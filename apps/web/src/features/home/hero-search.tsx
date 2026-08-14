@@ -92,7 +92,7 @@ export function HeroSearch() {
     <form
       action="/search"
       onSubmit={submit}
-      className="mt-9 flex h-[60px] max-w-[880px] items-center gap-3 rounded-[4px] border border-edge bg-raised pr-3.5 pl-[18px] transition-[border-color,box-shadow] focus-within:border-[#55647a] focus-within:shadow-[0_0_0_3px_rgba(156,179,214,0.07)]"
+      className="mt-9 flex h-[60px] max-w-[880px] items-center gap-3 rounded-[4px] border border-edge bg-raised pr-3.5 pl-[18px] transition-[border-color,box-shadow] focus-within:border-accent-dim focus-within:shadow-[0_0_0_3px_rgba(156,179,214,0.07)]"
     >
       <input
         name="q"

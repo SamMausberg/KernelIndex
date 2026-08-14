@@ -17,8 +17,11 @@ export default async function Home() {
       <SiteHeader home />
       {model.illustrative && <IllustrativeNotice />}
       <main>
-        <div data-hero className="mx-auto max-w-[1400px] px-10 pt-[88px]">
-          <h1 className="max-w-[24ch] text-[56px] leading-[1.04] font-normal tracking-[-0.03em] text-pretty">
+        <div
+          data-hero
+          className="mx-auto max-w-[1400px] px-10 pt-[88px] max-md:px-6 max-md:pt-14"
+        >
+          <h1 className="max-w-[24ch] text-[56px] leading-[1.04] font-normal tracking-[-0.03em] text-pretty max-md:text-[38px]">
             Find the fastest verified GPU kernel for your exact workload.
           </h1>
           <p className="mt-4 text-[16px] text-muted">
@@ -39,7 +42,7 @@ export default async function Home() {
           </div>
         </div>
 
-        <section className="mx-auto max-w-[1400px] px-10 pt-14">
+        <section className="mx-auto max-w-[1400px] px-10 pt-14 max-md:px-6">
           <div className="mb-4 flex items-baseline justify-between gap-4">
             <h2 className="text-[21px] font-medium tracking-[-0.015em]">
               Latest records
@@ -51,7 +54,7 @@ export default async function Home() {
           <LatestRecords rows={model.latest} />
         </section>
 
-        <div className="mx-auto mt-24 max-w-[1400px] px-10">
+        <div className="mx-auto mt-24 max-w-[1400px] px-10 max-md:px-6">
           <footer className="flex flex-wrap items-baseline justify-between gap-x-8 gap-y-3 border-t border-border pt-5 pb-16">
             <p className="text-[13px] text-subtle">
               Submit evidence, correct a record, or replicate a run —

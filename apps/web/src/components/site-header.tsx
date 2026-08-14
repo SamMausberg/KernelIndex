@@ -48,7 +48,7 @@ export function SiteHeader({
         {!home && active !== "search" && (
           <Link
             href="/search"
-            className="flex h-[34px] w-[220px] items-center gap-2 rounded-[3px] border border-border bg-raised px-2.5 text-[13px] text-faint transition-colors hover:border-edge-hover hover:text-subtle hover:no-underline"
+            className="flex h-[34px] w-[220px] items-center gap-2 rounded-[3px] border border-border bg-raised px-2.5 text-[13px] text-faint transition-colors hover:border-edge-hover hover:text-subtle hover:no-underline max-md:hidden"
           >
             Search
             <kbd className="ml-auto rounded-[2px] border border-border px-[5px] py-0.5 font-mono text-[11px]">

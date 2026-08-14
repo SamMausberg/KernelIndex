@@ -33,6 +33,7 @@
   /* One cool accent; status colors appear sparingly and always with text. */
   --color-accent: #9cb3d6;
   --color-accent-bright: #c9d7ea;
+  --color-accent-dim: #55647a;
   --color-accent-soft: #1c2836;
   --color-success: #6fcf97;
   --color-warning: #e3b85b;

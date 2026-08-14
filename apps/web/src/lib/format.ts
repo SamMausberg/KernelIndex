@@ -25,6 +25,18 @@ export function formatPrimary(primary: PrimaryMetric): string {
   return `${primary.value} ${primary.unit}`.trim()
 }
 
+/** Split for large numerals so digits carry and the unit recedes. */
+export function formatPrimaryParts(primary: PrimaryMetric): {
+  value: string
+  unit: string
+} {
+  const text = formatPrimary(primary)
+  const split = text.indexOf(" ")
+  return split === -1
+    ? { value: text, unit: "" }
+    : { value: text.slice(0, split), unit: text.slice(split + 1) }
+}
+
 /** "±0.03" — half-width of the uncertainty interval in the display unit. */
 export function formatSpread(primary: PrimaryMetric): string | null {
   if (!primary.uncertainty || primary.unit !== "ns") return null

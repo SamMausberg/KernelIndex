@@ -6,6 +6,7 @@ import {
   evidenceLabel,
   formatDateUTC,
   formatPrimary,
+  formatPrimaryParts,
   formatSpread,
 } from "@/lib/format"
 import { availabilityText, ResultRowItem, ResultTableHead } from "./result-row"
@@ -76,7 +77,7 @@ function SearchField({ query }: { query: string }) {
     <form
       action="/search"
       id="workload-search"
-      className="flex h-12 items-center gap-3 rounded-[3px] border border-edge bg-raised pr-3.5 pl-4 transition-colors focus-within:border-edge-hover"
+      className="flex h-12 items-center gap-3 rounded-[3px] border border-edge bg-raised pr-3.5 pl-4 transition-[border-color,box-shadow] focus-within:border-accent-dim focus-within:shadow-[0_0_0_3px_rgba(156,179,214,0.07)]"
     >
       <input
         id="header-search-input"
@@ -119,7 +120,12 @@ function Recommendation({
         </div>
         <div className="mt-3 flex flex-wrap items-baseline gap-4">
           <span className="font-mono text-[34px] leading-none font-medium">
-            {top.primary ? formatPrimary(top.primary) : "—"}
+            {top.primary ? formatPrimaryParts(top.primary).value : "—"}
+            {top.primary && (
+              <span className="ml-1.5 text-[19px] font-normal text-subtle">
+                {formatPrimaryParts(top.primary).unit}
+              </span>
+            )}
           </span>
           {top.primary && (
             <span className="font-mono text-[13px] text-subtle">

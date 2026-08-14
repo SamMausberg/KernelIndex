@@ -8,14 +8,19 @@ import * as schema from "./schema.ts"
 
 export type Db = PostgresJsDatabase<typeof schema>
 
-let instance: Db | undefined
+// Cached on globalThis so dev-server hot reloads reuse one pool instead of
+// leaking ten connections per reload until Postgres hits max_connections.
+const globalCache = globalThis as { __kernelindexDb?: Db }
 
 export function db(): Db {
-  if (!instance) {
+  if (!globalCache.__kernelindexDb) {
     if (!env.DATABASE_URL) throw new Error("DATABASE_URL is not configured")
-    instance = drizzle(postgres(env.DATABASE_URL, { max: 10 }), { schema })
+    globalCache.__kernelindexDb = drizzle(
+      postgres(env.DATABASE_URL, { max: 10 }),
+      { schema },
+    )
   }
-  return instance
+  return globalCache.__kernelindexDb
 }
 
 export { schema }

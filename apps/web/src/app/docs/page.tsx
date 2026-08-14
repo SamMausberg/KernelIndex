@@ -29,6 +29,7 @@ export default function DocsPage() {
   return (
     <>
       <SiteHeader active="docs" />
+      <div className="h-px origin-left animate-scan bg-accent" />
       <ContextHeader
         title="Documentation"
         context="query syntax · comparability · evidence · records"

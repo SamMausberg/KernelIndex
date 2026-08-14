@@ -11,7 +11,7 @@ import { getRunPage } from "@/lib/catalog"
 import {
   evidenceLabel,
   formatDateUTC,
-  formatPrimary,
+  formatPrimaryParts,
   formatSpread,
 } from "@/lib/format"
 
@@ -94,7 +94,10 @@ export default async function RunPage({ params }: Props) {
             </div>
             <div className="mt-3 flex flex-wrap items-baseline gap-4">
               <span className="font-mono text-[34px] leading-none font-medium">
-                {formatPrimary(model.primary)}
+                {formatPrimaryParts(model.primary).value}
+                <span className="ml-1.5 text-[19px] font-normal text-subtle">
+                  {formatPrimaryParts(model.primary).unit}
+                </span>
               </span>
               <span className="font-mono text-[13px] text-subtle">
                 {[
