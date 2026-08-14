@@ -159,7 +159,7 @@
               "pattern": "^[a-z][a-z0-9_]*$"
             }
           },
-          "required": ["timer", "compileIncluded", "primaryStatistic"],
+          "required": ["timer", "primaryStatistic"],
           "additionalProperties": false
         },
         "correctness": {

@@ -83,7 +83,9 @@ const operationSpecBody = z.strictObject({
   semantics: z.strictObject({
     expression: z.string().max(2000).optional(),
     mutation: z.enum(["none", "in_place", "destination"]),
-    determinism: z.enum(["deterministic", "nondeterministic"]),
+    // "unspecified" is for imports whose source does not state determinism —
+    // never guess a stronger claim than the source makes.
+    determinism: z.enum(["deterministic", "nondeterministic", "unspecified"]),
   }),
   reference: z
     .strictObject({ language: token, artifact: artifactRef.optional() })
@@ -123,6 +125,28 @@ const workloadCaseBody = z.strictObject({
     nanPolicy: z.enum(["reject", "exact_match", "ignore"]).optional(),
     infinityPolicy: z.enum(["reject", "exact_match", "ignore"]).optional(),
   }),
+})
+
+// ---------------------------------------------------------------------------
+// WorkloadSuite (§8.5, §11.7): an ordered case list with a published
+// aggregation rule. A suite-scoped result is a source-native aggregate, never
+// a per-case measurement.
+
+const workloadSuiteBody = z.strictObject({
+  operationSpecDigest: digestString,
+  cases: z
+    .array(
+      z.strictObject({
+        externalId: z.string().max(200),
+        axes: z.record(axisName, z.int()),
+      }),
+    )
+    .min(1),
+  correctness: z.strictObject({
+    comparator: token,
+    description: z.string().max(500).optional(),
+  }),
+  aggregation: z.strictObject({ metric: token, statistic: token }),
 })
 
 // ---------------------------------------------------------------------------
@@ -208,7 +232,8 @@ const benchmarkProtocolBody = z.strictObject({
   measurement: z.strictObject({
     timer: token,
     synchronization: token.optional(),
-    compileIncluded: z.boolean(),
+    // Absent means the source did not state it — never guess methodology.
+    compileIncluded: z.boolean().optional(),
     setupIncluded: z.boolean().optional(),
     warmupIterations: z.int().nonnegative().optional(),
     warmupDuration: durationNs.optional(),
@@ -290,15 +315,22 @@ export const runStatus = z.enum([
   "revoked",
 ])
 
-const latencyStats = z.strictObject({
-  median: durationNs,
-  p05: durationNs.optional(),
-  p95: durationNs.optional(),
-  minimum: durationNs.optional(),
-  maximum: durationNs.optional(),
-  mad: durationNs.optional(),
-  confidence95: z.tuple([durationNs, durationNs]).optional(),
-})
+const latencyStats = z
+  .strictObject({
+    // A source reports whichever central statistic it defines; at least one
+    // of median or mean is required and the protocol names the primary one.
+    median: durationNs.optional(),
+    mean: durationNs.optional(),
+    p05: durationNs.optional(),
+    p95: durationNs.optional(),
+    minimum: durationNs.optional(),
+    maximum: durationNs.optional(),
+    mad: durationNs.optional(),
+    confidence95: z.tuple([durationNs, durationNs]).optional(),
+  })
+  .refine((stats) => stats.median !== undefined || stats.mean !== undefined, {
+    message: "latencyNs requires median or mean",
+  })
 
 const measurement = z.strictObject({
   metric: token,
@@ -368,6 +400,10 @@ export const operationSpecManifest = manifest(
   operationSpecBody,
 )
 export const workloadCaseManifest = manifest("WorkloadCase", workloadCaseBody)
+export const workloadSuiteManifest = manifest(
+  "WorkloadSuite",
+  workloadSuiteBody,
+)
 export const softwareProjectManifest = manifest(
   "SoftwareProject",
   softwareProjectBody,
@@ -389,6 +425,7 @@ export const benchmarkRunManifest = manifest("BenchmarkRun", benchmarkRunBody)
 export const anyManifest = z.discriminatedUnion("kind", [
   operationSpecManifest,
   workloadCaseManifest,
+  workloadSuiteManifest,
   softwareProjectManifest,
   implementationRevisionManifest,
   benchmarkProtocolManifest,
@@ -398,6 +435,7 @@ export const anyManifest = z.discriminatedUnion("kind", [
 
 export type OperationSpecManifest = z.output<typeof operationSpecManifest>
 export type WorkloadCaseManifest = z.output<typeof workloadCaseManifest>
+export type WorkloadSuiteManifest = z.output<typeof workloadSuiteManifest>
 export type SoftwareProjectManifest = z.output<typeof softwareProjectManifest>
 export type ImplementationRevisionManifest = z.output<
   typeof implementationRevisionManifest
@@ -416,6 +454,7 @@ export type ManifestKind = AnyManifest["kind"]
 export const manifestSchemas = {
   OperationSpec: operationSpecManifest,
   WorkloadCase: workloadCaseManifest,
+  WorkloadSuite: workloadSuiteManifest,
   SoftwareProject: softwareProjectManifest,
   ImplementationRevision: implementationRevisionManifest,
   BenchmarkProtocol: benchmarkProtocolManifest,

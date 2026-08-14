@@ -27,11 +27,11 @@ import type {
 import type {
   ImplementationRevisionManifest,
   OperationSpecManifest,
-  WorkloadCaseManifest,
 } from "../../schemas/kinds.ts"
 import { db } from "../db/client.ts"
 import * as schema from "../db/schema.ts"
 import {
+  type AnyWorkloadManifest,
   environmentKeyValues,
   isStale,
   operationAxisSpecs,
@@ -167,9 +167,20 @@ function resultRow(
 }
 
 function axisMismatches(
-  requested: WorkloadCaseManifest,
-  observed: WorkloadCaseManifest,
+  requested: AnyWorkloadManifest,
+  observed: AnyWorkloadManifest,
 ): Mismatch[] {
+  if (requested.kind === "WorkloadSuite" || observed.kind === "WorkloadSuite") {
+    return [
+      {
+        field: "workloadScope",
+        requested:
+          requested.kind === "WorkloadSuite" ? "suite aggregate" : "exact case",
+        observed:
+          observed.kind === "WorkloadSuite" ? "suite aggregate" : "exact case",
+      },
+    ]
+  }
   const mismatches: Mismatch[] = []
   const names = new Set([
     ...Object.keys(requested.spec.axes),
@@ -213,7 +224,7 @@ function groupRuns(
   const cohortKey = primaryCohort[0]?.run.comparisonKey ?? null
 
   const selectedManifest = selected[0]?.workload.manifest as
-    | WorkloadCaseManifest
+    | AnyWorkloadManifest
     | undefined
   const exact = primaryCohort.map((j, index) =>
     resultRow(j, operation, { rank: index + 1 }),
@@ -235,7 +246,7 @@ function groupRuns(
         mismatches: selectedManifest
           ? axisMismatches(
               selectedManifest,
-              j.workload.manifest as WorkloadCaseManifest,
+              j.workload.manifest as AnyWorkloadManifest,
             )
           : [],
       }),
@@ -258,6 +269,13 @@ function groupRuns(
   return { exact, reported, compatible, cohort }
 }
 
+const escapeLike = (token: string) => token.replaceAll(/[\\%_]/g, "\\$&")
+
+/**
+ * Tiered operation resolution mirroring the §12.4 relevance order: exact
+ * slug, then exact alias, then family, then name substring. Deterministic —
+ * a weaker tier never outranks a stronger one.
+ */
 async function findOperation(query: string) {
   const database = db()
   const tokens = query
@@ -266,29 +284,53 @@ async function findOperation(query: string) {
     .filter((token) => /^[a-z0-9_-]{2,}$/.test(token))
   if (tokens.length === 0) return null
 
+  const bySlug = await database
+    .select()
+    .from(schema.operations)
+    .where(inArray(schema.operations.slug, tokens))
+    .limit(1)
+  if (bySlug[0]) return bySlug[0]
+
   const aliasHits = await database
     .select({ operationId: schema.operationAliases.operationId })
     .from(schema.operationAliases)
     .where(inArray(schema.operationAliases.alias, tokens))
-  const conditions = tokens.flatMap((token) => [
-    eq(schema.operations.slug, token),
-    eq(schema.operations.family, token),
-    ilike(schema.operations.name, `%${token}%`),
-  ])
   if (aliasHits.length > 0) {
-    conditions.push(
-      inArray(
-        schema.operations.id,
-        aliasHits.map((hit) => hit.operationId),
-      ),
-    )
+    const [operation] = await database
+      .select()
+      .from(schema.operations)
+      .where(
+        inArray(
+          schema.operations.id,
+          aliasHits.map((hit) => hit.operationId),
+        ),
+      )
+      .orderBy(schema.operations.createdAt)
+      .limit(1)
+    if (operation) return operation
   }
-  const [operation] = await database
+
+  const [byFamily] = await database
     .select()
     .from(schema.operations)
-    .where(or(...conditions))
+    .where(inArray(schema.operations.family, tokens))
+    .orderBy(schema.operations.createdAt)
     .limit(1)
-  return operation ?? null
+  if (byFamily) return byFamily
+
+  const [byName] = await database
+    .select()
+    .from(schema.operations)
+    .where(
+      or(
+        ...tokens.map((token) =>
+          ilike(schema.operations.name, `%${escapeLike(token)}%`),
+        ),
+      ),
+    )
+    .orderBy(schema.operations.createdAt)
+    .limit(1)
+  return byName ?? null
 }
 
 /** Pick the workload with the most runs as the default selection. */
@@ -505,12 +547,15 @@ export async function getOperationPage(
           : [],
     },
     workloads: workloadRows.map((row) => {
-      const workloadManifest = row.manifest as WorkloadCaseManifest
+      const workloadManifest = row.manifest as AnyWorkloadManifest
       return {
         id: row.id,
         digest: row.workloadDigest,
         label: workloadLabel(workloadManifest, row.dtypes),
-        axes: { ...workloadManifest.spec.axes },
+        axes:
+          workloadManifest.kind === "WorkloadCase"
+            ? { ...workloadManifest.spec.axes }
+            : {},
         toleranceSummary: toleranceSummary(workloadManifest),
       }
     }),
@@ -737,7 +782,7 @@ export async function getRunPage(id: string): Promise<RunPageModel | null> {
   if (!row || row.run.publishedAt === null) return null
   const { run, implementation, project, workload, source, operation } = row
   const stored = run.manifest as StoredRunManifest
-  const workloadManifest = workload.manifest as WorkloadCaseManifest
+  const workloadManifest = workload.manifest as AnyWorkloadManifest
 
   const measurementRows = await database
     .select()
@@ -855,7 +900,10 @@ export async function getRunPage(id: string): Promise<RunPageModel | null> {
       id: workload.id,
       digest: workload.workloadDigest,
       label: workloadLabel(workloadManifest, workload.dtypes),
-      axes: { ...workloadManifest.spec.axes },
+      axes:
+        workloadManifest.kind === "WorkloadCase"
+          ? { ...workloadManifest.spec.axes }
+          : {},
       tensors: workloadTensorKeyValues(workloadManifest),
       tolerance: toleranceKeyValues(workloadManifest),
     },

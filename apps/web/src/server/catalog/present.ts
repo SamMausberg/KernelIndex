@@ -13,6 +13,7 @@ import type {
   ExecutionEnvironmentManifest,
   OperationSpecManifest,
   WorkloadCaseManifest,
+  WorkloadSuiteManifest,
 } from "../../schemas/kinds.ts"
 import type * as schema from "../db/schema.ts"
 import { evidenceLevel } from "../policy/trust.ts"
@@ -25,6 +26,8 @@ export type StoredRunManifest = {
   protocol: BenchmarkProtocolManifest
   environment: ExecutionEnvironmentManifest
 }
+
+export type AnyWorkloadManifest = WorkloadCaseManifest | WorkloadSuiteManifest
 
 export const STALE_AFTER_DAYS = 180
 
@@ -105,8 +108,9 @@ export function environmentKeyValues(
 }
 
 export function workloadTensorKeyValues(
-  workload: WorkloadCaseManifest,
+  workload: AnyWorkloadManifest,
 ): KeyValue[] {
+  if (workload.kind === "WorkloadSuite") return []
   return Object.entries(workload.spec.tensors).map(([name, tensor]) => ({
     key: name,
     value: [
@@ -120,7 +124,14 @@ export function workloadTensorKeyValues(
   }))
 }
 
-export function toleranceKeyValues(workload: WorkloadCaseManifest): KeyValue[] {
+export function toleranceKeyValues(workload: AnyWorkloadManifest): KeyValue[] {
+  if (workload.kind === "WorkloadSuite") {
+    const suite = workload.spec.correctness
+    return kv([
+      ["comparator", suite.comparator],
+      ["description", suite.description],
+    ])
+  }
   const c = workload.spec.correctness
   return kv([
     ["comparator", c.comparator],
@@ -132,7 +143,9 @@ export function toleranceKeyValues(workload: WorkloadCaseManifest): KeyValue[] {
   ])
 }
 
-export function toleranceSummary(workload: WorkloadCaseManifest): string {
+export function toleranceSummary(workload: AnyWorkloadManifest): string {
+  if (workload.kind === "WorkloadSuite")
+    return workload.spec.correctness.comparator
   const c = workload.spec.correctness
   const parts: string[] = []
   if (c.maxAbsoluteError !== undefined)
@@ -145,9 +158,12 @@ export function toleranceSummary(workload: WorkloadCaseManifest): string {
 }
 
 export function workloadLabel(
-  workload: WorkloadCaseManifest,
+  workload: AnyWorkloadManifest,
   dtypes: string[],
 ): string {
+  if (workload.kind === "WorkloadSuite") {
+    return `${workload.metadata.title ?? workload.metadata.name} · suite of ${workload.spec.cases.length} cases · ${workload.spec.aggregation.statistic} ${workload.spec.aggregation.metric}`
+  }
   const axes = Object.entries(workload.spec.axes)
     .map(([name, value]) => `${name} = ${value}`)
     .join(" · ")

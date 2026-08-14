@@ -46,7 +46,7 @@ describe.skipIf(!url)("postgres catalog reads", () => {
   })
 
   it("getOperationPage returns semantics, workloads, and records", async () => {
-    const model = await getOperationPage("rmsnorm-h4096")
+    const model = await getOperationPage("example-rmsnorm-h4096")
     expect(model).not.toBeNull()
     expect(model?.semantics.inputs.map((input) => input.name)).toEqual([
       "input",
@@ -63,7 +63,7 @@ describe.skipIf(!url)("postgres catalog reads", () => {
   })
 
   it("getImplementationPage answers 'can I use this?'", async () => {
-    const model = await getImplementationPage("meridian-rmsnorm")
+    const model = await getImplementationPage("example-meridian-rmsnorm")
     expect(model).not.toBeNull()
     expect(model?.license.concluded).toBe("Apache-2.0")
     expect(model?.source.available).toBe(true)

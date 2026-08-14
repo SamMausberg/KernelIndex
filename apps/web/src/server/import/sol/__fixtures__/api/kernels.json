@@ -1,0 +1,14 @@
+{
+  "data": {
+    "kernels": [
+      {
+        "id": 4,
+        "name": "004_attention_output_projection_with_reshape_backward",
+        "title": "004_attention_output_projection_with_reshape_backward",
+        "gpu_types": ["B200"],
+        "tags": ["other", "L1", "model:LFM2-1.2B"],
+        "submission_count": 251
+      }
+    ]
+  }
+}

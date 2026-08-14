@@ -11,7 +11,8 @@
     "schemas:generate": "node scripts/generate-schemas.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node --env-file-if-exists=.env.local scripts/migrate.ts",
-    "db:seed": "node --env-file-if-exists=.env.local scripts/seed.ts"
+    "db:seed": "node --env-file-if-exists=.env.local scripts/seed.ts",
+    "import:sol": "node --env-file-if-exists=.env.local scripts/import-sol.ts"
   },
   "dependencies": {
     "canonicalize": "4.0.0",

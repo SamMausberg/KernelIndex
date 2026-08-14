@@ -40,7 +40,7 @@ export function exampleBundle(): ImportBundle {
     operations: [
       {
         manifest: load("operation-spec.yaml", "OperationSpec"),
-        slug: "rmsnorm-h4096",
+        slug: "example-rmsnorm-h4096",
         aliases: ["rms_norm", "rmsnorm"],
       },
     ],
@@ -51,7 +51,7 @@ export function exampleBundle(): ImportBundle {
           "implementation-revision.yaml",
           "ImplementationRevision",
         ),
-        slug: "meridian-rmsnorm",
+        slug: "example-meridian-rmsnorm",
         projectSlug: "meridian-kernels",
       },
     ],

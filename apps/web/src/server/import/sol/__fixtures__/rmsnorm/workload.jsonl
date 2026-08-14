@@ -1,0 +1,4 @@
+{"uuid": "33bf737d-3b37-4e38-be80-ea39b4b46ae6", "axes": {"batch_size": 7}, "inputs": {"hidden_states": {"type": "random"}, "weight": {"type": "random"}}}
+{"uuid": "864d596c-a930-4fc4-b241-02e6a06e92cb", "axes": {"batch_size": 1}, "inputs": {"hidden_states": {"type": "random"}, "weight": {"type": "random"}}}
+{"uuid": "f7c3b329-5d22-491c-9635-5b5906f0f4b1", "axes": {"batch_size": 34}, "inputs": {"hidden_states": {"type": "random"}, "weight": {"type": "random"}}}
+{"uuid": "b010c7f2-801d-41c0-b5d0-be619ecb4090", "axes": {"batch_size": 170}, "inputs": {"hidden_states": {"type": "random"}, "weight": {"type": "random"}}}

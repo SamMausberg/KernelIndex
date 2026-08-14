@@ -249,7 +249,7 @@
             },
             "determinism": {
               "type": "string",
-              "enum": ["deterministic", "nondeterministic"]
+              "enum": ["deterministic", "nondeterministic", "unspecified"]
             }
           },
           "required": ["mutation", "determinism"],

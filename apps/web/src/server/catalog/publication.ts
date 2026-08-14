@@ -12,6 +12,7 @@ import type {
   OperationSpecManifest,
   SoftwareProjectManifest,
   WorkloadCaseManifest,
+  WorkloadSuiteManifest,
 } from "../../schemas/kinds.ts"
 import { API_VERSION } from "../../schemas/kinds.ts"
 import { parseManifestDocument } from "../../schemas/parse.ts"
@@ -61,7 +62,7 @@ export type ImportBundle = {
     aliases?: string[]
     externalId?: string
   }[]
-  workloads: { manifest: WorkloadCaseManifest; externalId?: string }[]
+  workloads: { manifest: AnyWorkloadManifest; externalId?: string }[]
   implementations: {
     manifest: ImplementationRevisionManifest
     slug: string
@@ -93,6 +94,8 @@ export type PublicationResult = {
 }
 
 type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0]
+/** Callers may pass a live transaction; nested calls use savepoints. */
+export type DbHandle = Db | Tx
 
 // Revalidation inside the transaction (§10.8 step 2): never trust that a
 // caller's manifest object still matches its claimed kind and schema.
@@ -103,7 +106,12 @@ function revalidated<M extends AnyManifest>(manifest: M): M {
   return parsed as M
 }
 
-function summarizeShape(workload: WorkloadCaseManifest): string {
+/** A run can bind an exact case or a source-defined suite (§11.7). */
+export type AnyWorkloadManifest = WorkloadCaseManifest | WorkloadSuiteManifest
+
+function summarizeShape(workload: AnyWorkloadManifest): string {
+  if (workload.kind === "WorkloadSuite")
+    return `suite of ${workload.spec.cases.length} cases`
   const tensors = Object.values(workload.spec.tensors)
   return tensors.length > 0 ? `[${tensors[0].shape.join(", ")}]` : "[]"
 }
@@ -136,7 +144,7 @@ async function linkSource(
 
 /** Publish one validated bundle atomically. Safe to re-run with same input. */
 export async function publishBundle(
-  database: Db,
+  database: DbHandle,
   bundle: ImportBundle,
   options: { publish: boolean },
 ): Promise<PublicationResult> {
@@ -278,7 +286,7 @@ export async function publishBundle(
     // Workloads by content digest.
     const workloadRowByDigest = new Map<
       string,
-      { id: string; operationDigest: string; manifest: WorkloadCaseManifest }
+      { id: string; operationDigest: string; manifest: AnyWorkloadManifest }
     >()
     for (const workload of bundle.workloads) {
       const manifest = revalidated(workload.manifest)
@@ -290,7 +298,10 @@ export async function publishBundle(
       if (row) {
         counts.workloads.existing++
       } else {
-        const tensors = Object.values(manifest.spec.tensors)
+        const tensors =
+          manifest.kind === "WorkloadCase"
+            ? Object.values(manifest.spec.tensors)
+            : []
         ;[row] = await tx
           .insert(schema.workloads)
           .values({
@@ -413,7 +424,7 @@ export async function publishBundle(
         .where(eq(schema.workloads.workloadDigest, digest))
       if (!row)
         throw new Error(`workload ${digest} is not in the bundle or catalog`)
-      const manifest = row.manifest as WorkloadCaseManifest
+      const manifest = row.manifest as AnyWorkloadManifest
       return {
         id: row.id,
         operationDigest: manifest.spec.operationSpecDigest,
@@ -460,23 +471,29 @@ export async function publishBundle(
 
       const timing = manifest.spec.timing
       const firstMeasurement = manifest.spec.measurements?.[0]
-      const primary = timing
-        ? {
-            metric: "latency",
-            statistic: timing.primaryStatistic,
-            unit: "ns",
-            value: timing.latencyNs.median,
-            sampleCount: timing.samples ?? null,
-          }
-        : firstMeasurement
+      const centralLatency = timing
+        ? timing.primaryStatistic === "mean"
+          ? (timing.latencyNs.mean ?? timing.latencyNs.median)
+          : (timing.latencyNs.median ?? timing.latencyNs.mean)
+        : undefined
+      const primary =
+        timing && centralLatency !== undefined
           ? {
-              metric: firstMeasurement.metric,
-              statistic: firstMeasurement.statistic,
-              unit: firstMeasurement.unit,
-              value: firstMeasurement.value,
-              sampleCount: firstMeasurement.sampleCount ?? null,
+              metric: "latency",
+              statistic: timing.primaryStatistic,
+              unit: "ns",
+              value: centralLatency,
+              sampleCount: timing.samples ?? null,
             }
-          : null
+          : firstMeasurement
+            ? {
+                metric: firstMeasurement.metric,
+                statistic: firstMeasurement.statistic,
+                unit: firstMeasurement.unit,
+                value: firstMeasurement.value,
+                sampleCount: firstMeasurement.sampleCount ?? null,
+              }
+            : null
       if (manifest.spec.status === "passed" && options.publish && !primary) {
         throw new Error(
           `run ${manifest.metadata.name}: a published passed run needs a primary measurement`,
@@ -543,6 +560,7 @@ export async function publishBundle(
       if (timing) {
         const stats: [string, number | undefined][] = [
           ["median", timing.latencyNs.median],
+          ["mean", timing.latencyNs.mean],
           ["p05", timing.latencyNs.p05],
           ["p95", timing.latencyNs.p95],
           ["min", timing.latencyNs.minimum],
@@ -612,7 +630,7 @@ export async function publishBundle(
 
 /** True when every listed run digest already exists (used by --dry-run). */
 export async function existingRunDigests(
-  database: Db,
+  database: DbHandle,
   digests: string[],
 ): Promise<Set<string>> {
   if (digests.length === 0) return new Set()

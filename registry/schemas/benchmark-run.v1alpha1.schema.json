@@ -164,6 +164,19 @@
                     }
                   ]
                 },
+                "mean": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "string",
+                      "pattern": "^\\d+(\\.\\d+)?\\s?(ns|us|µs|ms|s)$"
+                    }
+                  ]
+                },
                 "p05": {
                   "anyOf": [
                     {
@@ -261,7 +274,6 @@
                   ]
                 }
               },
-              "required": ["median"],
               "additionalProperties": false
             },
             "rawSamples": {
