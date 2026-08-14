@@ -124,24 +124,112 @@ function familyOf(definition: SolDefinition): string {
   return tag ? kebab(tag) : "uncategorized"
 }
 
-type SolArgument = { name: string; shape: (string | number)[]; dtype: string }
+type SolArgument = {
+  name: string
+  shape: (string | number)[] | null
+  dtype: string
+}
+
+/** Axis identifiers are case-normalized; SOL uses e.g. GEMM's M/N/K. */
+const axisKey = (name: string) => name.toLowerCase()
+
+/** Argument names normalize to the token grammar (GEMM uses A/B/C). */
+function argumentKey(name: string): string {
+  const lowered = name.toLowerCase().replaceAll(/[^a-z0-9_]/g, "_")
+  return /^[a-z]/.test(lowered) ? lowered : `x_${lowered}`
+}
+
+/** Shape entries may be numeric strings ("2"); bound dims become integers. */
+const dimension = (value: string | number): string | number =>
+  typeof value === "number"
+    ? value
+    : /^\d+$/.test(value)
+      ? Number(value)
+      : axisKey(value)
 
 function operationArguments(
-  record: Record<string, { shape: (string | number)[]; dtype: string }>,
+  record: Record<string, { shape?: (string | number)[] | null; dtype: string }>,
 ) {
   return Object.entries(record).map(
-    ([name, tensor]): SolArgument => ({ name, ...tensor }),
+    ([name, tensor]): SolArgument => ({
+      name,
+      shape: tensor.shape ?? null,
+      dtype: tensor.dtype,
+    }),
   )
 }
 
+// A null upstream shape means a scalar input.
 function argumentSpec(argument: SolArgument) {
-  if (argument.shape.length === 0) {
-    return { name: argument.name, scalar: { dtype: mapDtype(argument.dtype) } }
+  if (argument.shape === null || argument.shape.length === 0) {
+    return {
+      name: argumentKey(argument.name),
+      scalar: { dtype: mapDtype(argument.dtype) },
+    }
   }
   return {
-    name: argument.name,
-    tensor: { shape: argument.shape, dtype: mapDtype(argument.dtype) },
+    name: argumentKey(argument.name),
+    tensor: {
+      shape: argument.shape.map(dimension),
+      dtype: mapDtype(argument.dtype),
+    },
   }
+}
+
+/**
+ * Evaluate a derived-axis expression from the tiny grammar (§9.1): integers,
+ * axis names, + - * %, floor division (//), and parentheses.
+ */
+export function evaluateAxisExpression(
+  expression: string,
+  bindings: Record<string, number>,
+): number {
+  const tokens = expression.match(/\d+|[a-z_][a-z0-9_]*|\/\/|[+\-*%()]/g) ?? []
+  let position = 0
+  const peek = () => tokens[position]
+  const next = () => tokens[position++]
+  const factor = (): number => {
+    const token = next()
+    if (token === undefined)
+      throw new Error(`unexpected end of '${expression}'`)
+    if (token === "(") {
+      const value = sum()
+      if (next() !== ")") throw new Error(`missing ')' in '${expression}'`)
+      return value
+    }
+    if (/^\d+$/.test(token)) return Number(token)
+    const bound = bindings[token]
+    if (bound === undefined)
+      throw new Error(`unbound axis '${token}' in '${expression}'`)
+    return bound
+  }
+  const product = (): number => {
+    let value = factor()
+    while (peek() === "*" || peek() === "//" || peek() === "%") {
+      const op = next()
+      const rhs = factor()
+      value =
+        op === "*"
+          ? value * rhs
+          : op === "%"
+            ? value % rhs
+            : Math.floor(value / rhs)
+    }
+    return value
+  }
+  const sum = (): number => {
+    let value = product()
+    while (peek() === "+" || peek() === "-") {
+      const op = next()
+      const rhs = product()
+      value = op === "+" ? value + rhs : value - rhs
+    }
+    return value
+  }
+  const result = sum()
+  if (position !== tokens.length)
+    throw new Error(`trailing tokens in '${expression}'`)
+  return result
 }
 
 /** SOL Definition → immutable OperationSpec manifest. */
@@ -167,10 +255,16 @@ export function operationFromDefinition(
       family: familyOf(definition),
       axes: Object.fromEntries(
         Object.entries(definition.axes).map(([name, axis]) => [
-          name,
+          axisKey(name),
           axis.type === "const"
             ? { role: "constant", type: "integer", value: axis.value }
-            : { role: "variable", type: "integer" },
+            : axis.type === "expr"
+              ? {
+                  role: "derived",
+                  type: "integer",
+                  expression: axis.expression?.toLowerCase(),
+                }
+              : { role: "variable", type: "integer" },
         ]),
       ),
       inputs: operationArguments(definition.inputs).map(argumentSpec),
@@ -196,9 +290,30 @@ export function caseFromEntry(
   operationSpecDigest: string,
   entry: SolWorkloadEntry,
 ): WorkloadCaseManifest {
-  const axisValue = (dim: string | number): number => {
+  const entryAxes = Object.fromEntries(
+    Object.entries(entry.axes).map(([name, value]) => [axisKey(name), value]),
+  )
+  const bindings: Record<string, number> = { ...entryAxes }
+  for (const [name, axis] of Object.entries(definition.axes)) {
+    if (axis.type === "const" && axis.value !== undefined)
+      bindings[axisKey(name)] = axis.value
+  }
+  for (const [name, axis] of Object.entries(definition.axes)) {
+    if (
+      axis.type === "expr" &&
+      axis.expression &&
+      bindings[axisKey(name)] === undefined
+    ) {
+      bindings[axisKey(name)] = evaluateAxisExpression(
+        axis.expression.toLowerCase(),
+        bindings,
+      )
+    }
+  }
+  const axisValue = (raw: string | number): number => {
+    const dim = dimension(raw)
     if (typeof dim === "number") return dim
-    const bound = entry.axes[dim] ?? definition.axes[dim]?.value
+    const bound = bindings[dim]
     if (bound === undefined)
       throw new Error(`unbound axis '${dim}' in workload ${entry.uuid}`)
     return bound
@@ -209,11 +324,11 @@ export function caseFromEntry(
     const descriptor = entry.inputs[argument.name]
     const dtype = mapDtype(argument.dtype)
     if (descriptor?.type === "scalar" && typeof descriptor.value === "number") {
-      scalars[argument.name] = { dtype, value: descriptor.value }
+      scalars[argumentKey(argument.name)] = { dtype, value: descriptor.value }
       continue
     }
-    if (argument.shape.length === 0) continue
-    tensors[argument.name] = {
+    if (argument.shape === null || argument.shape.length === 0) continue
+    tensors[argumentKey(argument.name)] = {
       shape: argument.shape.map(axisValue),
       dtype,
       data: {
@@ -233,7 +348,7 @@ export function caseFromEntry(
     },
     spec: {
       operationSpecDigest,
-      axes: entry.axes,
+      axes: entryAxes,
       tensors,
       scalars: Object.keys(scalars).length > 0 ? scalars : undefined,
       // Dataset workload rows publish per-case tolerances; when absent the
@@ -266,7 +381,12 @@ export function suiteFromEntries(
       operationSpecDigest,
       cases: entries.map((entry) => ({
         externalId: entry.uuid,
-        axes: entry.axes,
+        axes: Object.fromEntries(
+          Object.entries(entry.axes).map(([name, value]) => [
+            axisKey(name),
+            value,
+          ]),
+        ),
       })),
       correctness: {
         comparator: "sol_execbench_eval",

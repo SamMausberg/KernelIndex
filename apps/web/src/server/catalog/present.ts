@@ -178,14 +178,16 @@ export function operationAxisSpecs(
     role: axis.role,
     value: axis.value ?? null,
     constraint:
-      axis.minimum !== undefined || axis.maximum !== undefined
-        ? [
-            axis.minimum !== undefined ? `${name} >= ${axis.minimum}` : null,
-            axis.maximum !== undefined ? `${name} <= ${axis.maximum}` : null,
-          ]
-            .filter(Boolean)
-            .join(", ")
-        : null,
+      axis.expression !== undefined
+        ? `${name} = ${axis.expression}`
+        : axis.minimum !== undefined || axis.maximum !== undefined
+          ? [
+              axis.minimum !== undefined ? `${name} >= ${axis.minimum}` : null,
+              axis.maximum !== undefined ? `${name} <= ${axis.maximum}` : null,
+            ]
+              .filter(Boolean)
+              .join(", ")
+          : null,
   }))
 }
 

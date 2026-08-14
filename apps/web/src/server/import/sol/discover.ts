@@ -31,14 +31,16 @@ import {
  * activations, and quantized variants.
  */
 export const DEFAULT_KERNELS = [
-  "002_fused_add_rmsnorm_h4096",
   "001_fused_add_rmsnorm_h2048",
-  "003_fused_add_rmsnorm_h7168",
-  "013_gqa_paged_decode_h32_kv8_d128_ps1",
-  "001_fp8_attention_output_projection",
-  "002_fp8_attention_qkv_projection",
-  "003_fp8_mlp_gate_up_projection",
-  "004_attention_output_projection_with_reshape_backward",
+  "002_fused_add_rmsnorm_h4096",
+  "069_rms_norm",
+  "012_gqa_paged_decode_h32_kv4_d128_ps1",
+  "018_mla_paged_decode_h16_ckv512_kpe64_ps1",
+  "014_gqa_paged_prefill_causal_h32_kv4_d128_ps1",
+  "009_gemm_n5120_k2048",
+  "007_gemm_n4096_k4096",
+  "011_rotary_position_embedding",
+  "048_fused_gate_up_projection_with_swiglu",
 ]
 
 export type SolSolutionEntry = {
@@ -106,6 +108,7 @@ function definitionFromRow(
   row: DatasetRow,
   locator: string,
   data: SolImportData,
+  tags: string[],
 ): void {
   try {
     const document = {
@@ -113,6 +116,8 @@ function definitionFromRow(
       axes: JSON.parse(row.axes as string),
       inputs: JSON.parse(row.inputs as string),
       outputs: JSON.parse(row.outputs as string),
+      // Family tags live on the leaderboard kernel entry, not the dataset row.
+      tags,
     }
     const definition = solDefinition.parse(document)
     data.definitions.set(definition.name, definition)
@@ -184,6 +189,9 @@ export async function discoverLeaderboard(
     }
     bySubset.set(subset, (bySubset.get(subset) ?? new Set()).add(kernel.name))
   }
+  const tagsByName = new Map(
+    wanted.map((kernel) => [kernel.name, kernel.tags ?? []]),
+  )
   for (const [subset, names] of bySubset) {
     const rows = await datasetRows(subset, names, data)
     for (const name of names) {
@@ -196,7 +204,12 @@ export async function discoverLeaderboard(
         })
         continue
       }
-      definitionFromRow(row, `${DATASET_ROWS_BASE}&config=${subset}`, data)
+      definitionFromRow(
+        row,
+        `${DATASET_ROWS_BASE}&config=${subset}`,
+        data,
+        tagsByName.get(name) ?? [],
+      )
     }
   }
 

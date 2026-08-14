@@ -3924,6 +3924,13 @@ This sequence is optimized for a solo founder using strong AI coding assistance.
 
 **Gate:** public performance claims come from real immutable records. Fixture mode remains available for design/tests but cannot be enabled silently in production.
 
+**Week 2 implementation notes (2026-08-14).** Reality adjustments made during the build, each preserving the §0.5 invariants:
+
+- The public SOL-ExecBench leaderboard publishes per-submission suite-mean latency and SOL-Score, not per-case traces. The `WorkloadSuite` kind (§9.1) therefore shipped in Week 2; leaderboard records import as suite-scoped, source-native, `Reported` runs with raw source metrics preserved. Per-case Trace files import via `import:sol --snapshot` — the path for the founder's gold record (§22.15), which is still pending real trace output. See ADR 0002.
+- SOL definitions use derived axes (`expr`, e.g. `head_dim // 2`); operation specs gained a `derived` axis role with a tiny validated expression grammar.
+- Operation specs gained `determinism: unspecified` for sources that do not state determinism; imports never claim more than the source does.
+- Benchmark protocols allow unknown methodology fields to stay absent (e.g. `compileIncluded`), because guessing methodology is worse than stating it is unpublished.
+
 ### 22.4 Week 3: query parsing, search, and matching
 
 **Build:**

@@ -39,3 +39,49 @@ jobs:
 
       - name: Check
         run: pnpm check
+
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:18.6
+        env:
+          POSTGRES_USER: kernelindex
+          POSTGRES_PASSWORD: kernelindex
+          POSTGRES_DB: kernelindex
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U kernelindex -d kernelindex"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 20
+    env:
+      DATABASE_URL: postgres://kernelindex:kernelindex@127.0.0.1:5432/kernelindex
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.21.0
+          run_install: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Migrate
+        run: pnpm --filter @kernelindex/web db:migrate
+
+      - name: Test
+        run: pnpm test

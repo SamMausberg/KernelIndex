@@ -145,7 +145,7 @@ export type SearchPageModel = {
 
 export type AxisSpec = {
   name: string
-  role: "variable" | "constant"
+  role: "variable" | "constant" | "derived"
   value: number | null
   constraint: string | null
 }

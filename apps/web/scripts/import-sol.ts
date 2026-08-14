@@ -20,7 +20,11 @@ import {
 } from "../src/server/import/sol/discover.ts"
 import { reconcile } from "../src/server/import/sol/reconcile.ts"
 
+// pnpm forwards the literal "--" separator, which would make parseArgs treat
+// every following flag as a positional; strip it.
+const rawArgs = process.argv.slice(2)
 const { values } = parseArgs({
+  args: rawArgs[0] === "--" ? rawArgs.slice(1) : rawArgs,
   options: {
     "dry-run": { type: "boolean", default: false },
     publish: { type: "boolean", default: false },

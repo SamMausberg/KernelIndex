@@ -43,14 +43,24 @@ const metadata = z.strictObject({
 
 const axisSpec = z
   .strictObject({
-    role: z.enum(["variable", "constant"]),
+    role: z.enum(["variable", "constant", "derived"]),
     type: z.literal("integer"),
     value: z.int().optional(),
     minimum: z.int().optional(),
     maximum: z.int().optional(),
+    // Deliberately tiny validated grammar (§9.1): integers, axis names,
+    // + - * % and floor division, parentheses.
+    expression: z
+      .string()
+      .regex(/^[a-z0-9_+\-*%/() ]+$/)
+      .max(200)
+      .optional(),
   })
   .refine((axis) => axis.role !== "constant" || axis.value !== undefined, {
     message: "a constant axis requires a value",
+  })
+  .refine((axis) => axis.role !== "derived" || axis.expression !== undefined, {
+    message: "a derived axis requires an expression",
   })
 
 const tensorSpec = z.strictObject({

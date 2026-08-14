@@ -18,13 +18,15 @@ export const REPO_RAW_BASE =
   "https://raw.githubusercontent.com/nvidia/sol-execbench"
 
 const solAxis = z.looseObject({
-  type: z.enum(["var", "const"]),
+  type: z.enum(["var", "const", "expr"]),
   value: z.int().optional(),
+  expression: z.string().nullish(),
   description: z.string().nullish(),
 })
 
 const solTensor = z.looseObject({
-  shape: z.array(z.union([z.string(), z.int()])),
+  // Null shape means a scalar input.
+  shape: z.array(z.union([z.string(), z.int()])).nullish(),
   dtype: z.string(),
   description: z.string().nullish(),
 })
@@ -126,8 +128,37 @@ export const solKernelSummary = z.looseObject({
   submission_count: z.int().nullish(),
 })
 
+const IGNORED_SUBMISSION_FIELDS = [
+  "type",
+  "user_id",
+  "kernel_title",
+  "collection_id",
+  "collection_submission_id",
+  "collection_title",
+  "benchmark_results",
+  "disqualification_reason",
+  "disqualification_source",
+  "disqualified_at",
+  "error_log",
+  "original_filename",
+  "started_at",
+  "profiling_results",
+  "review_status",
+  "review_decision",
+  "review_summary",
+  "review_reasons",
+  "review_policy_version",
+  "review_hard_rule_id",
+  "review_reviewer",
+  "review_model",
+  "run_log",
+] as const
+
 /** /api/submissions?kernel_id= entry: real published evaluation results. */
 export const solSubmission = z.looseObject({
+  ...Object.fromEntries(
+    IGNORED_SUBMISSION_FIELDS.map((field) => [field, z.unknown().optional()]),
+  ),
   id: z.int(),
   username: z.string(),
   kernel_id: z.int(),
