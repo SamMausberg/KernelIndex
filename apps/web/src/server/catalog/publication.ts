@@ -25,6 +25,7 @@ import {
   metricKey,
 } from "../policy/comparison.ts"
 import { concludeLicense } from "../policy/licensing.ts"
+import { syncRecordEvents } from "./record-events.ts"
 
 export type BundleArtifact = {
   role: string
@@ -434,6 +435,7 @@ export async function publishBundle(
 
     // Append-only benchmark runs (§10.7).
     const runIds: string[] = []
+    const insertedCohorts = new Set<string>()
     for (const run of bundle.runs) {
       const manifest = revalidated(run.manifest)
       const protocol = revalidated(run.protocol)
@@ -510,6 +512,16 @@ export async function publishBundle(
         10,
       )
 
+      const cohortKey = comparisonKey({
+        operationDigest: workload.operationDigest,
+        workloadDigest: manifest.spec.workloadDigest,
+        protocolKey,
+        environmentKey,
+        correctnessKey: runCorrectnessKey,
+        metricKey: primary
+          ? metricKey(primary.metric, primary.statistic, primary.unit)
+          : "none",
+      })
       const [row] = await tx
         .insert(schema.benchmarkRuns)
         .values({
@@ -528,16 +540,7 @@ export async function publishBundle(
           protocolKey,
           environmentKey,
           correctnessKey: runCorrectnessKey,
-          comparisonKey: comparisonKey({
-            operationDigest: workload.operationDigest,
-            workloadDigest: manifest.spec.workloadDigest,
-            protocolKey,
-            environmentKey,
-            correctnessKey: runCorrectnessKey,
-            metricKey: primary
-              ? metricKey(primary.metric, primary.statistic, primary.unit)
-              : "none",
-          }),
+          comparisonKey: cohortKey,
           primaryMetric: primary?.metric ?? "none",
           primaryValue: primary?.value ?? null,
           primaryUnit: primary?.unit ?? null,
@@ -553,6 +556,7 @@ export async function publishBundle(
         .returning()
       counts.runs.inserted++
       runIds.push(row.id)
+      insertedCohorts.add(cohortKey)
       await linkSource(tx, source.id, "run", row.id, run.externalId)
 
       // Expand timing statistics and secondary measurements into typed rows.
@@ -622,6 +626,12 @@ export async function publishBundle(
           })
           .onConflictDoNothing()
       }
+    }
+
+    // Derived ranking may have changed (§11.10): append the record
+    // transitions for every cohort this publication touched.
+    if (options.publish && insertedCohorts.size > 0) {
+      await syncRecordEvents(tx, [...insertedCohorts])
     }
 
     return { sourceId: source.id, counts, runIds }

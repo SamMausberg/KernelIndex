@@ -3,6 +3,9 @@
 // label. Projects, runs, and numbers are fictional and must never be
 // presented as real benchmark evidence.
 import type {
+  CompareField,
+  ComparePageModel,
+  CompareRun,
   EvidenceLevel,
   HomePageModel,
   ImplementationPageModel,
@@ -19,6 +22,8 @@ import type {
   SearchInput,
   SearchPageModel,
 } from "@/lib/catalog-models"
+import { describeIntent, parseQuery, removeToken } from "@/lib/search-query"
+import { RANKING_POLICY_VERSION, rankCohort } from "@/server/policy/ranking"
 
 const ILLUSTRATIVE = true
 const FRESH = "2026-08-10T09:30:00Z"
@@ -515,6 +520,14 @@ export async function getRecordsPage(): Promise<RecordsPageModel> {
   }
 }
 
+const FIXTURE_SOURCE_REF = {
+  name: "Illustrative fixture source",
+  kind: "fixture",
+  url: null,
+  externalId: null,
+  observedAt: FRESH,
+}
+
 export async function searchCatalog(
   input: SearchInput,
 ): Promise<SearchPageModel> {
@@ -522,6 +535,24 @@ export async function searchCatalog(
   // Deterministic error trigger for the design lab's error state.
   if (query === "__error__")
     throw new Error("Illustrative search failure (fixtures)")
+
+  // Fixtures interpret queries through the same parser as PostgreSQL mode,
+  // so tokens, parse errors, and the interpreted request behave identically.
+  const intent = parseQuery(query)
+  const shared = {
+    facets: intent.facets.map((facet) => ({
+      token: facet.token,
+      display: facet.display,
+      removeQuery: removeToken(query, facet.token),
+    })),
+    queryIssues: intent.issues,
+    policy: {
+      minimumTrust: intent.minimumTrust,
+      license: intent.license,
+      requireSource: intent.requireSource,
+      requireInstallable: intent.requireInstallable,
+    },
+  }
 
   const matched = /rms[\s_-]?norm/i.test(query)
   if (!matched) {
@@ -531,7 +562,8 @@ export async function searchCatalog(
       query,
       interpretedQuery: empty
         ? "Search the index"
-        : `No recognized operation in “${query}”`,
+        : describeIntent(intent, null),
+      ...shared,
       operation: null,
       browse: empty
         ? [
@@ -547,6 +579,7 @@ export async function searchCatalog(
         reported: [],
       },
       related: [],
+      sources: [],
       noResult: empty
         ? null
         : {
@@ -563,8 +596,8 @@ export async function searchCatalog(
   return {
     illustrative: ILLUSTRATIVE,
     query,
-    interpretedQuery:
-      "Operation RMSNorm · hidden 4096 · tokens 2048 · bf16 · NVIDIA B200 SXM · PyTorch",
+    interpretedQuery: describeIntent(intent, "RMSNorm, hidden 4096"),
+    ...shared,
     operation: { name: "RMSNorm, hidden 4096", slug: "rmsnorm-h4096" },
     browse: null,
     cohort: COHORT_2048,
@@ -590,6 +623,7 @@ export async function searchCatalog(
         summary: "Illustrative Triton kernel collection",
       },
     ],
+    sources: [FIXTURE_SOURCE_REF],
     noResult: null,
   }
 }
@@ -1018,4 +1052,145 @@ function runPage(r: FxRun): RunPageModel {
 export async function getRunPage(id: string): Promise<RunPageModel | null> {
   const r = RUNS.find((run) => run.id === id)
   return r ? runPage(r) : null
+}
+
+const cohortKeyOf = (r: FxRun) =>
+  r.workloadId === "wl-2048"
+    ? COHORT_2048.comparisonKey
+    : digest("cohort:rmsnorm-h4096:tokens-1024")
+
+/** Fixture compare mirrors the PostgreSQL field alignment (§16.11). */
+export async function getComparePage(
+  runIds: string[],
+): Promise<ComparePageModel> {
+  const wanted = [...new Set(runIds)].slice(0, 8)
+  const selected = wanted
+    .map((id) => RUNS.find((r) => r.id === id))
+    .filter((r): r is FxRun => r !== undefined)
+  const missingIds = wanted.filter((id) => !RUNS.some((r) => r.id === id))
+  if (selected.length === 0) {
+    return {
+      illustrative: ILLUSTRATIVE,
+      runs: [],
+      comparable: false,
+      profile: null,
+      comparisonKey: null,
+      fields: [],
+      firstMaterialMismatch: null,
+      explanation:
+        "Select two to eight runs to compare. Every result row and run dossier links here.",
+      missingIds,
+      policyVersion: RANKING_POLICY_VERSION,
+    }
+  }
+
+  const sharedCohort = selected.every(
+    (r) => cohortKeyOf(r) === cohortKeyOf(selected[0]),
+  )
+  const comparable =
+    selected.length >= 2 &&
+    sharedCohort &&
+    selected.every((r) => (r.ineligibleReasons ?? []).length === 0)
+  const rankById = new Map<string, { rank: number; tied: boolean }>()
+  if (comparable) {
+    for (const entry of rankCohort(
+      selected.map((r) => ({
+        id: r.id,
+        value: r.latencyNs,
+        interval: r.ci ? { low: r.ci[0], high: r.ci[1] } : null,
+        evidence: r.evidence,
+        observedAt: new Date(r.lastTestedAt),
+      })),
+      "strict_exact",
+    )) {
+      rankById.set(entry.id, { rank: entry.rank, tied: entry.tiedWithPrevious })
+    }
+  }
+
+  const runs: CompareRun[] = selected.map((r) => {
+    const row = rowFromRun(r)
+    return {
+      runId: r.id,
+      digest: digest(`run:${r.id}`),
+      implementation: row.implementation,
+      project: row.project,
+      operation: row.operation,
+      workloadLabel: WORKLOADS[r.workloadId].label,
+      hardware: B200.model,
+      primary: row.primary,
+      evidence: r.evidence,
+      status: r.status,
+      comparisonKey: cohortKeyOf(r),
+      rank: rankById.get(r.id)?.rank ?? null,
+      tiedWithPrevious: rankById.get(r.id)?.tied ?? false,
+      eligible: (r.ineligibleReasons ?? []).length === 0,
+      ineligibleReasons: r.ineligibleReasons ?? [],
+      license: r.license,
+      install: row.install,
+      sourceAvailable: r.sourceAvailable,
+      observedAt: r.lastTestedAt,
+    }
+  })
+
+  const field = (
+    name: string,
+    material: boolean,
+    value: (r: FxRun) => string | null,
+  ): CompareField => {
+    const values = selected.map(value)
+    return {
+      field: name,
+      material,
+      values,
+      differs: new Set(values.map((entry) => entry ?? "∅")).size > 1,
+    }
+  }
+  const fields: CompareField[] = [
+    field("operation", true, () => "rmsnorm-h4096"),
+    field(
+      "workload",
+      true,
+      (r) =>
+        `${WORKLOADS[r.workloadId].label} · ${WORKLOADS[r.workloadId].digest.slice(7, 15)}`,
+    ),
+    field("protocol", true, () => "ki-fixed-clock v1 · 0f1e2d3c"),
+    field("environment", true, () => `${B200.model} · 4b5a6978`),
+    field("correctness policy", true, (r) =>
+      WORKLOADS[r.workloadId].toleranceSummary.slice(0, 20),
+    ),
+    field("metric", true, () => "latency median (ns)"),
+    field("architecture", false, () => B200.architecture),
+    field("CUDA", false, () => "13.1"),
+    field("framework", false, () => "pytorch 2.9"),
+    field("samples", false, (r) => (r.samples ? String(r.samples) : null)),
+    field("evidence", false, (r) => r.evidence),
+    field("license", false, (r) => r.license.concluded),
+    field("source", false, (r) =>
+      r.sourceAvailable ? "available" : "unavailable",
+    ),
+    field("status", false, (r) => r.status),
+    field("observed", false, (r) => r.lastTestedAt.slice(0, 10)),
+  ]
+  const firstMaterialMismatch =
+    fields.find((entry) => entry.material && entry.differs)?.field ?? null
+  const explanation = comparable
+    ? `All ${selected.length} runs share one strict exact comparison cohort; ranks follow ${RANKING_POLICY_VERSION}.`
+    : selected.length < 2
+      ? "Add at least one more run to compare."
+      : firstMaterialMismatch !== null
+        ? `No winner can be declared: ${firstMaterialMismatch} differs. A valid comparison requires identical operation, workload, protocol, environment, correctness policy, and metric.`
+        : "No winner can be declared: at least one selected run is not eligible for ranking."
+
+  return {
+    illustrative: ILLUSTRATIVE,
+    runs,
+    comparable,
+    profile: sharedCohort ? "strict_exact" : null,
+    comparisonKey: sharedCohort ? cohortKeyOf(selected[0]) : null,
+    fields,
+    firstMaterialMismatch,
+    explanation,
+    missingIds,
+    policyVersion: RANKING_POLICY_VERSION,
+  }
 }

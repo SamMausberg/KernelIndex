@@ -186,12 +186,32 @@ export type RecordsPageModel = {
   records: RecordHolder[]
 }
 
+/** One recognized facet rendered as an editable token (§16.6). */
+export type SearchFacetToken = {
+  token: string
+  display: string
+  /** The query with this facet removed — tokens stay editable via URL. */
+  removeQuery: string
+}
+
+/** Policy facets filter rows inside a group; they never alter comparability. */
+export type SearchPolicy = {
+  minimumTrust: EvidenceLevel | null
+  license: string | null
+  requireSource: boolean
+  requireInstallable: boolean
+}
+
 /** §16.6: result groups are semantically separate and never interleaved. */
 export type SearchPageModel = {
   illustrative: boolean
   query: string
   /** Plain-language interpretation shown above results. */
   interpretedQuery: string
+  /** Recognized facets as editable tokens; parse errors beside them. */
+  facets: SearchFacetToken[]
+  queryIssues: { token: string; message: string }[]
+  policy: SearchPolicy
   /** Resolved operation, when the query named one. */
   operation: { name: string; slug: string } | null
   /** Populated only for the empty query: browse the index instead of failing. */
@@ -204,7 +224,59 @@ export type SearchPageModel = {
     reported: ResultRow[]
   }
   related: RelatedItem[]
+  /** Source coverage and freshness for the resolved operation (§22.4). */
+  sources: SourceRef[]
   noResult: { guidance: string; suggestions: string[] } | null
+}
+
+/** One aligned comparison field across the selected runs (§16.11). */
+export type CompareField = {
+  field: string
+  /** Cohort-identity fields are material: any difference blocks a winner. */
+  material: boolean
+  values: (string | null)[]
+  differs: boolean
+}
+
+export type CompareRun = {
+  runId: string
+  digest: string
+  implementation: { name: string; slug: string }
+  project: { name: string; slug: string }
+  operation: { name: string; slug: string }
+  workloadLabel: string
+  hardware: string
+  primary: PrimaryMetric | null
+  evidence: EvidenceLevel
+  status: RunStatus
+  comparisonKey: string
+  /** Rank within the selection; null when the selection is incomparable. */
+  rank: number | null
+  tiedWithPrevious: boolean
+  eligible: boolean
+  ineligibleReasons: string[]
+  license: LicenseInfo
+  install: { kind: string; command: string } | null
+  sourceAvailable: boolean
+  observedAt: string
+}
+
+/**
+ * §16.11: two to eight runs compared field by field. A winner exists only
+ * when every selected run shares one comparison cohort and is eligible.
+ */
+export type ComparePageModel = {
+  illustrative: boolean
+  runs: CompareRun[]
+  comparable: boolean
+  profile: ComparisonProfile | null
+  comparisonKey: string | null
+  fields: CompareField[]
+  firstMaterialMismatch: string | null
+  /** What would need to match before a valid winner could be declared. */
+  explanation: string
+  missingIds: string[]
+  policyVersion: string
 }
 
 export type AxisSpec = {

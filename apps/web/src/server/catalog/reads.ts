@@ -1,16 +1,19 @@
 // PostgreSQL-backed implementations of the catalog read seam (§27.5),
 // returning the same page models as the fixtures. Only published, passed,
-// unretracted runs appear in result tables; the run page itself shows any
-// published run including failed, superseded, and retracted evidence.
-import { and, count, desc, eq, inArray, isNotNull, isNull } from "drizzle-orm"
+// unretracted, unsuperseded runs appear in result tables; the run page itself
+// shows any published run including failed, superseded, and retracted
+// evidence. Search interprets the query through the deterministic parser
+// (§12.2–12.3) and ranks only inside cohorts under ranking-v1 (§11.5).
+import { and, asc, count, desc, eq, inArray, isNotNull, sql } from "drizzle-orm"
 import type {
   BrowseFamily,
   CohortContext,
+  ComparePageModel,
+  CompareRun,
   HomePageModel,
   ImplementationPageModel,
   ImplementationSummary,
   KeyValue,
-  Mismatch,
   OperationPageModel,
   RecordEvent,
   RecordHolder,
@@ -21,12 +24,30 @@ import type {
   SearchPageModel,
   SourceRef,
 } from "../../lib/catalog-models.ts"
+import {
+  describeIntent,
+  parseQuery,
+  removeToken,
+  type SearchIntent,
+} from "../../lib/search-query.ts"
 import type {
   ImplementationRevisionManifest,
   OperationSpecManifest,
 } from "../../schemas/kinds.ts"
 import { db } from "../db/client.ts"
 import * as schema from "../db/schema.ts"
+import {
+  eligibilityReasons,
+  RANKING_POLICY_VERSION,
+  type RankInput,
+  rankCohort,
+} from "../policy/ranking.ts"
+import {
+  caseHasShape,
+  intentMismatches,
+  type MatchTarget,
+  workloadMismatches,
+} from "./match.ts"
 import {
   type AnyWorkloadManifest,
   environmentKeyValues,
@@ -42,6 +63,7 @@ import {
   workloadLabel,
   workloadTensorKeyValues,
 } from "./present.ts"
+import { eligibleRunFilter } from "./record-events.ts"
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
@@ -54,7 +76,7 @@ type JoinedRun = {
   source: typeof schema.sources.$inferSelect
 }
 
-/** Published, passed, unretracted runs for one operation, fastest first. */
+/** Published eligible runs for one operation, fastest first. */
 async function joinedRunsForOperation(
   operationId: string,
 ): Promise<JoinedRun[]> {
@@ -84,13 +106,7 @@ async function joinedRunsForOperation(
       eq(schema.benchmarkRuns.sourceId, schema.sources.id),
     )
     .where(
-      and(
-        eq(schema.workloads.operationId, operationId),
-        eq(schema.benchmarkRuns.status, "passed"),
-        isNotNull(schema.benchmarkRuns.publishedAt),
-        isNull(schema.benchmarkRuns.retractedAt),
-        isNull(schema.benchmarkRuns.supersedesId),
-      ),
+      and(eq(schema.workloads.operationId, operationId), eligibleRunFilter()),
     )
     .orderBy(schema.benchmarkRuns.primaryValue)
 }
@@ -111,7 +127,10 @@ function resultRow(
   joined: JoinedRun,
   operation: { name: string; slug: string },
   extras: Partial<
-    Pick<ResultRow, "match" | "mismatches" | "rank" | "caveats">
+    Pick<
+      ResultRow,
+      "match" | "mismatches" | "rank" | "tiedWithPrevious" | "caveats"
+    >
   > = {},
 ): ResultRow {
   const { run, implementation, project, workload } = joined
@@ -152,7 +171,7 @@ function resultRow(
     match: extras.match ?? "exact",
     mismatches: extras.mismatches ?? [],
     rank: extras.rank ?? null,
-    tiedWithPrevious: false,
+    tiedWithPrevious: extras.tiedWithPrevious ?? false,
     sourceAvailable: run.sourceAvailable,
     installable: run.installable,
     license: {
@@ -168,50 +187,44 @@ function resultRow(
   }
 }
 
-function axisMismatches(
-  requested: AnyWorkloadManifest,
-  observed: AnyWorkloadManifest,
-): Mismatch[] {
-  if (requested.kind === "WorkloadSuite" || observed.kind === "WorkloadSuite") {
-    return [
-      {
-        field: "workloadScope",
-        requested:
-          requested.kind === "WorkloadSuite" ? "suite aggregate" : "exact case",
-        observed:
-          observed.kind === "WorkloadSuite" ? "suite aggregate" : "exact case",
-      },
-    ]
+/** Dtypes declared by the operation's tensor arguments (suite fallback). */
+function operationDtypes(manifest: OperationSpecManifest): string[] {
+  return [
+    ...new Set(
+      [...manifest.spec.inputs, ...manifest.spec.outputs]
+        .map((argument) => argument.tensor?.dtype)
+        .filter((dtype): dtype is string => dtype !== undefined),
+    ),
+  ]
+}
+
+function rankInputOf(joined: JoinedRun): RankInput {
+  return {
+    id: joined.run.id,
+    value: joined.run.primaryValue as number,
+    interval:
+      joined.run.uncertaintyLow !== null && joined.run.uncertaintyHigh !== null
+        ? { low: joined.run.uncertaintyLow, high: joined.run.uncertaintyHigh }
+        : null,
+    evidence: runEvidence(joined.run),
+    observedAt: joined.run.observedAt,
   }
-  const mismatches: Mismatch[] = []
-  const names = new Set([
-    ...Object.keys(requested.spec.axes),
-    ...Object.keys(observed.spec.axes),
-  ])
-  for (const name of names) {
-    const want = requested.spec.axes[name]
-    const got = observed.spec.axes[name]
-    if (want !== got) {
-      mismatches.push({
-        field: `axes.${name}`,
-        requested: String(want),
-        observed: String(got),
-      })
-    }
-  }
-  return mismatches
 }
 
 /**
- * Group one operation's runs for a selected workload: the largest same-key
- * comparison cohort is the ranked table; same-workload runs outside it are
- * listed separately; other workloads' runs become compatible matches with an
- * explicit mismatch vector (§16.6, §11.1).
+ * Group one operation's runs for a selected workload (§16.6, §11.1): the
+ * largest same-key comparison cohort is the candidate table; requests that
+ * every intent facet matches rank under ranking-v1, facet-mismatched runs
+ * become compatible evidence with an explicit mismatch vector, same-workload
+ * runs under another cohort stay separate, and other workloads' runs are
+ * compatible with their differences enumerated.
  */
 function groupRuns(
   joined: JoinedRun[],
   operation: { name: string; slug: string },
+  operationManifest: OperationSpecManifest,
   selectedWorkloadId: string,
+  intent: SearchIntent,
 ) {
   const selected = joined.filter((j) => j.workload.id === selectedWorkloadId)
   const byCohort = new Map<string, JoinedRun[]>()
@@ -224,48 +237,98 @@ function groupRuns(
   const primaryCohort =
     [...byCohort.values()].sort((a, b) => b.length - a.length)[0] ?? []
   const cohortKey = primaryCohort[0]?.run.comparisonKey ?? null
-
   const selectedManifest = selected[0]?.workload.manifest as
     | AnyWorkloadManifest
     | undefined
-  const exact = primaryCohort.map((j, index) =>
-    resultRow(j, operation, { rank: index + 1 }),
-  )
-  const reported = selected
-    .filter((j) => j.run.comparisonKey !== cohortKey)
-    .map((j) =>
-      resultRow(j, operation, {
-        caveats: [
-          "Different comparison cohort: protocol or environment differs",
-        ],
-      }),
-    )
-  const compatible = joined
-    .filter((j) => j.workload.id !== selectedWorkloadId)
-    .map((j) =>
-      resultRow(j, operation, {
-        match: "compatible",
-        mismatches: selectedManifest
-          ? axisMismatches(
-              selectedManifest,
-              j.workload.manifest as AnyWorkloadManifest,
-            )
-          : [],
-      }),
-    )
+
+  const opDtypes = operationDtypes(operationManifest)
+  const target = (j: JoinedRun): MatchTarget => ({
+    hardwareModel: j.run.hardwareModel,
+    hardwareArchitecture: j.run.hardwareArchitecture,
+    cudaMajor: j.run.cudaMajor,
+    framework: j.implementation.framework,
+    language: j.implementation.language,
+    workload: j.workload.manifest as AnyWorkloadManifest,
+    workloadDtypes: j.workload.dtypes.length > 0 ? j.workload.dtypes : opDtypes,
+    workloadLayouts: j.workload.layoutKeys,
+  })
+
+  const compatible: ResultRow[] = []
+  const rankable: JoinedRun[] = []
+  const unrankable: JoinedRun[] = []
+  for (const j of primaryCohort) {
+    const mismatches = intentMismatches(intent, target(j))
+    if (mismatches.length > 0) {
+      compatible.push(
+        resultRow(j, operation, { match: "compatible", mismatches }),
+      )
+    } else if (j.run.primaryValue !== null) {
+      rankable.push(j)
+    } else {
+      unrankable.push(j)
+    }
+  }
 
   const sourceNative = primaryCohort.some(
     (j) =>
       (j.run.manifest as StoredRunManifest).run.spec.sourceNative !== undefined,
   )
+  const profile = sourceNative
+    ? ("source_native" as const)
+    : ("strict_exact" as const)
+  const byId = new Map(rankable.map((j) => [j.run.id, j]))
+  const exact = rankCohort(rankable.map(rankInputOf), profile).map((entry) =>
+    resultRow(byId.get(entry.id) as JoinedRun, operation, {
+      rank: entry.rank,
+      tiedWithPrevious: entry.tiedWithPrevious,
+    }),
+  )
+  exact.push(
+    ...unrankable.map((j) =>
+      resultRow(j, operation, {
+        caveats: ["No primary measurement; unranked (MISSING_PRIMARY_METRIC)"],
+      }),
+    ),
+  )
+
+  const reported = selected
+    .filter((j) => j.run.comparisonKey !== cohortKey)
+    .map((j) => {
+      const mismatches = intentMismatches(intent, target(j))
+      return resultRow(j, operation, {
+        match: mismatches.length > 0 ? "compatible" : "exact",
+        mismatches,
+        caveats: [
+          "Different comparison cohort: protocol or environment differs",
+        ],
+      })
+    })
+
+  for (const j of joined) {
+    if (j.workload.id === selectedWorkloadId) continue
+    const merged = intentMismatches(intent, target(j))
+    if (selectedManifest) {
+      for (const mismatch of workloadMismatches(
+        selectedManifest,
+        j.workload.manifest as AnyWorkloadManifest,
+      )) {
+        if (!merged.some((entry) => entry.field === mismatch.field))
+          merged.push(mismatch)
+      }
+    }
+    compatible.push(
+      resultRow(j, operation, { match: "compatible", mismatches: merged }),
+    )
+  }
+
   const cohort: CohortContext | null = cohortKey
     ? {
         comparisonKey: cohortKey,
-        profile: sourceNative ? "source_native" : "strict_exact",
+        profile,
         description: sourceNative
-          ? "Source-native cohort: identical workload, protocol, and environment under the upstream harness. Ordered by primary metric; statistical tie policy arrives with ranking v1."
-          : "Identical workload, protocol, environment, and correctness policy. Ordered by primary metric; statistical tie policy arrives with ranking v1.",
-        facts: cohortFacts(primaryCohort[0]),
+          ? `Source-native cohort: identical workload, protocol, and environment under the upstream harness. Ranked by the source's primary metric under ${RANKING_POLICY_VERSION}; unequal values keep the source order.`
+          : `Identical workload, protocol, environment, and correctness policy. Ranked by primary metric under ${RANKING_POLICY_VERSION}; overlapping confidence intervals share a rank.`,
+        facts: cohortFacts(primaryCohort[0] ?? selected[0] ?? joined[0]),
       }
     : null
 
@@ -318,68 +381,127 @@ const SEARCH_STOPWORDS = new Set([
   "operation",
 ])
 
+type OperationRow = typeof schema.operations.$inferSelect
+
 /**
- * Tiered operation resolution mirroring the §12.4 relevance order: exact
- * slug, then exact alias, then exact family, then substring matches over
- * slug/family/name scored by how many query tokens they satisfy. Matching is
- * hyphen/underscore-insensitive, so "rmsnorm" also finds "069-rms-norm".
- * Facet tokens (key=value, shapes, short hardware/dtype codes) never
- * misresolve the operation — they score zero until the Week 3 parser turns
- * them into real filters. The corpus is small pre-Week-3; FTS and trigram
- * search replace the in-memory scan in §22.4.
+ * Tiered operation resolution in one explainable SQL query (§12.3–12.4):
+ * exact slug (400) beats exact alias (300) beats exact family (200), then
+ * weighted full-text rank and per-term trigram word similarity break the
+ * fuzzy tier. Hyphen/underscore-insensitive, so "rmsnorm" also finds
+ * "069-rms-norm". Facet tokens never reach this function; only free text
+ * resolves the operation.
  */
-async function findOperation(query: string) {
-  const database = db()
-  const tokens = [
+async function resolveOperation(intent: SearchIntent): Promise<{
+  operation: OperationRow | null
+  nearMisses: OperationRow[]
+}> {
+  const terms = [
     ...new Set(
-      query
-        .toLowerCase()
-        .split(/[\s,]+/)
-        .filter((token) => /^[a-z][a-z0-9_-]{2,}$/.test(token))
-        .filter((token) => !SEARCH_STOPWORDS.has(token)),
+      (intent.family !== null ? [intent.family, ...intent.text] : intent.text)
+        .filter((term) =>
+          /^(?=[a-z0-9_-]*[a-z])[a-z0-9][a-z0-9_-]{2,}$/.test(term),
+        )
+        .filter((term) => !SEARCH_STOPWORDS.has(term)),
     ),
   ]
-  if (tokens.length === 0) return null
+  if (terms.length === 0) return { operation: null, nearMisses: [] }
+  const phrase = terms.join(" ")
+  // Exact tiers must cover the whole request: a one-token alias hit must not
+  // outrank full term coverage of a longer query (§12.4). All three phrase
+  // spellings (spaces, hyphens, underscores) and the collapsed form count.
+  const phraseSlug = terms.join("-")
+  const phraseUnderscore = terms.join("_")
+  const phraseCollapsed = terms
+    .map((term) => term.replaceAll(/[-_]/g, ""))
+    .join("")
+  // Terms are charset-validated above, so a literal `{a,b}` array is safe —
+  // the postgres-js driver does not serialize JS arrays for `= any($n)`.
+  const termsArray = `{${terms.join(",")}}`
 
-  const operations = await database.select().from(schema.operations)
-  const byAge = (
-    a: (typeof operations)[number],
-    b: (typeof operations)[number],
-  ) => a.createdAt.getTime() - b.createdAt.getTime()
+  const database = db()
+  const scored = await database.execute(sql`
+    select o.id, (
+      case
+        when lower(o.slug) = ${phraseSlug}
+          or replace(lower(o.slug), '-', '') = ${phraseCollapsed} then 400
+        when exists (
+          select 1 from ${schema.operationAliases} a
+          where a.operation_id = o.id
+            and (a.alias in (${phrase}, ${phraseSlug}, ${phraseUnderscore})
+              or replace(replace(a.alias, '_', ''), '-', '') = ${phraseCollapsed})
+        ) then 300
+        when o.family in (${phrase}, ${phraseSlug}) then 200
+        else 0
+      end
+      + ts_rank(o.search_vector, websearch_to_tsquery('english', ${phrase})) * 50
+      + (
+        select coalesce(sum(greatest(
+          word_similarity(t.term, o.name),
+          word_similarity(t.term, o.slug),
+          word_similarity(t.term, o.family))), 0)
+        from unnest(${termsArray}::text[]) as t(term)
+      ) * 10
+    ) as score
+    from ${schema.operations} o
+    order by score desc, o.created_at asc
+    limit 6
+  `)
+  const hits = [...scored]
+    .map((row) => ({ id: row.id as string, score: Number(row.score) }))
+    .filter((hit) => hit.score >= 8)
+  if (hits.length === 0) return { operation: null, nearMisses: [] }
 
-  const bySlug = operations
-    .filter((op) => tokens.includes(op.slug))
-    .sort(byAge)[0]
-  if (bySlug) return bySlug
+  const rows = await database
+    .select()
+    .from(schema.operations)
+    .where(
+      inArray(
+        schema.operations.id,
+        hits.map((hit) => hit.id),
+      ),
+    )
+  const byId = new Map(rows.map((row) => [row.id, row]))
+  const ordered = hits
+    .map((hit) => byId.get(hit.id))
+    .filter((row): row is OperationRow => row !== undefined)
+  return { operation: ordered[0] ?? null, nearMisses: ordered.slice(1) }
+}
 
-  const aliasHits = await database
-    .select({ operationId: schema.operationAliases.operationId })
-    .from(schema.operationAliases)
-    .where(inArray(schema.operationAliases.alias, tokens))
-  const aliasIds = new Set(aliasHits.map((hit) => hit.operationId))
-  const byAlias = operations.filter((op) => aliasIds.has(op.id)).sort(byAge)[0]
-  if (byAlias) return byAlias
-
-  const byFamily = operations
-    .filter((op) => tokens.includes(op.family))
-    .sort(byAge)[0]
-  if (byFamily) return byFamily
-
-  const collapse = (value: string) =>
-    value.toLowerCase().replaceAll(/[-_]/g, "")
-  const scored = operations
-    .map((op) => {
-      const haystack = `${op.slug} ${op.family} ${op.name}`.toLowerCase()
-      const collapsed = collapse(haystack)
-      const score = tokens.filter(
-        (token) =>
-          haystack.includes(token) || collapsed.includes(collapse(token)),
-      ).length
-      return { op, score }
+/**
+ * Choose the workload the request binds (§12.5): an exact case matching the
+ * requested shape/axes/dtypes wins (measured cases first), otherwise the
+ * workload with the most runs.
+ */
+function selectWorkloadId(
+  intent: SearchIntent,
+  workloadRows: (typeof schema.workloads.$inferSelect)[],
+  joined: JoinedRun[],
+): string | null {
+  const bindsCase = intent.shape !== null || Object.keys(intent.axes).length > 0
+  if (bindsCase) {
+    const matches = workloadRows.filter((row) => {
+      const manifest = row.manifest as AnyWorkloadManifest
+      if (manifest.kind !== "WorkloadCase") return false
+      if (intent.shape !== null && !caseHasShape(manifest, intent.shape))
+        return false
+      if (
+        !Object.entries(intent.axes).every(
+          ([axis, value]) => manifest.spec.axes[axis] === value,
+        )
+      )
+        return false
+      return intent.dtypes.every((dtype) => row.dtypes.includes(dtype))
     })
-    .filter((candidate) => candidate.score > 0)
-    .sort((a, b) => b.score - a.score || byAge(a.op, b.op))
-  return scored[0]?.op ?? null
+    const measured = matches.find((row) =>
+      joined.some((j) => j.workload.id === row.id),
+    )
+    if (measured) return measured.id
+    if (matches.length > 0) return matches[0].id
+  }
+  return defaultWorkloadId(
+    joined,
+    workloadRows.map((row) => row.id),
+  )
 }
 
 /** Pick the workload with the most runs as the default selection. */
@@ -430,14 +552,7 @@ export async function getHomePage(): Promise<HomePageModel> {
       schema.sources,
       eq(schema.benchmarkRuns.sourceId, schema.sources.id),
     )
-    .where(
-      and(
-        eq(schema.benchmarkRuns.status, "passed"),
-        isNotNull(schema.benchmarkRuns.publishedAt),
-        isNull(schema.benchmarkRuns.retractedAt),
-        isNull(schema.benchmarkRuns.supersedesId),
-      ),
-    )
+    .where(eligibleRunFilter())
     .orderBy(desc(schema.benchmarkRuns.observedAt))
     .limit(8)
   const database = db()
@@ -465,14 +580,15 @@ export async function getHomePage(): Promise<HomePageModel> {
 }
 
 /**
- * §16.12: derive the record ledger from append-only runs. Within one
- * comparison cohort, the record sequence is the running minimum of the
- * primary metric in observation order; nothing is stored, so corrections
- * and retractions automatically recompute history.
+ * §16.12: the records ledger reads the append-only record_events table
+ * (§11.10). Events whose run has since lost eligibility (retraction,
+ * supersession) drop out of the visible sequence; until the correction write
+ * path ships, no retraction-cause events exist to display in their place.
  */
 export async function getRecordsPage(): Promise<RecordsPageModel> {
   const rows = await db()
     .select({
+      event: schema.recordEvents,
       run: schema.benchmarkRuns,
       implementation: schema.implementations,
       project: schema.projects,
@@ -480,7 +596,11 @@ export async function getRecordsPage(): Promise<RecordsPageModel> {
       source: schema.sources,
       operation: schema.operations,
     })
-    .from(schema.benchmarkRuns)
+    .from(schema.recordEvents)
+    .innerJoin(
+      schema.benchmarkRuns,
+      eq(schema.recordEvents.runId, schema.benchmarkRuns.id),
+    )
     .innerJoin(
       schema.implementations,
       eq(schema.benchmarkRuns.implementationId, schema.implementations.id),
@@ -501,21 +621,13 @@ export async function getRecordsPage(): Promise<RecordsPageModel> {
       schema.sources,
       eq(schema.benchmarkRuns.sourceId, schema.sources.id),
     )
-    .where(
-      and(
-        eq(schema.benchmarkRuns.status, "passed"),
-        isNotNull(schema.benchmarkRuns.publishedAt),
-        isNotNull(schema.benchmarkRuns.primaryValue),
-        isNull(schema.benchmarkRuns.retractedAt),
-        isNull(schema.benchmarkRuns.supersedesId),
-      ),
-    )
-    .orderBy(schema.benchmarkRuns.observedAt)
+    .where(eligibleRunFilter())
+    .orderBy(asc(schema.recordEvents.at), asc(schema.recordEvents.createdAt))
 
   const byCohort = new Map<string, typeof rows>()
   for (const row of rows) {
-    byCohort.set(row.run.comparisonKey, [
-      ...(byCohort.get(row.run.comparisonKey) ?? []),
+    byCohort.set(row.event.comparisonKey, [
+      ...(byCohort.get(row.event.comparisonKey) ?? []),
       row,
     ])
   }
@@ -524,42 +636,44 @@ export async function getRecordsPage(): Promise<RecordsPageModel> {
   const holderRows: (typeof rows)[number][] = []
   for (const [cohortKey, cohortRows] of byCohort) {
     const events: RecordEvent[] = []
-    let bestRow: (typeof rows)[number] | null = null
+    let previous: (typeof rows)[number] | null = null
     for (const row of cohortRows) {
-      const value = row.run.primaryValue as number
-      if (bestRow !== null && value >= (bestRow.run.primaryValue as number))
-        continue
       const operation = {
         name: row.operation.name,
         slug: row.operation.slug,
       }
-      const previous = bestRow ? resultRow(bestRow, operation).primary : null
       const current = resultRow(row, operation)
+      const previousPrimary = previous
+        ? resultRow(previous, operation).primary
+        : null
       events.unshift({
-        at: row.run.observedAt.toISOString(),
+        at: row.event.at.toISOString(),
         runId: row.run.id,
         implementation: current.implementation,
         value: current.primary as RecordEvent["value"],
-        previousValue: previous,
-        improvementPct: previous
-          ? ((previous.value - value) / previous.value) * 100
-          : null,
+        previousValue: previousPrimary,
+        improvementPct:
+          previousPrimary && current.primary
+            ? ((previousPrimary.value - current.primary.value) /
+                previousPrimary.value) *
+              100
+            : null,
       })
-      bestRow = row
+      previous = row
     }
-    if (bestRow === null) continue
-    holderRows.push(bestRow)
-    const stored = bestRow.run.manifest as StoredRunManifest
+    if (previous === null) continue
+    holderRows.push(previous)
+    const stored = previous.run.manifest as StoredRunManifest
     const operation = {
-      name: bestRow.operation.name,
-      slug: bestRow.operation.slug,
+      name: previous.operation.name,
+      slug: previous.operation.slug,
     }
-    const holderRow = resultRow(bestRow, operation)
+    const holderRow = resultRow(previous, operation)
     records.push({
       cohortKey,
       operation,
       workloadSummary: holderRow.workloadSummary,
-      hardware: bestRow.run.hardwareModel,
+      hardware: previous.run.hardwareModel,
       environmentSummary: [
         stored.environment.spec.software.cudaToolkit
           ? `CUDA ${stored.environment.spec.software.cudaToolkit}`
@@ -603,14 +717,7 @@ async function browseFamilies(): Promise<BrowseFamily[]> {
       schema.operations,
       eq(schema.workloads.operationId, schema.operations.id),
     )
-    .where(
-      and(
-        eq(schema.benchmarkRuns.status, "passed"),
-        isNotNull(schema.benchmarkRuns.publishedAt),
-        isNull(schema.benchmarkRuns.retractedAt),
-        isNull(schema.benchmarkRuns.supersedesId),
-      ),
-    )
+    .where(eligibleRunFilter())
     .groupBy(schema.operations.family)
   const runsByFamily = new Map(runs.map((row) => [row.family, row.n]))
   return operations
@@ -622,67 +729,108 @@ async function browseFamilies(): Promise<BrowseFamily[]> {
     .sort((a, b) => b.runs - a.runs || a.family.localeCompare(b.family))
 }
 
+const EMPTY_GROUPS = {
+  exact: [],
+  compatible: [],
+  supportedUnmeasured: [],
+  reported: [],
+}
+
 export async function searchCatalog(
   input: SearchInput,
 ): Promise<SearchPageModel> {
   const query = input.query.trim()
+  const intent = parseQuery(query)
   const base: Omit<SearchPageModel, "noResult"> = {
     illustrative: false,
     query,
-    interpretedQuery:
-      query === "" ? "Search the index" : `Operation search for “${query}”`,
+    interpretedQuery: describeIntent(intent, null),
+    facets: intent.facets.map((facet) => ({
+      token: facet.token,
+      display: facet.display,
+      removeQuery: removeToken(query, facet.token),
+    })),
+    queryIssues: intent.issues,
+    policy: {
+      minimumTrust: intent.minimumTrust,
+      license: intent.license,
+      requireSource: intent.requireSource,
+      requireInstallable: intent.requireInstallable,
+    },
     operation: null,
     browse: null,
     cohort: null,
-    groups: {
-      exact: [],
-      compatible: [],
-      supportedUnmeasured: [],
-      reported: [],
-    },
+    groups: EMPTY_GROUPS,
     related: [],
+    sources: [],
   }
   if (query === "") {
     return { ...base, browse: await browseFamilies(), noResult: null }
   }
-  const operation = await findOperation(query)
+  const { operation, nearMisses } = await resolveOperation(intent)
   if (!operation) {
     const families = await db()
       .selectDistinct({ family: schema.operations.family })
       .from(schema.operations)
       .orderBy(schema.operations.family)
       .limit(8)
+    const facetsOnly = intent.facets.length > 0
     return {
       ...base,
       noResult: {
-        guidance:
-          "No matching operation found. Search by operation name, family, or alias — shape, dtype, and hardware filters arrive with the full query parser.",
-        suggestions: families.map((row) => row.family),
+        guidance: facetsOnly
+          ? "The recognized facets need an operation to narrow. Add an operation name, family, or alias."
+          : "No matching operation found. Search by operation name, family, or alias — recognized shape, dtype, and hardware facets then narrow the results.",
+        suggestions: [
+          ...nearMisses.map((op) => op.slug),
+          ...families.map((row) => row.family),
+        ].slice(0, 8),
       },
     }
   }
 
-  const joined = await joinedRunsForOperation(operation.id)
-  const workloadIds = [...new Set(joined.map((j) => j.workload.id))]
-  const selectedWorkloadId = defaultWorkloadId(joined, workloadIds)
+  const database = db()
+  const [joined, workloadRows] = await Promise.all([
+    joinedRunsForOperation(operation.id),
+    database
+      .select()
+      .from(schema.workloads)
+      .where(eq(schema.workloads.operationId, operation.id)),
+  ])
+  const selectedWorkloadId = selectWorkloadId(intent, workloadRows, joined)
   const groups = selectedWorkloadId
     ? groupRuns(
         joined,
         { name: operation.name, slug: operation.slug },
+        operation.manifest as OperationSpecManifest,
         selectedWorkloadId,
+        intent,
       )
-    : { exact: [], reported: [], compatible: [], cohort: null }
+    : { ...EMPTY_GROUPS, cohort: null }
 
-  const related = await db()
+  const related = await database
     .select()
     .from(schema.operations)
-    .where(and(eq(schema.operations.family, operation.family)))
+    .where(eq(schema.operations.family, operation.family))
     .limit(6)
+  const relatedItems = [...related, ...nearMisses]
+    .filter(
+      (op, index, all) =>
+        op.id !== operation.id &&
+        all.findIndex((other) => other.id === op.id) === index,
+    )
+    .slice(0, 6)
+    .map((op) => ({
+      kind: "operation" as const,
+      name: op.name,
+      slug: op.slug,
+      summary: `Operation in the ${op.family} family`,
+    }))
 
   return {
     ...base,
     illustrative: pageIllustrative(joined),
-    interpretedQuery: `Operation ${operation.name}`,
+    interpretedQuery: describeIntent(intent, operation.name),
     operation: { name: operation.name, slug: operation.slug },
     cohort: groups.cohort,
     groups: {
@@ -691,14 +839,8 @@ export async function searchCatalog(
       supportedUnmeasured: await supportedUnmeasuredRows(operation, joined),
       reported: groups.reported,
     },
-    related: related
-      .filter((op) => op.id !== operation.id)
-      .map((op) => ({
-        kind: "operation" as const,
-        name: op.name,
-        slug: op.slug,
-        summary: `Operation in the ${op.family} family`,
-      })),
+    related: relatedItems,
+    sources: sourceRefs(joined),
     noResult: null,
   }
 }
@@ -801,7 +943,9 @@ export async function getOperationPage(
     ? groupRuns(
         joined,
         { name: operation.name, slug: operation.slug },
+        manifest,
         selectedWorkloadId,
+        parseQuery(""),
       )
     : { exact: [], reported: [], compatible: [], cohort: null }
 
@@ -1087,20 +1231,20 @@ export async function getRunPage(id: string): Promise<RunPageModel | null> {
   const [supersededBy] = await database
     .select({ id: schema.benchmarkRuns.id })
     .from(schema.benchmarkRuns)
-    .where(eq(schema.benchmarkRuns.supersedesId, run.id))
+    .where(
+      and(
+        eq(schema.benchmarkRuns.supersedesId, run.id),
+        isNotNull(schema.benchmarkRuns.publishedAt),
+      ),
+    )
   const cohortRuns = await database
-    .select({
-      id: schema.benchmarkRuns.id,
-      primaryValue: schema.benchmarkRuns.primaryValue,
-    })
+    .select()
     .from(schema.benchmarkRuns)
     .where(
       and(
         eq(schema.benchmarkRuns.comparisonKey, run.comparisonKey),
-        eq(schema.benchmarkRuns.status, "passed"),
-        isNotNull(schema.benchmarkRuns.publishedAt),
-        isNull(schema.benchmarkRuns.retractedAt),
-        isNull(schema.benchmarkRuns.supersedesId),
+        eligibleRunFilter(),
+        isNotNull(schema.benchmarkRuns.primaryValue),
       ),
     )
   const [link] = await database
@@ -1113,23 +1257,34 @@ export async function getRunPage(id: string): Promise<RunPageModel | null> {
       ),
     )
 
-  const eligible =
-    run.status === "passed" &&
-    run.retractedAt === null &&
-    supersededBy === undefined
-  const ineligibleReasons = [
-    ...(run.status !== "passed" ? [`STATUS_${run.status.toUpperCase()}`] : []),
-    ...(run.retractedAt !== null ? ["RETRACTED"] : []),
-    ...(supersededBy !== undefined ? ["SUPERSEDED"] : []),
-  ]
-  const rank =
-    eligible && run.primaryValue !== null
-      ? cohortRuns.filter(
-          (candidate) =>
-            candidate.primaryValue !== null &&
-            candidate.primaryValue < (run.primaryValue as number),
-        ).length + 1
-      : null
+  const ineligibleReasons = eligibilityReasons({
+    status: run.status,
+    published: run.publishedAt !== null,
+    retracted: run.retractedAt !== null,
+    superseded: supersededBy !== undefined,
+    primaryValue: run.primaryValue,
+  })
+  const eligible = ineligibleReasons.length === 0
+  const profile =
+    stored.run.spec.sourceNative !== undefined
+      ? ("source_native" as const)
+      : ("strict_exact" as const)
+  const ranked = rankCohort(
+    cohortRuns.map((cohortRun) => ({
+      id: cohortRun.id,
+      value: cohortRun.primaryValue as number,
+      interval:
+        cohortRun.uncertaintyLow !== null && cohortRun.uncertaintyHigh !== null
+          ? { low: cohortRun.uncertaintyLow, high: cohortRun.uncertaintyHigh }
+          : null,
+      evidence: runEvidence(cohortRun),
+      observedAt: cohortRun.observedAt,
+    })),
+    profile,
+  )
+  const rank = eligible
+    ? (ranked.find((entry) => entry.id === run.id)?.rank ?? null)
+    : null
 
   const correctness = stored.run.spec.correctness
 
@@ -1169,10 +1324,7 @@ export async function getRunPage(id: string): Promise<RunPageModel | null> {
     },
     cohort: {
       comparisonKey: run.comparisonKey,
-      profile:
-        stored.run.spec.sourceNative !== undefined
-          ? "source_native"
-          : "strict_exact",
+      profile,
       rank,
       eligible,
       ineligibleReasons,
@@ -1239,5 +1391,255 @@ export async function getRunPage(id: string): Promise<RunPageModel | null> {
       snapshotDigest: null,
     },
     manifest: run.manifest,
+  }
+}
+
+const MAX_COMPARE = 8
+
+/** Short digest for aligned compare cells. */
+const short = (digest: string) => digest.replace("sha256:", "").slice(0, 8)
+
+/**
+ * §16.11: compare two to eight runs. Ranks exist only when every selected
+ * run shares one comparison cohort and is eligible; otherwise the aligned
+ * field diff names the first material mismatch and what would need to match.
+ */
+export async function getComparePage(
+  runIds: string[],
+): Promise<ComparePageModel> {
+  const wanted = [...new Set(runIds)]
+    .filter((id) => UUID_PATTERN.test(id) || id.startsWith("sha256:"))
+    .slice(0, MAX_COMPARE)
+  const empty: ComparePageModel = {
+    illustrative: false,
+    runs: [],
+    comparable: false,
+    profile: null,
+    comparisonKey: null,
+    fields: [],
+    firstMaterialMismatch: null,
+    explanation:
+      "Select two to eight runs to compare. Every result row and run dossier links here.",
+    missingIds: [],
+    policyVersion: RANKING_POLICY_VERSION,
+  }
+  if (wanted.length === 0) return empty
+
+  const uuids = wanted.filter((id) => UUID_PATTERN.test(id))
+  const digests = wanted.filter((id) => id.startsWith("sha256:"))
+  const rows = await db()
+    .select({
+      run: schema.benchmarkRuns,
+      implementation: schema.implementations,
+      project: schema.projects,
+      workload: schema.workloads,
+      source: schema.sources,
+      operation: schema.operations,
+    })
+    .from(schema.benchmarkRuns)
+    .innerJoin(
+      schema.implementations,
+      eq(schema.benchmarkRuns.implementationId, schema.implementations.id),
+    )
+    .innerJoin(
+      schema.projects,
+      eq(schema.implementations.projectId, schema.projects.id),
+    )
+    .innerJoin(
+      schema.workloads,
+      eq(schema.benchmarkRuns.workloadId, schema.workloads.id),
+    )
+    .innerJoin(
+      schema.operations,
+      eq(schema.workloads.operationId, schema.operations.id),
+    )
+    .innerJoin(
+      schema.sources,
+      eq(schema.benchmarkRuns.sourceId, schema.sources.id),
+    )
+    .where(
+      and(
+        isNotNull(schema.benchmarkRuns.publishedAt),
+        uuids.length > 0 && digests.length > 0
+          ? sql`(${inArray(schema.benchmarkRuns.id, uuids)} or ${inArray(schema.benchmarkRuns.runDigest, digests)})`
+          : uuids.length > 0
+            ? inArray(schema.benchmarkRuns.id, uuids)
+            : inArray(schema.benchmarkRuns.runDigest, digests),
+      ),
+    )
+  const ordered = wanted
+    .map((id) =>
+      rows.find((row) => row.run.id === id || row.run.runDigest === id),
+    )
+    .filter((row): row is (typeof rows)[number] => row !== undefined)
+  const missingIds = wanted.filter(
+    (id) => !rows.some((row) => row.run.id === id || row.run.runDigest === id),
+  )
+  if (ordered.length === 0) return { ...empty, missingIds }
+
+  const supersededRows = await db()
+    .select({ supersedesId: schema.benchmarkRuns.supersedesId })
+    .from(schema.benchmarkRuns)
+    .where(
+      and(
+        inArray(
+          schema.benchmarkRuns.supersedesId,
+          ordered.map((row) => row.run.id),
+        ),
+        isNotNull(schema.benchmarkRuns.publishedAt),
+      ),
+    )
+  const supersededIds = new Set(supersededRows.map((row) => row.supersedesId))
+
+  const eligibleById = new Map(
+    ordered.map((row) => [
+      row.run.id,
+      eligibilityReasons({
+        status: row.run.status,
+        published: row.run.publishedAt !== null,
+        retracted: row.run.retractedAt !== null,
+        superseded: supersededIds.has(row.run.id),
+        primaryValue: row.run.primaryValue,
+      }),
+    ]),
+  )
+  const sourceNative = ordered.some(
+    (row) =>
+      (row.run.manifest as StoredRunManifest).run.spec.sourceNative !==
+      undefined,
+  )
+  const profile = sourceNative
+    ? ("source_native" as const)
+    : ("strict_exact" as const)
+  const sharedCohort = ordered.every(
+    (row) => row.run.comparisonKey === ordered[0].run.comparisonKey,
+  )
+  const comparable =
+    ordered.length >= 2 &&
+    sharedCohort &&
+    ordered.every((row) => (eligibleById.get(row.run.id) ?? []).length === 0)
+
+  const rankById = new Map<string, { rank: number; tied: boolean }>()
+  if (comparable) {
+    for (const entry of rankCohort(
+      ordered.map((row) => rankInputOf(row)),
+      profile,
+    )) {
+      rankById.set(entry.id, { rank: entry.rank, tied: entry.tiedWithPrevious })
+    }
+  }
+
+  const runs: CompareRun[] = ordered.map((row) => {
+    const base = resultRow(row, {
+      name: row.operation.name,
+      slug: row.operation.slug,
+    })
+    const reasons = eligibleById.get(row.run.id) ?? []
+    return {
+      runId: row.run.id,
+      digest: row.run.runDigest,
+      implementation: base.implementation,
+      project: base.project,
+      operation: base.operation,
+      workloadLabel: workloadLabel(
+        row.workload.manifest as AnyWorkloadManifest,
+        row.workload.dtypes,
+      ),
+      hardware: row.run.hardwareModel,
+      primary: base.primary,
+      evidence: base.evidence as CompareRun["evidence"],
+      status: row.run.status as CompareRun["status"],
+      comparisonKey: row.run.comparisonKey,
+      rank: rankById.get(row.run.id)?.rank ?? null,
+      tiedWithPrevious: rankById.get(row.run.id)?.tied ?? false,
+      eligible: reasons.length === 0,
+      ineligibleReasons: reasons,
+      license: base.license,
+      install: base.install,
+      sourceAvailable: row.run.sourceAvailable,
+      observedAt: row.run.observedAt.toISOString(),
+    }
+  })
+
+  const field = (
+    name: string,
+    material: boolean,
+    value: (row: (typeof ordered)[number]) => string | null,
+  ) => {
+    const values = ordered.map(value)
+    const distinct = new Set(values.map((entry) => entry ?? "∅"))
+    return { field: name, material, values, differs: distinct.size > 1 }
+  }
+  const fields = [
+    field("operation", true, (row) => row.operation.slug),
+    field(
+      "workload",
+      true,
+      (row) =>
+        `${workloadLabel(row.workload.manifest as AnyWorkloadManifest, row.workload.dtypes)} · ${short(row.workload.workloadDigest)}`,
+    ),
+    field("protocol", true, (row) => {
+      const stored = row.run.manifest as StoredRunManifest
+      return `${stored.protocol.spec.harness.name} · ${short(row.run.protocolKey)}`
+    }),
+    field(
+      "environment",
+      true,
+      (row) => `${row.run.hardwareModel} · ${short(row.run.environmentKey)}`,
+    ),
+    field("correctness policy", true, (row) => short(row.run.correctnessKey)),
+    field("metric", true, (row) => {
+      const stored = row.run.manifest as StoredRunManifest
+      return `${row.run.primaryMetric} ${stored.run.spec.timing?.primaryStatistic ?? "value"} (${row.run.primaryUnit ?? "—"})`
+    }),
+    field("architecture", false, (row) => row.run.hardwareArchitecture),
+    field("CUDA", false, (row) => {
+      const stored = row.run.manifest as StoredRunManifest
+      return stored.environment.spec.software.cudaToolkit ?? null
+    }),
+    field("driver", false, (row) => {
+      const stored = row.run.manifest as StoredRunManifest
+      return stored.environment.spec.software.driver ?? null
+    }),
+    field("framework", false, (row) => {
+      const framework = (row.run.manifest as StoredRunManifest).environment.spec
+        .software.framework
+      return framework ? `${framework.name} ${framework.version}` : null
+    }),
+    field("samples", false, (row) =>
+      row.run.sampleCount !== null ? String(row.run.sampleCount) : null,
+    ),
+    field("evidence", false, (row) => runEvidence(row.run)),
+    field("license", false, (row) => row.run.licenseExpression),
+    field("source", false, (row) =>
+      row.run.sourceAvailable ? "available" : "unavailable",
+    ),
+    field("status", false, (row) => row.run.status),
+    field("observed", false, (row) =>
+      row.run.observedAt.toISOString().slice(0, 10),
+    ),
+  ]
+  const firstMaterialMismatch =
+    fields.find((entry) => entry.material && entry.differs)?.field ?? null
+
+  const explanation = comparable
+    ? `All ${ordered.length} runs share one ${profile === "source_native" ? "source-native" : "strict exact"} comparison cohort; ranks follow ${RANKING_POLICY_VERSION}.`
+    : ordered.length < 2
+      ? "Add at least one more run to compare."
+      : firstMaterialMismatch !== null
+        ? `No winner can be declared: ${firstMaterialMismatch} differs. A valid comparison requires identical operation, workload, protocol, environment, correctness policy, and metric.`
+        : "No winner can be declared: at least one selected run is not eligible for ranking."
+
+  return {
+    illustrative: ordered.every((row) => row.source.kind === "illustrative"),
+    runs,
+    comparable,
+    profile: sharedCohort ? profile : null,
+    comparisonKey: sharedCohort ? ordered[0].run.comparisonKey : null,
+    fields,
+    firstMaterialMismatch,
+    explanation,
+    missingIds,
+    policyVersion: RANKING_POLICY_VERSION,
   }
 }

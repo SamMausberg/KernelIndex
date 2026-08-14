@@ -238,6 +238,31 @@ export const benchmarkRuns = pgTable(
   ],
 )
 
+/**
+ * Append-only record transitions per comparison cohort (§11.10), added in
+ * Week 4 with the public record history. Derived from eligible runs under a
+ * named ranking policy; recomputation appends, never rewrites.
+ */
+export const recordEvents = pgTable(
+  "record_events",
+  {
+    id: id(),
+    comparisonKey: text("comparison_key").notNull(),
+    runId: uuid("run_id")
+      .notNull()
+      .references(() => benchmarkRuns.id),
+    previousRunId: uuid("previous_run_id").references(() => benchmarkRuns.id),
+    policyVersion: text("policy_version").notNull(),
+    cause: text("cause").notNull(),
+    at: timestamp("at", { withTimezone: true }).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    uniqueIndex("record_events_cohort_run_unique").on(t.comparisonKey, t.runId),
+    index("record_events_cohort_idx").on(t.comparisonKey, t.at),
+  ],
+)
+
 /** Typed secondary and statistical measurements (§8.12). */
 export const measurements = pgTable(
   "measurements",

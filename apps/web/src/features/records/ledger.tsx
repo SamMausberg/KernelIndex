@@ -129,6 +129,13 @@ function HolderRow({ holder }: { holder: RecordHolder }) {
             <Link href={`/runs/${record.runId}`}>Run dossier →</Link>
           )}
           <Link href={`/operations/${holder.operation.slug}`}>Operation</Link>
+          {record.runId && holder.history.length >= 2 && (
+            <Link
+              href={`/compare?run=${record.runId}&run=${holder.history[1].runId}`}
+            >
+              Compare with previous record
+            </Link>
+          )}
           <Link href="/docs#records">How records are decided</Link>
         </div>
       </div>

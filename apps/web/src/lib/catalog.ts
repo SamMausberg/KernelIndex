@@ -4,6 +4,7 @@
 // or "postgres" (real published records).
 import { cache } from "react"
 import type {
+  ComparePageModel,
   HomePageModel,
   ImplementationPageModel,
   OperationPageModel,
@@ -25,6 +26,7 @@ type CatalogReads = {
   ): Promise<OperationPageModel | null>
   getImplementationPage(slug: string): Promise<ImplementationPageModel | null>
   getRunPage(id: string): Promise<RunPageModel | null>
+  getComparePage(runIds: string[]): Promise<ComparePageModel>
 }
 
 // Server-only: both backends are loaded lazily so fixture mode never touches
@@ -70,5 +72,11 @@ export const getImplementationPage = cache(
 export const getRunPage = cache(
   async (id: string): Promise<RunPageModel | null> => {
     return (await reads()).getRunPage(id)
+  },
+)
+
+export const getComparePage = cache(
+  async (runIds: string[]): Promise<ComparePageModel> => {
+    return (await reads()).getComparePage(runIds)
   },
 )

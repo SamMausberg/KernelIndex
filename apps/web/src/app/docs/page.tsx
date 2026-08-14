@@ -53,14 +53,26 @@ export default function DocsPage() {
           </p>
           <pre className="mt-3 overflow-x-auto rounded-[3px] border border-border bg-surface px-4 py-3 font-mono text-[12.5px] leading-relaxed">
             {`rmsnorm
-rmsnorm B200 bf16 [2048,4096]
-rmsnorm gpu:B200 dtype:bf16 shape:[2048,4096] framework=pytorch`}
+rmsnorm B200 bf16 [2048,4096] tokens=2048
+rmsnorm gpu:B200 dtype:bf16 shape:[2048,4096] framework=pytorch trust:verified`}
           </pre>
           <p className="mt-3">
-            Today the resolver matches the operation by slug, alias, family,
-            then name; shape, dtype, and hardware facets narrow results as the
-            full parser lands (Week 4 of the engineering plan). Unrecognized
-            text is preserved, never deleted.
+            The operation resolves by slug, alias, and family first, then
+            full-text and typo-tolerant matching. Structured filters accept{" "}
+            <span className="font-mono text-[12.5px]">key:value</span> or{" "}
+            <span className="font-mono text-[12.5px]">key=value</span> with the
+            keys{" "}
+            <span className="font-mono text-[12.5px]">
+              op family gpu arch dtype shape layout framework language cuda
+              trust license source installable
+            </span>
+            , plus <span className="font-mono text-[12.5px]">name=integer</span>{" "}
+            axis bindings such as{" "}
+            <span className="font-mono text-[12.5px]">tokens=2048</span>.
+            Workload and environment facets decide exact versus compatible;
+            trust, license, source, and installable filter rows without ever
+            reclassifying evidence. An unknown filter returns a correction hint,
+            never silent free text.
           </p>
         </Section>
 
@@ -79,12 +91,19 @@ rmsnorm gpu:B200 dtype:bf16 shape:[2048,4096] framework=pytorch`}
         <Section id="ranking" title="How ranking works">
           <p>
             Within a cohort, results are ordered by the protocol's primary
-            metric — median latency for kernel cohorts. A strict winner requires
-            the paired difference to be statistically defensible; until ranking
-            policy v1 ships, ties shown as{" "}
-            <span className="font-mono text-[13px]">N=</span> share a rank and
-            display order is not a performance claim. Every rank, exclusion, and
-            near match carries its reason.
+            metric — median latency for kernel cohorts — under the frozen{" "}
+            <span className="font-mono text-[13px]">ranking-v1</span> policy.
+            Two runs receive a strict order only when their declared confidence
+            intervals separate; overlapping intervals (and equal values) share a
+            rank shown as <span className="font-mono text-[13px]">N=</span>, and
+            display order inside a tie follows trust, recency, then stable ID —
+            never a hidden performance tiebreaker. Source-native cohorts keep
+            the upstream ordering and tie only on equal values. Every rank,
+            exclusion, and near match carries a structured reason code such as{" "}
+            <span className="font-mono text-[12.5px]">
+              RETRACTED, SUPERSEDED, MISSING_PRIMARY_METRIC
+            </span>
+            .
           </p>
         </Section>
 
@@ -114,11 +133,14 @@ rmsnorm gpu:B200 dtype:bf16 shape:[2048,4096] framework=pytorch`}
         <Section id="records" title="How records are decided">
           <p>
             A record exists only inside one comparison cohort. The{" "}
-            <Link href="/records">records ledger</Link> is derived from
-            append-only runs: within a cohort, the record sequence is the
-            running minimum of the primary metric in observation order.
-            Corrections supersede prior runs and retractions remove them from
-            eligibility, so history recomputes without ever rewriting evidence.
+            <Link href="/records">records ledger</Link> reads an append-only
+            record-event log derived at publication time: within a cohort, the
+            record sequence is the running minimum of the primary metric in
+            observation order. Corrections supersede prior runs and retractions
+            remove them from eligibility, so the visible sequence recomputes
+            without ever rewriting evidence. Two runs can be inspected side by
+            side on the <Link href="/compare">compare page</Link>, which
+            declares a winner only inside one cohort.
           </p>
         </Section>
 

@@ -9,6 +9,8 @@ import {
   formatPrimaryParts,
   formatSpread,
 } from "@/lib/format"
+import { meetsTrust } from "@/lib/search-query"
+import { licenseMatches } from "@/server/policy/deployability"
 import { availabilityText, ResultRowItem, ResultTableHead } from "./result-row"
 
 export type ResultMode = "exact" | "compatible" | "supported" | "reported"
@@ -16,7 +18,10 @@ export type SearchFilters = {
   view?: ResultMode
   verified: boolean
   deployable: boolean
+  page?: number
 }
+
+const PAGE_SIZE = 50
 
 const MODES: { key: ResultMode; label: string; note: string | null }[] = [
   { key: "exact", label: "Exact", note: null },
@@ -47,11 +52,13 @@ function searchHref(
   filters: SearchFilters,
   patch: Partial<SearchFilters>,
 ) {
-  const next = { ...filters, ...patch }
+  // Any change other than paging restarts at page 1.
+  const next = { ...filters, page: patch.page ?? 1, ...patch }
   const params = new URLSearchParams({ q: query })
   if (next.view && next.view !== "exact") params.set("view", next.view)
   if (next.verified) params.set("verified", "1")
   if (next.deployable) params.set("deployable", "1")
+  if (next.page > 1) params.set("page", String(next.page))
   return `/search?${params.toString()}`
 }
 
@@ -300,12 +307,23 @@ export function SearchResults({
     filters.view ??
     MODES.find((mode) => groupsByMode[mode.key].length > 0)?.key ??
     "exact"
+  // Policy facets from the query (trust:, license:, source:, installable:)
+  // filter rows inside a group; they never reclassify evidence (§11.4).
+  const { policy } = model
   const keep = (row: ResultRow) =>
     (!filters.verified || isVerified(row)) &&
-    (!filters.deployable || isDeployable(row))
-  const rows = groupsByMode[view].filter(keep)
-  const hidden = groupsByMode[view].length - rows.length
-  const top = model.groups.exact[0]
+    (!filters.deployable || isDeployable(row)) &&
+    meetsTrust(row.evidence, policy.minimumTrust) &&
+    (policy.license === null ||
+      licenseMatches(policy.license, row.license.concluded)) &&
+    (!policy.requireSource || row.sourceAvailable) &&
+    (!policy.requireInstallable || row.installable)
+  const allRows = groupsByMode[view].filter(keep)
+  const hidden = groupsByMode[view].length - allRows.length
+  const pageCount = Math.max(1, Math.ceil(allRows.length / PAGE_SIZE))
+  const page = Math.min(Math.max(1, filters.page ?? 1), pageCount)
+  const rows = allRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  const top = model.groups.exact.find(keep)
   const best = top?.primary ?? null
   const anyTie = rows.some((row) => row.tiedWithPrevious)
   const modeNote = MODES.find((mode) => mode.key === view)?.note
@@ -317,6 +335,32 @@ export function SearchResults({
       <div className="border-b border-border bg-surface">
         <div className="shell animate-fade-in pt-5 pb-4">
           <SearchField query={model.query} />
+          {(model.facets.length > 0 || model.queryIssues.length > 0) && (
+            <div className="mt-2.5 flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
+              {model.facets.map((facet) => (
+                <span
+                  key={facet.token}
+                  className="inline-flex items-center gap-1.5 rounded-[2px] border border-border bg-raised px-2 py-[3px] font-mono text-[11.5px] text-muted"
+                >
+                  {facet.display}
+                  <Link
+                    href={`/search?q=${encodeURIComponent(facet.removeQuery)}`}
+                    aria-label={`Remove ${facet.display}`}
+                    className="text-faint transition-colors hover:text-fg hover:no-underline"
+                  >
+                    ✕
+                  </Link>
+                </span>
+              ))}
+              {model.queryIssues.map((issue) => (
+                <span key={issue.token} className="text-[12px] text-warning">
+                  <span className="font-mono text-[11.5px]">{issue.token}</span>
+                  {" — "}
+                  {issue.message}
+                </span>
+              ))}
+            </div>
+          )}
           {model.operation !== null && (
             <>
               <div className="mt-4 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
@@ -431,6 +475,7 @@ export function SearchResults({
                       key={row.runId ?? row.implementation.slug}
                       row={row}
                       best={best}
+                      compareWith={top?.runId ?? null}
                       tiedWithNext={
                         rows[index + 1]?.tiedWithPrevious &&
                         rows[index + 1]?.rank === row.rank
@@ -445,6 +490,38 @@ export function SearchResults({
                 </p>
               )}
             </div>
+
+            {pageCount > 1 && (
+              <div className="mt-4 flex items-baseline gap-5 text-[12.5px]">
+                {page > 1 ? (
+                  <Link
+                    href={searchHref(model.query, filters, {
+                      view,
+                      page: page - 1,
+                    })}
+                  >
+                    ← Previous
+                  </Link>
+                ) : (
+                  <span className="text-ghost">← Previous</span>
+                )}
+                <span className="font-mono text-[12px] text-faint">
+                  page {page} of {pageCount}
+                </span>
+                {page < pageCount ? (
+                  <Link
+                    href={searchHref(model.query, filters, {
+                      view,
+                      page: page + 1,
+                    })}
+                  >
+                    Next →
+                  </Link>
+                ) : (
+                  <span className="text-ghost">Next →</span>
+                )}
+              </div>
+            )}
 
             {anyTie && (
               <p className="mt-3.5 text-[12.5px] text-faint">
@@ -496,6 +573,16 @@ export function SearchResults({
             </div>
           )}
         </div>
+        {model.sources.length > 0 && (
+          <p className="mt-2 font-mono text-[11.5px] text-faint">
+            {model.sources
+              .map(
+                (source) =>
+                  `${source.name} · last observed ${formatDateUTC(source.observedAt)}`,
+              )
+              .join("  ·  ")}
+          </p>
+        )}
       </main>
     </>
   )

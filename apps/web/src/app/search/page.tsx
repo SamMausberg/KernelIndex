@@ -11,6 +11,7 @@ type Params = {
   view?: string
   verified?: string
   deployable?: string
+  page?: string
 }
 
 const MODES = new Set(["exact", "compatible", "supported", "reported"])
@@ -23,6 +24,7 @@ export default async function SearchPage({
   const params = await searchParams
   const query = params.q ?? ""
   const model = await searchCatalog({ query })
+  const page = Number.parseInt(params.page ?? "1", 10)
   return (
     <>
       <SiteHeader active="search" />
@@ -36,6 +38,7 @@ export default async function SearchPage({
               : undefined,
           verified: params.verified === "1",
           deployable: params.deployable === "1",
+          page: Number.isNaN(page) ? 1 : page,
         }}
       />
     </>

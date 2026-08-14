@@ -58,10 +58,13 @@ export function ResultTableHead() {
 export function ResultRowItem({
   row,
   best,
+  compareWith = null,
   tiedWithNext = false,
 }: {
   row: ResultRow
   best: PrimaryMetric | null
+  /** Cohort leader's run ID; enables the row's compare action (§16.7). */
+  compareWith?: string | null
   tiedWithNext?: boolean
 }) {
   const tied = row.tiedWithPrevious || tiedWithNext
@@ -212,6 +215,11 @@ export function ResultRowItem({
                 Implementation
               </Link>
               <Link href={`/operations/${row.operation.slug}`}>Operation</Link>
+              {row.runId && compareWith && compareWith !== row.runId && (
+                <Link href={`/compare?run=${compareWith}&run=${row.runId}`}>
+                  Compare with #1
+                </Link>
+              )}
             </div>
           </div>
         </div>
