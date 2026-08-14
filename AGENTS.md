@@ -30,7 +30,8 @@ the conflict and get my sign-off before breaking it.
   in sync. This is vital, as this repo evolves incredibly fast.
 - Always verify your work: run the relevant tests, builds, or checks before
   reporting something done, and ground your claims in actual results rather
-  than assertions.
+  than assertions. Do not run repo-wide verification unless the scope
+  requires it.
 - Do not over-engineer. No unrequested features, speculative abstractions, or
   defensive handling for scenarios that cannot happen.
 - Write as little code as possible — this is essential. Less code must come
@@ -38,6 +39,13 @@ the conflict and get my sign-off before breaking it.
   dropping features. The target is low LOC with all the same features: code
   that is as smart, long-term, and organized as possible. Better coding means
   less code; do not cheat the metric.
+
+## TypeScript
+
+- Avoid `any`. Inferred types are better: the system should adapt to changes
+  instead of requiring them everywhere.
+- TypeScript code should not read like a Python developer wrote it.
+- Try to avoid one-line functions that are casting wrappers.
 
 ## Communication
 
