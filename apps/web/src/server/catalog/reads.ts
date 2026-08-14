@@ -2,17 +2,7 @@
 // returning the same page models as the fixtures. Only published, passed,
 // unretracted runs appear in result tables; the run page itself shows any
 // published run including failed, superseded, and retracted evidence.
-import {
-  and,
-  count,
-  desc,
-  eq,
-  ilike,
-  inArray,
-  isNotNull,
-  isNull,
-  or,
-} from "drizzle-orm"
+import { and, count, desc, eq, inArray, isNotNull, isNull } from "drizzle-orm"
 import type {
   CohortContext,
   HomePageModel,
@@ -312,68 +302,83 @@ function cohortFacts(joined: JoinedRun): KeyValue[] {
     .map(([key, value]) => ({ key, value }))
 }
 
-const escapeLike = (token: string) => token.replaceAll(/[\\%_]/g, "\\$&")
+/** Intent words that never identify an operation. */
+const SEARCH_STOPWORDS = new Set([
+  "the",
+  "and",
+  "for",
+  "with",
+  "kernel",
+  "kernels",
+  "gpu",
+  "fastest",
+  "best",
+  "implementation",
+  "operation",
+])
 
 /**
  * Tiered operation resolution mirroring the §12.4 relevance order: exact
- * slug, then exact alias, then family, then name substring. Deterministic —
- * a weaker tier never outranks a stronger one.
+ * slug, then exact alias, then exact family, then substring matches over
+ * slug/family/name scored by how many query tokens they satisfy. Matching is
+ * hyphen/underscore-insensitive, so "rmsnorm" also finds "069-rms-norm".
+ * Facet tokens (key=value, shapes, short hardware/dtype codes) never
+ * misresolve the operation — they score zero until the Week 3 parser turns
+ * them into real filters. The corpus is small pre-Week-3; FTS and trigram
+ * search replace the in-memory scan in §22.4.
  */
 async function findOperation(query: string) {
   const database = db()
-  const tokens = query
-    .toLowerCase()
-    .split(/[\s,]+/)
-    .filter((token) => /^[a-z0-9_-]{2,}$/.test(token))
+  const tokens = [
+    ...new Set(
+      query
+        .toLowerCase()
+        .split(/[\s,]+/)
+        .filter((token) => /^[a-z][a-z0-9_-]{2,}$/.test(token))
+        .filter((token) => !SEARCH_STOPWORDS.has(token)),
+    ),
+  ]
   if (tokens.length === 0) return null
 
-  const bySlug = await database
-    .select()
-    .from(schema.operations)
-    .where(inArray(schema.operations.slug, tokens))
-    .limit(1)
-  if (bySlug[0]) return bySlug[0]
+  const operations = await database.select().from(schema.operations)
+  const byAge = (
+    a: (typeof operations)[number],
+    b: (typeof operations)[number],
+  ) => a.createdAt.getTime() - b.createdAt.getTime()
+
+  const bySlug = operations
+    .filter((op) => tokens.includes(op.slug))
+    .sort(byAge)[0]
+  if (bySlug) return bySlug
 
   const aliasHits = await database
     .select({ operationId: schema.operationAliases.operationId })
     .from(schema.operationAliases)
     .where(inArray(schema.operationAliases.alias, tokens))
-  if (aliasHits.length > 0) {
-    const [operation] = await database
-      .select()
-      .from(schema.operations)
-      .where(
-        inArray(
-          schema.operations.id,
-          aliasHits.map((hit) => hit.operationId),
-        ),
-      )
-      .orderBy(schema.operations.createdAt)
-      .limit(1)
-    if (operation) return operation
-  }
+  const aliasIds = new Set(aliasHits.map((hit) => hit.operationId))
+  const byAlias = operations.filter((op) => aliasIds.has(op.id)).sort(byAge)[0]
+  if (byAlias) return byAlias
 
-  const [byFamily] = await database
-    .select()
-    .from(schema.operations)
-    .where(inArray(schema.operations.family, tokens))
-    .orderBy(schema.operations.createdAt)
-    .limit(1)
+  const byFamily = operations
+    .filter((op) => tokens.includes(op.family))
+    .sort(byAge)[0]
   if (byFamily) return byFamily
 
-  const [byName] = await database
-    .select()
-    .from(schema.operations)
-    .where(
-      or(
-        ...tokens.map((token) =>
-          ilike(schema.operations.name, `%${escapeLike(token)}%`),
-        ),
-      ),
-    )
-    .orderBy(schema.operations.createdAt)
-    .limit(1)
-  return byName ?? null
+  const collapse = (value: string) =>
+    value.toLowerCase().replaceAll(/[-_]/g, "")
+  const scored = operations
+    .map((op) => {
+      const haystack = `${op.slug} ${op.family} ${op.name}`.toLowerCase()
+      const collapsed = collapse(haystack)
+      const score = tokens.filter(
+        (token) =>
+          haystack.includes(token) || collapsed.includes(collapse(token)),
+      ).length
+      return { op, score }
+    })
+    .filter((candidate) => candidate.score > 0)
+    .sort((a, b) => b.score - a.score || byAge(a.op, b.op))
+  return scored[0]?.op ?? null
 }
 
 /** Pick the workload with the most runs as the default selection. */
@@ -600,12 +605,19 @@ export async function searchCatalog(
   }
   const operation = query === "" ? null : await findOperation(query)
   if (!operation) {
+    const families = await db()
+      .selectDistinct({ family: schema.operations.family })
+      .from(schema.operations)
+      .orderBy(schema.operations.family)
+      .limit(8)
     return {
       ...base,
       noResult: {
         guidance:
-          "No matching operation found. Search by operation name, family, or alias — shape, dtype, and hardware filters arrive with the full query parser.",
-        suggestions: ["rmsnorm", "gemm", "attention"],
+          query === ""
+            ? "Search by operation, hardware, dtype, and shape — or start from an indexed operation family."
+            : "No matching operation found. Search by operation name, family, or alias — shape, dtype, and hardware filters arrive with the full query parser.",
+        suggestions: families.map((row) => row.family),
       },
     }
   }

@@ -17,5 +17,18 @@ const environmentSchema = z
       message: "CATALOG_BACKEND=postgres requires DATABASE_URL",
     },
   )
+  .refine(
+    (env) =>
+      process.env.VERCEL_ENV !== "production" ||
+      env.CATALOG_BACKEND === "postgres",
+    {
+      message:
+        "Production must explicitly select CATALOG_BACKEND=postgres — fixture mode cannot be enabled silently in production (§22.3 gate)",
+    },
+  )
 
 export const env = environmentSchema.parse(process.env)
+
+/** Non-sensitive release identity for the diagnostics footer (§27.11). */
+export const releaseSha =
+  env.RELEASE_SHA ?? process.env.VERCEL_GIT_COMMIT_SHA ?? null

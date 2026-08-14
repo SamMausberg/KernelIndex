@@ -4,6 +4,7 @@ import { SiteHeader } from "@/components/site-header"
 import { HeroSearch } from "@/features/home/hero-search"
 import { LatestRecords } from "@/features/home/latest-records"
 import { getHomePage } from "@/lib/catalog"
+import { releaseSha } from "@/server/env"
 
 // The homepage reads live records; never freeze them into the build.
 export const dynamic = "force-dynamic"
@@ -66,6 +67,7 @@ export default async function Home() {
                 ]
                   .map(([n, word]) => `${n} ${word}${n === 1 ? "" : "s"}`)
                   .join(" · ")}
+                {releaseSha && ` · ${releaseSha.slice(0, 7)}`}
               </span>
               <Link href="/docs" className="text-[13px] text-subtle">
                 Methodology

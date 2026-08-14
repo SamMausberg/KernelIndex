@@ -541,7 +541,9 @@ export async function searchCatalog(
       related: [],
       noResult: {
         guidance:
-          "No comparable public evidence found. Search by operation, shape, dtype, hardware, and framework.",
+          query === ""
+            ? "Search by operation, hardware, dtype, and shape — or start from an example query."
+            : "No comparable public evidence found. Search by operation, shape, dtype, hardware, and framework.",
         suggestions: ["rmsnorm B200 bf16 [2048,4096]", "rmsnorm bf16 pytorch"],
       },
     }
