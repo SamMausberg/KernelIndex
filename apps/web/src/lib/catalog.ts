@@ -22,10 +22,11 @@ type CatalogReads = {
   getRunPage(id: string): Promise<RunPageModel | null>
 }
 
-// Server-only: both backends are loaded lazily so fixture mode needs no
-// database driver and no environment configuration at all.
+// Server-only: both backends are loaded lazily so fixture mode never touches
+// the database driver.
 async function reads(): Promise<CatalogReads> {
-  if (process.env.CATALOG_BACKEND === "postgres") {
+  const { env } = await import("@/server/env")
+  if (env.CATALOG_BACKEND === "postgres") {
     return await import("@/server/catalog/reads")
   }
   return await import("@/data/fixtures/catalog")

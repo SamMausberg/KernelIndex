@@ -8,7 +8,9 @@
     "start": "next start",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
-    "schemas:generate": "node scripts/generate-schemas.ts"
+    "schemas:generate": "node scripts/generate-schemas.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "node --env-file-if-exists=.env.local scripts/migrate.ts"
   },
   "dependencies": {
     "canonicalize": "4.0.0",
