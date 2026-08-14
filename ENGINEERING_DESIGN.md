@@ -4541,9 +4541,10 @@ This is a starting layout, not a mandate to create one file per listed component
 
 ### 27.5 Fixture/read seam
 
-Pages call four page-oriented functions:
+Pages call five page-oriented functions:
 
 ```ts
+export async function getHomePage(): Promise<HomePageModel>
 export async function searchCatalog(input: SearchInput): Promise<SearchPageModel>
 export async function getOperationPage(slug: string): Promise<OperationPageModel | null>
 export async function getImplementationPage(

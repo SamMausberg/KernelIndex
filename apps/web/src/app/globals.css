@@ -1,1 +1,123 @@
 @import "tailwindcss";
+
+/*
+ * KernelIndex visual system (§16.2): restrained black technical reference.
+ * Semantic tokens extracted from the founder's "KernelIndex Search" design;
+ * components reference roles, never raw hex, so a light palette stays
+ * possible later.
+ */
+@theme {
+  /* Surfaces: near-black canvas with only slight separation. */
+  --color-canvas: #050505;
+  --color-surface: #070707;
+  --color-raised: #0a0a0a;
+
+  /* 1px hairline hierarchy: row separators < section borders < controls. */
+  --color-line: #161616;
+  --color-border: #1f1f1f;
+  --color-border-strong: #242424;
+  --color-edge: #2a2a2a;
+  --color-edge-hover: #3a3a3a;
+
+  /* Text scale, brightest to quietest. */
+  --color-fg: #f2f2f1;
+  --color-muted: #b4b4b1;
+  --color-subtle: #8e8e8b;
+  --color-faint: #6a6a67;
+  --color-ghost: #3d3d3f;
+
+  /* One cool accent; status colors appear sparingly and always with text. */
+  --color-accent: #9cb3d6;
+  --color-accent-bright: #c9d7ea;
+  --color-accent-soft: #1c2836;
+  --color-success: #6fcf97;
+  --color-warning: #e3b85b;
+
+  /* ABC Diatype leads when locally available; hosted fallbacks otherwise. */
+  --font-sans:
+    "ABC Diatype", var(--font-instrument-sans), "Helvetica Neue", Helvetica,
+    Arial, sans-serif;
+  --font-mono:
+    "ABC Diatype Semi Mono", "ABC Diatype Semi-Mono", var(--font-space-grotesk),
+    ui-monospace, monospace;
+
+  /* One-shot entrance animations only — nothing repaints continuously. */
+  --animate-row-in: row-in 0.32s cubic-bezier(0.22, 0.7, 0.2, 1) both;
+  --animate-fade-in: fade-in 0.2s ease both;
+  --animate-scan: scan 0.55s cubic-bezier(0.22, 0.7, 0.2, 1) both;
+
+  @keyframes row-in {
+    from {
+      opacity: 0;
+      transform: translateY(7px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes scan {
+    from {
+      transform: scaleX(0);
+      opacity: 1;
+    }
+    to {
+      transform: scaleX(1);
+      opacity: 0;
+    }
+  }
+}
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+  body {
+    @apply bg-canvas font-sans text-fg antialiased;
+    line-height: 1.5;
+  }
+  a {
+    @apply text-accent no-underline;
+  }
+  a:hover {
+    @apply text-accent-bright underline;
+  }
+  input,
+  button {
+    font: inherit;
+    color: inherit;
+  }
+  input::placeholder {
+    @apply text-faint;
+  }
+  input:focus-visible,
+  button:focus-visible,
+  summary:focus-visible,
+  a:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+  ::selection {
+    @apply bg-accent-soft;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      /* biome-ignore lint/complexity/noImportantStyles: must beat animate-* utilities */
+      animation-duration: 0.01ms !important;
+      /* biome-ignore lint/complexity/noImportantStyles: must beat animate-* utilities */
+      animation-iteration-count: 1 !important;
+      /* biome-ignore lint/complexity/noImportantStyles: must beat transition utilities */
+      transition-duration: 0.01ms !important;
+    }
+  }
+}

@@ -14,6 +14,7 @@ import {
 } from "drizzle-orm"
 import type {
   CohortContext,
+  HomePageModel,
   ImplementationPageModel,
   ImplementationSummary,
   Mismatch,
@@ -347,6 +348,56 @@ function defaultWorkloadId(
 
 function pageIllustrative(rows: JoinedRun[]): boolean {
   return rows.length > 0 && rows.every((j) => j.source.kind === "illustrative")
+}
+
+/** §16.5: most recent published records across all operations, newest first. */
+export async function getHomePage(): Promise<HomePageModel> {
+  const rows = await db()
+    .select({
+      run: schema.benchmarkRuns,
+      implementation: schema.implementations,
+      project: schema.projects,
+      workload: schema.workloads,
+      source: schema.sources,
+      operation: schema.operations,
+    })
+    .from(schema.benchmarkRuns)
+    .innerJoin(
+      schema.implementations,
+      eq(schema.benchmarkRuns.implementationId, schema.implementations.id),
+    )
+    .innerJoin(
+      schema.projects,
+      eq(schema.implementations.projectId, schema.projects.id),
+    )
+    .innerJoin(
+      schema.workloads,
+      eq(schema.benchmarkRuns.workloadId, schema.workloads.id),
+    )
+    .innerJoin(
+      schema.operations,
+      eq(schema.workloads.operationId, schema.operations.id),
+    )
+    .innerJoin(
+      schema.sources,
+      eq(schema.benchmarkRuns.sourceId, schema.sources.id),
+    )
+    .where(
+      and(
+        eq(schema.benchmarkRuns.status, "passed"),
+        isNotNull(schema.benchmarkRuns.publishedAt),
+        isNull(schema.benchmarkRuns.retractedAt),
+        isNull(schema.benchmarkRuns.supersedesId),
+      ),
+    )
+    .orderBy(desc(schema.benchmarkRuns.observedAt))
+    .limit(8)
+  return {
+    illustrative: pageIllustrative(rows),
+    latest: rows.map((j) =>
+      resultRow(j, { name: j.operation.name, slug: j.operation.slug }),
+    ),
+  }
 }
 
 export async function searchCatalog(

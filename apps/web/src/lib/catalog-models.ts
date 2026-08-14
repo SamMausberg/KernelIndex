@@ -126,6 +126,12 @@ export type CohortContext = {
 
 export type SearchInput = { query: string }
 
+/** §16.5: homepage read — the most recent published records, newest first. */
+export type HomePageModel = {
+  illustrative: boolean
+  latest: ResultRow[]
+}
+
 /** §16.6: result groups are semantically separate and never interleaved. */
 export type SearchPageModel = {
   illustrative: boolean

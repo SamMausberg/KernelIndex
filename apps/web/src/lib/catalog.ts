@@ -1,8 +1,9 @@
-// The fixture/read seam (§27.5). Pages call these four functions and never
+// The fixture/read seam (§27.5). Pages call these five functions and never
 // know which backend produced the model. `CATALOG_BACKEND` selects the
 // implementation: "fixtures" (default, deterministic, visibly illustrative)
 // or "postgres" (real published records).
 import type {
+  HomePageModel,
   ImplementationPageModel,
   OperationPageModel,
   RunPageModel,
@@ -13,6 +14,7 @@ import type {
 export type * from "./catalog-models"
 
 type CatalogReads = {
+  getHomePage(): Promise<HomePageModel>
   searchCatalog(input: SearchInput): Promise<SearchPageModel>
   getOperationPage(
     slug: string,
@@ -30,6 +32,10 @@ async function reads(): Promise<CatalogReads> {
     return await import("@/server/catalog/reads")
   }
   return await import("@/data/fixtures/catalog")
+}
+
+export async function getHomePage(): Promise<HomePageModel> {
+  return (await reads()).getHomePage()
 }
 
 export async function searchCatalog(

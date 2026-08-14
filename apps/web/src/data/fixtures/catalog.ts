@@ -4,6 +4,7 @@
 // presented as real benchmark evidence.
 import type {
   EvidenceLevel,
+  HomePageModel,
   ImplementationPageModel,
   LicenseInfo,
   MatchQuality,
@@ -397,6 +398,13 @@ const SUPPORTED_UNMEASURED: ResultRow = {
 }
 
 const RANKED = RUNS.filter((r) => r.workloadId === "wl-2048" && r.rank !== null)
+
+export async function getHomePage(): Promise<HomePageModel> {
+  const latest = [...RANKED]
+    .sort((a, b) => b.lastTestedAt.localeCompare(a.lastTestedAt))
+    .map(rowFromRun)
+  return { illustrative: ILLUSTRATIVE, latest }
+}
 
 export async function searchCatalog(
   input: SearchInput,

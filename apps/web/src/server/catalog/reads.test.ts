@@ -1,11 +1,12 @@
 // End-to-end integration: publish the illustrative example bundle through
-// the real publication transaction, then read it back through all four
+// the real publication transaction, then read it back through all five
 // page-read functions. Requires DATABASE_URL (migrated database).
 import { beforeAll, describe, expect, it } from "vitest"
 import { db } from "../db/client.ts"
 import { exampleBundle } from "./example-bundle.ts"
 import { publishBundle } from "./publication.ts"
 import {
+  getHomePage,
   getImplementationPage,
   getOperationPage,
   getRunPage,
@@ -24,6 +25,17 @@ describe.skipIf(!url)("postgres catalog reads", () => {
     const again = await publishBundle(db(), exampleBundle(), { publish: true })
     expect(again.counts.runs).toEqual({ inserted: 0, existing: 1 })
     expect(again.counts.operations).toEqual({ inserted: 0, existing: 1 })
+  })
+
+  it("getHomePage lists recent published records newest first", async () => {
+    const model = await getHomePage()
+    expect(model.latest.length).toBeGreaterThanOrEqual(1)
+    const dates = model.latest.map((row) => row.lastTestedAt ?? "")
+    expect(dates).toEqual([...dates].sort().reverse())
+    const [first] = model.latest
+    expect(first.runId).toBeTruthy()
+    expect(first.operation.slug).toBeTruthy()
+    expect(first.primary?.unit).toBe("ns")
   })
 
   it("searchCatalog finds the operation by alias and labels it illustrative", async () => {
