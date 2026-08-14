@@ -525,12 +525,20 @@ export async function searchCatalog(
 
   const matched = /rms[\s_-]?norm/i.test(query)
   if (!matched) {
+    const empty = query === ""
     return {
       illustrative: ILLUSTRATIVE,
       query,
-      interpretedQuery:
-        query === "" ? "Empty query" : `No recognized operation in “${query}”`,
+      interpretedQuery: empty
+        ? "Search the index"
+        : `No recognized operation in “${query}”`,
       operation: null,
+      browse: empty
+        ? [
+            { family: "rmsnorm", operations: 2, runs: 8 },
+            { family: "fused-residual-rmsnorm", operations: 1, runs: 0 },
+          ]
+        : null,
       cohort: null,
       groups: {
         exact: [],
@@ -539,13 +547,16 @@ export async function searchCatalog(
         reported: [],
       },
       related: [],
-      noResult: {
-        guidance:
-          query === ""
-            ? "Search by operation, hardware, dtype, and shape — or start from an example query."
-            : "No comparable public evidence found. Search by operation, shape, dtype, hardware, and framework.",
-        suggestions: ["rmsnorm B200 bf16 [2048,4096]", "rmsnorm bf16 pytorch"],
-      },
+      noResult: empty
+        ? null
+        : {
+            guidance:
+              "No comparable public evidence found. Search by operation, shape, dtype, hardware, and framework.",
+            suggestions: [
+              "rmsnorm B200 bf16 [2048,4096]",
+              "rmsnorm bf16 pytorch",
+            ],
+          },
     }
   }
 
@@ -555,6 +566,7 @@ export async function searchCatalog(
     interpretedQuery:
       "Operation RMSNorm · hidden 4096 · tokens 2048 · bf16 · NVIDIA B200 SXM · PyTorch",
     operation: { name: "RMSNorm, hidden 4096", slug: "rmsnorm-h4096" },
+    browse: null,
     cohort: COHORT_2048,
     groups: {
       exact: RANKED.map(rowFromRun),

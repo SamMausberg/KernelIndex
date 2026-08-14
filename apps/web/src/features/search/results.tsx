@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { CopyButton } from "@/components/copy-button"
 import { KeyValueList } from "@/components/key-value-list"
-import type { ResultRow, SearchPageModel } from "@/lib/catalog"
+import type { BrowseFamily, ResultRow, SearchPageModel } from "@/lib/catalog"
 import {
   evidenceLabel,
   formatDateUTC,
@@ -90,6 +90,69 @@ function SearchField({ query }: { query: string }) {
         ⏎
       </kbd>
     </form>
+  )
+}
+
+/** Empty-query start state (§16.5): the published corpus, ready to browse. */
+function StartState({ families }: { families: BrowseFamily[] }) {
+  const totalOperations = families.reduce((n, f) => n + f.operations, 0)
+  const totalRuns = families.reduce((n, f) => n + f.runs, 0)
+  const examples = families.slice(0, 2).map((f) => `${f.family} B200 bf16`)
+  return (
+    <section className="animate-row-in pt-6">
+      <div className="flex flex-wrap items-baseline gap-x-5 gap-y-2 text-[13px]">
+        <span className="text-faint">Try</span>
+        {examples.map((example) => (
+          <Link
+            key={example}
+            href={`/search?q=${encodeURIComponent(example)}`}
+            className="font-mono text-[12.5px]"
+          >
+            {example}
+          </Link>
+        ))}
+        <Link
+          href="/docs#query-syntax"
+          className="ml-auto text-[12.5px] text-faint"
+        >
+          Query syntax
+        </Link>
+      </div>
+      <div className="mt-8 flex flex-wrap items-baseline justify-between gap-4 border-b border-border-strong pb-3">
+        <h2 className="text-[15px] font-medium tracking-[-0.01em]">
+          Browse the index
+        </h2>
+        <span className="text-[12.5px] text-faint">
+          {totalOperations} operations · {totalRuns} published runs
+        </span>
+      </div>
+      <div className="grid grid-cols-[minmax(220px,1fr)_140px_140px] text-[11.5px] text-faint">
+        <div className="py-2">Family</div>
+        <div className="py-2 text-right">Operations</div>
+        <div className="py-2 text-right">Published runs</div>
+      </div>
+      {families.map((entry) => (
+        <Link
+          key={entry.family}
+          href={`/search?q=${encodeURIComponent(entry.family)}`}
+          className="grid h-[47px] grid-cols-[minmax(220px,1fr)_140px_140px] items-center border-t border-line transition-colors hover:bg-raised hover:no-underline"
+        >
+          <span className="truncate pr-3 font-mono text-[13px] text-fg">
+            {entry.family}
+          </span>
+          <span className="text-right font-mono text-[13px] text-muted">
+            {entry.operations}
+          </span>
+          <span
+            className={`text-right font-mono text-[13px] ${
+              entry.runs > 0 ? "text-muted" : "text-faint"
+            }`}
+          >
+            {entry.runs > 0 ? entry.runs : "none yet"}
+          </span>
+        </Link>
+      ))}
+    </section>
   )
 }
 
@@ -254,7 +317,7 @@ export function SearchResults({
       <div className="border-b border-border bg-surface">
         <div className="shell animate-fade-in pt-5 pb-4">
           <SearchField query={model.query} />
-          {model.noResult === null && (
+          {model.operation !== null && (
             <>
               <div className="mt-4 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
                 <h1 className="text-[20px] leading-tight font-medium tracking-[-0.012em]">
@@ -279,7 +342,9 @@ export function SearchResults({
       </div>
 
       <main className="shell pb-20">
-        {model.noResult ? (
+        {model.browse ? (
+          <StartState families={model.browse} />
+        ) : model.noResult ? (
           <section className="py-14">
             <p className="max-w-[64ch] text-[14px] text-muted">
               {model.noResult.guidance}
@@ -418,8 +483,9 @@ export function SearchResults({
 
         <div className="mt-12 flex flex-wrap items-baseline justify-between gap-5 border-t border-border pt-5">
           <p className="text-[12.5px] text-subtle">
-            Missing an implementation for this workload? Evidence submissions
-            open with the contribution beta.
+            {model.operation
+              ? "Missing an implementation for this workload? Evidence submissions open with the contribution beta."
+              : "Results are ranked only inside comparable workloads and environments."}
           </p>
           {model.cohort && (
             <div className="flex items-center gap-2.5">

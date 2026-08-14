@@ -130,6 +130,13 @@ export type CohortContext = {
 
 export type SearchInput = { query: string }
 
+/** One row of the empty-query start state (§16.5): the corpus by family. */
+export type BrowseFamily = {
+  family: string
+  operations: number
+  runs: number
+}
+
 /** §16.5: homepage read — the most recent published records, newest first. */
 export type HomePageModel = {
   illustrative: boolean
@@ -187,6 +194,8 @@ export type SearchPageModel = {
   interpretedQuery: string
   /** Resolved operation, when the query named one. */
   operation: { name: string; slug: string } | null
+  /** Populated only for the empty query: browse the index instead of failing. */
+  browse: BrowseFamily[] | null
   cohort: CohortContext | null
   groups: {
     exact: ResultRow[]

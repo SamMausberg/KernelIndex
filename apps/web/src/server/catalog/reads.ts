@@ -4,6 +4,7 @@
 // published run including failed, superseded, and retracted evidence.
 import { and, count, desc, eq, inArray, isNotNull, isNull } from "drizzle-orm"
 import type {
+  BrowseFamily,
   CohortContext,
   HomePageModel,
   ImplementationPageModel,
@@ -584,6 +585,43 @@ export async function getRecordsPage(): Promise<RecordsPageModel> {
   }
 }
 
+/** §16.5 start state: the published corpus grouped by operation family. */
+async function browseFamilies(): Promise<BrowseFamily[]> {
+  const database = db()
+  const operations = await database
+    .select({ family: schema.operations.family, n: count() })
+    .from(schema.operations)
+    .groupBy(schema.operations.family)
+  const runs = await database
+    .select({ family: schema.operations.family, n: count() })
+    .from(schema.benchmarkRuns)
+    .innerJoin(
+      schema.workloads,
+      eq(schema.benchmarkRuns.workloadId, schema.workloads.id),
+    )
+    .innerJoin(
+      schema.operations,
+      eq(schema.workloads.operationId, schema.operations.id),
+    )
+    .where(
+      and(
+        eq(schema.benchmarkRuns.status, "passed"),
+        isNotNull(schema.benchmarkRuns.publishedAt),
+        isNull(schema.benchmarkRuns.retractedAt),
+        isNull(schema.benchmarkRuns.supersedesId),
+      ),
+    )
+    .groupBy(schema.operations.family)
+  const runsByFamily = new Map(runs.map((row) => [row.family, row.n]))
+  return operations
+    .map((row) => ({
+      family: row.family,
+      operations: row.n,
+      runs: runsByFamily.get(row.family) ?? 0,
+    }))
+    .sort((a, b) => b.runs - a.runs || a.family.localeCompare(b.family))
+}
+
 export async function searchCatalog(
   input: SearchInput,
 ): Promise<SearchPageModel> {
@@ -592,8 +630,9 @@ export async function searchCatalog(
     illustrative: false,
     query,
     interpretedQuery:
-      query === "" ? "Empty query" : `Operation search for “${query}”`,
+      query === "" ? "Search the index" : `Operation search for “${query}”`,
     operation: null,
+    browse: null,
     cohort: null,
     groups: {
       exact: [],
@@ -603,7 +642,10 @@ export async function searchCatalog(
     },
     related: [],
   }
-  const operation = query === "" ? null : await findOperation(query)
+  if (query === "") {
+    return { ...base, browse: await browseFamilies(), noResult: null }
+  }
+  const operation = await findOperation(query)
   if (!operation) {
     const families = await db()
       .selectDistinct({ family: schema.operations.family })
@@ -614,9 +656,7 @@ export async function searchCatalog(
       ...base,
       noResult: {
         guidance:
-          query === ""
-            ? "Search by operation, hardware, dtype, and shape — or start from an indexed operation family."
-            : "No matching operation found. Search by operation name, family, or alias — shape, dtype, and hardware filters arrive with the full query parser.",
+          "No matching operation found. Search by operation name, family, or alias — shape, dtype, and hardware filters arrive with the full query parser.",
         suggestions: families.map((row) => row.family),
       },
     }

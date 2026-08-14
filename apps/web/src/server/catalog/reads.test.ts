@@ -70,6 +70,14 @@ describe.skipIf(!url)("postgres catalog reads", () => {
     expect(model.cohort?.profile).toBe("strict_exact")
   })
 
+  it("searchCatalog returns the browse start state for an empty query", async () => {
+    const model = await searchCatalog({ query: "" })
+    expect(model.noResult).toBeNull()
+    expect(model.browse?.length).toBeGreaterThanOrEqual(1)
+    const rmsnorm = model.browse?.find((entry) => entry.family === "rmsnorm")
+    expect(rmsnorm?.operations).toBeGreaterThanOrEqual(1)
+  })
+
   it("searchCatalog explains a no-result query", async () => {
     const model = await searchCatalog({ query: "nonexistent-operation-xyz" })
     expect(model.groups.exact).toHaveLength(0)
