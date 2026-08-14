@@ -1,0 +1,14 @@
+# Invalid: digests must match sha256:<64 lowercase hex> (§10.5).
+apiVersion: kernelindex.dev/v1alpha1
+kind: WorkloadCase
+metadata:
+  name: bad-digest-workload
+spec:
+  operationSpecDigest: md5:abc123
+  axes: { tokens: 2048 }
+  tensors:
+    input:
+      shape: [2048, 4096]
+      dtype: bf16
+  correctness:
+    comparator: elementwise_close

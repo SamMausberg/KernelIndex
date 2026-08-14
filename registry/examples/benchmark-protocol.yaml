@@ -1,0 +1,27 @@
+# Illustrative example manifest. Fictional; not real benchmark evidence.
+apiVersion: kernelindex.dev/v1alpha1
+kind: BenchmarkProtocol
+metadata:
+  name: example-fixed-clock-median
+  title: Example fixed-clock median-latency protocol
+spec:
+  harness:
+    name: example-harness
+    version: "1.0"
+  measurement:
+    timer: device_events
+    synchronization: device_sync
+    compileIncluded: false
+    warmupIterations: 50
+    samples: 200
+    inputRegeneration: per_sample
+    primaryStatistic: median
+  correctness:
+    reference: fp32 eager reference
+    comparator: elementwise_close
+  devicePolicy:
+    clocksLocked: true
+    persistenceMode: true
+  comparability:
+    family: example_fixed_clock
+    notes: Comparable only inside this example protocol family.

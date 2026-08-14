@@ -1,0 +1,16 @@
+# Invalid: 0.0000005 ms is not an integer nanosecond count (§9.2 step 3).
+apiVersion: kernelindex.dev/v1alpha1
+kind: BenchmarkRun
+metadata:
+  name: ambiguous-duration-run
+spec:
+  implementationDigest: sha256:4444444444444444444444444444444444444444444444444444444444444444
+  workloadDigest: sha256:1111111111111111111111111111111111111111111111111111111111111111
+  protocolDigest: sha256:2222222222222222222222222222222222222222222222222222222222222222
+  environmentDigest: sha256:3333333333333333333333333333333333333333333333333333333333333333
+  status: passed
+  timing:
+    primaryStatistic: median
+    latencyNs:
+      median: 0.0000005 ms
+  observedAt: 2026-08-01T12:00:00Z

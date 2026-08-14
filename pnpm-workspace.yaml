@@ -3,5 +3,8 @@ packages:
   - "packages/*"
 # Reviewed lifecycle-script exceptions (design Section 27.3): sharp is Next.js's
 # image-optimization dependency; its postinstall links prebuilt libvips binaries.
+# esbuild (via vitest/vite and drizzle-kit) installs its platform binary in
+# postinstall; without it both tools fail at startup.
 allowBuilds:
+  esbuild: true
   sharp: true

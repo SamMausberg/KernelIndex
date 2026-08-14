@@ -1,0 +1,8 @@
+# Invalid: duplicate mapping keys are rejected at parse time (§9.2 step 1).
+apiVersion: kernelindex.dev/v1alpha1
+kind: SoftwareProject
+metadata:
+  name: duplicate-key-project
+spec:
+  name: First Name
+  name: Second Name

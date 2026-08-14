@@ -1,0 +1,23 @@
+# Illustrative example manifest. Fictional; not real benchmark evidence.
+apiVersion: kernelindex.dev/v1alpha1
+kind: ExecutionEnvironment
+metadata:
+  name: example-b200-sxm
+  title: Example NVIDIA B200 SXM environment
+spec:
+  hardware:
+    vendor: nvidia
+    product: NVIDIA B200 SXM
+    architecture: sm_100
+    memoryBytes: 206158430208
+    count: 1
+  software:
+    operatingSystem: Ubuntu 24.04
+    driver: "580.00"
+    cudaToolkit: "13.1"
+    framework:
+      name: pytorch
+      version: "2.9"
+  settings:
+    clocksLocked: true
+    persistenceMode: true

@@ -11,6 +11,7 @@
     "dev": "pnpm --filter @kernelindex/web dev",
     "build": "pnpm --filter @kernelindex/web build",
     "typecheck": "pnpm --filter @kernelindex/web typecheck",
+    "test": "pnpm --filter @kernelindex/web test",
     "lint": "biome check .",
     "format": "biome check --write .",
     "check": "pnpm lint && pnpm typecheck && pnpm build"

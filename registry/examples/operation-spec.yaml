@@ -1,0 +1,37 @@
+# Illustrative example manifest. Fictional; not real benchmark evidence.
+apiVersion: kernelindex.dev/v1alpha1
+kind: OperationSpec
+metadata:
+  name: rmsnorm-h4096
+  title: RMSNorm, hidden size 4096
+  description: Example operation manifest for the RMSNorm family.
+  labels:
+    domain: normalization
+spec:
+  family: rmsnorm
+  axes:
+    tokens: { role: variable, type: integer, minimum: 1 }
+    hidden: { role: constant, type: integer, value: 4096 }
+  inputs:
+    - name: input
+      tensor:
+        shape: [tokens, hidden]
+        dtype: bf16
+        layout: row_major
+    - name: weight
+      tensor:
+        shape: [hidden]
+        dtype: bf16
+        layout: contiguous
+    - name: epsilon
+      scalar: { dtype: fp32 }
+  outputs:
+    - name: output
+      tensor:
+        shape: [tokens, hidden]
+        dtype: bf16
+        layout: row_major
+  semantics:
+    expression: "output = cast_bf16(input * rsqrt(mean(cast_fp32(input)^2, axis=-1) + epsilon) * weight)"
+    mutation: none
+    determinism: deterministic

@@ -1,0 +1,41 @@
+# Illustrative example manifest. Fictional; not real benchmark evidence.
+apiVersion: kernelindex.dev/v1alpha1
+kind: ImplementationRevision
+metadata:
+  name: meridian-rmsnorm
+  title: meridian-rmsnorm (fictional)
+  authors:
+    - github: fictional-author
+  sourceRefs:
+    - url: https://example.invalid/meridian/kernels/tree/b81d40e0b81d40e0b81d40e0b81d40e0b81d40e0
+spec:
+  projectRevision:
+    repository: https://example.invalid/meridian/kernels
+    commit: b81d40e0b81d40e0b81d40e0b81d40e0b81d40e0
+  operation:
+    specDigest: sha256:7a3b25630f0628b21ed74b6adb588d28f7e29191f9038bed6f56ed393deefb5b
+  callable:
+    language: triton
+    path: kernels/rmsnorm.py
+    symbol: rmsnorm
+    interface: pytorch
+  support:
+    hardwareArchitectures: [sm_100]
+    productsTested: [NVIDIA B200 SXM]
+    axes: ["tokens >= 1", "hidden == 4096"]
+    dtypes: [bf16]
+    layouts: [row_major]
+  buildVariants:
+    - name: source
+      install:
+        kind: git
+        repository: https://example.invalid/meridian/kernels
+        commit: b81d40e0b81d40e0b81d40e0b81d40e0b81d40e0
+      requirements:
+        python: ">=3.12,<3.14"
+        torch: ">=2.8,<2.10"
+  licensing:
+    declared: Apache-2.0
+    concluded: Apache-2.0
+    evidence:
+      path: LICENSE

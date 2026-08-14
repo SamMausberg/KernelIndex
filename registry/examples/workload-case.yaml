@@ -1,0 +1,37 @@
+# Illustrative example manifest. Fictional; not real benchmark evidence.
+apiVersion: kernelindex.dev/v1alpha1
+kind: WorkloadCase
+metadata:
+  name: rmsnorm-h4096-tokens-2048
+  title: RMSNorm h4096, tokens 2048
+spec:
+  operationSpecDigest: sha256:7a3b25630f0628b21ed74b6adb588d28f7e29191f9038bed6f56ed393deefb5b
+  axes: { tokens: 2048, hidden: 4096 }
+  tensors:
+    input:
+      shape: [2048, 4096]
+      dtype: bf16
+      strides: [4096, 1]
+      alignmentBytes: 16
+      data:
+        generator: normal
+        seed: 230485
+        parameters: { mean: 0.0, stddev: 1.0 }
+    weight:
+      shape: [4096]
+      dtype: bf16
+      strides: [1]
+      alignmentBytes: 16
+      data:
+        generator: normal
+        seed: 230486
+        parameters: { mean: 1.0, stddev: 0.1 }
+  scalars:
+    epsilon: { dtype: fp32, value: 0.000001 }
+  correctness:
+    comparator: elementwise_close
+    maxAbsoluteError: 0.01
+    maxRelativeError: 0.01
+    requiredMatchedRatio: 0.99
+    nanPolicy: reject
+    infinityPolicy: exact_match

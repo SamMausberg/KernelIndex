@@ -1,0 +1,13 @@
+# Illustrative example manifest. Fictional; not real benchmark evidence.
+apiVersion: kernelindex.dev/v1alpha1
+kind: SoftwareProject
+metadata:
+  name: meridian-kernels
+  title: Meridian Kernels (fictional)
+  description: Example project manifest for a fictional Triton kernel collection.
+spec:
+  name: Meridian Kernels
+  repository: https://example.invalid/meridian/kernels
+  host:
+    kind: other
+    id: example.invalid/meridian/kernels

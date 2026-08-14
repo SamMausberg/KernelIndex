@@ -1,0 +1,8 @@
+# Invalid: strict schemas reject unknown fields (§9.1).
+apiVersion: kernelindex.dev/v1alpha1
+kind: SoftwareProject
+metadata:
+  name: unknown-field-project
+spec:
+  name: Unknown Field Project
+  popularity: 9001
