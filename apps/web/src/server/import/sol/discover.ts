@@ -33,8 +33,10 @@ import {
 export const DEFAULT_KERNELS = [
   "001_fused_add_rmsnorm_h2048",
   "002_fused_add_rmsnorm_h4096",
+  "003_fused_add_rmsnorm_h7168",
   "069_rms_norm",
   "012_gqa_paged_decode_h32_kv4_d128_ps1",
+  "013_gqa_paged_decode_h32_kv8_d128_ps1",
   "018_mla_paged_decode_h16_ckv512_kpe64_ps1",
   "014_gqa_paged_prefill_causal_h32_kv4_d128_ps1",
   "009_gemm_n5120_k2048",
