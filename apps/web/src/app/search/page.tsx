@@ -1,12 +1,19 @@
 import type { Metadata } from "next"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
 import { SiteHeader } from "@/components/site-header"
-import { SearchResults } from "@/features/search/results"
+import { type ResultMode, SearchResults } from "@/features/search/results"
 import { searchCatalog } from "@/lib/catalog"
 
 export const metadata: Metadata = { title: "Search" }
 
-type Params = { q?: string; verified?: string; deployable?: string }
+type Params = {
+  q?: string
+  view?: string
+  verified?: string
+  deployable?: string
+}
+
+const MODES = new Set(["exact", "compatible", "supported", "reported"])
 
 export default async function SearchPage({
   searchParams,
@@ -18,11 +25,15 @@ export default async function SearchPage({
   const model = await searchCatalog({ query })
   return (
     <>
-      <SiteHeader query={query} />
+      <SiteHeader active="search" />
       {model.illustrative && <IllustrativeNotice />}
       <SearchResults
         model={model}
         filters={{
+          view:
+            params.view && MODES.has(params.view)
+              ? (params.view as ResultMode)
+              : undefined,
           verified: params.verified === "1",
           deployable: params.deployable === "1",
         }}

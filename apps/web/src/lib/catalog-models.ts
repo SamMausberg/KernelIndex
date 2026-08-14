@@ -85,6 +85,8 @@ export type ResultRow = {
   /** Null for supported-but-unmeasured implementations. */
   runId: string | null
   implementation: { name: string; slug: string }
+  /** Verified install command; null renders as "no verified install recipe". */
+  install: { kind: string; command: string } | null
   project: { name: string; slug: string }
   /** Short display revision: commit prefix or release version. */
   revision: string | null
@@ -122,6 +124,8 @@ export type CohortContext = {
   comparisonKey: string
   profile: ComparisonProfile
   description: string
+  /** Facts invariant across every row in the cohort (§16.6), shown once. */
+  facts: KeyValue[]
 }
 
 export type SearchInput = { query: string }
@@ -130,6 +134,49 @@ export type SearchInput = { query: string }
 export type HomePageModel = {
   illustrative: boolean
   latest: ResultRow[]
+  /** Corpus size by entity; published runs only. */
+  counts: {
+    operations: number
+    implementations: number
+    runs: number
+    sources: number
+  }
+}
+
+/** One record transition inside a comparison cohort's history. */
+export type RecordEvent = {
+  at: string
+  runId: string
+  implementation: { name: string; slug: string }
+  value: PrimaryMetric
+  /** The record this run beat; null for the cohort's first record. */
+  previousValue: PrimaryMetric | null
+  improvementPct: number | null
+}
+
+/** Current record holder for one comparison cohort (§16.12). */
+export type RecordHolder = {
+  cohortKey: string
+  operation: { name: string; slug: string }
+  workloadSummary: string
+  hardware: string
+  /** Short environment/protocol line, e.g. "CUDA 13.1 · torch 2.9 · sol/v1". */
+  environmentSummary: string
+  current: ResultRow
+  since: string
+  /** Newest first; the first entry is the current record. */
+  history: RecordEvent[]
+}
+
+/**
+ * §16.12: the records ledger, derived from append-only runs. A record exists
+ * only inside one comparison cohort; there is no global fastest kernel.
+ */
+export type RecordsPageModel = {
+  illustrative: boolean
+  hardwareOptions: string[]
+  /** Newest record first. */
+  records: RecordHolder[]
 }
 
 /** §16.6: result groups are semantically separate and never interleaved. */
@@ -138,6 +185,8 @@ export type SearchPageModel = {
   query: string
   /** Plain-language interpretation shown above results. */
   interpretedQuery: string
+  /** Resolved operation, when the query named one. */
+  operation: { name: string; slug: string } | null
   cohort: CohortContext | null
   groups: {
     exact: ResultRow[]

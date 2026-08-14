@@ -4,6 +4,7 @@
 // published run including failed, superseded, and retracted evidence.
 import {
   and,
+  count,
   desc,
   eq,
   ilike,
@@ -17,8 +18,12 @@ import type {
   HomePageModel,
   ImplementationPageModel,
   ImplementationSummary,
+  KeyValue,
   Mismatch,
   OperationPageModel,
+  RecordEvent,
+  RecordHolder,
+  RecordsPageModel,
   ResultRow,
   RunPageModel,
   SearchInput,
@@ -120,9 +125,14 @@ function resultRow(
 ): ResultRow {
   const { run, implementation, project, workload } = joined
   const stored = run.manifest as StoredRunManifest
+  const variant = (implementation.manifest as ImplementationRevisionManifest)
+    .spec.buildVariants?.[0]
   return {
     runId: run.id,
     implementation: { name: implementation.slug, slug: implementation.slug },
+    install: variant?.install.command
+      ? { kind: variant.install.kind, command: variant.install.command }
+      : null,
     project: { name: project.name, slug: project.slug },
     revision: implementation.sourceRevision?.slice(0, 7) ?? null,
     operation,
@@ -264,10 +274,42 @@ function groupRuns(
         description: sourceNative
           ? "Source-native cohort: identical workload, protocol, and environment under the upstream harness. Ordered by primary metric; statistical tie policy arrives with ranking v1."
           : "Identical workload, protocol, environment, and correctness policy. Ordered by primary metric; statistical tie policy arrives with ranking v1.",
+        facts: cohortFacts(primaryCohort[0]),
       }
     : null
 
   return { exact, reported, compatible, cohort }
+}
+
+/** Facts every row in the cohort shares (§16.6) — rendered once, not per row. */
+function cohortFacts(joined: JoinedRun): KeyValue[] {
+  const stored = joined.run.manifest as StoredRunManifest
+  const { hardware, software } = stored.environment.spec
+  const measurement = stored.protocol.spec.measurement
+  const framework = software.framework
+    ? `${software.framework.name} ${software.framework.version}`
+    : null
+  const protocol = [
+    `${stored.protocol.spec.harness.name}${stored.protocol.spec.harness.version ? ` ${stored.protocol.spec.harness.version}` : ""}`,
+    measurement.samples
+      ? `${measurement.primaryStatistic} of ${measurement.samples}`
+      : measurement.primaryStatistic,
+    measurement.compileIncluded === false ? "compile excluded" : null,
+  ]
+    .filter(Boolean)
+    .join(" · ")
+  const workloadManifest = joined.workload.manifest as AnyWorkloadManifest
+  const entries: [string, string | null | undefined][] = [
+    ["GPU", hardware.product],
+    ["Workload", workloadLabel(workloadManifest, joined.workload.dtypes)],
+    ["CUDA", software.cudaToolkit],
+    ["Driver", software.driver],
+    ["Framework", framework],
+    ["Protocol", protocol],
+  ]
+  return entries
+    .filter((entry): entry is [string, string] => Boolean(entry[1]))
+    .map(([key, value]) => ({ key, value }))
 }
 
 const escapeLike = (token: string) => token.replaceAll(/[\\%_]/g, "\\$&")
@@ -392,11 +434,148 @@ export async function getHomePage(): Promise<HomePageModel> {
     )
     .orderBy(desc(schema.benchmarkRuns.observedAt))
     .limit(8)
+  const database = db()
+  const [operations, implementations, runs, sources] = await Promise.all([
+    database.select({ n: count() }).from(schema.operations),
+    database.select({ n: count() }).from(schema.implementations),
+    database
+      .select({ n: count() })
+      .from(schema.benchmarkRuns)
+      .where(isNotNull(schema.benchmarkRuns.publishedAt)),
+    database.select({ n: count() }).from(schema.sources),
+  ])
   return {
     illustrative: pageIllustrative(rows),
     latest: rows.map((j) =>
       resultRow(j, { name: j.operation.name, slug: j.operation.slug }),
     ),
+    counts: {
+      operations: operations[0].n,
+      implementations: implementations[0].n,
+      runs: runs[0].n,
+      sources: sources[0].n,
+    },
+  }
+}
+
+/**
+ * §16.12: derive the record ledger from append-only runs. Within one
+ * comparison cohort, the record sequence is the running minimum of the
+ * primary metric in observation order; nothing is stored, so corrections
+ * and retractions automatically recompute history.
+ */
+export async function getRecordsPage(): Promise<RecordsPageModel> {
+  const rows = await db()
+    .select({
+      run: schema.benchmarkRuns,
+      implementation: schema.implementations,
+      project: schema.projects,
+      workload: schema.workloads,
+      source: schema.sources,
+      operation: schema.operations,
+    })
+    .from(schema.benchmarkRuns)
+    .innerJoin(
+      schema.implementations,
+      eq(schema.benchmarkRuns.implementationId, schema.implementations.id),
+    )
+    .innerJoin(
+      schema.projects,
+      eq(schema.implementations.projectId, schema.projects.id),
+    )
+    .innerJoin(
+      schema.workloads,
+      eq(schema.benchmarkRuns.workloadId, schema.workloads.id),
+    )
+    .innerJoin(
+      schema.operations,
+      eq(schema.workloads.operationId, schema.operations.id),
+    )
+    .innerJoin(
+      schema.sources,
+      eq(schema.benchmarkRuns.sourceId, schema.sources.id),
+    )
+    .where(
+      and(
+        eq(schema.benchmarkRuns.status, "passed"),
+        isNotNull(schema.benchmarkRuns.publishedAt),
+        isNotNull(schema.benchmarkRuns.primaryValue),
+        isNull(schema.benchmarkRuns.retractedAt),
+        isNull(schema.benchmarkRuns.supersedesId),
+      ),
+    )
+    .orderBy(schema.benchmarkRuns.observedAt)
+
+  const byCohort = new Map<string, typeof rows>()
+  for (const row of rows) {
+    byCohort.set(row.run.comparisonKey, [
+      ...(byCohort.get(row.run.comparisonKey) ?? []),
+      row,
+    ])
+  }
+
+  const records: RecordHolder[] = []
+  const holderRows: (typeof rows)[number][] = []
+  for (const [cohortKey, cohortRows] of byCohort) {
+    const events: RecordEvent[] = []
+    let bestRow: (typeof rows)[number] | null = null
+    for (const row of cohortRows) {
+      const value = row.run.primaryValue as number
+      if (bestRow !== null && value >= (bestRow.run.primaryValue as number))
+        continue
+      const operation = {
+        name: row.operation.name,
+        slug: row.operation.slug,
+      }
+      const previous = bestRow ? resultRow(bestRow, operation).primary : null
+      const current = resultRow(row, operation)
+      events.unshift({
+        at: row.run.observedAt.toISOString(),
+        runId: row.run.id,
+        implementation: current.implementation,
+        value: current.primary as RecordEvent["value"],
+        previousValue: previous,
+        improvementPct: previous
+          ? ((previous.value - value) / previous.value) * 100
+          : null,
+      })
+      bestRow = row
+    }
+    if (bestRow === null) continue
+    holderRows.push(bestRow)
+    const stored = bestRow.run.manifest as StoredRunManifest
+    const operation = {
+      name: bestRow.operation.name,
+      slug: bestRow.operation.slug,
+    }
+    const holderRow = resultRow(bestRow, operation)
+    records.push({
+      cohortKey,
+      operation,
+      workloadSummary: holderRow.workloadSummary,
+      hardware: bestRow.run.hardwareModel,
+      environmentSummary: [
+        stored.environment.spec.software.cudaToolkit
+          ? `CUDA ${stored.environment.spec.software.cudaToolkit}`
+          : null,
+        stored.environment.spec.software.framework
+          ? `${stored.environment.spec.software.framework.name} ${stored.environment.spec.software.framework.version}`
+          : null,
+        stored.protocol.spec.harness.name,
+      ]
+        .filter(Boolean)
+        .join(" · "),
+      current: holderRow,
+      since: events[0].at,
+      history: events,
+    })
+  }
+
+  records.sort((a, b) => b.since.localeCompare(a.since))
+  return {
+    illustrative: pageIllustrative(holderRows),
+    hardwareOptions: [...new Set(records.map((holder) => holder.hardware))],
+    records,
   }
 }
 
@@ -409,6 +588,7 @@ export async function searchCatalog(
     query,
     interpretedQuery:
       query === "" ? "Empty query" : `Operation search for “${query}”`,
+    operation: null,
     cohort: null,
     groups: {
       exact: [],
@@ -451,6 +631,7 @@ export async function searchCatalog(
     ...base,
     illustrative: pageIllustrative(joined),
     interpretedQuery: `Operation ${operation.name}`,
+    operation: { name: operation.name, slug: operation.slug },
     cohort: groups.cohort,
     groups: {
       exact: groups.exact,
@@ -491,12 +672,16 @@ async function supportedUnmeasuredRows(
     .filter((row) => !measured.has(row.implementation.id))
     .map(({ implementation, project }) => {
       const manifest = implementation.manifest as ImplementationRevisionManifest
+      const variant = manifest.spec.buildVariants?.[0]
       return {
         runId: null,
         implementation: {
           name: implementation.slug,
           slug: implementation.slug,
         },
+        install: variant?.install.command
+          ? { kind: variant.install.kind, command: variant.install.command }
+          : null,
         project: { name: project.name, slug: project.slug },
         revision: implementation.sourceRevision?.slice(0, 7) ?? null,
         operation: { name: operation.name, slug: operation.slug },

@@ -9,6 +9,7 @@ import {
   getHomePage,
   getImplementationPage,
   getOperationPage,
+  getRecordsPage,
   getRunPage,
   searchCatalog,
 } from "./reads.ts"
@@ -36,6 +37,24 @@ describe.skipIf(!url)("postgres catalog reads", () => {
     expect(first.runId).toBeTruthy()
     expect(first.operation.slug).toBeTruthy()
     expect(first.primary?.unit).toBe("ns")
+  })
+
+  it("getRecordsPage derives per-cohort record history from runs", async () => {
+    const model = await getRecordsPage()
+    expect(model.records.length).toBeGreaterThanOrEqual(1)
+    for (const holder of model.records) {
+      // The newest event is the current record.
+      expect(holder.history[0].runId).toBe(holder.current.runId)
+      expect(holder.since).toBe(holder.history[0].at)
+      // Records only ever improve: newer events are strictly faster.
+      for (let i = 0; i + 1 < holder.history.length; i++) {
+        expect(holder.history[i].value.value).toBeLessThan(
+          holder.history[i + 1].value.value,
+        )
+      }
+      // The first event has no predecessor; later events always do.
+      expect(holder.history.at(-1)?.previousValue).toBeNull()
+    }
   })
 
   it("searchCatalog finds the operation by alias and labels it illustrative", async () => {

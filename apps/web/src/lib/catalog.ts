@@ -1,11 +1,13 @@
-// The fixture/read seam (§27.5). Pages call these five functions and never
+// The fixture/read seam (§27.5). Pages call these six functions and never
 // know which backend produced the model. `CATALOG_BACKEND` selects the
 // implementation: "fixtures" (default, deterministic, visibly illustrative)
 // or "postgres" (real published records).
+import { cache } from "react"
 import type {
   HomePageModel,
   ImplementationPageModel,
   OperationPageModel,
+  RecordsPageModel,
   RunPageModel,
   SearchInput,
   SearchPageModel,
@@ -15,6 +17,7 @@ export type * from "./catalog-models"
 
 type CatalogReads = {
   getHomePage(): Promise<HomePageModel>
+  getRecordsPage(): Promise<RecordsPageModel>
   searchCatalog(input: SearchInput): Promise<SearchPageModel>
   getOperationPage(
     slug: string,
@@ -34,29 +37,38 @@ async function reads(): Promise<CatalogReads> {
   return await import("@/data/fixtures/catalog")
 }
 
-export async function getHomePage(): Promise<HomePageModel> {
+// React request-level cache: a page and its generateMetadata share one read.
+export const getHomePage = cache(async (): Promise<HomePageModel> => {
   return (await reads()).getHomePage()
-}
+})
 
-export async function searchCatalog(
-  input: SearchInput,
-): Promise<SearchPageModel> {
-  return (await reads()).searchCatalog(input)
-}
+export const getRecordsPage = cache(async (): Promise<RecordsPageModel> => {
+  return (await reads()).getRecordsPage()
+})
 
-export async function getOperationPage(
-  slug: string,
-  options?: { workload?: string },
-): Promise<OperationPageModel | null> {
-  return (await reads()).getOperationPage(slug, options)
-}
+export const searchCatalog = cache(
+  async (input: SearchInput): Promise<SearchPageModel> => {
+    return (await reads()).searchCatalog(input)
+  },
+)
 
-export async function getImplementationPage(
-  slug: string,
-): Promise<ImplementationPageModel | null> {
-  return (await reads()).getImplementationPage(slug)
-}
+export const getOperationPage = cache(
+  async (
+    slug: string,
+    options?: { workload?: string },
+  ): Promise<OperationPageModel | null> => {
+    return (await reads()).getOperationPage(slug, options)
+  },
+)
 
-export async function getRunPage(id: string): Promise<RunPageModel | null> {
-  return (await reads()).getRunPage(id)
-}
+export const getImplementationPage = cache(
+  async (slug: string): Promise<ImplementationPageModel | null> => {
+    return (await reads()).getImplementationPage(slug)
+  },
+)
+
+export const getRunPage = cache(
+  async (id: string): Promise<RunPageModel | null> => {
+    return (await reads()).getRunPage(id)
+  },
+)

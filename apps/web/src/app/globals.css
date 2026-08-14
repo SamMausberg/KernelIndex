@@ -19,11 +19,15 @@
   --color-edge: #2a2a2a;
   --color-edge-hover: #3a3a3a;
 
-  /* Text scale, brightest to quietest. */
+  /*
+   * Text scale, brightest to quietest — four deliberate levels (§16.2):
+   * fg = primary, muted = secondary, subtle = metadata, faint = tertiary.
+   * ghost is for decorative glyphs (slashes, arrows) only.
+   */
   --color-fg: #f2f2f1;
   --color-muted: #b4b4b1;
-  --color-subtle: #8e8e8b;
-  --color-faint: #6a6a67;
+  --color-subtle: #a6a6a6;
+  --color-faint: #7a7a7e;
   --color-ghost: #3d3d3f;
 
   /* One cool accent; status colors appear sparingly and always with text. */
@@ -83,6 +87,7 @@
   body {
     @apply bg-canvas font-sans text-fg antialiased;
     line-height: 1.5;
+    font-variant-numeric: tabular-nums;
   }
   a {
     @apply text-accent no-underline;
@@ -119,5 +124,19 @@
       /* biome-ignore lint/complexity/noImportantStyles: must beat transition utilities */
       transition-duration: 0.01ms !important;
     }
+  }
+}
+
+@layer components {
+  /*
+   * Page grid (§16.3): navigation and data surfaces share one wide shell;
+   * prose uses the narrower reading shell. The homepage hero intentionally
+   * uses its own rhythm.
+   */
+  .shell {
+    @apply mx-auto w-full max-w-[1420px] px-7;
+  }
+  .shell-narrow {
+    @apply mx-auto w-full max-w-[880px] px-7;
   }
 }

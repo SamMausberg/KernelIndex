@@ -10,6 +10,9 @@ import type {
   MatchQuality,
   Mismatch,
   OperationPageModel,
+  PrimaryMetric,
+  RecordHolder,
+  RecordsPageModel,
   ResultRow,
   RunPageModel,
   RunStatus,
@@ -34,6 +37,17 @@ const COHORT_2048 = {
   profile: "strict_exact" as const,
   description:
     "RMSNorm, hidden 4096, tokens 2048, bf16 row-major on NVIDIA B200 SXM under the illustrative fixed protocol",
+  facts: [
+    { key: "GPU", value: "NVIDIA B200 SXM 180GB" },
+    { key: "Workload", value: "tokens = 2048 · hidden = 4096 · bf16" },
+    { key: "Layout", value: "row-major · aligned 16" },
+    { key: "CUDA", value: "13.1 · driver 590.24" },
+    { key: "Framework", value: "PyTorch 2.9.0" },
+    {
+      key: "Protocol",
+      value: "ki-fixed-clock v1 · median of 200 · compile excluded",
+    },
+  ],
 }
 
 const WORKLOADS = {
@@ -337,6 +351,9 @@ function rowFromRun(r: FxRun): ResultRow {
   return {
     runId: r.id,
     implementation: { name: r.impl.name, slug: r.impl.slug },
+    install: r.installable
+      ? { kind: "pip", command: `pip install ${r.project.slug}` }
+      : null,
     project: r.project,
     revision: r.impl.revision,
     operation: { name: "RMSNorm, hidden 4096", slug: "rmsnorm-h4096" },
@@ -375,6 +392,7 @@ const SUPPORTED_UNMEASURED: ResultRow = {
     name: "atlas-fused-residual-rmsnorm-vectorized-bf16-persistent-warp-specialized",
     slug: "atlas-fused-residual-rmsnorm",
   },
+  install: { kind: "pip", command: "pip install atlas-primitives" },
   project: { name: "Atlas Primitives (fictional)", slug: "atlas-primitives" },
   revision: "v2.1.0",
   operation: { name: "RMSNorm, hidden 4096", slug: "rmsnorm-h4096" },
@@ -403,7 +421,98 @@ export async function getHomePage(): Promise<HomePageModel> {
   const latest = [...RANKED]
     .sort((a, b) => b.lastTestedAt.localeCompare(a.lastTestedAt))
     .map(rowFromRun)
-  return { illustrative: ILLUSTRATIVE, latest }
+  return {
+    illustrative: ILLUSTRATIVE,
+    latest,
+    counts: {
+      operations: 2,
+      implementations: new Set(RUNS.map((r) => r.impl.slug)).size + 1,
+      runs: RUNS.length,
+      sources: 1,
+    },
+  }
+}
+
+/** Metric helper for handcrafted record histories. */
+function latencyMetric(
+  value: number,
+  samples: number | null,
+  ci: [number, number] | null,
+): PrimaryMetric {
+  return {
+    metric: "latency",
+    unit: "ns",
+    statistic: "median",
+    value,
+    sampleCount: samples,
+    uncertainty: ci ? { low: ci[0], high: ci[1] } : null,
+  }
+}
+
+// Record histories are handcrafted to exercise multi-event and first-record
+// states; event dates are fictional like everything else in this file.
+export async function getRecordsPage(): Promise<RecordsPageModel> {
+  const byId = new Map(RUNS.map((r) => [r.id, r]))
+  const run = (id: string) => byId.get(id) as FxRun
+  const holder2048: RecordHolder = {
+    cohortKey: COHORT_2048.comparisonKey,
+    operation: { name: "RMSNorm, hidden 4096", slug: "rmsnorm-h4096" },
+    workloadSummary: WORKLOADS["wl-2048"].summary,
+    hardware: B200.model,
+    environmentSummary: "CUDA 13.1 · PyTorch 2.9.0 · ki-fixed-clock v1",
+    current: rowFromRun(run("run-fx-0001")),
+    since: FRESH,
+    history: [
+      {
+        at: FRESH,
+        runId: "run-fx-0001",
+        implementation: { name: "ionflux-rmsnorm", slug: "ionflux-rmsnorm" },
+        value: latencyMetric(7810, 200, [7788, 7841]),
+        previousValue: latencyMetric(8120, 200, [8095, 8151]),
+        improvementPct: 3.8,
+      },
+      {
+        at: "2026-07-02T12:00:00Z",
+        runId: "run-fx-0002",
+        implementation: { name: "meridian-rmsnorm", slug: "meridian-rmsnorm" },
+        value: latencyMetric(8120, 200, [8095, 8151]),
+        previousValue: latencyMetric(8410, 200, [8380, 8446]),
+        improvementPct: 3.4,
+      },
+      {
+        at: "2026-05-02T12:00:00Z",
+        runId: "run-fx-0009",
+        implementation: { name: "meridian-rmsnorm", slug: "meridian-rmsnorm" },
+        value: latencyMetric(8410, 200, [8380, 8446]),
+        previousValue: null,
+        improvementPct: null,
+      },
+    ],
+  }
+  const holder1024: RecordHolder = {
+    cohortKey: digest("cohort:rmsnorm-h4096:tokens-1024"),
+    operation: { name: "RMSNorm, hidden 4096", slug: "rmsnorm-h4096" },
+    workloadSummary: WORKLOADS["wl-1024"].summary,
+    hardware: B200.model,
+    environmentSummary: "CUDA 13.1 · PyTorch 2.9.0 · ki-fixed-clock v1",
+    current: rowFromRun(run("run-fx-0005")),
+    since: FRESH,
+    history: [
+      {
+        at: FRESH,
+        runId: "run-fx-0005",
+        implementation: { name: "meridian-rmsnorm", slug: "meridian-rmsnorm" },
+        value: latencyMetric(4090, 200, [4072, 4111]),
+        previousValue: null,
+        improvementPct: null,
+      },
+    ],
+  }
+  return {
+    illustrative: ILLUSTRATIVE,
+    hardwareOptions: [B200.model],
+    records: [holder2048, holder1024],
+  }
 }
 
 export async function searchCatalog(
@@ -421,6 +530,7 @@ export async function searchCatalog(
       query,
       interpretedQuery:
         query === "" ? "Empty query" : `No recognized operation in “${query}”`,
+      operation: null,
       cohort: null,
       groups: {
         exact: [],
@@ -442,6 +552,7 @@ export async function searchCatalog(
     query,
     interpretedQuery:
       "Operation RMSNorm · hidden 4096 · tokens 2048 · bf16 · NVIDIA B200 SXM · PyTorch",
+    operation: { name: "RMSNorm, hidden 4096", slug: "rmsnorm-h4096" },
     cohort: COHORT_2048,
     groups: {
       exact: RANKED.map(rowFromRun),
