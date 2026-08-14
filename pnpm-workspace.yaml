@@ -1,0 +1,7 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+# Reviewed lifecycle-script exceptions (design Section 27.3): sharp is Next.js's
+# image-optimization dependency; its postinstall links prebuilt libvips binaries.
+allowBuilds:
+  sharp: true

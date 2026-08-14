@@ -1,0 +1,21 @@
+{
+  "name": "kernelindex",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.21.0",
+  "engines": {
+    "node": ">=24.19.0 <25",
+    "pnpm": "11.21.0"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @kernelindex/web dev",
+    "build": "pnpm --filter @kernelindex/web build",
+    "typecheck": "pnpm --filter @kernelindex/web typecheck",
+    "lint": "biome check .",
+    "format": "biome check --write .",
+    "check": "pnpm lint && pnpm typecheck && pnpm build"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.8"
+  }
+}
