@@ -1,0 +1,185 @@
+// Manifest-to-display projection shared by the PostgreSQL catalog reads.
+// Components receive domain-ready display data; they never see table rows or
+// raw manifests (§16.15).
+import type {
+  AxisSpec,
+  EvidenceLevel,
+  KeyValue,
+  TensorBinding,
+} from "../../lib/catalog-models.ts"
+import type {
+  BenchmarkProtocolManifest,
+  BenchmarkRunManifest,
+  ExecutionEnvironmentManifest,
+  OperationSpecManifest,
+  WorkloadCaseManifest,
+} from "../../schemas/kinds.ts"
+import type * as schema from "../db/schema.ts"
+import { evidenceLevel } from "../policy/trust.ts"
+
+export type RunRow = typeof schema.benchmarkRuns.$inferSelect
+
+/** Stored run manifest shape: run plus its protocol/environment snapshots. */
+export type StoredRunManifest = {
+  run: BenchmarkRunManifest
+  protocol: BenchmarkProtocolManifest
+  environment: ExecutionEnvironmentManifest
+}
+
+export const STALE_AFTER_DAYS = 180
+
+export function isStale(observedAt: Date): boolean {
+  return (
+    Date.now() - observedAt.getTime() > STALE_AFTER_DAYS * 24 * 60 * 60 * 1000
+  )
+}
+
+export function runEvidence(run: RunRow): EvidenceLevel {
+  const stored = run.manifest as StoredRunManifest
+  const hasRawEvidence =
+    stored.run.spec.timing?.rawSamples !== undefined ||
+    stored.run.spec.evidence?.rawSamples !== undefined ||
+    stored.run.spec.evidence?.logs !== undefined
+  return evidenceLevel({
+    reproducedByKernelindex: run.reproducedByKernelindex,
+    independentReplicationCount: run.independentReplicationCount,
+    sourceAvailable: run.sourceAvailable,
+    installable: run.installable,
+    hasRawEvidence,
+    identityComplete: true,
+  })
+}
+
+const skip = (value: unknown): value is undefined | null =>
+  value === undefined || value === null
+const kv = (entries: [string, unknown][]): KeyValue[] =>
+  entries
+    .filter(([, value]) => !skip(value))
+    .map(([key, value]) => ({ key, value: String(value) }))
+
+export function protocolKeyValues(
+  protocol: BenchmarkProtocolManifest,
+): KeyValue[] {
+  const m = protocol.spec.measurement
+  return kv([
+    [
+      "harness",
+      `${protocol.spec.harness.name}${protocol.spec.harness.version ? ` ${protocol.spec.harness.version}` : ""}`,
+    ],
+    ["timer", m.timer],
+    ["synchronization", m.synchronization],
+    ["compileIncluded", m.compileIncluded],
+    ["warmupIterations", m.warmupIterations],
+    ["measuredIterations", m.measuredIterations],
+    ["samples", m.samples],
+    ["inputRegeneration", m.inputRegeneration],
+    ["primaryStatistic", m.primaryStatistic],
+    ["outlierPolicy", m.outlierPolicy],
+    ["correctnessReference", protocol.spec.correctness?.reference],
+    ["comparabilityFamily", protocol.spec.comparability?.family],
+  ])
+}
+
+export function environmentKeyValues(
+  environment: ExecutionEnvironmentManifest,
+): KeyValue[] {
+  const { hardware, software, settings } = environment.spec
+  return kv([
+    ["gpu", `${hardware.product} (${hardware.architecture})`],
+    ["gpuCount", hardware.count],
+    ["memoryBytes", hardware.memoryBytes],
+    ["operatingSystem", software.operatingSystem],
+    ["driver", software.driver],
+    ["cudaToolkit", software.cudaToolkit],
+    [
+      "framework",
+      software.framework
+        ? `${software.framework.name} ${software.framework.version}`
+        : undefined,
+    ],
+    ["compiler", software.compiler],
+    ["clocksLocked", settings?.clocksLocked],
+    ["persistenceMode", settings?.persistenceMode],
+    ["imageDigest", environment.spec.imageDigest],
+  ])
+}
+
+export function workloadTensorKeyValues(
+  workload: WorkloadCaseManifest,
+): KeyValue[] {
+  return Object.entries(workload.spec.tensors).map(([name, tensor]) => ({
+    key: name,
+    value: [
+      tensor.dtype,
+      `[${tensor.shape.join(", ")}]`,
+      tensor.strides ? `strides [${tensor.strides.join(", ")}]` : null,
+      tensor.alignmentBytes ? `align ${tensor.alignmentBytes}` : null,
+    ]
+      .filter(Boolean)
+      .join(" "),
+  }))
+}
+
+export function toleranceKeyValues(workload: WorkloadCaseManifest): KeyValue[] {
+  const c = workload.spec.correctness
+  return kv([
+    ["comparator", c.comparator],
+    ["maxAbsoluteError", c.maxAbsoluteError],
+    ["maxRelativeError", c.maxRelativeError],
+    ["requiredMatchedRatio", c.requiredMatchedRatio],
+    ["nanPolicy", c.nanPolicy],
+    ["infinityPolicy", c.infinityPolicy],
+  ])
+}
+
+export function toleranceSummary(workload: WorkloadCaseManifest): string {
+  const c = workload.spec.correctness
+  const parts: string[] = []
+  if (c.maxAbsoluteError !== undefined)
+    parts.push(`abs ≤ ${c.maxAbsoluteError}`)
+  if (c.maxRelativeError !== undefined)
+    parts.push(`rel ≤ ${c.maxRelativeError}`)
+  if (c.requiredMatchedRatio !== undefined)
+    parts.push(`matched ≥ ${c.requiredMatchedRatio * 100}%`)
+  return parts.length > 0 ? parts.join(", ") : c.comparator
+}
+
+export function workloadLabel(
+  workload: WorkloadCaseManifest,
+  dtypes: string[],
+): string {
+  const axes = Object.entries(workload.spec.axes)
+    .map(([name, value]) => `${name} = ${value}`)
+    .join(" · ")
+  return [axes, dtypes.join("/")].filter(Boolean).join(" · ")
+}
+
+export function operationAxisSpecs(
+  operation: OperationSpecManifest,
+): AxisSpec[] {
+  return Object.entries(operation.spec.axes).map(([name, axis]) => ({
+    name,
+    role: axis.role,
+    value: axis.value ?? null,
+    constraint:
+      axis.minimum !== undefined || axis.maximum !== undefined
+        ? [
+            axis.minimum !== undefined ? `${name} >= ${axis.minimum}` : null,
+            axis.maximum !== undefined ? `${name} <= ${axis.maximum}` : null,
+          ]
+            .filter(Boolean)
+            .join(", ")
+        : null,
+  }))
+}
+
+export function operationTensorBindings(
+  args: OperationSpecManifest["spec"]["inputs"],
+): TensorBinding[] {
+  return args.map((argument) => ({
+    name: argument.name,
+    dtype: argument.tensor?.dtype ?? argument.scalar?.dtype ?? "unknown",
+    shape: argument.tensor ? `[${argument.tensor.shape.join(", ")}]` : "scalar",
+    layout: argument.tensor?.layout ?? null,
+  }))
+}
