@@ -3946,6 +3946,13 @@ This sequence is optimized for a solo founder using strong AI coding assistance.
 
 **Gate:** representative engineer queries return the correct group and never promote a near match as exact. Search p95 meets the initial target on representative data.
 
+**Week 3 implementation notes (2026-08-14).** Shipped as specified with these reality adjustments:
+
+- One shared deterministic parser (`lib/search-query.ts`) serves both catalog backends and the UI, so fixture mode interprets the same grammar as PostgreSQL mode. Bare tokens (`B200`, `bf16`, `[2048,4096]`, `tokens=2048`) become facets deterministically; unknown filters return correction hints; range operators are rejected explicitly rather than half-supported.
+- Operation resolution runs as one explainable SQL query: whole-phrase slug/alias/family exact tiers (400/300/200) above weighted FTS rank and per-term trigram word similarity, hyphen/underscore-insensitive, acceptance threshold below which the query returns guidance plus near-miss suggestions. A single-token alias hit deliberately does not outrank full term coverage of a longer query.
+- Facet semantics split per §11.4 step 10: workload/hardware/environment facets decide exact versus compatible (mismatch vectors via `catalog/match.ts`); trust/license/source/installable are policy filters that hide rows inside a group and never reclassify evidence.
+- A `workload.scope` mismatch marks suite aggregates answering exact-case requests (ADR 0002 continuation).
+
 ### 22.5 Week 4: comparison integrity and useful corpus
 
 **Build:**
@@ -3959,6 +3966,14 @@ This sequence is optimized for a solo founder using strong AI coding assistance.
 - Playwright coverage of the critical public journey.
 
 **Gate:** every displayed rank is reproducible from stored facts and policy. Incomparable runs never receive a synthetic winner.
+
+**Week 4 implementation notes (2026-08-14).** Shipped as specified with these reality adjustments:
+
+- `ranking-v1` (`policy/ranking.ts`) is the frozen versioned policy: eligibility returns structured reason codes (`STATUS_*`, `RETRACTED`, `SUPERSEDED`, `MISSING_PRIMARY_METRIC`); dense ranks; without paired samples the conservative tie rule is overlap of declared confidence intervals (equal values tie; source-native cohorts tie only on equal values per §11.5 rule 8). Tie chains are non-transitive; display order inside a tie is trust, recency, stable ID. Deployability is a separate reason-vector policy (`deployability-v1`).
+- Ranked-surface visibility now excludes superseded runs via an anti-join on `supersedes_id` (the previous filter kept the superseded original instead of the correction).
+- `record_events` (§11.10, migration 0002) is appended inside the publication transaction for touched cohorts; `db:sync-records` backfills catalogs published before the table existed. The ledger reads events; the current holder is derived only from still-eligible runs. Retraction-cause events arrive with the Week 6 correction write path.
+- `/compare` accepts up to eight runs by ID or digest, aligns cohort-identity fields (material) against context fields, names the first material mismatch, and ranks only when all selections share one cohort and are eligible. Markdown/JSON exports are copy actions rendered from the same model.
+- Corpus: 48 real SOL-ExecBench records across 12 reviewed kernels (norm, GQA/MLA attention, GEMM, RoPE, SwiGLU families; top 4 correct submissions each) plus the one labeled illustrative example pending the §22.15 gold record. Playwright covers search-to-evidence, no-result/parse-error, retracted/superseded states, and comparable/incomparable compare in CI against fixtures.
 
 ### 22.6 Week 5: public API and CLI preview
 
