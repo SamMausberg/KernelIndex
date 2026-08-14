@@ -3931,6 +3931,8 @@ This sequence is optimized for a solo founder using strong AI coding assistance.
 - Operation specs gained `determinism: unspecified` for sources that do not state determinism; imports never claim more than the source does.
 - Benchmark protocols allow unknown methodology fields to stay absent (e.g. `compileIncluded`), because guessing methodology is worse than stating it is unpublished.
 
+**Week 0–2 closure (2026-08-14).** Deployed: Vercel project `kernel-index` (root directory `apps/web`, Node 24.x) serving `kernelindex.com` from Neon PostgreSQL with `CATALOG_BACKEND=postgres` set explicitly; the environment boundary now hard-fails a production deployment that does not select postgres, satisfying the §22.3 gate. Previews use fixtures without database credentials (§27.7). The published catalog was replicated to production from the local append-only catalog after the SOL leaderboard API began returning 500s; identical rows, digests, and snapshots. The preview-only design lab (§16.19) exists at `/dev/design-lab` and returns 404 in production. The single open Week 2 item is the §22.15 gold record, blocked on the founder's own SOL trace output (`import:sol --snapshot`).
+
 ### 22.4 Week 3: query parsing, search, and matching
 
 **Build:**
