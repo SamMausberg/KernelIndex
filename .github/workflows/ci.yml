@@ -85,3 +85,36 @@ jobs:
 
       - name: Test
         run: pnpm test
+
+  e2e:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.21.0
+          run_install: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browser
+        run: pnpm --filter @kernelindex/web exec playwright install --with-deps chromium
+
+      - name: Build
+        run: pnpm build
+
+      - name: Critical journeys
+        run: pnpm --filter @kernelindex/web test:e2e

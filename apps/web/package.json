@@ -16,7 +16,8 @@
     "db:migrate": "node --env-file-if-exists=.env.local scripts/migrate.ts",
     "db:seed": "node --env-file-if-exists=.env.local scripts/seed.ts",
     "db:sync-records": "node --env-file-if-exists=.env.local scripts/sync-record-events.ts",
-    "import:sol": "node --env-file-if-exists=.env.local scripts/import-sol.ts"
+    "import:sol": "node --env-file-if-exists=.env.local scripts/import-sol.ts",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "canonicalize": "4.0.0",
@@ -32,6 +33,7 @@
     "zod": "4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "1.62.1",
     "@tailwindcss/postcss": "4.3.3",
     "@types/node": "24.13.3",
     "@types/react": "19.2.18",
