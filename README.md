@@ -52,8 +52,8 @@ nothing. Imported results are labeled **Reported** — never "verified" — and
 every record links its workload, protocol, environment, source snapshot, and
 raw source metrics.
 
-`ENGINEERING_DESIGN.md` is the source of truth for product semantics, data
-architecture, and sequencing.
+[`docs/ENGINEERING_DESIGN.md`](docs/ENGINEERING_DESIGN.md) is the source of
+truth for product semantics, data architecture, and sequencing.
 
 ## License
 

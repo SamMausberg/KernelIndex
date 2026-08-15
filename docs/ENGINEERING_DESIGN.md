@@ -405,12 +405,12 @@ KernelIndex/
       tsconfig.json
   docs/
     adr/
+    ENGINEERING_DESIGN.md
   .editorconfig
   .gitattributes
   .gitignore
   .node-version
   AGENTS.md
-  ENGINEERING_DESIGN.md
   LICENSE
   README.md
   biome.json
@@ -4794,7 +4794,6 @@ Day 1:
 .node-version
 .npmrc
 AGENTS.md
-ENGINEERING_DESIGN.md
 LICENSE
 README.md
 biome.json
@@ -4802,6 +4801,7 @@ package.json
 pnpm-lock.yaml
 pnpm-workspace.yaml
 apps/web/
+docs/ENGINEERING_DESIGN.md
 .github/workflows/ci.yml
 ```
 

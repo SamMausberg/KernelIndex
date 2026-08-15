@@ -7,7 +7,7 @@ KernelIndex — the public performance index for GPU software.
 
 ## Source of truth
 
-`ENGINEERING_DESIGN.md` is our primary plan and specification. It is not a
+`docs/ENGINEERING_DESIGN.md` is our primary plan and specification. It is not a
 hard fixed rule: it will change as the codebase evolves, and you can change
 it — when reality diverges from the document, propose the update and keep it
 in sync.
