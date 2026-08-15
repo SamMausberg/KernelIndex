@@ -426,16 +426,7 @@ export async function getHomePage(): Promise<HomePageModel> {
   const latest = [...RANKED]
     .sort((a, b) => b.lastTestedAt.localeCompare(a.lastTestedAt))
     .map(rowFromRun)
-  return {
-    illustrative: ILLUSTRATIVE,
-    latest,
-    counts: {
-      operations: 2,
-      implementations: new Set(RUNS.map((r) => r.impl.slug)).size + 1,
-      runs: RUNS.length,
-      sources: 1,
-    },
-  }
+  return { illustrative: ILLUSTRATIVE, latest }
 }
 
 /** Metric helper for handcrafted record histories. */

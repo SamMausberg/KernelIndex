@@ -6,7 +6,6 @@ import { CopyButton } from "@/components/copy-button"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
 import { KeyValueList } from "@/components/key-value-list"
 import { Section } from "@/components/section"
-import { SiteHeader } from "@/components/site-header"
 import { getRunPage } from "@/lib/catalog"
 import {
   evidenceLabel,
@@ -41,7 +40,6 @@ export default async function RunPage({ params }: Props) {
 
   return (
     <>
-      <SiteHeader />
       {model.illustrative && <IllustrativeNotice />}
       <div className="scan-line" />
       <ContextHeader

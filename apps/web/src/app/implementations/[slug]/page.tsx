@@ -6,7 +6,6 @@ import { CopyButton } from "@/components/copy-button"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
 import { KeyValueList } from "@/components/key-value-list"
 import { Section } from "@/components/section"
-import { SiteHeader } from "@/components/site-header"
 import { ResultRowItem, ResultTableHead } from "@/features/search/result-row"
 import { getImplementationPage } from "@/lib/catalog"
 import { evidenceLabel, formatDateUTC } from "@/lib/format"
@@ -31,7 +30,6 @@ export default async function ImplementationPage({ params }: Props) {
 
   return (
     <>
-      <SiteHeader />
       {model.illustrative && <IllustrativeNotice />}
       <div className="scan-line" />
       <ContextHeader

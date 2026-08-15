@@ -141,13 +141,6 @@ export type BrowseFamily = {
 export type HomePageModel = {
   illustrative: boolean
   latest: ResultRow[]
-  /** Corpus size by entity; published runs only. */
-  counts: {
-    operations: number
-    implementations: number
-    runs: number
-    sources: number
-  }
 }
 
 /** One record transition inside a comparison cohort's history. */

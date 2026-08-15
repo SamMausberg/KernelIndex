@@ -1,6 +1,5 @@
 import type { Metadata } from "next"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
-import { SiteHeader } from "@/components/site-header"
 import { type ResultMode, SearchResults } from "@/features/search/results"
 import { searchCatalog } from "@/lib/catalog"
 
@@ -27,7 +26,6 @@ export default async function SearchPage({
   const page = Number.parseInt(params.page ?? "1", 10)
   return (
     <>
-      <SiteHeader active="search" />
       {model.illustrative && <IllustrativeNotice />}
       <SearchResults
         model={model}

@@ -1,10 +1,8 @@
 import Link from "next/link"
-import { SiteHeader } from "@/components/site-header"
 
 export default function NotFound() {
   return (
     <>
-      <SiteHeader />
       <div className="scan-line" />
       <main className="shell pt-24 pb-32">
         <div className="font-mono text-[10px] tracking-[0.08em] text-faint uppercase">

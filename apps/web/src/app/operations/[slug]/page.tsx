@@ -5,7 +5,6 @@ import { ContextHeader } from "@/components/context-header"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
 import { KeyValueList } from "@/components/key-value-list"
 import { Section } from "@/components/section"
-import { SiteHeader } from "@/components/site-header"
 import { ResultRowItem, ResultTableHead } from "@/features/search/result-row"
 import { getOperationPage } from "@/lib/catalog"
 import { evidenceLabel, formatDateUTC, formatPrimary } from "@/lib/format"
@@ -31,7 +30,6 @@ export default async function OperationPage({ params, searchParams }: Props) {
 
   return (
     <>
-      <SiteHeader />
       {model.illustrative && <IllustrativeNotice />}
       <div className="scan-line" />
       <ContextHeader

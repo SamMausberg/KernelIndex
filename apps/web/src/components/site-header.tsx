@@ -1,28 +1,28 @@
+"use client"
+
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { CommandK } from "./command-k"
 
-type NavKey = "search" | "records" | "docs"
-
-const NAV: { key: NavKey; label: string; href: string }[] = [
-  { key: "search", label: "Search", href: "/search" },
-  { key: "records", label: "Records", href: "/records" },
-  { key: "docs", label: "Docs", href: "/docs" },
+const NAV = [
+  { label: "Search", href: "/search" },
+  { label: "Records", href: "/records" },
+  { label: "Docs", href: "/docs" },
 ]
 
 /**
- * Sticky site header (§16.4). One search model everywhere (§16.6): the
- * homepage hero and the search page's workload field are the primary
- * controls, so the navbar carries only a compact "Search ⌘K" affordance on
- * every other page — never a raw query string. On the homepage the header
- * floats transparent over the hero video instead of sticking.
+ * Sticky site header (§16.4), mounted once in the root layout so it survives
+ * route transitions instead of dropping into every page's loading state. The
+ * active item derives from the pathname. One search model everywhere (§16.6):
+ * the navbar carries only a compact "Search ⌘K" affordance — never a raw
+ * query string. The homepage floats its own transparent variant (`home`)
+ * inside the hero so the illustrative notice can push it down; the layout
+ * instance stands down there.
  */
-export function SiteHeader({
-  active,
-  home,
-}: {
-  active?: NavKey
-  home?: boolean
-}) {
+export function SiteHeader({ home }: { home?: boolean }) {
+  const pathname = usePathname()
+  if (!home && pathname === "/") return null
+  const onSearch = pathname.startsWith("/search")
   return (
     <div
       className={
@@ -41,10 +41,10 @@ export function SiteHeader({
         <nav className="flex gap-[22px] text-[13.5px]">
           {NAV.map((item) => (
             <Link
-              key={item.key}
+              key={item.href}
               href={item.href}
               className={`transition-colors hover:text-fg hover:no-underline ${
-                active === item.key ? "text-fg" : "text-subtle"
+                pathname.startsWith(item.href) ? "text-fg" : "text-subtle"
               }`}
             >
               {item.label}
@@ -52,7 +52,7 @@ export function SiteHeader({
           ))}
         </nav>
         <div className="flex-1" />
-        {!home && active !== "search" && (
+        {!home && !onSearch && (
           <Link
             href="/search"
             className="well flex h-[34px] w-[220px] items-center gap-2 px-2.5 text-[13px] text-faint transition-colors hover:text-subtle hover:no-underline max-md:hidden"

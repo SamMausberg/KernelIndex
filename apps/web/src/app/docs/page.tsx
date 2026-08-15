@@ -2,7 +2,6 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { ContextHeader } from "@/components/context-header"
 import { Section } from "@/components/section"
-import { SiteHeader } from "@/components/site-header"
 
 export const metadata: Metadata = { title: "Docs" }
 
@@ -28,7 +27,6 @@ const EVIDENCE_LEVELS = [
 export default function DocsPage() {
   return (
     <>
-      <SiteHeader active="docs" />
       <div className="scan-line" />
       <ContextHeader
         title="Documentation"

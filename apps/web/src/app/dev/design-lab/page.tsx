@@ -2,7 +2,6 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import type { ReactNode } from "react"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
-import { SiteHeader } from "@/components/site-header"
 import * as fixtures from "@/data/fixtures/catalog"
 import { RecordsLedger } from "@/features/records/ledger"
 import { SearchResults } from "@/features/search/results"
@@ -38,70 +37,67 @@ export default async function DesignLabPage() {
   const noFilters = { view: undefined, verified: false, deployable: false }
 
   return (
-    <>
-      <SiteHeader />
-      <div className="shell pb-24">
-        <div className="mt-8 flex flex-wrap items-baseline justify-between gap-4">
-          <h1 className="text-[20px] font-medium tracking-[-0.012em]">
-            Design lab
-          </h1>
-          <p className="text-[12.5px] text-subtle">
-            Deterministic fixture states for every difficult case. Preview only,
-            never indexed, never production.
-          </p>
-        </div>
-
-        <State label="notice · illustrative data">
-          <IllustrativeNotice />
-        </State>
-
-        <State label="search · exact results, ties, stale, license-unknown, divergence">
-          <SearchResults model={results} filters={noFilters} />
-        </State>
-
-        <State label="search · compatible view with mismatch vectors">
-          <SearchResults
-            model={results}
-            filters={{ ...noFilters, view: "compatible" }}
-          />
-        </State>
-
-        <State label="search · verified-only filter hiding rows">
-          <SearchResults
-            model={results}
-            filters={{ ...noFilters, verified: true }}
-          />
-        </State>
-
-        <State label="search · supported-unmeasured with overflowing names">
-          <SearchResults
-            model={results}
-            filters={{ ...noFilters, view: "supported" }}
-          />
-        </State>
-
-        <State label="search · no matching operation">
-          <SearchResults model={noResult} filters={noFilters} />
-        </State>
-
-        <State label="search · empty query start state">
-          <SearchResults model={emptyQuery} filters={noFilters} />
-        </State>
-
-        <State label="records · current ledger with history and tie">
-          <RecordsLedger
-            model={records}
-            filters={{ view: "current", hardware: null, verified: false }}
-          />
-        </State>
-
-        <State label="records · recently broken">
-          <RecordsLedger
-            model={records}
-            filters={{ view: "broken", hardware: null, verified: false }}
-          />
-        </State>
+    <div className="shell pb-24">
+      <div className="mt-8 flex flex-wrap items-baseline justify-between gap-4">
+        <h1 className="text-[20px] font-medium tracking-[-0.012em]">
+          Design lab
+        </h1>
+        <p className="text-[12.5px] text-subtle">
+          Deterministic fixture states for every difficult case. Preview only,
+          never indexed, never production.
+        </p>
       </div>
-    </>
+
+      <State label="notice · illustrative data">
+        <IllustrativeNotice />
+      </State>
+
+      <State label="search · exact results, ties, stale, license-unknown, divergence">
+        <SearchResults model={results} filters={noFilters} />
+      </State>
+
+      <State label="search · compatible view with mismatch vectors">
+        <SearchResults
+          model={results}
+          filters={{ ...noFilters, view: "compatible" }}
+        />
+      </State>
+
+      <State label="search · verified-only filter hiding rows">
+        <SearchResults
+          model={results}
+          filters={{ ...noFilters, verified: true }}
+        />
+      </State>
+
+      <State label="search · supported-unmeasured with overflowing names">
+        <SearchResults
+          model={results}
+          filters={{ ...noFilters, view: "supported" }}
+        />
+      </State>
+
+      <State label="search · no matching operation">
+        <SearchResults model={noResult} filters={noFilters} />
+      </State>
+
+      <State label="search · empty query start state">
+        <SearchResults model={emptyQuery} filters={noFilters} />
+      </State>
+
+      <State label="records · current ledger with history and tie">
+        <RecordsLedger
+          model={records}
+          filters={{ view: "current", hardware: null, verified: false }}
+        />
+      </State>
+
+      <State label="records · recently broken">
+        <RecordsLedger
+          model={records}
+          filters={{ view: "broken", hardware: null, verified: false }}
+        />
+      </State>
+    </div>
   )
 }

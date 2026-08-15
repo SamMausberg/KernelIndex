@@ -555,27 +555,11 @@ export async function getHomePage(): Promise<HomePageModel> {
     .where(eligibleRunFilter())
     .orderBy(desc(schema.benchmarkRuns.observedAt))
     .limit(8)
-  const database = db()
-  const [operations, implementations, runs, sources] = await Promise.all([
-    database.select({ n: count() }).from(schema.operations),
-    database.select({ n: count() }).from(schema.implementations),
-    database
-      .select({ n: count() })
-      .from(schema.benchmarkRuns)
-      .where(isNotNull(schema.benchmarkRuns.publishedAt)),
-    database.select({ n: count() }).from(schema.sources),
-  ])
   return {
     illustrative: pageIllustrative(rows),
     latest: rows.map((j) =>
       resultRow(j, { name: j.operation.name, slug: j.operation.slug }),
     ),
-    counts: {
-      operations: operations[0].n,
-      implementations: implementations[0].n,
-      runs: runs[0].n,
-      sources: sources[0].n,
-    },
   }
 }
 
@@ -702,23 +686,25 @@ export async function getRecordsPage(): Promise<RecordsPageModel> {
 /** §16.5 start state: the published corpus grouped by operation family. */
 async function browseFamilies(): Promise<BrowseFamily[]> {
   const database = db()
-  const operations = await database
-    .select({ family: schema.operations.family, n: count() })
-    .from(schema.operations)
-    .groupBy(schema.operations.family)
-  const runs = await database
-    .select({ family: schema.operations.family, n: count() })
-    .from(schema.benchmarkRuns)
-    .innerJoin(
-      schema.workloads,
-      eq(schema.benchmarkRuns.workloadId, schema.workloads.id),
-    )
-    .innerJoin(
-      schema.operations,
-      eq(schema.workloads.operationId, schema.operations.id),
-    )
-    .where(eligibleRunFilter())
-    .groupBy(schema.operations.family)
+  const [operations, runs] = await Promise.all([
+    database
+      .select({ family: schema.operations.family, n: count() })
+      .from(schema.operations)
+      .groupBy(schema.operations.family),
+    database
+      .select({ family: schema.operations.family, n: count() })
+      .from(schema.benchmarkRuns)
+      .innerJoin(
+        schema.workloads,
+        eq(schema.benchmarkRuns.workloadId, schema.workloads.id),
+      )
+      .innerJoin(
+        schema.operations,
+        eq(schema.workloads.operationId, schema.operations.id),
+      )
+      .where(eligibleRunFilter())
+      .groupBy(schema.operations.family),
+  ])
   const runsByFamily = new Map(runs.map((row) => [row.family, row.n]))
   return operations
     .map((row) => ({
@@ -790,12 +776,18 @@ export async function searchCatalog(
   }
 
   const database = db()
-  const [joined, workloadRows] = await Promise.all([
+  const [joined, workloadRows, related, implRows] = await Promise.all([
     joinedRunsForOperation(operation.id),
     database
       .select()
       .from(schema.workloads)
       .where(eq(schema.workloads.operationId, operation.id)),
+    database
+      .select()
+      .from(schema.operations)
+      .where(eq(schema.operations.family, operation.family))
+      .limit(6),
+    implementationRows(operation.id),
   ])
   const selectedWorkloadId = selectWorkloadId(intent, workloadRows, joined)
   const groups = selectedWorkloadId
@@ -807,12 +799,6 @@ export async function searchCatalog(
         intent,
       )
     : { ...EMPTY_GROUPS, cohort: null }
-
-  const related = await database
-    .select()
-    .from(schema.operations)
-    .where(eq(schema.operations.family, operation.family))
-    .limit(6)
   const relatedItems = [...related, ...nearMisses]
     .filter(
       (op, index, all) =>
@@ -836,7 +822,7 @@ export async function searchCatalog(
     groups: {
       exact: groups.exact,
       compatible: groups.compatible,
-      supportedUnmeasured: await supportedUnmeasuredRows(operation, joined),
+      supportedUnmeasured: supportedUnmeasuredRows(operation, joined, implRows),
       reported: groups.reported,
     },
     related: relatedItems,
@@ -845,13 +831,9 @@ export async function searchCatalog(
   }
 }
 
-/** Implementations declaring support for the operation but with no run. */
-async function supportedUnmeasuredRows(
-  operation: typeof schema.operations.$inferSelect,
-  joined: JoinedRun[],
-): Promise<ResultRow[]> {
-  const measured = new Set(joined.map((j) => j.implementation.id))
-  const rows = await db()
+/** Implementations (with their project) declared for one operation. */
+async function implementationRows(operationId: string) {
+  return db()
     .select({
       implementation: schema.implementations,
       project: schema.projects,
@@ -861,7 +843,18 @@ async function supportedUnmeasuredRows(
       schema.projects,
       eq(schema.implementations.projectId, schema.projects.id),
     )
-    .where(eq(schema.implementations.operationId, operation.id))
+    .where(eq(schema.implementations.operationId, operationId))
+}
+
+type ImplementationRows = Awaited<ReturnType<typeof implementationRows>>
+
+/** Implementations declaring support for the operation but with no run. */
+function supportedUnmeasuredRows(
+  operation: typeof schema.operations.$inferSelect,
+  joined: JoinedRun[],
+  rows: ImplementationRows,
+): ResultRow[] {
+  const measured = new Set(joined.map((j) => j.implementation.id))
   return rows
     .filter((row) => !measured.has(row.implementation.id))
     .map(({ implementation, project }) => {
@@ -920,16 +913,18 @@ export async function getOperationPage(
   if (!operation) return null
   const manifest = operation.manifest as OperationSpecManifest
 
-  const workloadRows = await database
-    .select()
-    .from(schema.workloads)
-    .where(eq(schema.workloads.operationId, operation.id))
-  const aliases = await database
-    .select({ alias: schema.operationAliases.alias })
-    .from(schema.operationAliases)
-    .where(eq(schema.operationAliases.operationId, operation.id))
-
-  const joined = await joinedRunsForOperation(operation.id)
+  const [workloadRows, aliases, joined, implRows] = await Promise.all([
+    database
+      .select()
+      .from(schema.workloads)
+      .where(eq(schema.workloads.operationId, operation.id)),
+    database
+      .select({ alias: schema.operationAliases.alias })
+      .from(schema.operationAliases)
+      .where(eq(schema.operationAliases.operationId, operation.id)),
+    joinedRunsForOperation(operation.id),
+    implementationRows(operation.id),
+  ])
   const requestedWorkload = workloadRows.find(
     (w) => w.id === options?.workload || w.workloadDigest === options?.workload,
   )
@@ -949,7 +944,7 @@ export async function getOperationPage(
       )
     : { exact: [], reported: [], compatible: [], cohort: null }
 
-  const implementations = await implementationSummaries(operation.id, joined)
+  const implementations = implementationSummaries(implRows, joined)
   const evidence = joined.map((j) => runEvidence(j.run))
 
   return {
@@ -1030,21 +1025,10 @@ function sourceRefs(joined: JoinedRun[]): SourceRef[] {
   return [...bySlug.values()]
 }
 
-async function implementationSummaries(
-  operationId: string,
+function implementationSummaries(
+  rows: ImplementationRows,
   joined: JoinedRun[],
-): Promise<ImplementationSummary[]> {
-  const rows = await db()
-    .select({
-      implementation: schema.implementations,
-      project: schema.projects,
-    })
-    .from(schema.implementations)
-    .innerJoin(
-      schema.projects,
-      eq(schema.implementations.projectId, schema.projects.id),
-    )
-    .where(eq(schema.implementations.operationId, operationId))
+): ImplementationSummary[] {
   return rows.map(({ implementation, project }) => {
     const best = joined.find((j) => j.implementation.id === implementation.id)
     const manifest = implementation.manifest as ImplementationRevisionManifest
@@ -1216,46 +1200,49 @@ export async function getRunPage(id: string): Promise<RunPageModel | null> {
   const stored = run.manifest as StoredRunManifest
   const workloadManifest = workload.manifest as AnyWorkloadManifest
 
-  const measurementRows = await database
-    .select()
-    .from(schema.measurements)
-    .where(eq(schema.measurements.runId, run.id))
-  const artifactRows = await database
-    .select({ artifact: schema.artifacts, link: schema.runArtifacts })
-    .from(schema.runArtifacts)
-    .innerJoin(
-      schema.artifacts,
-      eq(schema.runArtifacts.artifactId, schema.artifacts.id),
-    )
-    .where(eq(schema.runArtifacts.runId, run.id))
-  const [supersededBy] = await database
-    .select({ id: schema.benchmarkRuns.id })
-    .from(schema.benchmarkRuns)
-    .where(
-      and(
-        eq(schema.benchmarkRuns.supersedesId, run.id),
-        isNotNull(schema.benchmarkRuns.publishedAt),
-      ),
-    )
-  const cohortRuns = await database
-    .select()
-    .from(schema.benchmarkRuns)
-    .where(
-      and(
-        eq(schema.benchmarkRuns.comparisonKey, run.comparisonKey),
-        eligibleRunFilter(),
-        isNotNull(schema.benchmarkRuns.primaryValue),
-      ),
-    )
-  const [link] = await database
-    .select({ externalId: schema.sourceLinks.externalId })
-    .from(schema.sourceLinks)
-    .where(
-      and(
-        eq(schema.sourceLinks.entityKind, "run"),
-        eq(schema.sourceLinks.entityId, run.id),
-      ),
-    )
+  const [measurementRows, artifactRows, [supersededBy], cohortRuns, [link]] =
+    await Promise.all([
+      database
+        .select()
+        .from(schema.measurements)
+        .where(eq(schema.measurements.runId, run.id)),
+      database
+        .select({ artifact: schema.artifacts, link: schema.runArtifacts })
+        .from(schema.runArtifacts)
+        .innerJoin(
+          schema.artifacts,
+          eq(schema.runArtifacts.artifactId, schema.artifacts.id),
+        )
+        .where(eq(schema.runArtifacts.runId, run.id)),
+      database
+        .select({ id: schema.benchmarkRuns.id })
+        .from(schema.benchmarkRuns)
+        .where(
+          and(
+            eq(schema.benchmarkRuns.supersedesId, run.id),
+            isNotNull(schema.benchmarkRuns.publishedAt),
+          ),
+        ),
+      database
+        .select()
+        .from(schema.benchmarkRuns)
+        .where(
+          and(
+            eq(schema.benchmarkRuns.comparisonKey, run.comparisonKey),
+            eligibleRunFilter(),
+            isNotNull(schema.benchmarkRuns.primaryValue),
+          ),
+        ),
+      database
+        .select({ externalId: schema.sourceLinks.externalId })
+        .from(schema.sourceLinks)
+        .where(
+          and(
+            eq(schema.sourceLinks.entityKind, "run"),
+            eq(schema.sourceLinks.entityId, run.id),
+          ),
+        ),
+    ])
 
   const ineligibleReasons = eligibilityReasons({
     status: run.status,

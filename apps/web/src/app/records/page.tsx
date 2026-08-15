@@ -2,7 +2,6 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { ContextHeader } from "@/components/context-header"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
-import { SiteHeader } from "@/components/site-header"
 import {
   RecordsLedger,
   type RecordsView,
@@ -37,7 +36,6 @@ export default async function RecordsPage({
   }
   return (
     <>
-      <SiteHeader active="records" />
       {model.illustrative && <IllustrativeNotice />}
       <div className="scan-line" />
       <ContextHeader

@@ -53,12 +53,20 @@ export function HeroSearch() {
     router.push(href)
 
     // Land on the destination field once the search page has rendered it.
+    // Translation rides `transform` so only width/height touch layout, and
+    // that layout is scoped to the fixed-position clone's tiny subtree.
     const startedAt = performance.now()
     const land = () => {
       const target = document.getElementById("workload-search")
       if (!target || target === form) {
-        if (performance.now() - startedAt > 600) clone.remove()
-        else requestAnimationFrame(land)
+        if (performance.now() - startedAt > 1500) {
+          clone
+            .animate([{ opacity: 1 }, { opacity: 0 }], {
+              duration: 150,
+              fill: "both",
+            })
+            .finished.finally(() => clone.remove())
+        } else requestAnimationFrame(land)
         return
       }
       const to = target.getBoundingClientRect()
@@ -66,14 +74,12 @@ export function HeroSearch() {
       const flight = clone.animate(
         [
           {
-            left: `${from.left}px`,
-            top: `${from.top}px`,
+            transform: "translate(0px, 0px)",
             width: `${from.width}px`,
             height: `${from.height}px`,
           },
           {
-            left: `${to.left}px`,
-            top: `${to.top}px`,
+            transform: `translate(${to.left - from.left}px, ${to.top - from.top}px)`,
             width: `${to.width}px`,
             height: `${to.height}px`,
           },

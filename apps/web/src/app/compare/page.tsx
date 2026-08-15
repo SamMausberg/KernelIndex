@@ -1,7 +1,6 @@
 import type { Metadata } from "next"
 import { ContextHeader } from "@/components/context-header"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
-import { SiteHeader } from "@/components/site-header"
 import { CompareView } from "@/features/compare/compare-view"
 import { getComparePage } from "@/lib/catalog"
 
@@ -22,7 +21,6 @@ export default async function ComparePage({
   const model = await getComparePage(runIds)
   return (
     <>
-      <SiteHeader />
       {model.illustrative && <IllustrativeNotice />}
       <div className="scan-line" />
       <ContextHeader
