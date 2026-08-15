@@ -1,6 +1,6 @@
 import Link from "next/link"
 import type { ResultRow } from "@/lib/catalog"
-import { evidenceLabel, formatDateUTC, formatPrimary } from "@/lib/format"
+import { evidenceLabel, formatDateUTC, formatPrimaryParts } from "@/lib/format"
 
 const GRID =
   "grid grid-cols-[1.2fr_1.4fr_110px_150px_150px_110px] min-w-[920px]"
@@ -46,7 +46,16 @@ export function LatestRecords({ rows }: { rows: ResultRow[] }) {
               </Link>
             </div>
             <div className="px-4 text-right font-mono text-[13.5px]">
-              {row.primary ? formatPrimary(row.primary) : "—"}
+              {row.primary ? (
+                <>
+                  {formatPrimaryParts(row.primary).value}
+                  <span className="ml-1 text-[11px] text-faint">
+                    {formatPrimaryParts(row.primary).unit}
+                  </span>
+                </>
+              ) : (
+                "—"
+              )}
             </div>
             <div className="truncate px-4 font-mono text-[12.5px] text-muted">
               {row.hardware.model}

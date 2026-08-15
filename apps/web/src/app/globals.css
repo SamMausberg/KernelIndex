@@ -1,41 +1,42 @@
 @import "tailwindcss";
 
 /*
- * KernelIndex visual system (§16.2): restrained black technical reference.
- * Semantic tokens extracted from the founder's "KernelIndex Search" design;
- * components reference roles, never raw hex, so a light palette stays
- * possible later.
+ * KernelIndex visual system (§16.2): instrument-grade black ledger.
+ * The material is cold ink graded from the hero film — never neutral gray —
+ * and light is used as machining, not decoration: catch-lights on raised
+ * plates, recessed input wells, graticule rules. Components reference roles,
+ * never raw hex, so the palette stays swappable.
  */
 @theme {
-  /* Surfaces: near-black canvas with only slight separation. */
-  --color-canvas: #050505;
-  --color-surface: #070707;
-  --color-raised: #0a0a0a;
+  /* Surfaces: deep matte black with a barely-cool cast, slight separation. */
+  --color-canvas: #030407;
+  --color-surface: #06070b;
+  --color-raised: #0a0b11;
 
   /* 1px hairline hierarchy: row separators < section borders < controls. */
-  --color-line: #161616;
-  --color-border: #1f1f1f;
-  --color-border-strong: #242424;
-  --color-edge: #2a2a2a;
-  --color-edge-hover: #3a3a3a;
+  --color-line: #11131b;
+  --color-border: #191c25;
+  --color-border-strong: #212430;
+  --color-edge: #282c39;
+  --color-edge-hover: #3a3f51;
 
   /*
    * Text scale, brightest to quietest — four deliberate levels (§16.2):
    * fg = primary, muted = secondary, subtle = metadata, faint = tertiary.
    * ghost is for decorative glyphs (slashes, arrows) only.
    */
-  --color-fg: #f2f2f1;
-  --color-muted: #b4b4b1;
-  --color-subtle: #a6a6a6;
-  --color-faint: #7a7a7e;
-  --color-ghost: #3d3d3f;
+  --color-fg: #f1f2f6;
+  --color-muted: #b5b8c4;
+  --color-subtle: #a4a8b6;
+  --color-faint: #787d8e;
+  --color-ghost: #3d4150;
 
   /* One cool accent; status colors appear sparingly and always with text. */
-  --color-accent: #9cb3d6;
-  --color-accent-bright: #c9d7ea;
-  --color-accent-dim: #55647a;
-  --color-accent-soft: #1c2836;
-  --color-success: #6fcf97;
+  --color-accent: #a4b9dd;
+  --color-accent-bright: #d6e2f5;
+  --color-accent-dim: #5d6d89;
+  --color-accent-soft: #161e2b;
+  --color-success: #74d3a0;
   --color-warning: #e3b85b;
 
   /* ABC Diatype leads when locally available; hosted fallbacks otherwise. */
@@ -87,8 +88,28 @@
   }
   body {
     @apply bg-canvas font-sans text-fg antialiased;
+    /* Faint cool bloom, top right — the one light source every catch-light
+       in the interface agrees with. Static; scrolls with the page. */
+    background-image: radial-gradient(
+      96rem 44rem at 82% -12%,
+      rgb(164 185 221 / 0.04),
+      transparent 60%
+    );
+    background-repeat: no-repeat;
     line-height: 1.5;
     font-variant-numeric: tabular-nums;
+  }
+  /* Matte finish: static film grain over the whole page. A fixed composited
+     layer — painted once, never repainted, no scroll cost. */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    pointer-events: none;
+    opacity: 0.02;
+    background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAAAAADmVT4XAAAACXBIWXMAAAABAAAAAQBPJcTWAAAGWElEQVR4nO1b2Y6iChCtb1RRg1tEMSwa1wBKcAtucQ2ixDVuRNz+8fa0093TM16vM9NSL/cLKIo651SdKqBX85RHoYXFLUapleXql5btwnlVqFpDhtHHBSftb0ptgohG2w4uHOKm8wEvlc0q1efkTTCg7NpmziLFZCEZIdONjNGmp9I4po2cPUG1xIjOTunuejf0E6yZ52PcKCsqtUTM6zIbg/EpoRa2YPcDxfTFz69zs4vLq3Hp0xmmYym3jQc9aW+ylOOboXRj162FfVpkVmTMZMwYdq1JNtLLhTwNdhjve5glOy50jqqcmXJSy1LmlSVddLhnYZ4ZpcuCNxmsxxgqMazk9UTqoCyFfjd3dvmnlMO3Cfsr5Zk07Xcu0aEstPytDTuCL36hXP3g3DLneOY8MyJirdTfhPzDjGMvz4vRqsqUx0VK4Lt8ahSVI51zcBsAfsN6Bd259NVYqyPvSZos1g1Vn2a4YFBsUI5YZC5MnZWOVUvsOXPuGSUY39or+6jtNiC2Zlpqre5VgxDD4t6VzQhkZJohKzl3q9HrudfJ+FDqk3ndOI3nvjQliUxhNJbWOY08c1rCUZ7wATjF3G1zEg+ktxkzFp4Q3pASUWSNS/JLzjEjFubhzHe4UY12cNpkUTk0U7TbjDbUzUQrp7TltjiZtYOKGaIrHars4JzDS25hiqyoxFzuKpfXmrWGwJ5GA82oKqV4gZ0Lx091D1/1JpnINqjkFMMTZPZDg9uldS1zmJsBXSQzJ1dvYi0MI5TI1lNGsd62Gl2+0uOVqaRDn96s3Hyjy0oC2+15G9Hi2WtnVsCWPN/hF7AXdFma2DHuqbu+PRLxSb1ZzAMG9n8MA2ynvp+YAmwH/k9wgX7HGFrBfLqUV+oe012pZi6C6rKPnuDvSohLlrKl0e5Q5Iy9OhEPu2ara+qFaHGdGjl2+kGeXcahpFJzyFuXO1+IbbzZY6ukCOcaE03qsZXCAyoJvEAWhKqf94pJQ+C4bMRDD0LJiiw2e7VTPtou6lJ6IVhkwae6h5TXFfMMdsXl6qBLpC+8Gk73G5O+WEouvJLmg7y023iFdtttJEMSLwbCUjw0C1XnRSqoWGlZFUrythMmuiKhzkxC2LKqv59QExCtlvaDgUJ3D/GFvtr7iPiIPutJX6FZtQTXJrPhiYHDIa4pk9GZPEMsnF8r4PD13PZ7eIZnsNvvlCbYyrs3IoM79aEsS9SJUxfGMUvXiYwvpi2+njXAMYy44wPn4hI5inW/y22yx8qFOlUW4cx8zAq15P7wVMWG30DMUzICTU4aBxzrGicKHOnUGh1hLXWVDeFUlPRg1i3pDXJDv8AtuC/4t3JoO+iWDFoqpVPG0RXqhsrD5Lw/HacWzjKz65HUbycU7ITcLQkF3MfnecCU4m+dK9g+idRnOrfssWTBH4spDRmeX2b3cQt/KGJfBkl4VmpnbLN8klvcf6ktIE1k79iCL5mvynvVOY1oxNjF14KUqDvq5GQZ5QIRtS2w96kOnjn3PRIX2PCSd4EGNtD9XRwCnjdyhQ38dVv7l4wAT+q2Hw4LbG8AfqoIQOzIX+sNnul+PBIP/lyAisEX6QK0j//9RQHXKc7S8CSZf3ioBqxu+K2yAKn43/0aQJxLXxt9QP4CMcBL/tUsA7xHX306/I0J3mB+1WVAevH3RhtQneqXBh/wXOIzPyAvXkCwhz9xDthmCP5LfvADQPeKUR2qF0UAxLn0lc4AZ0/ykWqwb0t8O5GAuzNLU/DUfcwDiAakiewdH4A2Fn+vdnh+53//8wHKmuSHzw52HivcKg7A8obeQA02X2z8kgTAcsnfyAyeugx4oDrxzWosX+CNHcDm5/3CRoDHgVcJA9Sx6KXUAPOQ7Vvtwhe1dn8slfDMA5VHWAvs6HzvpQee5j49WFeAfFYs4jMh8mg4+j8AsPV88sYiA1Bb4pek4x82IzfFFCCflKbxxQjnbOFD1wD5jGgGeEJ87VMAeTCyAOF46hN1wbMOlB7VZUBcnL+6+IA6lXBSC2w8HbzJIoCEvvciBryZ6Eo+gHDB96mMAJkIK4B73C94AfmAQgPc64G1Cjg/eH307vgBIDZDr5ACnKP+j4IAHI/8YwrDv65H74jwhPhawYCzLfwIHOzzxW9rF9gnvLclAf9PK4w/bX+M4x9JjoagDTV7AgAAAABJRU5ErkJggg==");
+    background-size: 128px 128px;
   }
   a {
     @apply text-accent no-underline;
@@ -139,5 +160,95 @@
   }
   .shell-narrow {
     @apply mx-auto w-full max-w-[880px] px-7;
+  }
+
+  /* Machined raised surface: hairline border, vertical grade, catch-light. */
+  .plate {
+    border: 1px solid var(--color-border);
+    border-radius: 5px;
+    background: linear-gradient(
+      180deg,
+      var(--color-raised),
+      var(--color-surface)
+    );
+    box-shadow: inset 0 1px 0 rgb(214 226 245 / 0.05);
+  }
+
+  /* Small machined control — keys, chips, copy. Pressing it sinks it. */
+  .key {
+    border: 1px solid var(--color-border-strong);
+    border-radius: 4px;
+    background: linear-gradient(180deg, #0f121c, #08090f);
+    box-shadow:
+      inset 0 1px 0 rgb(214 226 245 / 0.07),
+      0 1px 2px rgb(0 0 0 / 0.35);
+    transition:
+      border-color 0.15s,
+      color 0.15s;
+  }
+  button.key:hover {
+    border-color: var(--color-edge-hover);
+  }
+  button.key:active {
+    background: linear-gradient(180deg, #08090f, #0d101a);
+    box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.5);
+  }
+
+  /* Recessed input well: instruments read, they don't glow — until focused. */
+  .well {
+    border: 1px solid var(--color-border-strong);
+    border-radius: 5px;
+    background: linear-gradient(180deg, #040509, #07080d);
+    box-shadow:
+      inset 0 1.5px 4px rgb(0 0 0 / 0.4),
+      inset 0 -1px 0 rgb(214 226 245 / 0.03);
+    transition:
+      border-color 0.16s,
+      box-shadow 0.16s;
+  }
+  .well:focus-within {
+    border-color: var(--color-accent-dim);
+    box-shadow:
+      inset 0 1.5px 4px rgb(0 0 0 / 0.4),
+      0 0 0 3px rgb(164 185 221 / 0.06);
+  }
+  /* The well is the focus ring; never double-box the inner input. */
+  .well input:focus-visible {
+    outline: none;
+  }
+
+  /* Graticule: a measurement axis, not a divider. Minor ticks every 20px,
+     majors every 100px, baseline flush with the bottom edge. */
+  .tick-rule {
+    height: 8px;
+    background:
+      repeating-linear-gradient(
+        90deg,
+        var(--color-border-strong) 0 1px,
+        transparent 1px 100px
+      )
+      bottom / 100% 8px no-repeat,
+      repeating-linear-gradient(
+        90deg,
+        var(--color-border) 0 1px,
+        transparent 1px 20px
+      )
+      bottom / 100% 4px no-repeat,
+      linear-gradient(var(--color-border-strong), var(--color-border-strong))
+      bottom / 100% 1px no-repeat;
+  }
+
+  /* Route-transition scan: a light streak crossing the page once. */
+  .scan-line {
+    height: 1px;
+    transform-origin: left;
+    animation: scan 0.55s cubic-bezier(0.22, 0.7, 0.2, 1) both;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      var(--color-accent) 30%,
+      var(--color-accent-bright) 55%,
+      transparent
+    );
   }
 }

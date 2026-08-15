@@ -71,7 +71,7 @@ export function CompareView({ model }: { model: ComparePageModel }) {
         )}
         <p className="mt-4 text-[13px] text-subtle">
           Pick runs from any <Link href="/search">search result</Link> or the{" "}
-          <Link href="/records">records ledger</Link> — each row links here.
+          <Link href="/records">records ledger</Link>. Each row links here.
         </p>
       </main>
     )
@@ -115,7 +115,7 @@ export function CompareView({ model }: { model: ComparePageModel }) {
             <div className="self-end py-2 text-[11.5px] text-faint">
               {model.comparable
                 ? `ranked under ${model.policyVersion}`
-                : "no ranks — not comparable"}
+                : "no ranks: not comparable"}
             </div>
             {model.runs.map((run) => (
               <RunHeader key={run.runId} run={run} />

@@ -13,7 +13,8 @@ const NAV: { key: NavKey; label: string; href: string }[] = [
  * Sticky site header (§16.4). One search model everywhere (§16.6): the
  * homepage hero and the search page's workload field are the primary
  * controls, so the navbar carries only a compact "Search ⌘K" affordance on
- * every other page — never a raw query string.
+ * every other page — never a raw query string. On the homepage the header
+ * floats transparent over the hero video instead of sticking.
  */
 export function SiteHeader({
   active,
@@ -23,13 +24,19 @@ export function SiteHeader({
   home?: boolean
 }) {
   return (
-    <div className="sticky top-0 z-50 border-b border-border bg-canvas">
+    <div
+      className={
+        home
+          ? "absolute inset-x-0 top-0 z-40"
+          : "sticky top-0 z-50 border-b border-border bg-canvas"
+      }
+    >
       <div className="shell flex h-14 items-center gap-7">
         <Link
           href="/"
-          className="font-mono text-[15px] font-semibold tracking-[-0.01em] text-fg hover:no-underline"
+          className="font-mono text-[14.5px] font-semibold tracking-[-0.02em] text-fg hover:no-underline"
         >
-          kernel<span className="text-accent">index</span>
+          KernelIndex
         </Link>
         <nav className="flex gap-[22px] text-[13.5px]">
           {NAV.map((item) => (
@@ -48,10 +55,10 @@ export function SiteHeader({
         {!home && active !== "search" && (
           <Link
             href="/search"
-            className="flex h-[34px] w-[220px] items-center gap-2 rounded-[3px] border border-border bg-raised px-2.5 text-[13px] text-faint transition-colors hover:border-edge-hover hover:text-subtle hover:no-underline max-md:hidden"
+            className="well flex h-[34px] w-[220px] items-center gap-2 px-2.5 text-[13px] text-faint transition-colors hover:text-subtle hover:no-underline max-md:hidden"
           >
             Search
-            <kbd className="ml-auto rounded-[2px] border border-border px-[5px] py-0.5 font-mono text-[11px]">
+            <kbd className="key ml-auto px-[5px] py-0.5 font-mono text-[11px]">
               ⌘K
             </kbd>
           </Link>

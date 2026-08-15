@@ -92,17 +92,19 @@ export function HeroSearch() {
     <form
       action="/search"
       onSubmit={submit}
-      className="mt-9 flex h-[60px] max-w-[880px] items-center gap-3 rounded-[4px] border border-edge bg-raised pr-3.5 pl-[18px] transition-[border-color,box-shadow] focus-within:border-accent-dim focus-within:shadow-[0_0_0_3px_rgba(156,179,214,0.07)]"
+      className="well mt-7 flex h-[46px] max-w-[620px] items-center gap-3 pr-2 pl-4"
     >
       <input
         name="q"
+        autoComplete="off"
+        spellCheck={false}
         placeholder="Search operation, GPU, dtype, shape, framework…"
-        className="min-w-0 flex-1 border-0 bg-transparent p-0 font-mono text-[15.5px] outline-none"
+        className="min-w-0 flex-1 border-0 bg-transparent p-0 font-mono text-[14px] outline-none"
       />
       <button
         type="submit"
         aria-label="Search"
-        className="flex-none cursor-pointer rounded-[3px] border border-border-strong bg-transparent px-[9px] pb-[3px] font-mono text-[13px] text-faint transition-colors hover:border-edge-hover hover:text-fg"
+        className="key flex-none cursor-pointer px-2 pb-[2px] font-mono text-[12.5px] text-faint hover:text-fg"
       >
         ↵
       </button>

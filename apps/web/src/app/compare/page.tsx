@@ -24,7 +24,7 @@ export default async function ComparePage({
     <>
       <SiteHeader />
       {model.illustrative && <IllustrativeNotice />}
-      <div className="h-px origin-left animate-scan bg-accent" />
+      <div className="scan-line" />
       <ContextHeader
         title="Compare runs"
         context={

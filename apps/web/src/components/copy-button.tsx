@@ -16,7 +16,7 @@ export function CopyButton({ text }: { text: string }) {
         clearTimeout(timer.current)
         timer.current = setTimeout(() => setCopied(false), 1400)
       }}
-      className="flex-none cursor-pointer rounded-[2px] border border-border-strong bg-transparent px-2 py-[3px] text-[12px] text-muted transition-colors hover:border-edge-hover"
+      className="key flex-none cursor-pointer px-2 py-[3px] text-[12px] text-muted hover:text-fg"
     >
       {copied ? "Copied" : "Copy"}
     </button>

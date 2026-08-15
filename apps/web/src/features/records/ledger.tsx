@@ -44,25 +44,27 @@ function HolderRow({ holder }: { holder: RecordHolder }) {
   return (
     <details className="group border-b border-line">
       <summary
-        className={`${CURRENT_GRID} cursor-pointer list-none items-center transition-colors hover:bg-raised [&::-webkit-details-marker]:hidden`}
+        className={`${CURRENT_GRID} cursor-pointer list-none items-start transition-colors hover:bg-raised [&::-webkit-details-marker]:hidden`}
       >
         <div className="min-w-0 py-3 pr-3">
-          <div className="truncate font-mono text-[13px] text-fg">
+          <div className="truncate font-mono text-[13px] leading-[20px] text-fg">
             {holder.operation.name} · {holder.workloadSummary}
           </div>
-          <div className="mt-0.5 truncate font-mono text-[11.5px] text-faint">
+          <div className="truncate font-mono text-[11.5px] leading-4 text-faint">
             {holder.environmentSummary}
           </div>
         </div>
         <div className="py-3 pr-4 text-right whitespace-nowrap">
-          <span className="font-mono text-[14.5px] text-fg">
+          <span className="block font-mono text-[14.5px] leading-[20px] text-fg">
             {record.primary ? formatPrimary(record.primary) : "—"}
           </span>
-          <div className="font-mono text-[11px] text-faint">
-            {record.primary ? (formatSpread(record.primary) ?? " ") : ""}
+          {/* Fixed height with or without a spread: every record cell is
+              exactly two lines, so row rhythm never drifts. */}
+          <div className="h-4 font-mono text-[11px] leading-4 text-faint">
+            {record.primary ? formatSpread(record.primary) : null}
           </div>
         </div>
-        <div className="min-w-0 truncate py-3 pr-3">
+        <div className="min-w-0 truncate py-3 pr-3 leading-[20px]">
           <Link
             href={`/implementations/${record.implementation.slug}`}
             className="font-mono text-[13px]"
@@ -73,22 +75,22 @@ function HolderRow({ holder }: { holder: RecordHolder }) {
             {record.project.name}
           </span>
         </div>
-        <div className="truncate py-3 pr-3 font-mono text-[12px] text-muted">
+        <div className="truncate py-3 pr-3 font-mono text-[12px] leading-[20px] text-muted">
           {holder.hardware}
         </div>
         <div
-          className={`py-3 text-[12.5px] ${strong ? "text-fg" : "text-subtle"}`}
+          className={`py-3 text-[12.5px] leading-[20px] ${strong ? "text-fg" : "text-subtle"}`}
         >
           {strong && <span className="mr-1.5 text-[9px] text-success">●</span>}
           {evidenceLabel(record.evidence)}
         </div>
-        <div className="py-3 font-mono text-[11.5px] whitespace-nowrap text-faint">
+        <div className="py-3 font-mono text-[11.5px] leading-[20px] whitespace-nowrap text-faint">
           {formatDateShort(holder.since)}
           {isNew && <span className="text-accent"> · new</span>}
         </div>
         <div
           aria-hidden="true"
-          className="pr-1 text-right font-mono text-[12px] text-faint transition-transform group-open:rotate-90"
+          className="py-3 pr-1 text-right font-mono text-[12px] leading-[20px] text-faint transition-transform group-open:rotate-90"
         >
           ›
         </div>
@@ -221,7 +223,7 @@ function HistoryRows({
           </div>
           <div className="min-w-0 py-3.5">
             <div className="text-[13px] text-fg">
-              {event.previousValue ? "Record set" : "First record"} —{" "}
+              {event.previousValue ? "Record set" : "First record"}:{" "}
               <span className="font-mono text-[12.5px]">
                 {holder.operation.name} · {holder.workloadSummary} ·{" "}
                 {holder.hardware}

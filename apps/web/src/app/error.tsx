@@ -18,8 +18,8 @@ export default function ErrorBoundary({
         This page failed to render.
       </h1>
       <p className="mt-3 max-w-[52ch] text-[14px] text-muted">
-        The catalog itself is unaffected — published evidence is immutable.
-        Retry the request, or return to search.
+        The catalog is unaffected. Published evidence is immutable. Retry the
+        request, or return to search.
         {error.digest && (
           <span className="mt-2 block font-mono text-[12px] text-faint">
             reference {error.digest}
@@ -30,7 +30,7 @@ export default function ErrorBoundary({
         <button
           type="button"
           onClick={reset}
-          className="cursor-pointer rounded-[3px] border border-border-strong bg-transparent px-3 py-1.5 text-[13px] text-fg transition-colors hover:border-edge-hover"
+          className="key cursor-pointer px-3 py-1.5 text-[13px] text-fg"
         >
           Try again
         </button>

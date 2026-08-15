@@ -17,7 +17,7 @@ const spaceGrotesk = Space_Grotesk({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://kernelindex.com"),
-  title: { default: "KernelIndex", template: "%s — KernelIndex" },
+  title: { default: "KernelIndex", template: "%s · KernelIndex" },
   description: "Find the fastest verified GPU kernel for your exact workload.",
 }
 
@@ -31,7 +31,9 @@ export default function RootLayout({
       lang="en"
       className={`${instrumentSans.variable} ${spaceGrotesk.variable}`}
     >
-      <body>{children}</body>
+      {/* suppressHydrationWarning: extensions (Grammarly) mutate <body> attrs
+          pre-hydration; React 19 treats that as a mismatch. Attrs only. */}
+      <body suppressHydrationWarning>{children}</body>
     </html>
   )
 }

@@ -33,7 +33,7 @@ export default async function OperationPage({ params, searchParams }: Props) {
     <>
       <SiteHeader />
       {model.illustrative && <IllustrativeNotice />}
-      <div className="h-px origin-left animate-scan bg-accent" />
+      <div className="scan-line" />
       <ContextHeader
         title={operation.name}
         context={
@@ -116,9 +116,13 @@ export default async function OperationPage({ params, searchParams }: Props) {
               <div className="py-2">Evidence</div>
               <div className="py-2">Availability</div>
             </div>
-            {model.implementations.map((impl) => (
+            {/* Slugs can repeat when an implementation appears once per
+                revision or evidence source; the list is server-rendered and
+                never reordered, so the index is a safe disambiguator. */}
+            {model.implementations.map((impl, index) => (
               <div
-                key={impl.slug}
+                // biome-ignore lint/suspicious/noArrayIndexKey: static read-only rows
+                key={`${impl.slug}-${index}`}
                 className="grid min-w-[900px] grid-cols-[minmax(240px,1.6fr)_150px_150px_140px_minmax(150px,1fr)] items-center border-b border-line transition-colors hover:bg-raised"
               >
                 <div className="min-w-0 truncate py-3 pr-3">
@@ -203,7 +207,7 @@ export default async function OperationPage({ params, searchParams }: Props) {
             </div>
           </div>
           {semantics.expression && (
-            <pre className="mt-5 overflow-x-auto rounded-[3px] border border-border bg-surface px-4 py-3 font-mono text-[12.5px] leading-relaxed text-muted">
+            <pre className="plate mt-5 overflow-x-auto px-4 py-3 font-mono text-[12.5px] leading-relaxed text-muted">
               {semantics.expression}
             </pre>
           )}

@@ -39,7 +39,7 @@ export default async function RecordsPage({
     <>
       <SiteHeader active="records" />
       {model.illustrative && <IllustrativeNotice />}
-      <div className="h-px origin-left animate-scan bg-accent" />
+      <div className="scan-line" />
       <ContextHeader
         title="Performance records"
         meta={VIEWS.map((view) => (
@@ -55,7 +55,7 @@ export default async function RecordsPage({
         ))}
       >
         <p className="mt-1.5 text-[13px] text-subtle">
-          A record exists only inside an exactly comparable cohort — one
+          A record exists only inside an exactly comparable cohort: one
           workload, protocol, and environment at a time. There is no global
           fastest kernel.
         </p>

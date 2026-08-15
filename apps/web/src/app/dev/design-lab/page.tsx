@@ -46,8 +46,8 @@ export default async function DesignLabPage() {
             Design lab
           </h1>
           <p className="text-[12.5px] text-subtle">
-            Deterministic fixture states for every difficult case — preview
-            only, never indexed, never production.
+            Deterministic fixture states for every difficult case. Preview only,
+            never indexed, never production.
           </p>
         </div>
 

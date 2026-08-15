@@ -28,7 +28,7 @@ const MODES: { key: ResultMode; label: string; note: string | null }[] = [
   {
     key: "compatible",
     label: "Compatible",
-    note: "Nearby measured evidence — each row lists what differs from the request.",
+    note: "Nearby measured evidence. Each row lists what differs from the request.",
   },
   {
     key: "supported",
@@ -84,16 +84,18 @@ function SearchField({ query }: { query: string }) {
     <form
       action="/search"
       id="workload-search"
-      className="flex h-12 items-center gap-3 rounded-[3px] border border-edge bg-raised pr-3.5 pl-4 transition-[border-color,box-shadow] focus-within:border-accent-dim focus-within:shadow-[0_0_0_3px_rgba(156,179,214,0.07)]"
+      className="well flex h-12 items-center gap-3 pr-3.5 pl-4"
     >
       <input
         id="header-search-input"
         name="q"
         defaultValue={query}
+        autoComplete="off"
+        spellCheck={false}
         placeholder="Search operation, GPU, dtype, shape, framework…"
         className="min-w-0 flex-1 border-0 bg-transparent p-0 font-mono text-[14px] outline-none"
       />
-      <kbd className="rounded-[2px] border border-border-strong px-[6px] py-0.5 font-mono text-[12px] text-faint">
+      <kbd className="key px-[6px] py-0.5 font-mono text-[12px] text-faint">
         ⏎
       </kbd>
     </form>
@@ -233,7 +235,7 @@ function Recommendation({
           {top.caveats.length > 0 ? ` ${top.caveats.join(". ")}.` : ""}
         </p>
         {top.install ? (
-          <div className="mt-4 flex max-w-[520px] items-center gap-2.5 rounded-[3px] border border-border bg-surface py-2 pr-2 pl-3">
+          <div className="plate mt-4 flex max-w-[520px] items-center gap-2.5 py-2 pr-2 pl-3">
             <code className="min-w-0 flex-1 truncate font-mono text-[12.5px] text-muted">
               {top.install.command}
             </code>
@@ -246,7 +248,7 @@ function Recommendation({
         )}
         {deployableAlternative?.primary && (
           <p className="mt-3.5 text-[13px] text-subtle">
-            Fastest deployable —{" "}
+            Fastest deployable:{" "}
             <Link
               href={`/implementations/${deployableAlternative.implementation.slug}`}
               className="font-mono text-[13px]"
@@ -262,7 +264,7 @@ function Recommendation({
         )}
         {fasterElsewhere?.primary && (
           <p className="mt-2 text-[13px] text-subtle">
-            A faster result exists outside this cohort —{" "}
+            A faster result exists outside this cohort:{" "}
             <span className="font-mono text-fg">
               {formatPrimary(fasterElsewhere.primary)}
             </span>
@@ -330,7 +332,7 @@ export function SearchResults({
 
   return (
     <>
-      <div className="h-px origin-left animate-scan bg-accent" />
+      <div className="scan-line" />
 
       <div className="border-b border-border bg-surface">
         <div className="shell animate-fade-in pt-5 pb-4">
@@ -340,7 +342,7 @@ export function SearchResults({
               {model.facets.map((facet) => (
                 <span
                   key={facet.token}
-                  className="inline-flex items-center gap-1.5 rounded-[2px] border border-border bg-raised px-2 py-[3px] font-mono text-[11.5px] text-muted"
+                  className="key inline-flex items-center gap-1.5 px-2 py-[3px] font-mono text-[11.5px] text-muted"
                 >
                   {facet.display}
                   <Link
@@ -355,7 +357,7 @@ export function SearchResults({
               {model.queryIssues.map((issue) => (
                 <span key={issue.token} className="text-[12px] text-warning">
                   <span className="font-mono text-[11.5px]">{issue.token}</span>
-                  {" — "}
+                  {" · "}
                   {issue.message}
                 </span>
               ))}
@@ -525,8 +527,8 @@ export function SearchResults({
 
             {anyTie && (
               <p className="mt-3.5 text-[12.5px] text-faint">
-                Ranks shown as N= are statistically tied — the latency
-                difference interval contains zero.{" "}
+                Ranks shown as N= are statistically tied: the latency difference
+                interval contains zero.{" "}
                 <Link href="/docs#ranking">How ranking works →</Link>
               </p>
             )}

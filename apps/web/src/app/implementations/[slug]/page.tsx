@@ -33,7 +33,7 @@ export default async function ImplementationPage({ params }: Props) {
     <>
       <SiteHeader />
       {model.illustrative && <IllustrativeNotice />}
-      <div className="h-px origin-left animate-scan bg-accent" />
+      <div className="scan-line" />
       <ContextHeader
         title={
           <span className="font-mono text-[19px]">
@@ -67,7 +67,7 @@ export default async function ImplementationPage({ params }: Props) {
           <div className="grid grid-cols-[minmax(0,1.5fr)_minmax(280px,1fr)] gap-11 max-lg:grid-cols-1">
             <div>
               {model.usage.install ? (
-                <div className="flex max-w-[560px] items-center gap-2.5 rounded-[3px] border border-border bg-surface py-2 pr-2 pl-3">
+                <div className="plate flex max-w-[560px] items-center gap-2.5 py-2 pr-2 pl-3">
                   <code className="min-w-0 flex-1 truncate font-mono text-[12.5px] text-muted">
                     {model.usage.install.command}
                   </code>
@@ -79,7 +79,7 @@ export default async function ImplementationPage({ params }: Props) {
                 </p>
               )}
               {model.usage.invocationExample && (
-                <pre className="mt-4 max-w-[560px] overflow-x-auto rounded-[3px] border border-border bg-surface px-4 py-3 font-mono text-[12.5px] leading-relaxed text-muted">
+                <pre className="plate mt-4 max-w-[560px] overflow-x-auto px-4 py-3 font-mono text-[12.5px] leading-relaxed text-muted">
                   {model.usage.invocationExample}
                 </pre>
               )}

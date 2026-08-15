@@ -29,7 +29,7 @@ export default function DocsPage() {
   return (
     <>
       <SiteHeader active="docs" />
-      <div className="h-px origin-left animate-scan bg-accent" />
+      <div className="scan-line" />
       <ContextHeader
         title="Documentation"
         context="query syntax · comparability · evidence · records"
@@ -47,11 +47,11 @@ export default function DocsPage() {
 
         <Section id="query-syntax" title="Query syntax">
           <p>
-            Type anything — an operation name is enough. Recognized hardware,
+            Type anything. An operation name is enough. Recognized hardware,
             dtype, and shape tokens refine the workload; structured syntax is
             optional.
           </p>
-          <pre className="mt-3 overflow-x-auto rounded-[3px] border border-border bg-surface px-4 py-3 font-mono text-[12.5px] leading-relaxed">
+          <pre className="plate mt-3 overflow-x-auto px-4 py-3 font-mono text-[12.5px] leading-relaxed">
             {`rmsnorm
 rmsnorm B200 bf16 [2048,4096] tokens=2048
 rmsnorm gpu:B200 dtype:bf16 shape:[2048,4096] framework=pytorch trust:verified`}
@@ -83,20 +83,19 @@ rmsnorm gpu:B200 dtype:bf16 shape:[2048,4096] framework=pytorch trust:verified`}
             correctness policy. Hardware name or operation label alone never
             establishes comparability. Source-native results (for example
             SOL-ExecBench suite scores) keep their upstream protocol and are
-            shown separately — they are never merged into an exact latency
-            cohort.
+            shown separately, never merged into an exact latency cohort.
           </p>
         </Section>
 
         <Section id="ranking" title="How ranking works">
           <p>
             Within a cohort, results are ordered by the protocol's primary
-            metric — median latency for kernel cohorts — under the frozen{" "}
+            metric (median latency for kernel cohorts) under the frozen{" "}
             <span className="font-mono text-[13px]">ranking-v1</span> policy.
             Two runs receive a strict order only when their declared confidence
             intervals separate; overlapping intervals (and equal values) share a
             rank shown as <span className="font-mono text-[13px]">N=</span>, and
-            display order inside a tie follows trust, recency, then stable ID —
+            display order inside a tie follows trust, recency, then stable ID,
             never a hidden performance tiebreaker. Source-native cohorts keep
             the upstream ordering and tie only on equal values. Every rank,
             exclusion, and near match carries a structured reason code such as{" "}
@@ -122,7 +121,7 @@ rmsnorm gpu:B200 dtype:bf16 shape:[2048,4096] framework=pytorch trust:verified`}
           <p className="mt-3">
             Badges are derived from stored facts; a submitter can never choose
             one. Imported results are <em>Reported</em> until independently
-            rerun — trusted-publisher status and download counts are source
+            rerun. Trusted-publisher status and download counts are source
             trust, not benchmark verification. Deployability (license, install,
             tested hardware) is tracked separately from trust: the fastest
             verified result and the fastest deployable result are often

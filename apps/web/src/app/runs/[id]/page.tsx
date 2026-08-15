@@ -43,7 +43,7 @@ export default async function RunPage({ params }: Props) {
     <>
       <SiteHeader />
       {model.illustrative && <IllustrativeNotice />}
-      <div className="h-px origin-left animate-scan bg-accent" />
+      <div className="scan-line" />
       <ContextHeader
         title={
           <span className="font-mono text-[19px]">
@@ -269,7 +269,7 @@ export default async function RunPage({ params }: Props) {
               <span className="group-open:hidden">Show manifest</span>
               <span className="hidden group-open:inline">Hide manifest</span>
             </summary>
-            <pre className="mt-3 max-h-[480px] overflow-auto rounded-[3px] border border-border bg-surface px-4 py-3 font-mono text-[11.5px] leading-relaxed text-muted">
+            <pre className="plate mt-3 max-h-[480px] overflow-auto px-4 py-3 font-mono text-[11.5px] leading-relaxed text-muted">
               {JSON.stringify(model.manifest, null, 2)}
             </pre>
           </details>
