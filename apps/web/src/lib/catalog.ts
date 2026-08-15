@@ -3,7 +3,7 @@
 // implementation: "fixtures" (default, deterministic, visibly illustrative)
 // or "postgres" (real published records).
 import { createHash } from "node:crypto"
-import { unstable_cache } from "next/cache"
+import { unstable_cache } from "next/cache.js"
 import { cache } from "react"
 import type {
   ComparePageModel,

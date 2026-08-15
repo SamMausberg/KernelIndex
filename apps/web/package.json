@@ -18,13 +18,16 @@
     "db:sync-records": "node --env-file-if-exists=.env.local scripts/sync-record-events.ts",
     "import:sol": "node --env-file-if-exists=.env.local scripts/import-sol.ts",
     "import:gpumode": "node --env-file-if-exists=.env.local scripts/import-gpumode.ts",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "export:catalog": "node --env-file-if-exists=.env.local scripts/export-catalog.ts"
   },
   "dependencies": {
+    "@hono/zod-openapi": "^1.6.0",
     "canonicalize": "4.0.0",
     "clsx": "2.1.1",
     "diff": "^9.0.0",
     "drizzle-orm": "0.45.2",
+    "hono": "^4.13.2",
     "next": "16.2.12",
     "postgres": "3.4.9",
     "react": "19.2.8",
@@ -36,6 +39,7 @@
     "zod": "4.4.3"
   },
   "devDependencies": {
+    "@mongodb-js/zstd": "^7.0.0",
     "@playwright/test": "1.62.1",
     "@tailwindcss/postcss": "4.3.3",
     "@types/node": "24.13.3",

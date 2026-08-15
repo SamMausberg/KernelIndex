@@ -199,10 +199,39 @@ rmsnorm gpu:B200 dtype:bf16 shape:[2048,4096] framework=pytorch trust:verified`}
         <Section id="data" title="Data and API">
           <p>
             Everything visible here is backed by canonical manifests with RFC
-            8785 content digests. The public REST API, exports, CLI, and MCP
-            interface arrive with the contribution beta; agents will receive the
-            same resolver semantics as these pages, never scraped HTML.
+            8785 content digests. The public REST API at{" "}
+            <span className="font-mono text-[12.5px]">/api/v1</span> returns the
+            same resolver decisions as these pages — never scraped HTML —
+            documented at{" "}
+            <a href="/api/v1/openapi.json" className="font-mono text-[12.5px]">
+              /api/v1/openapi.json
+            </a>
+            . One human and one agent example per capability:
           </p>
+          <pre className="plate mt-4 overflow-x-auto px-4 py-3 font-mono text-[12.5px] leading-relaxed text-muted">
+            {`# search — a person in a browser, or:
+curl "https://kernelindex.dev/api/v1/search?q=rmsnorm%20B200%20bf16"
+
+# structured resolution — an agent with an exact workload:
+curl -X POST https://kernelindex.dev/api/v1/resolve/kernel \\
+  -H 'Content-Type: application/json' \\
+  -d '{"operation":{"name":"rmsnorm","axes":{"tokens":2048}},
+       "environment":{"hardwareProduct":"B200","dtype":"bf16"}}'
+
+# evidence dossiers (same models as the pages):
+curl https://kernelindex.dev/api/v1/runs/<id-or-digest>
+curl "https://kernelindex.dev/api/v1/implementations/<slug>?include=source"
+
+# records ledger, cursor-paginated:
+curl "https://kernelindex.dev/api/v1/records?limit=50"
+
+# the ki CLI (apps/cli) — stable --json for machines:
+ki search "gemm b200 nvfp4" --json | jq '.groups.exact[0]'
+ki manifest digest my-run.yaml
+
+# bulk export (versioned, immutable, zstd JSONL):
+curl -L https://kernelindex.dev/api/v1/exports/catalog.jsonl.zst`}
+          </pre>
         </Section>
 
         <Section id="sources" title="Sources and licensing">

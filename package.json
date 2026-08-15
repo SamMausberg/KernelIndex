@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "pnpm --filter @kernelindex/web dev",
     "build": "pnpm --filter @kernelindex/web build",
-    "typecheck": "pnpm --filter @kernelindex/web typecheck",
+    "typecheck": "pnpm --filter @kernelindex/web typecheck && pnpm --filter @kernelindex/cli exec tsc --noEmit",
     "test": "pnpm --filter @kernelindex/web test",
     "lint": "biome check .",
     "format": "biome check --write .",

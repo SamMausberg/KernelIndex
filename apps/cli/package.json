@@ -1,0 +1,26 @@
+{
+  "name": "@kernelindex/cli",
+  "private": true,
+  "type": "module",
+  "description": "ki \u2014 the KernelIndex command line (\u00a713.8). Readable tables by default; stable --json/--jsonl for machines.",
+  "bin": {
+    "ki": "./src/ki.ts"
+  },
+  "scripts": {
+    "generate": "openapi-typescript openapi.json -o src/generated/api.d.ts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
+    "canonicalize": "^2.1.0",
+    "openapi-fetch": "^0.15.1",
+    "yaml": "^2.8.2"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.10.1",
+    "vitest": "^4.1.10",
+    "typescript": "6.0.3",
+    "@types/node": "24.13.3"
+  }
+}

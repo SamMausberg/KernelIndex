@@ -6,5 +6,7 @@ packages:
 # esbuild (via vitest/vite and drizzle-kit) installs its platform binary in
 # postinstall; without it both tools fail at startup.
 allowBuilds:
+  # zstd compiles/links its native binding for the catalog export script.
+  '@mongodb-js/zstd': true
   esbuild: true
   sharp: true
