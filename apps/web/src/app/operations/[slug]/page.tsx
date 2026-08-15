@@ -4,10 +4,11 @@ import { notFound } from "next/navigation"
 import { ContextHeader } from "@/components/context-header"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
 import { KeyValueList } from "@/components/key-value-list"
+import { Metric } from "@/components/metric"
 import { Section } from "@/components/section"
 import { ResultRowItem, ResultTableHead } from "@/features/search/result-row"
 import { getOperationPage } from "@/lib/catalog"
-import { evidenceLabel, formatDateUTC, formatPrimary } from "@/lib/format"
+import { evidenceLabel, formatDateUTC } from "@/lib/format"
 
 type Props = {
   params: Promise<{ slug: string }>
@@ -135,21 +136,26 @@ export default async function OperationPage({ params, searchParams }: Props) {
                 <div className="min-w-0 truncate py-3 pr-3">
                   <Link
                     href={`/implementations/${impl.slug}`}
-                    className="font-mono text-[13px]"
+                    className="text-[13px]"
                   >
                     {impl.name}
                   </Link>
-                  <span className="ml-2 text-[12px] text-faint">
-                    {impl.project.name}
-                  </span>
+                  {impl.project.name !== impl.name && (
+                    <span className="ml-2 text-[12px] text-faint">
+                      {impl.project.name}
+                    </span>
+                  )}
                 </div>
                 <div className="py-3 font-mono text-[12px] text-subtle">
                   {[impl.language, impl.framework]
                     .filter(Boolean)
                     .join(" · ") || "—"}
                 </div>
-                <div className="py-3 pr-3.5 text-right font-mono text-[13px]">
-                  {impl.bestPrimary ? formatPrimary(impl.bestPrimary) : "—"}
+                <div className="py-3 pr-3.5 text-right whitespace-nowrap">
+                  <Metric
+                    primary={impl.bestPrimary}
+                    valueClassName="font-mono text-[13px] text-fg"
+                  />
                 </div>
                 <div className="py-3 text-[12.5px] text-subtle">
                   {evidenceLabel(impl.evidence)}

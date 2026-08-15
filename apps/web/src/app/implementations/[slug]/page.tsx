@@ -34,12 +34,24 @@ export default async function ImplementationPage({ params }: Props) {
       <div className="scan-line" />
       <ContextHeader
         title={
-          <span className="font-mono text-[19px]">
-            {model.implementation.name}
-          </span>
+          model.implementation.name === model.implementation.slug ? (
+            <span className="font-mono text-[19px]">
+              {model.implementation.name}
+            </span>
+          ) : (
+            <span className="text-[19px]">{model.implementation.name}</span>
+          )
         }
         context={
           <>
+            {model.implementation.name !== model.implementation.slug && (
+              <>
+                <span className="font-mono text-[12px]">
+                  {model.implementation.slug}
+                </span>
+                {" · "}
+              </>
+            )}
             {model.project.repositoryUrl ? (
               <a href={model.project.repositoryUrl}>{model.project.name}</a>
             ) : (

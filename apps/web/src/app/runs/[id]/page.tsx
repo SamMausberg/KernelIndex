@@ -44,9 +44,13 @@ export default async function RunPage({ params }: Props) {
       <div className="scan-line" />
       <ContextHeader
         title={
-          <span className="font-mono text-[19px]">
-            {model.implementation.name}
-          </span>
+          model.implementation.name === model.implementation.slug ? (
+            <span className="font-mono text-[19px]">
+              {model.implementation.name}
+            </span>
+          ) : (
+            <span className="text-[19px]">{model.implementation.name}</span>
+          )
         }
         context={
           <>
