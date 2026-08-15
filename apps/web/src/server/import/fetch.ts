@@ -4,8 +4,10 @@
 // immutable snapshot before anything parses it (§14.3).
 import { lookup } from "node:dns/promises"
 import { isIP } from "node:net"
-import { type Digest, sha256Digest } from "../../identity/digest.ts"
-import { PARSER_NAME, PARSER_VERSION } from "./types.ts"
+import { type Digest, sha256Digest } from "../identity/digest.ts"
+
+/** Which importer parsed a snapshot; recorded on every snapshot row. */
+export type ParserIdentity = { name: string; version: string }
 
 const ALLOWED_HOSTS = new Set([
   "research.nvidia.com",
@@ -111,7 +113,11 @@ export async function fetchSnapshot(locator: string): Promise<FetchedSnapshot> {
 }
 
 /** Snapshot row for the publication bundle, inlining only bounded bodies. */
-export function snapshotRow(snapshot: FetchedSnapshot, observedAt?: Date) {
+export function snapshotRow(
+  snapshot: FetchedSnapshot,
+  parser: ParserIdentity,
+  observedAt?: Date,
+) {
   return {
     locator: snapshot.locator,
     resolvedLocator: snapshot.resolvedLocator,
@@ -119,8 +125,8 @@ export function snapshotRow(snapshot: FetchedSnapshot, observedAt?: Date) {
     mediaType: snapshot.mediaType,
     sizeBytes: snapshot.sizeBytes,
     body: snapshot.sizeBytes <= INLINE_BODY_LIMIT ? snapshot.body : undefined,
-    parserName: PARSER_NAME,
-    parserVersion: PARSER_VERSION,
+    parserName: parser.name,
+    parserVersion: parser.version,
     observedAt: observedAt ?? snapshot.fetchedAt,
     fetchedAt: snapshot.fetchedAt,
   }

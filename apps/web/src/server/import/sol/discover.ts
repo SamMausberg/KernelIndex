@@ -1,13 +1,16 @@
-// Discovery (§14.1): enumerate what to import. Leaderboard mode walks the
-// public SOL-ExecBench API plus the Hugging Face dataset rows; snapshot mode
-// walks a local directory produced by sol-execbench or a saved fetch.
+// Discovery (§14.1): enumerate what to import. Leaderboard mode walks only
+// the public SOL-ExecBench leaderboard API — never the Hugging Face dataset,
+// whose NVIDIA Evaluation Dataset License forbids redistribution (see
+// docs/source-policy.md). Snapshot mode walks a local directory produced by
+// sol-execbench or a saved fetch.
 import { readdirSync, readFileSync, statSync } from "node:fs"
 import path from "node:path"
 import { sha256Digest } from "../../identity/digest.ts"
-import { type FetchedSnapshot, fetchSnapshot } from "./fetch.ts"
+import { type FetchedSnapshot, fetchSnapshot } from "../fetch.ts"
 import {
   type ImportIssue,
   parseDefinition,
+  parseKernelDetail,
   parseKernelList,
   parseSolution,
   parseSubmissions,
@@ -21,29 +24,7 @@ import {
   type SolSubmission,
   type SolTrace,
   type SolWorkloadEntry,
-  solDefinition,
-  solWorkloadEntry,
 } from "./types.ts"
-
-/**
- * Reviewed default kernel set for the first corpus, following the §22.14
- * operation order: norms first, then attention, GEMM-adjacent projections,
- * activations, and quantized variants.
- */
-export const DEFAULT_KERNELS = [
-  "001_fused_add_rmsnorm_h2048",
-  "002_fused_add_rmsnorm_h4096",
-  "003_fused_add_rmsnorm_h7168",
-  "069_rms_norm",
-  "012_gqa_paged_decode_h32_kv4_d128_ps1",
-  "013_gqa_paged_decode_h32_kv8_d128_ps1",
-  "018_mla_paged_decode_h16_ckv512_kpe64_ps1",
-  "014_gqa_paged_prefill_causal_h32_kv4_d128_ps1",
-  "009_gemm_n5120_k2048",
-  "007_gemm_n4096_k4096",
-  "011_rotary_position_embedding",
-  "048_fused_gate_up_projection_with_swiglu",
-]
 
 export type SolSolutionEntry = {
   solution: SolSolution
@@ -78,71 +59,19 @@ function emptyData(): SolImportData {
   }
 }
 
-const SUBSETS = ["L1", "L2", "Quant", "FlashInfer-Bench"]
-const DATASET_ROWS_BASE =
-  "https://datasets-server.huggingface.co/rows?dataset=nvidia%2FSOL-ExecBench&split=train"
-
-type DatasetRow = Record<string, unknown>
-
-/** Page one dataset subset and return raw rows for the wanted definitions. */
-async function datasetRows(
-  subset: string,
-  wanted: Set<string>,
-  data: SolImportData,
-): Promise<Map<string, DatasetRow>> {
-  const found = new Map<string, DatasetRow>()
-  for (let offset = 0; ; offset += 100) {
-    const locator = `${DATASET_ROWS_BASE}&config=${encodeURIComponent(subset)}&offset=${offset}&length=100`
-    const snapshot = await fetchSnapshot(locator)
-    data.snapshots.push(snapshot)
-    const page = JSON.parse(snapshot.body) as { rows?: { row: DatasetRow }[] }
-    const rows = page.rows ?? []
-    for (const { row } of rows) {
-      const name = row.name
-      if (typeof name === "string" && wanted.has(name)) found.set(name, row)
-    }
-    if (rows.length < 100 || found.size === wanted.size) return found
-  }
-}
-
-/** Dataset rows store nested objects as JSON strings; unfold them. */
-function definitionFromRow(
-  row: DatasetRow,
-  locator: string,
-  data: SolImportData,
-  tags: string[],
-): void {
-  try {
-    const document = {
-      ...row,
-      axes: JSON.parse(row.axes as string),
-      inputs: JSON.parse(row.inputs as string),
-      outputs: JSON.parse(row.outputs as string),
-      // Family tags live on the leaderboard kernel entry, not the dataset row.
-      tags,
-    }
-    const definition = solDefinition.parse(document)
-    data.definitions.set(definition.name, definition)
-    const workloads = (JSON.parse(row.workloads as string) as unknown[]).map(
-      (entry) => solWorkloadEntry.parse(entry),
-    )
-    data.workloadEntries.set(definition.name, workloads)
-  } catch (error) {
-    data.issues.push({
-      locator,
-      item: String(row.name ?? "unknown row"),
-      problem: (error as Error).message,
-    })
-  }
-}
-
 export type LeaderboardOptions = {
-  kernels: string[]
+  /** Explicit kernel names; absent means every kernel on the leaderboard. */
+  kernels?: string[]
+  /** Tranche filter: keep kernels carrying this leaderboard tag. */
+  tag?: string
   limit?: number
   resume?: string
 }
 
-/** Leaderboard mode: definitions, workload suites, and submissions. */
+/** Politeness delay between per-kernel API fetches (ToS §3.2(g)). */
+const FETCH_SPACING_MS = 120
+
+/** Leaderboard mode: definitions, workload lists, and submissions. */
 export async function discoverLeaderboard(
   options: LeaderboardOptions,
 ): Promise<SolImportData> {
@@ -154,9 +83,27 @@ export async function discoverLeaderboard(
   data.issues.push(...kernelList.issues)
   data.driftWarnings.push(...kernelList.driftWarnings)
 
-  let wanted = kernelList.values.filter((kernel) =>
-    options.kernels.includes(kernel.name),
-  )
+  let wanted = kernelList.values
+  if (options.kernels !== undefined) {
+    const requestedNames = options.kernels
+    wanted = wanted.filter((kernel) => requestedNames.includes(kernel.name))
+    if (options.resume === undefined) {
+      for (const requested of requestedNames) {
+        if (!kernelList.values.some((kernel) => kernel.name === requested)) {
+          data.issues.push({
+            locator: listSnapshot.locator,
+            item: requested,
+            problem:
+              "requested kernel not present in the leaderboard kernel list",
+          })
+        }
+      }
+    }
+  }
+  if (options.tag !== undefined) {
+    const tag = options.tag
+    wanted = wanted.filter((kernel) => (kernel.tags ?? []).includes(tag))
+  }
   if (options.resume) {
     const resumeIndex = wanted.findIndex(
       (kernel) => kernel.name === options.resume,
@@ -164,60 +111,26 @@ export async function discoverLeaderboard(
     if (resumeIndex >= 0) wanted = wanted.slice(resumeIndex)
   }
   if (options.limit !== undefined) wanted = wanted.slice(0, options.limit)
-  for (const requested of options.kernels) {
-    if (
-      !kernelList.values.some((kernel) => kernel.name === requested) &&
-      options.resume === undefined
-    ) {
-      data.issues.push({
-        locator: listSnapshot.locator,
-        item: requested,
-        problem: "requested kernel not present in the leaderboard kernel list",
-      })
-    }
-  }
 
-  // Definitions and workload suites from the Hugging Face dataset.
-  const bySubset = new Map<string, Set<string>>()
+  // Definitions plus workload lists from the public kernel-detail endpoint,
+  // then the published evaluation results per kernel.
   for (const kernel of wanted) {
-    const subset = (kernel.tags ?? []).find((tag) => SUBSETS.includes(tag))
-    if (!subset) {
-      data.issues.push({
-        locator: listSnapshot.locator,
-        item: kernel.name,
-        problem: "kernel has no dataset subset tag; definition source unknown",
-      })
-      continue
-    }
-    bySubset.set(subset, (bySubset.get(subset) ?? new Set()).add(kernel.name))
-  }
-  const tagsByName = new Map(
-    wanted.map((kernel) => [kernel.name, kernel.tags ?? []]),
-  )
-  for (const [subset, names] of bySubset) {
-    const rows = await datasetRows(subset, names, data)
-    for (const name of names) {
-      const row = rows.get(name)
-      if (!row) {
-        data.issues.push({
-          locator: `${DATASET_ROWS_BASE}&config=${subset}`,
-          item: name,
-          problem: "definition not found in dataset subset",
-        })
-        continue
-      }
-      definitionFromRow(
-        row,
-        `${DATASET_ROWS_BASE}&config=${subset}`,
-        data,
-        tagsByName.get(name) ?? [],
-      )
-    }
-  }
+    const detailSnapshot = await fetchSnapshot(
+      `${LEADERBOARD_BASE}/kernels/${kernel.id}`,
+    )
+    data.snapshots.push(detailSnapshot)
+    const detail = parseKernelDetail(
+      detailSnapshot.body,
+      detailSnapshot.locator,
+    )
+    data.issues.push(...detail.issues)
+    data.driftWarnings.push(...detail.driftWarnings)
+    const definition = detail.values[0]
+    if (!definition) continue
+    definition.tags = definition.tags ?? kernel.tags ?? []
+    data.definitions.set(definition.name, definition)
+    data.workloadEntries.set(definition.name, definition.workloads ?? [])
 
-  // Published evaluation results per kernel.
-  for (const kernel of wanted) {
-    if (!data.definitions.has(kernel.name)) continue
     const snapshot = await fetchSnapshot(
       `${LEADERBOARD_BASE}/submissions?kernel_id=${kernel.id}`,
     )
@@ -225,7 +138,8 @@ export async function discoverLeaderboard(
     const submissions = parseSubmissions(snapshot.body, snapshot.locator)
     data.issues.push(...submissions.issues)
     data.driftWarnings.push(...submissions.driftWarnings)
-    data.submissions.set(kernel.name, submissions.values)
+    data.submissions.set(definition.name, submissions.values)
+    await new Promise((resolve) => setTimeout(resolve, FETCH_SPACING_MS))
   }
 
   data.driftWarnings = [...new Set(data.driftWarnings)]

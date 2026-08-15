@@ -11,10 +11,11 @@ Reviewed, deliberately committed source snapshots (§6.2, §21.3). Origins:
   and workload UUIDs so the golden pipeline resolves end to end. Its numbers
   are documentation examples, not measurements; it exists to test parsing and
   publication, and is never imported into a real catalog.
-- `api/kernels.json`, `api/submissions.json` — real leaderboard API responses
-  (`/api/kernels`, `/api/submissions?kernel_id=4`) sliced to a few entries.
-- `api/dataset-row-004.json` — one real row from the Hugging Face dataset
-  (`nvidia/SOL-ExecBench`, config `L1`) via the datasets-server rows API.
+- `api/kernels.json`, `api/submissions.json`, `api/kernel-4.json` — real
+  leaderboard API responses (`/api/kernels`, `/api/submissions?kernel_id=4`,
+  `/api/kernels/4`) sliced or pretty-printed. Only the public leaderboard API
+  is ever snapshotted here — never the Hugging Face dataset, whose NVIDIA
+  Evaluation Dataset License forbids redistribution (docs/source-policy.md).
 
 Refreshing any file changes parser goldens; re-run the importer tests and
 review the diff like any other source-schema drift (§14.8).

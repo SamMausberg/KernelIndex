@@ -31,11 +31,50 @@ const solTensor = z.looseObject({
   description: z.string().nullish(),
 })
 
-/** definition.json — also the shape of /api/kernels/{id} minus metadata. */
+/**
+ * One workload case. Local workload.jsonl lines carry uuid, per-argument
+ * input descriptors, and tolerances; the public kernel-detail API publishes
+ * only the axes plus baseline/speed-of-light latencies. Absent fields stay
+ * absent downstream — nothing is invented (§14.5).
+ */
+export const solWorkloadEntry = z.looseObject({
+  uuid: z.string().nullish(),
+  axes: z.record(z.string(), z.int()),
+  inputs: z
+    .record(
+      z.string(),
+      z.looseObject({
+        type: z.string(),
+        value: z.union([z.number(), z.boolean()]).optional(),
+        path: z.string().optional(),
+        tensor_key: z.string().optional(),
+      }),
+    )
+    .nullish(),
+  tolerance: z
+    .looseObject({
+      max_atol: z.number().nonnegative().optional(),
+      max_rtol: z.number().nonnegative().optional(),
+    })
+    .nullish(),
+  baseline_latency_ms: z.number().nullish(),
+  sol_ms: z.number().nullish(),
+})
+
+/** definition.json — also the shape of /api/kernels/{id}, which adds the
+ * leaderboard fields (workloads, baselines, speed-of-light metadata). */
 export const solDefinition = z.looseObject({
   name: z.string(),
   op_type: z.string().nullish(),
   description: z.string().nullish(),
+  title: z.string().nullish(),
+  id: z.int().nullish(),
+  gpu_types: z.array(z.string()).nullish(),
+  workloads: z.array(solWorkloadEntry).nullish(),
+  baseline: z.string().nullish(),
+  baseline_latency_ms: z.number().nullish(),
+  latency_unit: z.string().nullish(),
+  sol_is_dummy: z.boolean().nullish(),
   axes: z.record(z.string(), solAxis),
   inputs: z.record(z.string(), solTensor),
   outputs: z.record(z.string(), solTensor),
@@ -43,27 +82,6 @@ export const solDefinition = z.looseObject({
   tags: z.array(z.string()).nullish(),
   hf_id: z.string().nullish(),
   custom_inputs_entrypoint: z.string().nullish(),
-})
-
-/** One line of workload.jsonl (dataset rows add per-case tolerances). */
-export const solWorkloadEntry = z.looseObject({
-  uuid: z.string(),
-  axes: z.record(z.string(), z.int()),
-  inputs: z.record(
-    z.string(),
-    z.looseObject({
-      type: z.string(),
-      value: z.union([z.number(), z.boolean()]).optional(),
-      path: z.string().optional(),
-      tensor_key: z.string().optional(),
-    }),
-  ),
-  tolerance: z
-    .looseObject({
-      max_atol: z.number().nonnegative().optional(),
-      max_rtol: z.number().nonnegative().optional(),
-    })
-    .nullish(),
 })
 
 /** solution_*.json from the repository examples. */

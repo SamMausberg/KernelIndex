@@ -1,11 +1,14 @@
-// Explicit SOL-ExecBench importer command (§14.1–14.2).
+// Explicit SOL-ExecBench importer command (§14.1–14.2). Leaderboard mode
+// discovers every kernel by default; narrow a tranche with --tag (an
+// upstream tag such as L1, normalization, or model:DeepSeek-V3) or --kernels.
 //
-//   pnpm --filter @kernelindex/web import:sol -- --dry-run
+//   pnpm --filter @kernelindex/web import:sol -- --tag L1 --dry-run
 //   pnpm --filter @kernelindex/web import:sol -- --kernels a,b --publish
 //   pnpm --filter @kernelindex/web import:sol -- --snapshot ./sol-data --dry-run
 //
-// Flags: --dry-run --publish --snapshot <dir> --kernels <a,b> --limit <n>
-//        --top <n> --resume <kernel> --source-revision <stack> --output <file>
+// Flags: --dry-run --publish --snapshot <dir> --kernels <a,b> --tag <tag>
+//        --limit <n> --top <n> --resume <kernel> --source-revision <stack>
+//        --output <file>
 // Dry-run is the default; nothing is written without --publish.
 import { writeFileSync } from "node:fs"
 import { parseArgs } from "node:util"
@@ -14,7 +17,6 @@ import postgres from "postgres"
 import { publishBundle } from "../src/server/catalog/publication.ts"
 import * as schema from "../src/server/db/schema.ts"
 import {
-  DEFAULT_KERNELS,
   discoverLeaderboard,
   discoverLocal,
 } from "../src/server/import/sol/discover.ts"
@@ -30,6 +32,7 @@ const { values } = parseArgs({
     publish: { type: "boolean", default: false },
     snapshot: { type: "string" },
     kernels: { type: "string" },
+    tag: { type: "string" },
     limit: { type: "string" },
     top: { type: "string", default: "3" },
     resume: { type: "string" },
@@ -59,7 +62,8 @@ try {
     : await discoverLeaderboard({
         kernels: values.kernels
           ? values.kernels.split(",").map((k) => k.trim())
-          : DEFAULT_KERNELS,
+          : undefined,
+        tag: values.tag,
         limit: values.limit !== undefined ? Number(values.limit) : undefined,
         resume: values.resume,
       })

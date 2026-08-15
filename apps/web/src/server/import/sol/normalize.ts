@@ -15,6 +15,11 @@ import type {
   WorkloadSuiteManifest,
 } from "../../../schemas/kinds.ts"
 import { parseManifestDocument } from "../../../schemas/parse.ts"
+import { sha256Digest } from "../../identity/digest.ts"
+import { evaluateAxisExpression, kebab, toUtcInstant } from "../shared.ts"
+
+export { evaluateAxisExpression, kebab, toUtcInstant }
+
 import type { ImportIssue } from "./parse.ts"
 import type {
   SolDefinition,
@@ -96,23 +101,6 @@ export function mapLanguage(language: string): string {
   )
 }
 
-export function kebab(value: string): string {
-  return value
-    .toLowerCase()
-    .replaceAll(/[^a-z0-9]+/g, "-")
-    .replaceAll(/^-+|-+$/g, "")
-    .slice(0, 100)
-}
-
-/** SOL timestamps may lack a timezone; they are UTC by convention. */
-export function toUtcInstant(value: string): string {
-  const withZone = /(z|[+-]\d\d:\d\d)$/i.test(value) ? value : `${value}Z`
-  const parsed = new Date(withZone)
-  if (Number.isNaN(parsed.getTime()))
-    throw new Error(`unparseable timestamp: ${value}`)
-  return parsed.toISOString()
-}
-
 const SUBSET_TAGS = new Set(["L1", "L2", "Quant", "FlashInfer-Bench"])
 
 function familyOf(definition: SolDefinition): string {
@@ -122,6 +110,36 @@ function familyOf(definition: SolDefinition): string {
       !SUBSET_TAGS.has(candidate) && !candidate.startsWith("model:"),
   )
   return tag ? kebab(tag) : "uncategorized"
+}
+
+/**
+ * Editorial operation tags (§8.2): leaderboard family tags kebab-cased plus
+ * model workload provenance as `model:<kebab-slug>`. Difficulty-subset
+ * markers (L1/L2/…) are import bookkeeping, not taxonomy.
+ */
+function taxonomyTags(definition: SolDefinition): string[] {
+  return [
+    ...new Set(
+      (definition.tags ?? [])
+        .filter((tag) => !SUBSET_TAGS.has(tag))
+        .map((tag) =>
+          tag.startsWith("model:")
+            ? `model:${kebab(tag.slice(6))}`
+            : kebab(tag),
+        ),
+    ),
+  ]
+}
+
+/** Stable case identity: upstream uuid, else a digest of the bound axes. */
+export function workloadEntryKey(entry: SolWorkloadEntry): string {
+  if (entry.uuid) return entry.uuid
+  const canonical = JSON.stringify(
+    Object.fromEntries(
+      Object.entries(entry.axes).sort(([a], [b]) => a.localeCompare(b)),
+    ),
+  )
+  return sha256Digest(canonical).slice("sha256:".length, "sha256:".length + 12)
 }
 
 type SolArgument = {
@@ -176,62 +194,6 @@ function argumentSpec(argument: SolArgument) {
   }
 }
 
-/**
- * Evaluate a derived-axis expression from the tiny grammar (§9.1): integers,
- * axis names, + - * %, floor division (//), and parentheses.
- */
-export function evaluateAxisExpression(
-  expression: string,
-  bindings: Record<string, number>,
-): number {
-  const tokens = expression.match(/\d+|[a-z_][a-z0-9_]*|\/\/|[+\-*%()]/g) ?? []
-  let position = 0
-  const peek = () => tokens[position]
-  const next = () => tokens[position++]
-  const factor = (): number => {
-    const token = next()
-    if (token === undefined)
-      throw new Error(`unexpected end of '${expression}'`)
-    if (token === "(") {
-      const value = sum()
-      if (next() !== ")") throw new Error(`missing ')' in '${expression}'`)
-      return value
-    }
-    if (/^\d+$/.test(token)) return Number(token)
-    const bound = bindings[token]
-    if (bound === undefined)
-      throw new Error(`unbound axis '${token}' in '${expression}'`)
-    return bound
-  }
-  const product = (): number => {
-    let value = factor()
-    while (peek() === "*" || peek() === "//" || peek() === "%") {
-      const op = next()
-      const rhs = factor()
-      value =
-        op === "*"
-          ? value * rhs
-          : op === "%"
-            ? value % rhs
-            : Math.floor(value / rhs)
-    }
-    return value
-  }
-  const sum = (): number => {
-    let value = product()
-    while (peek() === "+" || peek() === "-") {
-      const op = next()
-      const rhs = product()
-      value = op === "+" ? value + rhs : value - rhs
-    }
-    return value
-  }
-  const result = sum()
-  if (position !== tokens.length)
-    throw new Error(`trailing tokens in '${expression}'`)
-  return result
-}
-
 /** SOL Definition → immutable OperationSpec manifest. */
 export function operationFromDefinition(
   definition: SolDefinition,
@@ -240,6 +202,7 @@ export function operationFromDefinition(
   manifest: OperationSpecManifest
   slug: string
   aliases: string[]
+  tags: string[]
   externalId: string
 } {
   const manifest = parseManifestDocument({
@@ -280,6 +243,7 @@ export function operationFromDefinition(
     manifest,
     slug: kebab(definition.name),
     aliases: [definition.name.toLowerCase()],
+    tags: taxonomyTags(definition),
     externalId: definition.name,
   }
 }
@@ -310,18 +274,19 @@ export function caseFromEntry(
       )
     }
   }
+  const entryKey = workloadEntryKey(entry)
   const axisValue = (raw: string | number): number => {
     const dim = dimension(raw)
     if (typeof dim === "number") return dim
     const bound = bindings[dim]
     if (bound === undefined)
-      throw new Error(`unbound axis '${dim}' in workload ${entry.uuid}`)
+      throw new Error(`unbound axis '${dim}' in workload ${entryKey}`)
     return bound
   }
   const tensors: Record<string, unknown> = {}
   const scalars: Record<string, unknown> = {}
   for (const argument of operationArguments(definition.inputs)) {
-    const descriptor = entry.inputs[argument.name]
+    const descriptor = entry.inputs?.[argument.name]
     const dtype = mapDtype(argument.dtype)
     if (descriptor?.type === "scalar" && typeof descriptor.value === "number") {
       scalars[argumentKey(argument.name)] = { dtype, value: descriptor.value }
@@ -331,20 +296,27 @@ export function caseFromEntry(
     tensors[argumentKey(argument.name)] = {
       shape: argument.shape.map(axisValue),
       dtype,
-      data: {
-        generator:
-          descriptor?.type === "safetensors" ? "safetensors" : "random",
-      },
+      // Leaderboard workload lists omit input descriptors; the generator
+      // stays absent rather than guessed (§14.5).
+      data: descriptor
+        ? {
+            generator:
+              descriptor.type === "safetensors" ? "safetensors" : "random",
+          }
+        : undefined,
     }
   }
+  // Axis-heavy kernels overflow the 200-char title budget; the axes stay
+  // complete in spec.axes, only the display title truncates.
+  const title = `${definition.name} · ${Object.entries(entry.axes)
+    .map(([axis, value]) => `${axis}=${value}`)
+    .join(", ")}`
   const manifest = parseManifestDocument({
     apiVersion: "kernelindex.dev/v1alpha1",
     kind: "WorkloadCase",
     metadata: {
-      name: `${kebab(definition.name)}-${entry.uuid.slice(0, 8)}`,
-      title: `${definition.name} · ${Object.entries(entry.axes)
-        .map(([axis, value]) => `${axis}=${value}`)
-        .join(", ")}`,
+      name: `${kebab(definition.name)}-${entryKey.slice(0, 8)}`,
+      title: title.length > 200 ? `${title.slice(0, 199)}…` : title,
     },
     spec: {
       operationSpecDigest,
@@ -380,7 +352,7 @@ export function suiteFromEntries(
     spec: {
       operationSpecDigest,
       cases: entries.map((entry) => ({
-        externalId: entry.uuid,
+        externalId: workloadEntryKey(entry),
         axes: Object.fromEntries(
           Object.entries(entry.axes).map(([name, value]) => [
             axisKey(name),
@@ -684,7 +656,7 @@ export function runFromTrace(input: {
     kind: "BenchmarkRun",
     metadata: {
       name: kebab(
-        `sol-trace-${trace.definition}-${trace.workload.uuid.slice(0, 8)}`,
+        `sol-trace-${trace.definition}-${workloadEntryKey(trace.workload).slice(0, 8)}`,
       ),
       title: `${trace.solution ?? "unknown solution"} · ${trace.definition}`,
     },
@@ -730,7 +702,7 @@ export function runFromTrace(input: {
     manifest,
     protocol: input.protocol,
     environment: input.environment,
-    externalId: `trace/${trace.solution ?? "unknown"}/${trace.workload.uuid}`,
+    externalId: `trace/${trace.solution ?? "unknown"}/${workloadEntryKey(trace.workload)}`,
   }
 }
 

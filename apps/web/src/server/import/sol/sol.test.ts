@@ -18,6 +18,7 @@ import {
 } from "./normalize.ts"
 import {
   parseDefinition,
+  parseKernelDetail,
   parseKernelList,
   parseSubmissions,
   parseTraces,
@@ -90,13 +91,22 @@ describe("sol normalization", () => {
     expect(specDigest(first.manifest)).toBe(specDigest(second.manifest))
   })
 
-  it("preserves real per-case tolerances from dataset workloads", () => {
-    const row = JSON.parse(read("api/dataset-row-004.json")).rows[0].row
-    const entries = (JSON.parse(row.workloads) as unknown[]).map((entry) =>
-      solWorkloadEntry.parse(entry),
-    )
-    expect(entries).toHaveLength(16)
-    expect(entries[0].tolerance?.max_atol).toBeGreaterThan(0)
+  it("preserves per-case tolerances when a local workload declares them", () => {
+    const entry = solWorkloadEntry.parse({
+      uuid: "0f6d2c1e-aaaa-bbbb-cccc-000000000001",
+      axes: { batch_size: 8 },
+      inputs: { hidden_states: { type: "random" } },
+      tolerance: { max_atol: 0.003, max_rtol: 0.02 },
+    })
+    expect(entry.tolerance?.max_atol).toBe(0.003)
+    // Leaderboard workload lists carry only axes plus latency bounds.
+    const apiEntry = solWorkloadEntry.parse({
+      axes: { batch_size: 8 },
+      baseline_latency_ms: 0.05,
+      sol_ms: 0.03,
+    })
+    expect(apiEntry.uuid).toBeUndefined()
+    expect(apiEntry.sol_ms).toBe(0.03)
   })
 
   it("normalizes SOL timestamps to UTC instants", () => {
@@ -191,20 +201,12 @@ describe.skipIf(!url)("sol import pipeline (database)", () => {
     })
   })
 
-  it("imports leaderboard submissions against the dataset suite", async () => {
-    const row = JSON.parse(read("api/dataset-row-004.json")).rows[0].row
-    const definition = parseDefinition(
-      JSON.stringify({
-        ...row,
-        axes: JSON.parse(row.axes),
-        inputs: JSON.parse(row.inputs),
-        outputs: JSON.parse(row.outputs),
-      }),
-      "fx",
-    ).values[0]
-    const workloads = (JSON.parse(row.workloads) as unknown[]).map((entry) =>
-      solWorkloadEntry.parse(entry),
-    )
+  it("imports leaderboard submissions against the API workload suite", async () => {
+    const detail = parseKernelDetail(read("api/kernel-4.json"), "fx")
+    expect(detail.issues).toHaveLength(0)
+    const definition = detail.values[0]
+    const workloads = definition.workloads ?? []
+    expect(workloads).toHaveLength(16)
     const submissions = parseSubmissions(
       read("api/submissions.json"),
       "fx",
@@ -220,12 +222,21 @@ describe.skipIf(!url)("sol import pipeline (database)", () => {
       id: 900002,
       is_disqualified: true,
     }
+    // Faster than the published speed-of-light bound: review, not publish.
+    const impossiblyFast: SolSubmission = {
+      ...submissions[0],
+      id: 900003,
+      latency_ms: 1e-6,
+    }
 
     const data: SolImportData = {
       definitions: new Map([[definition.name, definition]]),
       workloadEntries: new Map([[definition.name, workloads]]),
       submissions: new Map([
-        [definition.name, [...submissions, incorrect, disqualified]],
+        [
+          definition.name,
+          [...submissions, incorrect, disqualified, impossiblyFast],
+        ],
       ]),
       solutions: [],
       traces: [],
@@ -240,6 +251,14 @@ describe.skipIf(!url)("sol import pipeline (database)", () => {
       expect(report.skippedSubmissions.incorrect).toBeGreaterThanOrEqual(1)
       expect(report.skippedSubmissions.disqualified).toBeGreaterThanOrEqual(1)
       expect(report.licenseWarnings.length).toBeGreaterThanOrEqual(2)
+      expect(
+        report.ambiguities.some((entry) =>
+          entry.includes("speed-of-light bound"),
+        ),
+      ).toBe(true)
+      // Model provenance tags survive; subset markers (L1) do not.
+      expect(bundle.operations[0].tags).toContain("model:lfm2-1-2b")
+      expect(bundle.operations[0].tags).not.toContain("l1")
       // 16 cases plus the suite the runs bind to.
       expect(bundle.workloads).toHaveLength(17)
       expect(bundle.runs).toHaveLength(2)

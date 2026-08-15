@@ -2,12 +2,13 @@
 // check the catalog for existing digests and slug conflicts, and assemble the
 // publication bundle plus the reviewable dry-run report (§14.2). Names alone
 // never merge identity; ambiguity becomes a review item, not an overwrite.
-import { eq, inArray } from "drizzle-orm"
+import { eq } from "drizzle-orm"
 import type { DbHandle, ImportBundle } from "../../catalog/publication.ts"
 import * as schema from "../../db/schema.ts"
 import { specDigest } from "../../identity/digest.ts"
+import { snapshotRow } from "../fetch.ts"
+import { type ProposedObject, proposedObjects } from "../report.ts"
 import type { SolImportData } from "./discover.ts"
-import { snapshotRow } from "./fetch.ts"
 import {
   caseFromEntry,
   implementationFromSolution,
@@ -22,21 +23,16 @@ import {
   suiteFromEntries,
   traceEnvironment,
   traceProtocol,
+  workloadEntryKey,
 } from "./normalize.ts"
 import type { ImportIssue } from "./parse.ts"
 import {
   LEADERBOARD_BASE,
+  PARSER_NAME,
   PARSER_VERSION,
   SOL_SOURCE,
   type SolSubmission,
 } from "./types.ts"
-
-export type ProposedObject = {
-  entity: "operation" | "workload" | "implementation" | "run" | "project"
-  name: string
-  digest: string
-  action: "insert" | "exists"
-}
 
 export type ImportReport = {
   source: string
@@ -55,6 +51,8 @@ export type ImportReport = {
     disqualified: number
     filtered: number
   }
+  /** Proposed operations per family — the tranche-review summary (§14.8). */
+  operationsByFamily: Record<string, number>
   proposed: ProposedObject[]
   ambiguities: string[]
   issues: ImportIssue[]
@@ -74,6 +72,7 @@ function selectSubmissions(
   all: SolSubmission[],
   options: ReconcileOptions,
   report: ImportReport,
+  solBoundMs: number | null,
 ): SolSubmission[] {
   const usable: SolSubmission[] = []
   for (const submission of all) {
@@ -94,6 +93,12 @@ function selectSubmissions(
       submission.latency_ms <= 0
     ) {
       report.skippedSubmissions.incorrect++
+    } else if (solBoundMs !== null && submission.latency_ms < solBoundMs) {
+      // §14.8: suspicious or impossible performance goes to review, and a
+      // bogus leader must not silently pull a slower entry into the top N.
+      report.ambiguities.push(
+        `submission ${submission.id} (${submission.username}) on '${submission.kernel_name}' reports ${submission.latency_ms} ms, beating the minimum per-case speed-of-light bound ${solBoundMs} ms — skipped pending review`,
+      )
     } else {
       usable.push(submission)
     }
@@ -103,22 +108,23 @@ function selectSubmissions(
     .slice(0, options.topPerKernel)
 }
 
-/** Look up which digests already exist so the report shows real actions. */
-async function existingDigests(
-  database: DbHandle,
-  table:
-    | typeof schema.operations.semanticDigest
-    | typeof schema.workloads.workloadDigest
-    | typeof schema.implementations.implementationDigest
-    | typeof schema.benchmarkRuns.runDigest,
-  digests: string[],
-): Promise<Set<string>> {
-  if (digests.length === 0) return new Set()
-  const rows = await database
-    .select({ digest: table })
-    .from(table.table)
-    .where(inArray(table, digests))
-  return new Set(rows.map((row) => row.digest))
+/**
+ * Minimum per-case speed-of-light latency in ms; null when any case lacks a
+ * bound. The upstream suite aggregate's weighting is not published, so only
+ * the minimum is a valid bound: no average of per-case latencies, however
+ * weighted, can beat the fastest case's physical limit.
+ */
+function suiteSolBound(
+  definition: { sol_is_dummy?: boolean | null },
+  entries: { sol_ms?: number | null | undefined }[],
+): number | null {
+  if (definition.sol_is_dummy || entries.length === 0) return null
+  let minimum = Number.POSITIVE_INFINITY
+  for (const entry of entries) {
+    if (typeof entry.sol_ms !== "number" || entry.sol_ms <= 0) return null
+    minimum = Math.min(minimum, entry.sol_ms)
+  }
+  return minimum
 }
 
 export async function reconcile(
@@ -145,6 +151,7 @@ export async function reconcile(
     },
     selectedSubmissions: 0,
     skippedSubmissions: { incorrect: 0, disqualified: 0, filtered: 0 },
+    operationsByFamily: {},
     proposed: [],
     ambiguities: [],
     issues: [...data.issues],
@@ -155,7 +162,9 @@ export async function reconcile(
 
   const bundle: ImportBundle = {
     source: { ...SOL_SOURCE },
-    snapshots: data.snapshots.map((snapshot) => snapshotRow(snapshot)),
+    snapshots: data.snapshots.map((snapshot) =>
+      snapshotRow(snapshot, { name: PARSER_NAME, version: PARSER_VERSION }),
+    ),
     projects: [],
     operations: [],
     workloads: [],
@@ -174,6 +183,8 @@ export async function reconcile(
       const digest = specDigest(operation.manifest)
       operationDigestByName.set(name, digest)
       bundle.operations.push(operation)
+      report.operationsByFamily[operation.manifest.spec.family] =
+        (report.operationsByFamily[operation.manifest.spec.family] ?? 0) + 1
       const [slugRow] = await database
         .select({ semanticDigest: schema.operations.semanticDigest })
         .from(schema.operations)
@@ -200,14 +211,15 @@ export async function reconcile(
     const operationDigest = operationDigestByName.get(name)
     if (!definition || !operationDigest) continue
     for (const entry of entries) {
+      const entryKey = workloadEntryKey(entry)
       try {
         const manifest = caseFromEntry(definition, operationDigest, entry)
-        caseDigestByUuid.set(entry.uuid, specDigest(manifest))
-        bundle.workloads.push({ manifest, externalId: entry.uuid })
+        caseDigestByUuid.set(entryKey, specDigest(manifest))
+        bundle.workloads.push({ manifest, externalId: entryKey })
       } catch (error) {
         report.issues.push({
           locator: "normalize",
-          item: `${name}/${entry.uuid}`,
+          item: `${name}/${entryKey}`,
           problem: (error as Error).message,
         })
       }
@@ -285,7 +297,12 @@ export async function reconcile(
       }
       continue
     }
-    const selected = selectSubmissions(all, options, report)
+    const selected = selectSubmissions(
+      all,
+      options,
+      report,
+      suiteSolBound(definition, data.workloadEntries.get(name) ?? []),
+    )
     report.selectedSubmissions += selected.length
     for (const submission of selected) {
       try {
@@ -336,12 +353,13 @@ export async function reconcile(
 
   // Traces: exact per-case runs (the gold-record path).
   for (const trace of data.traces) {
+    const traceKey = workloadEntryKey(trace.workload)
     const definition = data.definitions.get(trace.definition)
     const operationDigest = operationDigestByName.get(trace.definition)
     if (!definition || !operationDigest) {
       report.issues.push({
         locator: "normalize",
-        item: `trace/${trace.workload.uuid}`,
+        item: `trace/${traceKey}`,
         problem: `trace references unknown definition '${trace.definition}'`,
       })
       continue
@@ -356,7 +374,7 @@ export async function reconcile(
       continue
     }
     try {
-      let caseDigest = caseDigestByUuid.get(trace.workload.uuid)
+      let caseDigest = caseDigestByUuid.get(traceKey)
       if (!caseDigest) {
         const manifest = caseFromEntry(
           definition,
@@ -364,8 +382,8 @@ export async function reconcile(
           trace.workload,
         )
         caseDigest = specDigest(manifest)
-        caseDigestByUuid.set(trace.workload.uuid, caseDigest)
-        bundle.workloads.push({ manifest, externalId: trace.workload.uuid })
+        caseDigestByUuid.set(traceKey, caseDigest)
+        bundle.workloads.push({ manifest, externalId: traceKey })
       }
       if (!trace.evaluation) throw new Error("trace has no evaluation")
       const protocol = traceProtocol()
@@ -384,72 +402,14 @@ export async function reconcile(
     } catch (error) {
       report.issues.push({
         locator: "normalize",
-        item: `trace/${trace.workload.uuid}`,
+        item: `trace/${traceKey}`,
         problem: (error as Error).message,
       })
     }
   }
 
   // Compare proposed digests against the live catalog for the report.
-  const opDigests = bundle.operations.map((entry) => specDigest(entry.manifest))
-  const workloadDigests = bundle.workloads.map((entry) =>
-    specDigest(entry.manifest),
-  )
-  const implementationDigests = bundle.implementations.map((entry) =>
-    specDigest(entry.manifest),
-  )
-  const runDigests = bundle.runs.map((entry) => specDigest(entry.manifest))
-  const [
-    existingOps,
-    existingWorkloads,
-    existingImplementations,
-    existingRuns,
-  ] = await Promise.all([
-    existingDigests(database, schema.operations.semanticDigest, opDigests),
-    existingDigests(database, schema.workloads.workloadDigest, workloadDigests),
-    existingDigests(
-      database,
-      schema.implementations.implementationDigest,
-      implementationDigests,
-    ),
-    existingDigests(database, schema.benchmarkRuns.runDigest, runDigests),
-  ])
-  for (const [index, entry] of bundle.operations.entries()) {
-    report.proposed.push({
-      entity: "operation",
-      name: entry.slug,
-      digest: opDigests[index],
-      action: existingOps.has(opDigests[index]) ? "exists" : "insert",
-    })
-  }
-  for (const [index, entry] of bundle.workloads.entries()) {
-    report.proposed.push({
-      entity: "workload",
-      name: entry.manifest.metadata.name,
-      digest: workloadDigests[index],
-      action: existingWorkloads.has(workloadDigests[index])
-        ? "exists"
-        : "insert",
-    })
-  }
-  for (const [index, entry] of bundle.implementations.entries()) {
-    report.proposed.push({
-      entity: "implementation",
-      name: entry.slug,
-      digest: implementationDigests[index],
-      action: existingImplementations.has(implementationDigests[index])
-        ? "exists"
-        : "insert",
-    })
-  }
-  for (const [index, entry] of bundle.runs.entries()) {
-    report.proposed.push({
-      entity: "run",
-      name: entry.manifest.metadata.name,
-      digest: runDigests[index],
-      action: existingRuns.has(runDigests[index]) ? "exists" : "insert",
-    })
-  }
+  report.proposed = await proposedObjects(database, bundle)
 
   const inserts = report.proposed.filter(
     (object) => object.action === "insert",
