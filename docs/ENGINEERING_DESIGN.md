@@ -2719,9 +2719,17 @@ Entry into the corpus is effortless (2026-08-15):
   "state the inferred mode and let the user correct it");
 - the empty query browses the corpus at operation level with family scoping
   and Most indexed / Recently active / A–Z ordering;
-- inside a selected result group, Recommended (the group's native ranked
-  order) is default; Most verified, Deployable first, and Newest are
-  presentation re-sorts that never alter cohort rank or grouping.
+- inside a selected result group, Recommended is default and surfaces the
+  strongest available trust tier first (verified > reproducible >
+  license+source > source available > no source) with the group's native
+  ranked order untouched inside each tier — labeled dividers appear only
+  when tiers actually differ, so a uniform-tier corpus renders as a plain
+  ranked list; Newest is a presentation re-sort. Neither ever alters cohort
+  rank or grouping. One-click availability chips (has source, license
+  known, installable, verified) filter on single observable facts —
+  "has source" is the explicit way to drop rows without mirrored code
+  (2026-08-15 reality: the former Most verified / Deployable first sorts
+  were subsumed by tiering + chips).
 
 ### 16.7 Result row
 
@@ -2749,7 +2757,7 @@ The row must expose:
 - concise caveat count;
 - `Inspect`, `Install`, and `Compare` actions.
 
-Use at most three visible badges in the primary row. Render remaining facts as quiet text. “Why ranked here” expands eligibility, tie, uncertainty, and exclusion reasoning. “Mismatch” enumerates every difference from the request.
+Use at most three visible badges in the primary row. Render remaining facts as quiet text. Evidence, license state, and source availability share one Trust cell — "source" rendered as an accent affordance when code is viewable on-site, never as a warning; amber is reserved for genuinely warning states (stale, retracted, mismatch). The expansion (2026-08-15 reality) is one plain-English line (why ranked / mismatches / the caveat that matters), the availability fact chips, and three actions — View source (deep link to the implementation's `#code`), Run dossier, Compare with #1; the full evidence key-values live on the run dossier, which is their canonical home.
 
 On mobile, stack identity, metric, and key facts. Do not shrink a desktop table until it is unreadable.
 
