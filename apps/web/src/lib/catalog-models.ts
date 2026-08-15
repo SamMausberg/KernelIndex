@@ -130,13 +130,6 @@ export type CohortContext = {
 
 export type SearchInput = { query: string }
 
-/** One row of the empty-query start state (§16.5): the corpus by family. */
-export type BrowseFamily = {
-  family: string
-  operations: number
-  runs: number
-}
-
 /**
  * One operation in the compact corpus index that powers search suggestions
  * and the browse start state. Small by design — the whole index ships inline
@@ -220,10 +213,15 @@ export type SearchPageModel = {
   facets: SearchFacetToken[]
   queryIssues: { token: string; message: string }[]
   policy: SearchPolicy
-  /** Resolved operation, when the query named one. */
+  /** Resolved operation, when the query named exactly one. */
   operation: { name: string; slug: string } | null
   /** Populated only for the empty query: browse the index instead of failing. */
-  browse: BrowseFamily[] | null
+  browse: OperationIndexEntry[] | null
+  /**
+   * Populated when the query plausibly names several operations and none
+   * dominates: the chooser list, in match order. `operation` is null.
+   */
+  matches: OperationIndexEntry[] | null
   cohort: CohortContext | null
   groups: {
     exact: ResultRow[]
@@ -234,7 +232,11 @@ export type SearchPageModel = {
   related: RelatedItem[]
   /** Source coverage and freshness for the resolved operation (§22.4). */
   sources: SourceRef[]
-  noResult: { guidance: string; suggestions: string[] } | null
+  noResult: {
+    guidance: string
+    /** Clickable rewrites: display label plus the query it submits. */
+    suggestions: { label: string; query: string }[]
+  } | null
 }
 
 /** One aligned comparison field across the selected runs (§16.11). */

@@ -75,7 +75,7 @@ describe.skipIf(!url)("postgres catalog reads", () => {
     expect(model.noResult).toBeNull()
     expect(model.browse?.length).toBeGreaterThanOrEqual(1)
     const rmsnorm = model.browse?.find((entry) => entry.family === "rmsnorm")
-    expect(rmsnorm?.operations).toBeGreaterThanOrEqual(1)
+    expect(rmsnorm?.runs).toBeGreaterThanOrEqual(1)
   })
 
   it("searchCatalog explains a no-result query", async () => {

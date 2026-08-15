@@ -569,6 +569,8 @@ export async function searchCatalog(
   const matched = /rms[\s_-]?norm/i.test(query)
   if (!matched) {
     const empty = query === ""
+    // "norm" alone plausibly names both fixture operations: the chooser.
+    const ambiguous = !empty && intent.text.includes("norm")
     return {
       illustrative: ILLUSTRATIVE,
       query,
@@ -577,12 +579,8 @@ export async function searchCatalog(
         : describeIntent(intent, null),
       ...shared,
       operation: null,
-      browse: empty
-        ? [
-            { family: "rmsnorm", operations: 2, runs: 8 },
-            { family: "fused-residual-rmsnorm", operations: 1, runs: 0 },
-          ]
-        : null,
+      browse: empty ? await getOperationIndex() : null,
+      matches: ambiguous ? await getOperationIndex() : null,
       cohort: null,
       groups: {
         exact: [],
@@ -592,16 +590,23 @@ export async function searchCatalog(
       },
       related: [],
       sources: [],
-      noResult: empty
-        ? null
-        : {
-            guidance:
-              "No comparable public evidence found. Search by operation, shape, dtype, hardware, and framework.",
-            suggestions: [
-              "rmsnorm B200 bf16 [2048,4096]",
-              "rmsnorm bf16 pytorch",
-            ],
-          },
+      noResult:
+        empty || ambiguous
+          ? null
+          : {
+              guidance:
+                "No comparable public evidence found. Search by operation, shape, dtype, hardware, and framework.",
+              suggestions: [
+                {
+                  label: "RMSNorm, hidden 4096",
+                  query: "op:rmsnorm-h4096",
+                },
+                {
+                  label: "rmsnorm bf16 pytorch",
+                  query: "rmsnorm bf16 pytorch",
+                },
+              ],
+            },
     }
   }
 
@@ -612,6 +617,7 @@ export async function searchCatalog(
     ...shared,
     operation: { name: "RMSNorm, hidden 4096", slug: "rmsnorm-h4096" },
     browse: null,
+    matches: null,
     cohort: COHORT_2048,
     groups: {
       exact: RANKED.map(rowFromRun),

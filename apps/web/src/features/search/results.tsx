@@ -1,9 +1,7 @@
 import Link from "next/link"
 import { CopyButton } from "@/components/copy-button"
 import { KeyValueList } from "@/components/key-value-list"
-import { Meter } from "@/components/meter"
 import type {
-  BrowseFamily,
   OperationIndexEntry,
   ResultRow,
   SearchPageModel,
@@ -18,6 +16,7 @@ import {
 import { meetsTrust } from "@/lib/search-query"
 import { licenseMatches } from "@/server/policy/deployability"
 import { availabilityText, ResultRowItem, ResultTableHead } from "./result-row"
+import { type BrowseFilters, OperationList, StartState } from "./start-state"
 import { SuggestInput } from "./suggest"
 
 export type ResultMode = "exact" | "compatible" | "supported" | "reported"
@@ -111,97 +110,6 @@ function SearchField({
         ⏎
       </kbd>
     </form>
-  )
-}
-
-/** Filter grammar shown once on the start state; the values are syntax. */
-const SYNTAX_HINTS = [
-  "gpu:B200",
-  "dtype:bf16",
-  "shape:[2048,4096]",
-  "model:deepseek-v3",
-  "framework:pytorch",
-  "trust:verified",
-  "license:mit",
-]
-
-/** Empty-query start state (§16.5): the published corpus, ready to browse. */
-function StartState({ families }: { families: BrowseFamily[] }) {
-  const totalOperations = families.reduce((n, f) => n + f.operations, 0)
-  const totalRuns = families.reduce((n, f) => n + f.runs, 0)
-  const maxRuns = Math.max(1, ...families.map((f) => f.runs))
-  const examples = families.slice(0, 2).map((f) => `${f.family} B200 bf16`)
-  return (
-    <section className="animate-row-in pt-6">
-      <div className="flex flex-wrap items-baseline gap-x-5 gap-y-2 text-[13px]">
-        <span className="text-faint">Try</span>
-        {examples.map((example) => (
-          <Link
-            key={example}
-            href={`/search?q=${encodeURIComponent(example)}`}
-            className="font-mono text-[12.5px]"
-          >
-            {example}
-          </Link>
-        ))}
-        <Link
-          href="/docs#query-syntax"
-          className="ml-auto text-[12.5px] text-faint"
-        >
-          Query syntax
-        </Link>
-      </div>
-      <div className="mt-3 flex flex-wrap items-baseline gap-x-3.5 gap-y-1.5 text-[12px]">
-        <span className="text-faint">Filter with</span>
-        {SYNTAX_HINTS.map((hint) => (
-          <code key={hint} className="font-mono text-[11.5px] text-subtle">
-            {hint}
-          </code>
-        ))}
-      </div>
-      <div className="mt-8 flex flex-wrap items-baseline justify-between gap-4 border-b border-border-strong pb-3">
-        <h2 className="text-[15px] font-medium tracking-[-0.01em]">
-          Browse the index
-        </h2>
-        <span className="text-[12.5px] text-faint">
-          {totalOperations} operations · {totalRuns} published runs
-        </span>
-      </div>
-      <div className="grid grid-cols-[minmax(220px,1fr)_140px_220px] text-[11.5px] text-faint">
-        <div className="py-2">Family</div>
-        <div className="py-2 text-right">Operations</div>
-        <div className="py-2 text-right">Published runs</div>
-      </div>
-      {families.map((entry) => (
-        <Link
-          key={entry.family}
-          href={`/search?q=${encodeURIComponent(entry.family)}`}
-          className="grid h-[47px] grid-cols-[minmax(220px,1fr)_140px_220px] items-center border-t border-line transition-colors hover:bg-raised hover:no-underline"
-        >
-          <span className="truncate pr-3 font-mono text-[13px] text-fg">
-            {entry.family}
-          </span>
-          <span className="text-right font-mono text-[13px] text-muted">
-            {entry.operations}
-          </span>
-          <span className="flex items-center justify-end gap-2.5">
-            {entry.runs > 0 && (
-              <Meter
-                fraction={entry.runs / maxRuns}
-                className="w-[96px] max-sm:hidden"
-              />
-            )}
-            <span
-              className={`min-w-[52px] text-right font-mono text-[13px] ${
-                entry.runs > 0 ? "text-muted" : "text-faint"
-              }`}
-            >
-              {entry.runs > 0 ? entry.runs : "none yet"}
-            </span>
-          </span>
-        </Link>
-      ))}
-    </section>
   )
 }
 
@@ -335,10 +243,12 @@ function Recommendation({
 export function SearchResults({
   model,
   filters,
+  browse,
   suggest = [],
 }: {
   model: SearchPageModel
   filters: SearchFilters
+  browse?: BrowseFilters
   suggest?: OperationIndexEntry[]
 }) {
   const groupsByMode: Record<ResultMode, ResultRow[]> = {
@@ -444,7 +354,33 @@ export function SearchResults({
 
       <main className="shell pb-20">
         {model.browse ? (
-          <StartState families={model.browse} />
+          <StartState
+            operations={model.browse}
+            filters={browse ?? { sort: "indexed", family: null, page: 1 }}
+          />
+        ) : model.matches ? (
+          <section className="animate-row-in pt-6">
+            <div className="flex flex-wrap items-baseline justify-between gap-4 border-b border-border-strong pb-3">
+              <h1 className="text-[15px] font-medium tracking-[-0.01em]">
+                {model.matches.length} operations match
+              </h1>
+              <span className="text-[12.5px] text-faint">
+                Pick one to compare its implementations
+                {model.facets.length > 0 ? " — your filters carry over" : ""}
+              </span>
+            </div>
+            <OperationList
+              entries={model.matches}
+              hrefFor={(entry) =>
+                `/search?q=${encodeURIComponent(
+                  [
+                    ...model.facets.map((facet) => facet.token),
+                    `op:${entry.slug}`,
+                  ].join(" "),
+                )}`
+              }
+            />
+          </section>
         ) : model.noResult ? (
           <section className="py-14">
             <p className="max-w-[64ch] text-[14px] text-muted">
@@ -453,11 +389,11 @@ export function SearchResults({
             <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2">
               {model.noResult.suggestions.map((suggestion) => (
                 <Link
-                  key={suggestion}
-                  href={`/search?q=${encodeURIComponent(suggestion)}`}
+                  key={suggestion.query}
+                  href={`/search?q=${encodeURIComponent(suggestion.query)}`}
                   className="font-mono text-[13px]"
                 >
-                  {suggestion}
+                  {suggestion.label}
                 </Link>
               ))}
             </div>

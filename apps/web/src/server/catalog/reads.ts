@@ -16,7 +16,6 @@ import {
   sql,
 } from "drizzle-orm"
 import type {
-  BrowseFamily,
   CohortContext,
   ComparePageModel,
   CompareRun,
@@ -419,12 +418,13 @@ type OperationRow = typeof schema.operations.$inferSelect
  * trigram word similarity (over name, slug, family, and tags) break the
  * fuzzy tier. Hyphen/underscore-insensitive, so "rmsnorm" also finds
  * "069-rms-norm". A `model:` facet resolves even with no free text; other
- * facet tokens never reach this function.
+ * facet tokens never reach this function. Returns every plausible hit with
+ * its score, best first — the caller decides whether the top hit dominates
+ * or the user should choose.
  */
-async function resolveOperation(intent: SearchIntent): Promise<{
-  operation: OperationRow | null
-  nearMisses: OperationRow[]
-}> {
+async function resolveOperation(
+  intent: SearchIntent,
+): Promise<{ operation: OperationRow; score: number }[]> {
   const terms = [
     ...new Set(
       (intent.family !== null ? [intent.family, ...intent.text] : intent.text)
@@ -434,9 +434,7 @@ async function resolveOperation(intent: SearchIntent): Promise<{
         .filter((term) => !SEARCH_STOPWORDS.has(term)),
     ),
   ]
-  if (terms.length === 0 && intent.model === null) {
-    return { operation: null, nearMisses: [] }
-  }
+  if (terms.length === 0 && intent.model === null) return []
   const phrase = terms.join(" ")
   // Exact tiers must cover the whole request: a one-token alias hit must not
   // outrank full term coverage of a longer query (§12.4). All three phrase
@@ -489,12 +487,12 @@ async function resolveOperation(intent: SearchIntent): Promise<{
     ) as score
     from ${schema.operations} o
     order by score desc, o.created_at asc
-    limit 6
+    limit 20
   `)
   const hits = [...scored]
     .map((row) => ({ id: row.id as string, score: Number(row.score) }))
     .filter((hit) => hit.score >= 8)
-  if (hits.length === 0) return { operation: null, nearMisses: [] }
+  if (hits.length === 0) return []
 
   const rows = await database
     .select()
@@ -506,10 +504,22 @@ async function resolveOperation(intent: SearchIntent): Promise<{
       ),
     )
   const byId = new Map(rows.map((row) => [row.id, row]))
-  const ordered = hits
-    .map((hit) => byId.get(hit.id))
-    .filter((row): row is OperationRow => row !== undefined)
-  return { operation: ordered[0] ?? null, nearMisses: ordered.slice(1) }
+  return hits.flatMap((hit) => {
+    const operation = byId.get(hit.id)
+    return operation ? [{ operation, score: hit.score }] : []
+  })
+}
+
+/**
+ * Does the best hit clearly name one operation? An exact slug, alias, or
+ * model-tag tier (≥ 250) always does; below that a fuzzy winner must beat
+ * the runner-up decisively, otherwise the user chooses (§12.1: the result
+ * page states the inferred mode and lets the user correct it).
+ */
+function dominates(hits: { score: number }[]): boolean {
+  if (hits.length === 0) return false
+  if (hits[0].score >= 250 || hits.length === 1) return true
+  return hits[0].score - hits[1].score >= 40
 }
 
 /**
@@ -772,38 +782,6 @@ export async function getOperationIndex(): Promise<OperationIndexEntry[]> {
   })
 }
 
-/** §16.5 start state: the published corpus grouped by operation family. */
-async function browseFamilies(): Promise<BrowseFamily[]> {
-  const database = db()
-  const [operations, runs] = await Promise.all([
-    database
-      .select({ family: schema.operations.family, n: count() })
-      .from(schema.operations)
-      .groupBy(schema.operations.family),
-    database
-      .select({ family: schema.operations.family, n: count() })
-      .from(schema.benchmarkRuns)
-      .innerJoin(
-        schema.workloads,
-        eq(schema.benchmarkRuns.workloadId, schema.workloads.id),
-      )
-      .innerJoin(
-        schema.operations,
-        eq(schema.workloads.operationId, schema.operations.id),
-      )
-      .where(eligibleRunFilter())
-      .groupBy(schema.operations.family),
-  ])
-  const runsByFamily = new Map(runs.map((row) => [row.family, row.n]))
-  return operations
-    .map((row) => ({
-      family: row.family,
-      operations: row.n,
-      runs: runsByFamily.get(row.family) ?? 0,
-    }))
-    .sort((a, b) => b.runs - a.runs || a.family.localeCompare(b.family))
-}
-
 const EMPTY_GROUPS = {
   exact: [],
   compatible: [],
@@ -834,21 +812,25 @@ export async function searchCatalog(
     },
     operation: null,
     browse: null,
+    matches: null,
     cohort: null,
     groups: EMPTY_GROUPS,
     related: [],
     sources: [],
   }
   if (query === "") {
-    return { ...base, browse: await browseFamilies(), noResult: null }
+    return { ...base, browse: await getOperationIndex(), noResult: null }
   }
-  const { operation, nearMisses } = await resolveOperation(intent)
-  if (!operation) {
-    const families = await db()
-      .selectDistinct({ family: schema.operations.family })
-      .from(schema.operations)
-      .orderBy(schema.operations.family)
-      .limit(8)
+  const hits = await resolveOperation(intent)
+  if (hits.length === 0) {
+    const index = await getOperationIndex()
+    const runsByFamily = new Map<string, number>()
+    for (const entry of index) {
+      runsByFamily.set(
+        entry.family,
+        (runsByFamily.get(entry.family) ?? 0) + entry.runs,
+      )
+    }
     const facetsOnly = intent.facets.length > 0
     return {
       ...base,
@@ -856,13 +838,26 @@ export async function searchCatalog(
         guidance: facetsOnly
           ? "The recognized facets need an operation to narrow. Add an operation name, family, or alias."
           : "No matching operation found. Search by operation name, family, or alias — recognized shape, dtype, and hardware facets then narrow the results.",
-        suggestions: [
-          ...nearMisses.map((op) => op.slug),
-          ...families.map((row) => row.family),
-        ].slice(0, 8),
+        suggestions: [...runsByFamily.entries()]
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 8)
+          .map(([family]) => ({ label: family, query: family })),
       },
     }
   }
+  // Several plausible operations and no dominant hit: the user chooses.
+  if (!dominates(hits)) {
+    const bySlug = new Map(
+      (await getOperationIndex()).map((entry) => [entry.slug, entry]),
+    )
+    return {
+      ...base,
+      matches: hits.flatMap((hit) => bySlug.get(hit.operation.slug) ?? []),
+      noResult: null,
+    }
+  }
+  const operation = hits[0].operation
+  const nearMisses = hits.slice(1, 6).map((hit) => hit.operation)
 
   const database = db()
   const [joined, workloadRows, related, implRows] = await Promise.all([
