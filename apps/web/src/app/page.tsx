@@ -54,31 +54,22 @@ export default async function Home() {
           <LatestRecords rows={model.latest} />
         </section>
 
-        <div className="mx-auto mt-24 max-w-[1400px] px-10 max-md:px-6">
-          <div className="tick-rule" />
-          <footer className="flex flex-wrap items-baseline justify-between gap-x-8 gap-y-3 pt-5 pb-16">
-            <p className="text-[13px] text-subtle">
-              Submit evidence, correct a record, or replicate a run.
-              Contribution opens with the beta.
-            </p>
-            <div className="flex flex-wrap items-baseline gap-6">
-              {releaseSha && (
-                <span className="font-mono text-[12px] text-faint">
-                  {releaseSha.slice(0, 7)}
-                </span>
-              )}
-              <Link href="/docs" className="text-[13px] text-subtle">
-                Methodology
-              </Link>
-              <a
-                href="https://github.com/SamMausberg/KernelIndex"
-                className="text-[13px] text-subtle transition-colors hover:text-fg hover:no-underline"
-              >
-                GitHub
-              </a>
-            </div>
-          </footer>
-        </div>
+        <footer className="mx-auto mt-24 flex max-w-[1400px] flex-wrap items-baseline justify-end gap-x-6 gap-y-3 px-10 pb-16 max-md:px-6">
+          {releaseSha && (
+            <span className="font-mono text-[12px] text-faint">
+              {releaseSha.slice(0, 7)}
+            </span>
+          )}
+          <Link href="/docs" className="text-[13px] text-subtle">
+            Methodology
+          </Link>
+          <a
+            href="https://github.com/SamMausberg/KernelIndex"
+            className="text-[13px] text-subtle transition-colors hover:text-fg hover:no-underline"
+          >
+            GitHub
+          </a>
+        </footer>
       </main>
     </>
   )
