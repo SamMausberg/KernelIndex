@@ -263,7 +263,12 @@ export function kernelbotEnvironment(
   return manifest
 }
 
-export function projectForUser(userId: string | number): {
+/** One project per competition author; the display name prefers the
+ * public username (flat configs carry it, per-shape ones do not). */
+export function projectForUser(
+  userId: string | number,
+  userName?: string | null,
+): {
   manifest: SoftwareProjectManifest
   slug: string
 } {
@@ -273,7 +278,7 @@ export function projectForUser(userId: string | number): {
     kind: "SoftwareProject",
     metadata: { name: slug },
     spec: {
-      name: `KernelBot user ${userId}`,
+      name: userName?.trim() || `KernelBot user ${userId}`,
       host: { kind: "other", id: `gpumode-kernelbot/user/${userId}` },
     },
   })

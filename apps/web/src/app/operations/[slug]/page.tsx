@@ -13,7 +13,7 @@ import { evidenceLabel, formatDateUTC } from "@/lib/format"
 
 type Props = {
   params: Promise<{ slug: string }>
-  searchParams: Promise<{ workload?: string }>
+  searchParams: Promise<{ workload?: string; cohort?: string }>
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -24,8 +24,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function OperationPage({ params, searchParams }: Props) {
   const { slug } = await params
-  const { workload } = await searchParams
-  const model = await getOperationPage(slug, workload)
+  const { workload, cohort } = await searchParams
+  const model = await getOperationPage(slug, workload, cohort)
   if (!model) notFound()
   const { operation, semantics, coverage } = model
   const best = model.records[0]?.primary ?? null
@@ -77,6 +77,32 @@ export default async function OperationPage({ params, searchParams }: Props) {
             selectedId={model.selectedWorkloadId}
             slug={operation.slug}
           />
+          {model.cohortOptions.length > 1 && (
+            <div className="mb-3 flex flex-wrap items-baseline gap-x-5 gap-y-1.5 text-[12.5px]">
+              <span className="text-faint">Hardware</span>
+              {model.cohortOptions.map((option) => (
+                <Link
+                  key={option.key}
+                  href={`/operations/${operation.slug}?${new URLSearchParams({
+                    ...(model.selectedWorkloadId
+                      ? { workload: model.selectedWorkloadId }
+                      : {}),
+                    cohort: option.key,
+                  }).toString()}`}
+                  className={`font-mono text-[12px] transition-colors hover:text-fg hover:no-underline ${
+                    option.key === model.cohort?.comparisonKey
+                      ? "text-accent"
+                      : "text-subtle"
+                  }`}
+                >
+                  {option.label}
+                  <span className="ml-1.5 text-[11px] text-faint">
+                    {option.runs}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          )}
           {model.cohort && (
             <p className="mb-1 font-mono text-[12px] text-faint">
               {model.cohort.facts.map((fact) => fact.value).join(" · ")}
@@ -108,7 +134,7 @@ export default async function OperationPage({ params, searchParams }: Props) {
             <div className="grid min-w-[900px] grid-cols-[minmax(240px,1.6fr)_150px_150px_140px_minmax(150px,1fr)] border-b border-border-strong text-[11.5px] text-faint">
               <div className="py-2">Implementation</div>
               <div className="py-2">Runtime</div>
-              <div className="py-2 pr-3.5 text-right">Best median</div>
+              <div className="py-2 pr-3.5 text-right">Best latency</div>
               <div className="py-2">Evidence</div>
               <div className="py-2">Availability</div>
             </div>

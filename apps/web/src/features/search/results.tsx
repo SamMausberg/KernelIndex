@@ -537,7 +537,7 @@ export function SearchResults({
             <div className="mt-3 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1.5">
               <p className="text-[12.5px] text-faint">
                 {modeNote ??
-                  "Ranked by median latency inside one comparable cohort; statistically tied ranks share a number."}
+                  "Ranked by the primary latency statistic inside one comparable cohort; statistically tied ranks share a number."}
               </p>
               {allRows.length > 1 && (
                 <span className="flex items-baseline gap-2.5 text-[12.5px]">

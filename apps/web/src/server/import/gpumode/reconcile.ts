@@ -281,7 +281,11 @@ export async function reconcileKernelbot(
         const implementationDigest = specDigest(implementation.manifest)
         if (!seenProjects.has(implementation.projectSlug)) {
           seenProjects.add(implementation.projectSlug)
-          const project = projectForUser(candidate.userId)
+          const rawName = (candidate.raw as { user_name?: unknown }).user_name
+          const project = projectForUser(
+            candidate.userId,
+            typeof rawName === "string" ? rawName : null,
+          )
           bundle.projects.push({
             manifest: project.manifest,
             slug: project.slug,

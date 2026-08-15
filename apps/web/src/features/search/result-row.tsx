@@ -45,7 +45,7 @@ export function ResultTableHead({ relativeLabel }: { relativeLabel?: string }) {
     >
       <div className="py-2">#</div>
       <div className="py-2">Implementation</div>
-      <div className="py-2 pr-3.5 text-right">Median</div>
+      <div className="py-2 pr-3.5 text-right">Latency</div>
       <div className="py-2">{relativeLabel}</div>
       <div className="py-2">Evidence</div>
       <div className="py-2">Availability</div>

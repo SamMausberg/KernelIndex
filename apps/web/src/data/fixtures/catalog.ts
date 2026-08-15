@@ -650,6 +650,7 @@ export async function searchCatalog(
 export async function getOperationPage(
   slug: string,
   workload?: string,
+  _cohort?: string,
 ): Promise<OperationPageModel | null> {
   if (slug !== "rmsnorm-h4096") return null
   const selected: WorkloadId = workload === "wl-1024" ? "wl-1024" : "wl-2048"
@@ -718,6 +719,7 @@ export async function getOperationPage(
       toleranceSummary: w.toleranceSummary,
     })),
     selectedWorkloadId: selected,
+    cohortOptions: [],
     cohort: selected === "wl-2048" ? COHORT_2048 : null,
     records,
     implementations: [

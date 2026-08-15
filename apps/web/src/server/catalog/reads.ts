@@ -317,6 +317,7 @@ function groupRuns(
   operationManifest: OperationSpecManifest,
   selectedWorkloadId: string,
   intent: SearchIntent,
+  preferredCohortKey?: string,
 ) {
   const selected = joined.filter((j) => j.workload.id === selectedWorkloadId)
   const byCohort = new Map<string, OperationJoinedRun[]>()
@@ -325,8 +326,31 @@ function groupRuns(
     if (bucket) bucket.push(j)
     else byCohort.set(j.run.comparisonKey, [j])
   }
+  const rankedCohorts = [...byCohort.entries()].sort(
+    (a, b) => b[1].length - a[1].length,
+  )
+  // One selectable option per measured environment cohort; equal hardware
+  // labels (distinct runner fleets) get a short digest disambiguator.
+  const cohortOptions = rankedCohorts.map(([key, list]) => ({
+    key,
+    label: list[0].run.hardwareModel,
+    runs: list.length,
+  }))
+  const labelCounts = new Map<string, number>()
+  for (const option of cohortOptions) {
+    labelCounts.set(option.label, (labelCounts.get(option.label) ?? 0) + 1)
+  }
+  for (const option of cohortOptions) {
+    if ((labelCounts.get(option.label) ?? 0) > 1) {
+      option.label = `${option.label} · ${option.key.slice(-6)}`
+    }
+  }
   const primaryCohort =
-    [...byCohort.values()].sort((a, b) => b.length - a.length)[0] ?? []
+    (preferredCohortKey !== undefined
+      ? byCohort.get(preferredCohortKey)
+      : undefined) ??
+    rankedCohorts[0]?.[1] ??
+    []
   const cohortKey = primaryCohort[0]?.run.comparisonKey ?? null
   const selectedManifest = selected[0]?.workload.manifest as
     | AnyWorkloadManifest
@@ -422,7 +446,7 @@ function groupRuns(
 
   const headRunId =
     (primaryCohort[0] ?? selected[0] ?? joined[0])?.run.id ?? null
-  return { exact, reported, compatible, cohort, headRunId }
+  return { exact, reported, compatible, cohort, cohortOptions, headRunId }
 }
 
 /**
@@ -1084,6 +1108,7 @@ function supportedUnmeasuredRows(
 export async function getOperationPage(
   slug: string,
   workload?: string,
+  cohort?: string,
 ): Promise<OperationPageModel | null> {
   const database = db()
   const [operation] = await database
@@ -1121,8 +1146,16 @@ export async function getOperationPage(
         manifest,
         selectedWorkloadId,
         parseQuery(""),
+        cohort,
       )
-    : { exact: [], reported: [], compatible: [], cohort: null, headRunId: null }
+    : {
+        exact: [],
+        reported: [],
+        compatible: [],
+        cohort: null,
+        cohortOptions: [],
+        headRunId: null,
+      }
   await fillCohortFacts(groups)
 
   const implementations = implementationSummaries(implRows, joined, operation)
@@ -1172,6 +1205,7 @@ export async function getOperationPage(
       }
     }),
     selectedWorkloadId,
+    cohortOptions: groups.cohortOptions,
     cohort: groups.cohort,
     records: groups.exact,
     implementations,

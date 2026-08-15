@@ -26,6 +26,7 @@ type CatalogReads = {
   getOperationPage(
     slug: string,
     workload?: string,
+    cohort?: string,
   ): Promise<OperationPageModel | null>
   getImplementationPage(slug: string): Promise<ImplementationPageModel | null>
   getRunPage(id: string): Promise<RunPageModel | null>
@@ -102,8 +103,9 @@ export const getOperationPage = cache(
     async (
       slug: string,
       workload?: string,
+      cohort?: string,
     ): Promise<OperationPageModel | null> => {
-      return (await reads()).getOperationPage(slug, workload)
+      return (await reads()).getOperationPage(slug, workload, cohort)
     },
     ["operation", BACKEND],
     { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },

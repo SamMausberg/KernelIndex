@@ -354,6 +354,9 @@ export type OperationPageModel = {
   }
   workloads: WorkloadOption[]
   selectedWorkloadId: string | null
+  /** Hardware/environment cohorts measured for the selected workload; the
+      records table shows one at a time. */
+  cohortOptions: { key: string; label: string; runs: number }[]
   cohort: CohortContext | null
   /** Current records for the selected workload. */
   records: ResultRow[]

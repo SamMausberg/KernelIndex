@@ -10,6 +10,7 @@ import { getRunPage } from "@/lib/catalog"
 import {
   evidenceLabel,
   formatDateUTC,
+  formatPrimary,
   formatPrimaryParts,
   formatSpread,
 } from "@/lib/format"
@@ -230,7 +231,14 @@ export default async function RunPage({ params }: Props) {
               <KeyValueList
                 items={model.measurements.map((measurement) => ({
                   key: `${measurement.metric} · ${measurement.statistic}`,
-                  value: `${measurement.value} ${measurement.unit}${
+                  value: `${formatPrimary({
+                    metric: measurement.metric,
+                    unit: measurement.unit,
+                    statistic: measurement.statistic,
+                    value: measurement.value,
+                    sampleCount: measurement.sampleCount,
+                    uncertainty: null,
+                  })}${
                     measurement.sampleCount
                       ? ` · n=${measurement.sampleCount}`
                       : ""

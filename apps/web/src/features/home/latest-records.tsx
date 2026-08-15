@@ -22,7 +22,7 @@ export function LatestRecords({ rows }: { rows: ResultRow[] }) {
       >
         <div className="px-4 py-2.5">Operation / workload</div>
         <div className="px-4 py-2.5">Implementation</div>
-        <div className="px-4 py-2.5 text-right">Median</div>
+        <div className="px-4 py-2.5 text-right">Latency</div>
         <div className="px-4 py-2.5">Hardware</div>
         <div className="px-4 py-2.5">Evidence</div>
         <div className="px-4 py-2.5 text-right">Set</div>

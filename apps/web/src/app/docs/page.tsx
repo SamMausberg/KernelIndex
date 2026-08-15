@@ -142,7 +142,8 @@ rmsnorm gpu:B200 dtype:bf16 shape:[2048,4096] framework=pytorch trust:verified`}
         <Section id="ranking" title="How ranking works">
           <p>
             Within a cohort, results are ordered by the protocol's primary
-            metric (median latency for kernel cohorts) under the frozen{" "}
+            metric (the source-declared latency statistic for kernel cohorts)
+            under the frozen{" "}
             <span className="font-mono text-[13px]">ranking-v1</span> policy.
             Two runs receive a strict order only when their declared confidence
             intervals separate; overlapping intervals (and equal values) share a
