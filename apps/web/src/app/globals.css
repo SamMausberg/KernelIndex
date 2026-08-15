@@ -47,9 +47,13 @@
     "ABC Diatype Semi Mono", "ABC Diatype Semi-Mono", var(--font-space-grotesk),
     ui-monospace, monospace;
 
-  /* One-shot entrance animations only — nothing repaints continuously. */
-  --animate-row-in: row-in 0.32s cubic-bezier(0.22, 0.7, 0.2, 1) both;
-  --animate-fade-in: fade-in 0.2s ease both;
+  /* One-shot entrance animations only — nothing repaints continuously.
+     Entrances fill backwards, not both: a forwards fill would leave every
+     animated wrapper a permanent stacking context, painting later content
+     over popups (the search suggestions). Scan keeps `both` — its end state
+     is invisible. */
+  --animate-row-in: row-in 0.32s cubic-bezier(0.22, 0.7, 0.2, 1) backwards;
+  --animate-fade-in: fade-in 0.2s ease backwards;
   --animate-scan: scan 0.55s cubic-bezier(0.22, 0.7, 0.2, 1) both;
 
   @keyframes row-in {

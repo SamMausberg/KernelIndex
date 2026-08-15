@@ -348,7 +348,8 @@ export function SearchResults({
     <>
       <div className="scan-line" />
 
-      <div className="border-b border-border bg-surface">
+      {/* z-30: the suggest popup must paint above the result sections. */}
+      <div className="relative z-30 border-b border-border bg-surface">
         <div className="shell animate-fade-in pt-5 pb-4">
           <SearchField query={model.query} suggest={suggest} />
           {(model.facets.length > 0 || model.queryIssues.length > 0) && (

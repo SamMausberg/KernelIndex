@@ -101,7 +101,7 @@ export function HeroSearch({ suggest }: { suggest: OperationIndexEntry[] }) {
     <form
       action="/search"
       onSubmit={submit}
-      className="well relative mt-7 flex h-[46px] max-w-[620px] items-center gap-3 pr-2 pl-4"
+      className="well relative z-30 mt-7 flex h-[46px] max-w-[620px] items-center gap-3 pr-2 pl-4"
     >
       <SuggestInput
         index={suggest}
