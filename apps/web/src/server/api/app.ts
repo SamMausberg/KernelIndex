@@ -32,7 +32,7 @@ const CACHE_MEDIUM = "public, s-maxage=300, stale-while-revalidate=86400"
 
 /** RFC 9457 Problem Details thrown as an HTTPException (§13.5). */
 function fail(
-  status: 400 | 401 | 404 | 422,
+  status: 400 | 401 | 403 | 404 | 422,
   code: string,
   detail: string,
 ): never {
@@ -323,6 +323,45 @@ api.get("/exports/catalog.jsonl.zst", (c) => {
       "no catalog export has been generated yet",
     )
   }
+})
+
+// §10.7 corrections (Week 6): maintainer-only retraction and supersession
+// through the append-only write path; the session cookie authorizes.
+api.post("/corrections", async (c) => {
+  const { sessionUser, canCorrectRuns } = await import(
+    "../policy/authorization.ts"
+  )
+  const user = await sessionUser(c.req.raw.headers)
+  if (user === null || !canCorrectRuns(user)) {
+    fail(403, "FORBIDDEN", "correcting runs requires the site_admin role")
+  }
+  const body = z
+    .object({
+      action: z.enum(["retract", "supersede"]),
+      runId: z.uuid(),
+      supersedesRunId: z.uuid().optional(),
+      reason: z.string().min(3).max(2000),
+    })
+    .safeParse(await c.req.json())
+  if (!body.success) fail(400, "INVALID_BODY", body.error.message)
+  const { db } = await import("../db/client.ts")
+  const corrections = await import("../catalog/corrections.ts")
+  const actor = { id: user.id, name: user.name }
+  const result =
+    body.data.action === "retract"
+      ? await corrections.retractRun(db(), {
+          runId: body.data.runId,
+          reason: body.data.reason,
+          actor,
+        })
+      : await corrections.markSuperseded(db(), {
+          originalRunId: body.data.supersedesRunId ?? body.data.runId,
+          supersedingRunId: body.data.runId,
+          reason: body.data.reason,
+          actor,
+        })
+  revalidateTag("catalog", "max")
+  return c.json(result)
 })
 
 // §10.8 step 9: the importer calls this after publishing so caches drop

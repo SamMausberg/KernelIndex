@@ -285,7 +285,13 @@ export const recordEvents = pgTable(
     createdAt: createdAt(),
   },
   (t) => [
-    uniqueIndex("record_events_cohort_run_unique").on(t.comparisonKey, t.runId),
+    // Cause is part of the identity: a retraction may re-promote a run that
+    // already holds a new_run event, and that transition must append.
+    uniqueIndex("record_events_cohort_run_cause_unique").on(
+      t.comparisonKey,
+      t.runId,
+      t.cause,
+    ),
     index("record_events_cohort_idx").on(t.comparisonKey, t.at),
   ],
 )
@@ -376,6 +382,150 @@ export const sourceLinks = pgTable(
     ),
     index("source_links_entity_idx").on(t.entityKind, t.entityId),
   ],
+)
+
+// ---------------------------------------------------------------------------
+// Identity and contribution (§13.6, §15) — Week 6. The user/session/account/
+// verification tables follow better-auth's core schema; KernelIndex-owned
+// authorization lives in user_roles, never inside the auth library's tables.
+
+export const users = pgTable("users", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(),
+  emailVerified: boolean("email_verified").notNull().default(false),
+  image: text("image"),
+  createdAt: createdAt(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .default(now),
+})
+
+export const sessions = pgTable(
+  "sessions",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    token: text("token").notNull().unique(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    createdAt: createdAt(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .default(now),
+  },
+  (t) => [index("sessions_user_idx").on(t.userId)],
+)
+
+export const accounts = pgTable(
+  "accounts",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    accountId: text("account_id").notNull(),
+    providerId: text("provider_id").notNull(),
+    accessToken: text("access_token"),
+    refreshToken: text("refresh_token"),
+    idToken: text("id_token"),
+    accessTokenExpiresAt: timestamp("access_token_expires_at", {
+      withTimezone: true,
+    }),
+    refreshTokenExpiresAt: timestamp("refresh_token_expires_at", {
+      withTimezone: true,
+    }),
+    scope: text("scope"),
+    password: text("password"),
+    createdAt: createdAt(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .default(now),
+  },
+  (t) => [index("accounts_user_idx").on(t.userId)],
+)
+
+export const verifications = pgTable("verifications", {
+  id: text("id").primaryKey(),
+  identifier: text("identifier").notNull(),
+  value: text("value").notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  createdAt: createdAt(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .default(now),
+})
+
+/** KernelIndex roles (§15.8); granted by a maintainer command, never OAuth. */
+export const userRoles = pgTable(
+  "user_roles",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    role: text("role").notNull(),
+    grantedAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.role] })],
+)
+
+/** Mutation audit trail (§11.10): every authenticated or maintainer write. */
+export const auditEvents = pgTable(
+  "audit_events",
+  {
+    id: id(),
+    actor: text("actor").notNull(),
+    action: text("action").notNull(),
+    targetKind: text("target_kind").notNull(),
+    targetId: text("target_id").notNull(),
+    reason: text("reason"),
+    priorState: jsonb("prior_state"),
+    at: createdAt(),
+  },
+  (t) => [index("audit_events_target_idx").on(t.targetKind, t.targetId)],
+)
+
+/** Submission lifecycle (§15.4): the manifest bundle rides as jsonb until
+    acceptance publishes it through the one publication transaction. */
+export const submissions = pgTable(
+  "submissions",
+  {
+    id: id(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id),
+    state: text("state").notNull().default("draft"),
+    bundle: jsonb("bundle").notNull(),
+    validationReport: jsonb("validation_report"),
+    reviewNote: text("review_note"),
+    createdAt: createdAt(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .default(now),
+  },
+  (t) => [index("submissions_user_idx").on(t.userId, t.state)],
+)
+
+/** Project claims (§15.3): evidence reviewed by a maintainer. */
+export const projectClaims = pgTable(
+  "project_claims",
+  {
+    id: id(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id),
+    evidenceUrl: text("evidence_url").notNull(),
+    state: text("state").notNull().default("pending"),
+    reviewNote: text("review_note"),
+    createdAt: createdAt(),
+  },
+  (t) => [index("project_claims_project_idx").on(t.projectId)],
 )
 
 /** Immutable fetched or supplied source observation (§14.3). */

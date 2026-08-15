@@ -3,8 +3,12 @@
 // document enumerates every route, and cursors page deterministically.
 // Runs against the fixtures backend like the e2e suite.
 import { describe, expect, it } from "vitest"
-import { searchCatalog } from "../../lib/catalog.ts"
-import { api, composeQuery } from "./app.ts"
+
+// The contract tests always run against the deterministic fixtures backend,
+// whatever the shell environment says (dynamic imports order after this).
+process.env.CATALOG_BACKEND = "fixtures"
+const { searchCatalog } = await import("../../lib/catalog.ts")
+const { api, composeQuery } = await import("./app.ts")
 
 const get = (path: string) => api.request(path)
 const post = (path: string, body: unknown) =>
@@ -112,5 +116,16 @@ describe("api /v1", () => {
   it("rejects revalidation without the token", async () => {
     const response = await api.request("/revalidate", { method: "POST" })
     expect(response.status).toBe(401)
+  })
+
+  it("rejects corrections without an authorized session (IDOR guard)", async () => {
+    const response = await post("/corrections", {
+      action: "retract",
+      runId: "00000000-0000-7000-8000-000000000000",
+      reason: "should never happen",
+    })
+    expect(response.status).toBe(403)
+    const body = await response.json()
+    expect(body.code).toBe("FORBIDDEN")
   })
 })

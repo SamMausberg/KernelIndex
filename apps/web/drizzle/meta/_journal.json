@@ -50,6 +50,20 @@
       "when": 1786817794542,
       "tag": "0006_artifact-content",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1786829906576,
+      "tag": "0007_identity-contribution",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1786830012110,
+      "tag": "0008_record-event-causes",
+      "breakpoints": true
     }
   ]
 }

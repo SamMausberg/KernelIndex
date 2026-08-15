@@ -19,10 +19,12 @@
     "import:sol": "node --env-file-if-exists=.env.local scripts/import-sol.ts",
     "import:gpumode": "node --env-file-if-exists=.env.local scripts/import-gpumode.ts",
     "test:e2e": "playwright test",
-    "export:catalog": "node --env-file-if-exists=.env.local scripts/export-catalog.ts"
+    "export:catalog": "node --env-file-if-exists=.env.local scripts/export-catalog.ts",
+    "import:submission": "node --env-file-if-exists=.env.local scripts/import-submission.ts"
   },
   "dependencies": {
     "@hono/zod-openapi": "^1.6.0",
+    "better-auth": "^1.6.29",
     "canonicalize": "4.0.0",
     "clsx": "2.1.1",
     "diff": "^9.0.0",
