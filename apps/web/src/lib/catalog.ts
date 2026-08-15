@@ -45,15 +45,18 @@ async function reads(): Promise<CatalogReads> {
 // Two cache layers: React request-level `cache` (a page and its
 // generateMetadata share one read) over `unstable_cache` (results survive
 // across requests for five minutes). Data changes only through the CLI
-// importer, so short time-based staleness is acceptable (§16).
+// importer, so short time-based staleness is acceptable (§16). Keys are
+// namespaced by backend: locally the fixtures (e2e) and postgres servers
+// share .next/cache, and entries must never cross the seam.
 const REVALIDATE_SECONDS = 300
+const BACKEND = process.env.CATALOG_BACKEND === "postgres" ? "pg" : "fx"
 
 export const getHomePage = cache(
   unstable_cache(
     async (): Promise<HomePageModel> => {
       return (await reads()).getHomePage()
     },
-    ["home"],
+    ["home", BACKEND],
     { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },
   ),
 )
@@ -79,7 +82,7 @@ export const getOperationIndex = cache(
     async (): Promise<OperationIndexEntry[]> => {
       return (await reads()).getOperationIndex()
     },
-    ["operation-index"],
+    ["operation-index", BACKEND],
     { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },
   ),
 )
@@ -89,7 +92,7 @@ export const searchCatalog = cache(
     async (input: SearchInput): Promise<SearchPageModel> => {
       return (await reads()).searchCatalog(input)
     },
-    ["search"],
+    ["search", BACKEND],
     { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },
   ),
 )
@@ -102,7 +105,7 @@ export const getOperationPage = cache(
     ): Promise<OperationPageModel | null> => {
       return (await reads()).getOperationPage(slug, workload)
     },
-    ["operation"],
+    ["operation", BACKEND],
     { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },
   ),
 )
@@ -112,7 +115,7 @@ export const getImplementationPage = cache(
     async (slug: string): Promise<ImplementationPageModel | null> => {
       return (await reads()).getImplementationPage(slug)
     },
-    ["implementation"],
+    ["implementation", BACKEND],
     { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },
   ),
 )
@@ -122,7 +125,7 @@ export const getRunPage = cache(
     async (id: string): Promise<RunPageModel | null> => {
       return (await reads()).getRunPage(id)
     },
-    ["run"],
+    ["run", BACKEND],
     { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },
   ),
 )
@@ -132,7 +135,7 @@ export const getComparePage = cache(
     async (runIds: string[]): Promise<ComparePageModel> => {
       return (await reads()).getComparePage(runIds)
     },
-    ["compare"],
+    ["compare", BACKEND],
     { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },
   ),
 )
