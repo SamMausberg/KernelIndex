@@ -36,7 +36,13 @@ export default async function DesignLabPage() {
   const emptyQuery = await fixtures.searchCatalog({ query: "" })
   const multiMatch = await fixtures.searchCatalog({ query: "norm" })
   const records = await fixtures.getRecordsPage()
-  const noFilters = { view: undefined, verified: false, deployable: false }
+  const noFilters = {
+    view: undefined,
+    verified: false,
+    source: false,
+    license: false,
+    installable: false,
+  }
 
   return (
     <div className="shell pb-24">
@@ -104,6 +110,7 @@ export default async function DesignLabPage() {
             view: "current",
             hardware: null,
             verified: false,
+            source: false,
             filter: "",
             sort: "date",
             page: 1,
@@ -117,6 +124,7 @@ export default async function DesignLabPage() {
             view: "broken",
             hardware: null,
             verified: false,
+            source: false,
             filter: "",
             sort: "date",
             page: 1,
@@ -130,6 +138,7 @@ export default async function DesignLabPage() {
             view: "current",
             hardware: null,
             verified: false,
+            source: false,
             filter: "",
             sort: "improvement",
             page: 1,

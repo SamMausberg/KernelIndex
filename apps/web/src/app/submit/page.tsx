@@ -36,7 +36,7 @@ export default async function SubmitPage() {
         </p>
       </ContextHeader>
       <main className="shell-narrow animate-fade-in pb-20">
-        <SubmitForm signedIn={user !== null} />
+        <SubmitForm signedIn={user !== null} signInAvailable={authConfigured} />
       </main>
     </>
   )

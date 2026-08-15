@@ -17,14 +17,14 @@ function ChipRow({
   slug: string
 }) {
   return (
-    <div className="mb-3 flex flex-wrap items-baseline gap-x-5 gap-y-1.5 text-[12.5px]">
-      <span className="text-faint">Workload</span>
+    <div className="mb-3 flex flex-wrap items-center gap-2 text-[12.5px]">
+      <span className="mr-1 text-faint">Workload</span>
       {workloads.map((option) => (
         <Link
           key={option.id}
           href={`/operations/${slug}?workload=${option.id}`}
-          className={`font-mono text-[12px] transition-colors hover:text-fg hover:no-underline ${
-            option.id === selectedId ? "text-accent" : "text-subtle"
+          className={`key px-2.5 py-[3px] font-mono text-[12px] whitespace-nowrap hover:no-underline ${
+            option.id === selectedId ? "key-on" : "text-subtle hover:text-fg"
           }`}
         >
           {option.label}
@@ -103,55 +103,64 @@ export function WorkloadPicker({
           {rows.length} cases
         </span>
       </div>
-      <div className="mt-2 inline-block max-h-[300px] max-w-full overflow-auto rounded-[5px] border border-border">
-        <div
-          className="sticky top-0 grid border-b border-border-strong bg-surface"
-          style={{ gridTemplateColumns: template }}
-        >
-          {columns.map((name) => (
-            <div
-              key={name}
-              className="px-3.5 py-1.5 text-right font-mono text-[11px] tracking-[0.03em] text-faint uppercase"
-            >
-              {name}
+      <div className="mt-2 inline-block max-w-full rounded-[5px] border border-border">
+        <div className="scroll-pane max-h-[300px] overflow-auto">
+          <div
+            className="sticky top-0 grid border-b border-border-strong bg-surface"
+            style={{ gridTemplateColumns: template }}
+          >
+            {columns.map((name) => (
+              <div
+                key={name}
+                className="px-3.5 py-1.5 text-right font-mono text-[11px] tracking-[0.03em] text-faint uppercase"
+              >
+                {name}
+              </div>
+            ))}
+            <div className="px-3.5 py-1.5 font-mono text-[11px] tracking-[0.03em] text-faint uppercase">
+              dtype
             </div>
-          ))}
-          <div className="px-3.5 py-1.5 font-mono text-[11px] tracking-[0.03em] text-faint uppercase">
-            dtype
           </div>
-        </div>
-        {rows.map((option) => {
-          const selected = option.id === selectedId
-          return (
-            <Link
-              key={option.id}
-              href={`/operations/${slug}?workload=${option.id}`}
-              className={`grid border-b border-line font-mono text-[12px] transition-colors last:border-b-0 hover:bg-raised hover:no-underline ${
-                selected ? "text-accent" : "text-subtle hover:text-fg"
-              }`}
-              style={{ gridTemplateColumns: template }}
-            >
-              {columns.map((name) => (
-                <span key={name} className="px-3.5 py-[5px] text-right">
-                  {String(option.axes[name] ?? "—")}
+          {rows.map((option) => {
+            const selected = option.id === selectedId
+            return (
+              <Link
+                key={option.id}
+                href={`/operations/${slug}?workload=${option.id}`}
+                className={`grid border-b border-line font-mono text-[12px] transition-colors last:border-b-0 hover:bg-raised hover:no-underline ${
+                  selected ? "text-accent" : "text-subtle hover:text-fg"
+                }`}
+                style={{ gridTemplateColumns: template }}
+              >
+                {columns.map((name) => (
+                  <span key={name} className="px-3.5 py-[5px] text-right">
+                    {String(option.axes[name] ?? "—")}
+                  </span>
+                ))}
+                <span className="px-3.5 py-[5px]">
+                  {option.dtypes.join("/") || "—"}
                 </span>
-              ))}
-              <span className="px-3.5 py-[5px]">
-                {option.dtypes.join("/") || "—"}
-              </span>
-            </Link>
-          )
-        })}
+              </Link>
+            )
+          })}
+        </div>
+        {rows.length > 12 && (
+          <div className="border-t border-border px-3.5 py-1 font-mono text-[11px] text-faint">
+            scrolls · {rows.length} cases total
+          </div>
+        )}
       </div>
       {suites.length > 0 && (
-        <div className="mt-2 flex flex-wrap items-baseline gap-x-5 gap-y-1.5">
-          <span className="text-faint">Aggregates</span>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <span className="mr-1 text-faint">Aggregates</span>
           {suites.map((option) => (
             <Link
               key={option.id}
               href={`/operations/${slug}?workload=${option.id}`}
-              className={`font-mono text-[12px] transition-colors hover:text-fg hover:no-underline ${
-                option.id === selectedId ? "text-accent" : "text-subtle"
+              className={`key px-2.5 py-[3px] font-mono text-[12px] whitespace-nowrap hover:no-underline ${
+                option.id === selectedId
+                  ? "key-on"
+                  : "text-subtle hover:text-fg"
               }`}
             >
               {option.label}

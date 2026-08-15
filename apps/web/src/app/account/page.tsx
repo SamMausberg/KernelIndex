@@ -18,17 +18,27 @@ export default async function AccountPage() {
   const user = authConfigured ? await sessionUser(await headers()) : null
   if (user === null) {
     return (
-      <main className="shell-narrow pt-16 pb-20">
-        <p className="text-[13.5px] text-muted">
-          {authConfigured ? (
-            <a href="/api/auth/sign-in/social?provider=github">
-              Sign in with GitHub
-            </a>
-          ) : (
-            "Sign-in is not configured on this deployment."
-          )}
-        </p>
-      </main>
+      <>
+        <ContextHeader
+          title="Account"
+          context="submissions and project claims live here once you are signed in"
+        />
+        <main className="shell pt-8 pb-20">
+          <p className="max-w-[64ch] text-[13.5px] text-muted">
+            {authConfigured ? (
+              <a href="/api/auth/sign-in/social?provider=github">
+                Sign in with GitHub
+              </a>
+            ) : (
+              <>
+                Sign-in is not configured on this deployment. Evidence can still
+                be contributed through the{" "}
+                <a href="/submit">registry PR path</a>.
+              </>
+            )}
+          </p>
+        </main>
+      </>
     )
   }
   const [mine, claims] = await Promise.all([

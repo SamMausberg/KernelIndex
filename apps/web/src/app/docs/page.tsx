@@ -115,9 +115,14 @@ rmsnorm gpu:B200 dtype:bf16 shape:[2048,4096] framework=pytorch trust:verified`}
           <p>
             Search groups evidence into Exact, Compatible, Supported, and
             Reported views that are never interleaved. Inside a view,{" "}
-            <em>Recommended</em> is the default order — ranking-v1 for the exact
-            cohort — and <em>Most verified</em>, <em>Deployable first</em>, and{" "}
-            <em>Newest</em> are presentation re-sorts that never change a
+            <em>Recommended</em> surfaces the strongest available trust tier
+            first — verified, then reproducible, then license + source, then
+            source available, then no source — with the cohort&apos;s ranking-v1
+            latency order untouched inside each tier, so rank numbers keep their
+            cohort meaning. Labeled dividers appear only when tiers actually
+            differ, and the availability chips (has source, license known,
+            installable, verified) filter on single observable facts.{" "}
+            <em>Newest</em> is a presentation re-sort that never changes a
             row&apos;s cohort rank. The records ledger defaults to newest record
             first, with <em>Largest improvement</em> (margin over the previous
             record), <em>Most lead changes</em> (how many times the

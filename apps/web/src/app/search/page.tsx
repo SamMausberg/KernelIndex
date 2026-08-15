@@ -14,6 +14,10 @@ type Params = {
   q?: string
   view?: string
   verified?: string
+  source?: string
+  license?: string
+  installable?: string
+  /** Legacy links: expands to the three availability filters it implied. */
   deployable?: string
   sort?: string
   family?: string
@@ -21,12 +25,7 @@ type Params = {
 }
 
 const MODES = new Set(["exact", "compatible", "supported", "reported"])
-const RESULT_SORTS = new Set([
-  "recommended",
-  "verified",
-  "deployable",
-  "newest",
-])
+const RESULT_SORTS = new Set(["recommended", "newest"])
 const BROWSE_SORTS = new Set(["indexed", "active", "az"])
 
 export default async function SearchPage({
@@ -53,7 +52,9 @@ export default async function SearchPage({
               ? (params.sort as ResultSort)
               : undefined,
           verified: params.verified === "1",
-          deployable: params.deployable === "1",
+          source: params.source === "1" || params.deployable === "1",
+          license: params.license === "1" || params.deployable === "1",
+          installable: params.installable === "1" || params.deployable === "1",
           page: Number.isNaN(page) ? 1 : page,
         }}
         browse={{

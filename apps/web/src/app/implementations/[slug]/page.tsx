@@ -5,17 +5,20 @@ import { ContextHeader } from "@/components/context-header"
 import { CopyButton } from "@/components/copy-button"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
 import { KeyValueList } from "@/components/key-value-list"
+import { Metric } from "@/components/metric"
 import { Section } from "@/components/section"
 import {
   SourceCodeView,
   SourceDiffView,
 } from "@/features/implementations/source-view"
-import { ResultRowItem, ResultTableHead } from "@/features/search/result-row"
 import { getImplementationPage } from "@/lib/catalog"
-import { evidenceLabel, formatDateUTC } from "@/lib/format"
+import { evidenceLabel, formatDateShort, formatDateUTC } from "@/lib/format"
 
 // Implementation dossiers change only on importer runs; ISR on first hit.
 export const revalidate = 300
+
+const EVIDENCE_GRID =
+  "grid grid-cols-[minmax(260px,1.6fr)_170px_150px_90px_110px] min-w-[780px]"
 
 type Props = { params: Promise<{ slug: string }> }
 
@@ -29,7 +32,6 @@ export default async function ImplementationPage({ params }: Props) {
   const { slug } = await params
   const model = await getImplementationPage(slug)
   if (!model) notFound()
-  const best = model.bestResults[0]?.primary ?? null
   const support = [
     ...model.support.hardware,
     ...model.support.architectures,
@@ -59,14 +61,19 @@ export default async function ImplementationPage({ params }: Props) {
                 {" · "}
               </>
             )}
-            {model.project.repositoryUrl ? (
-              <a href={model.project.repositoryUrl}>{model.project.name}</a>
-            ) : (
-              model.project.name
-            )}
-            {" · "}
+            {model.project.name !== model.implementation.name &&
+              (model.project.repositoryUrl ? (
+                <>
+                  <a href={model.project.repositoryUrl}>{model.project.name}</a>
+                  {" · "}
+                </>
+              ) : (
+                `${model.project.name} · `
+              ))}
             {[
-              model.interface.language,
+              model.interface.language === "unknown"
+                ? null
+                : model.interface.language,
               model.license.concluded ??
                 model.license.declared ??
                 "License unknown",
@@ -76,7 +83,17 @@ export default async function ImplementationPage({ params }: Props) {
               .join(" · ")}
           </>
         }
-        meta={<span>{model.trust.summary}</span>}
+        meta={
+          <>
+            {model.sourceCode && (
+              <a href="#code">
+                Kernel source · {model.sourceCode.content.split("\n").length}{" "}
+                lines ↓
+              </a>
+            )}
+            <span>{model.trust.summary}</span>
+          </>
+        }
       />
 
       <main className="shell animate-fade-in pb-20">
@@ -160,18 +177,58 @@ export default async function ImplementationPage({ params }: Props) {
         </Section>
 
         <Section id="performance" title="Benchmark evidence">
+          {/* Purpose-built rows: this page IS the implementation, so each
+              row states the workload it was measured on — never its own
+              name, rank, or a self-comparison. */}
           <div className="overflow-x-auto">
             {model.bestResults.length > 0 ? (
-              <>
-                <ResultTableHead />
+              <div className="min-w-[780px]">
+                <div
+                  className={`${EVIDENCE_GRID} border-b border-border-strong text-[11.5px] text-faint`}
+                >
+                  <div className="py-2">Operation / workload</div>
+                  <div className="py-2">Hardware</div>
+                  <div className="py-2 pr-3.5 text-right">Latency</div>
+                  <div className="py-2">Tested</div>
+                  <div />
+                </div>
                 {model.bestResults.map((row) => (
-                  <ResultRowItem
+                  <div
                     key={row.runId ?? row.workloadSummary}
-                    row={row}
-                    best={best}
-                  />
+                    className={`${EVIDENCE_GRID} h-[47px] items-center border-b border-line transition-colors hover:bg-raised`}
+                  >
+                    <div className="min-w-0 truncate pr-3">
+                      <Link
+                        href={`/operations/${row.operation.slug}`}
+                        className="text-[13px] text-fg hover:text-accent-bright"
+                      >
+                        {row.operation.name}
+                      </Link>
+                      <span className="ml-2 font-mono text-[11.5px] text-faint">
+                        {row.workloadSummary}
+                      </span>
+                    </div>
+                    <div className="truncate pr-3 font-mono text-[12px] text-muted">
+                      {row.hardware.model}
+                    </div>
+                    <div className="pr-3.5 text-right whitespace-nowrap">
+                      <Metric
+                        primary={row.primary}
+                        spread
+                        valueClassName="font-mono text-[13.5px] text-fg"
+                      />
+                    </div>
+                    <div className="font-mono text-[11.5px] text-faint">
+                      {formatDateShort(row.lastTestedAt)}
+                    </div>
+                    <div className="pr-1 text-right text-[12.5px]">
+                      {row.runId && (
+                        <Link href={`/runs/${row.runId}`}>Run →</Link>
+                      )}
+                    </div>
+                  </div>
                 ))}
-              </>
+              </div>
             ) : (
               <p className="py-6 text-[13px] text-faint">
                 No published measurement for this revision.
@@ -185,7 +242,9 @@ export default async function ImplementationPage({ params }: Props) {
         </Section>
 
         <Section id="source" title="Source and license">
-          <div className="grid grid-cols-2 gap-10 max-lg:grid-cols-1">
+          {/* Same two-column rail as "Use it" so stacked sections share one
+              vertical grid line. */}
+          <div className="grid grid-cols-[minmax(0,1.5fr)_minmax(280px,1fr)] gap-11 max-lg:grid-cols-1">
             <KeyValueList
               items={[
                 {
@@ -206,37 +265,39 @@ export default async function ImplementationPage({ params }: Props) {
                 },
               ]}
             />
-            <KeyValueList
-              items={[
-                {
-                  key: "license declared",
-                  value: model.license.declared ?? "unknown",
-                },
-                {
-                  key: "license concluded",
-                  value: model.license.concluded ?? "unknown",
-                },
-                ...(model.license.evidencePath
-                  ? [{ key: "evidence", value: model.license.evidencePath }]
-                  : []),
-                ...(model.provenance.authors.length > 0
-                  ? [
-                      {
-                        key: "authors",
-                        value: model.provenance.authors.join(", "),
-                      },
-                    ]
-                  : []),
-                ...(model.provenance.importedAt
-                  ? [
-                      {
-                        key: "imported",
-                        value: formatDateUTC(model.provenance.importedAt),
-                      },
-                    ]
-                  : []),
-              ]}
-            />
+            <div className="border-l border-border pl-9 max-lg:border-l-0 max-lg:pl-0">
+              <KeyValueList
+                items={[
+                  {
+                    key: "license declared",
+                    value: model.license.declared ?? "unknown",
+                  },
+                  {
+                    key: "license concluded",
+                    value: model.license.concluded ?? "unknown",
+                  },
+                  ...(model.license.evidencePath
+                    ? [{ key: "evidence", value: model.license.evidencePath }]
+                    : []),
+                  ...(model.provenance.authors.length > 0
+                    ? [
+                        {
+                          key: "authors",
+                          value: model.provenance.authors.join(", "),
+                        },
+                      ]
+                    : []),
+                  ...(model.provenance.importedAt
+                    ? [
+                        {
+                          key: "imported",
+                          value: formatDateUTC(model.provenance.importedAt),
+                        },
+                      ]
+                    : []),
+                ]}
+              />
+            </div>
           </div>
         </Section>
 

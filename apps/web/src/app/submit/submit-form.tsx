@@ -14,7 +14,14 @@ const INITIAL: SubmitState = {
   text: "",
 }
 
-export function SubmitForm({ signedIn }: { signedIn: boolean }) {
+export function SubmitForm({
+  signedIn,
+  signInAvailable,
+}: {
+  signedIn: boolean
+  /** False when the deployment has no OAuth app; the PR path still works. */
+  signInAvailable: boolean
+}) {
   const [validated, validate, validating] = useActionState(
     validateAction,
     INITIAL,
@@ -53,7 +60,9 @@ export function SubmitForm({ signedIn }: { signedIn: boolean }) {
           </button>
           {!signedIn && (
             <span className="text-[12.5px] text-faint">
-              Sign in with GitHub to submit.
+              {signInAvailable
+                ? "Sign in with GitHub to submit."
+                : "Direct submission needs sign-in, which is not configured here — use the registry PR path instead."}
             </span>
           )}
         </div>

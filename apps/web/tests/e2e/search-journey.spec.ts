@@ -23,15 +23,16 @@ test("homepage search reaches an exact ranked answer with evidence", async ({
   // The headline answer states its evidence level, never a bare superlative.
   await expect(page.getByText("Fastest verified").first()).toBeVisible()
 
-  // Expanding a row explains its rank inside the cohort. (The cohort facts
-  // panel also renders a <details>, so target the row's specifically.)
+  // Expanding a row explains its rank inside the cohort in one line.
   await page
     .locator("details")
-    .filter({ hasText: "Why ranked here" })
+    .filter({ hasText: "Same workload, protocol, environment" })
     .first()
     .locator("summary")
     .click()
-  await expect(page.getByText("Why ranked here").first()).toBeVisible()
+  await expect(
+    page.getByText("Same workload, protocol, environment").first(),
+  ).toBeVisible()
 
   // Row → run dossier: the permanent evidence citation.
   await page.getByRole("link", { name: "Run dossier →" }).first().click()

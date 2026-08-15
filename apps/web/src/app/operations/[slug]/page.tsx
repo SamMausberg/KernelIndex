@@ -6,10 +6,11 @@ import { IllustrativeNotice } from "@/components/illustrative-notice"
 import { KeyValueList } from "@/components/key-value-list"
 import { Metric } from "@/components/metric"
 import { Section } from "@/components/section"
+import { TrustCell } from "@/components/trust"
 import { WorkloadPicker } from "@/features/operations/workload-picker"
 import { ResultRowItem, ResultTableHead } from "@/features/search/result-row"
 import { getOperationPage } from "@/lib/catalog"
-import { evidenceLabel, formatDateUTC } from "@/lib/format"
+import { formatDateUTC } from "@/lib/format"
 
 type Props = {
   params: Promise<{ slug: string }>
@@ -78,8 +79,8 @@ export default async function OperationPage({ params, searchParams }: Props) {
             slug={operation.slug}
           />
           {model.cohortOptions.length > 1 && (
-            <div className="mb-3 flex flex-wrap items-baseline gap-x-5 gap-y-1.5 text-[12.5px]">
-              <span className="text-faint">Hardware</span>
+            <div className="mb-3 flex flex-wrap items-center gap-2 text-[12.5px]">
+              <span className="mr-1 text-faint">Hardware</span>
               {model.cohortOptions.map((option) => (
                 <Link
                   key={option.key}
@@ -89,10 +90,10 @@ export default async function OperationPage({ params, searchParams }: Props) {
                       : {}),
                     cohort: option.key,
                   }).toString()}`}
-                  className={`font-mono text-[12px] transition-colors hover:text-fg hover:no-underline ${
+                  className={`key px-2.5 py-[3px] font-mono text-[12px] whitespace-nowrap hover:no-underline ${
                     option.key === model.cohort?.comparisonKey
-                      ? "text-accent"
-                      : "text-subtle"
+                      ? "key-on"
+                      : "text-subtle hover:text-fg"
                   }`}
                 >
                   {option.label}
@@ -131,12 +132,11 @@ export default async function OperationPage({ params, searchParams }: Props) {
 
         <Section id="implementations" title="Implementations">
           <div className="overflow-x-auto">
-            <div className="grid min-w-[900px] grid-cols-[minmax(240px,1.6fr)_150px_150px_140px_minmax(150px,1fr)] border-b border-border-strong text-[11.5px] text-faint">
+            <div className="grid min-w-[900px] grid-cols-[minmax(240px,1.6fr)_150px_150px_minmax(200px,1fr)] border-b border-border-strong text-[11.5px] text-faint">
               <div className="py-2">Implementation</div>
               <div className="py-2">Runtime</div>
               <div className="py-2 pr-3.5 text-right">Best latency</div>
-              <div className="py-2">Evidence</div>
-              <div className="py-2">Availability</div>
+              <div className="py-2">Trust</div>
             </div>
             {/* Slugs can repeat when an implementation appears once per
                 revision or evidence source; the list is server-rendered and
@@ -145,7 +145,7 @@ export default async function OperationPage({ params, searchParams }: Props) {
               <div
                 // biome-ignore lint/suspicious/noArrayIndexKey: static read-only rows
                 key={`${impl.slug}-${index}`}
-                className="grid min-w-[900px] grid-cols-[minmax(240px,1.6fr)_150px_150px_140px_minmax(150px,1fr)] items-center border-b border-line transition-colors hover:bg-raised"
+                className="grid min-w-[900px] grid-cols-[minmax(240px,1.6fr)_150px_150px_minmax(200px,1fr)] items-center border-b border-line transition-colors hover:bg-raised"
               >
                 <div className="min-w-0 truncate py-3 pr-3">
                   <Link
@@ -171,19 +171,8 @@ export default async function OperationPage({ params, searchParams }: Props) {
                     valueClassName="font-mono text-[13px] text-fg"
                   />
                 </div>
-                <div className="py-3 text-[12.5px] text-subtle">
-                  {evidenceLabel(impl.evidence)}
-                </div>
-                <div className="truncate py-3 text-[12.5px] text-subtle">
-                  {impl.license.concluded ??
-                    impl.license.declared ??
-                    "License unknown"}
-                  {" · "}
-                  {impl.installable
-                    ? "installable"
-                    : impl.sourceAvailable
-                      ? "source only"
-                      : "no source"}
+                <div className="py-3">
+                  <TrustCell row={impl} />
                 </div>
               </div>
             ))}

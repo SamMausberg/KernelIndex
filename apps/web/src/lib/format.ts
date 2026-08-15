@@ -75,6 +75,22 @@ export function evidenceLabel(level: EvidenceLevel | null): string {
   }
 }
 
+const FIELD_LABELS: Record<string, string> = {
+  "hardware.gpu": "GPU",
+  "hardware.architecture": "architecture",
+}
+
+/** Mismatch field paths ("hardware.gpu", "axes.n") as human words — raw
+ * dotted paths must never reach a rendered row. */
+export function humanizeField(field: string): string {
+  return (
+    FIELD_LABELS[field] ??
+    field
+      .replace(/^(axes|workload|environment|hardware)\./, "")
+      .replaceAll("_", " ")
+  )
+}
+
 /** "2026-08-11" from an ISO timestamp; "—" when never tested. */
 export function formatDateUTC(iso: string | null): string {
   return iso ? iso.slice(0, 10) : "—"

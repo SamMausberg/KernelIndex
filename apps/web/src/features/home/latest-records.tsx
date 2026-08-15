@@ -1,10 +1,11 @@
 import Link from "next/link"
 import { Metric } from "@/components/metric"
+import { TrustCell } from "@/components/trust"
 import type { ResultRow } from "@/lib/catalog"
-import { evidenceLabel, formatDateUTC } from "@/lib/format"
+import { formatDateUTC } from "@/lib/format"
 
 const GRID =
-  "grid grid-cols-[1.2fr_1.4fr_110px_150px_150px_110px] min-w-[920px]"
+  "grid grid-cols-[1.2fr_1.3fr_110px_150px_235px_110px] min-w-[980px]"
 
 /** Homepage table of the most recent published records (§16.5). */
 export function LatestRecords({ rows }: { rows: ResultRow[] }) {
@@ -24,12 +25,10 @@ export function LatestRecords({ rows }: { rows: ResultRow[] }) {
         <div className="px-4 py-2.5">Implementation</div>
         <div className="px-4 py-2.5 text-right">Latency</div>
         <div className="px-4 py-2.5">Hardware</div>
-        <div className="px-4 py-2.5">Evidence</div>
+        <div className="px-4 py-2.5">Trust</div>
         <div className="px-4 py-2.5 text-right">Set</div>
       </div>
       {rows.map((row) => {
-        const strong =
-          row.evidence === "verified" || row.evidence === "replicated"
         return (
           <div
             key={row.runId ?? row.implementation.slug}
@@ -58,13 +57,8 @@ export function LatestRecords({ rows }: { rows: ResultRow[] }) {
             <div className="truncate px-4 font-mono text-[12.5px] text-muted">
               {row.hardware.model}
             </div>
-            <div
-              className={`px-4 text-[12.5px] ${strong ? "text-fg" : "text-subtle"}`}
-            >
-              {strong && (
-                <span className="mr-1.5 text-[9px] text-success">●</span>
-              )}
-              {evidenceLabel(row.evidence)}
+            <div className="px-4">
+              <TrustCell row={row} />
             </div>
             <div className="px-4 text-right font-mono text-[12px] text-faint">
               {formatDateUTC(row.lastTestedAt)}

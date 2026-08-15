@@ -2,8 +2,10 @@ import type { ReactNode } from "react"
 
 /**
  * Page orientation strip (§16 brief): a human-readable title, a quiet
- * technical context line beneath it, and right-aligned page meta. Optional
- * children render as an extra row (tabs, filters) inside the same strip.
+ * technical context line beneath it, and right-aligned page meta. The meta
+ * bottom-aligns with the context line — the row it matches in size and
+ * color — not the title baseline, where the size gap reads as misalignment.
+ * Optional children render as an extra row (tabs, filters) inside the strip.
  */
 export function ContextHeader({
   title,
@@ -19,21 +21,23 @@ export function ContextHeader({
   return (
     <div className="border-b border-border bg-surface">
       <div className="shell animate-fade-in pt-[18px] pb-3.5">
-        <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
-          <h1 className="text-[20px] leading-tight font-medium tracking-[-0.012em]">
-            {title}
-          </h1>
+        <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-1">
+          <div className="min-w-0">
+            <h1 className="text-[20px] leading-tight font-medium tracking-[-0.012em]">
+              {title}
+            </h1>
+            {context && (
+              <div className="mt-1.5 font-mono text-[12.5px] text-subtle">
+                {context}
+              </div>
+            )}
+          </div>
           {meta && (
-            <div className="flex items-baseline gap-5 text-[12.5px] text-subtle">
+            <div className="flex items-baseline gap-5 pb-px text-[12.5px] text-subtle">
               {meta}
             </div>
           )}
         </div>
-        {context && (
-          <div className="mt-1.5 font-mono text-[12.5px] text-subtle">
-            {context}
-          </div>
-        )}
         {children}
       </div>
     </div>

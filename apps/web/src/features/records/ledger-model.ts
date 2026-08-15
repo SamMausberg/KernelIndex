@@ -9,6 +9,8 @@ export type RecordsFilters = {
   view: RecordsView
   hardware: string | null
   verified: boolean
+  /** Keep only records whose holder has mirrored source (§16.12). */
+  source: boolean
   /** Free-text filter over everything a cohort row displays (§16.12). */
   filter: string
   sort: RecordsSort
@@ -28,6 +30,7 @@ export function recordsHref(
   if (next.view !== "current") params.set("view", next.view)
   if (next.hardware) params.set("hw", next.hardware)
   if (next.verified) params.set("verified", "1")
+  if (next.source) params.set("source", "1")
   if (next.filter) params.set("f", next.filter)
   if (next.sort !== "date") params.set("sort", next.sort)
   if (next.page > 1) params.set("page", String(next.page))
@@ -79,6 +82,7 @@ export function keepHolder(holder: RecordHolder, filters: RecordsFilters) {
   if (filters.hardware !== null && holder.hardware !== filters.hardware)
     return false
   if (filters.verified && !isVerifiedHolder(holder)) return false
+  if (filters.source && !holder.current.sourceAvailable) return false
   if (filters.filter === "") return true
   const needle = filters.filter.toLowerCase()
   return [
@@ -141,6 +145,8 @@ export type LedgerSlice = {
   recordsTotal: number
   context: string | undefined
   holders?: { rows: RecordHolder[]; total: number; pageCount: number }
+  /** Lead story for the current view: newest breaks under the filters. */
+  latest?: LedgerEvent[]
   broken?: LedgerEvent[]
   events?: { rows: LedgerEvent[]; total: number; pageCount: number }
 }
@@ -187,6 +193,11 @@ export function ledgerSlice(
       total: holders.length,
       pageCount: page.pageCount,
     }
+    slice.latest = events
+      .filter(
+        ({ holder, event }) => kept(holder) && event.previousValue !== null,
+      )
+      .slice(0, 3)
   } else {
     const filtered = events.filter(({ holder }) => kept(holder))
     if (filters.view === "broken") slice.broken = recentlyBroken(filtered)

@@ -56,7 +56,9 @@ export function OperationList({
   entries: OperationIndexEntry[]
   hrefFor: (entry: OperationIndexEntry) => string
 }) {
-  const maxRuns = Math.max(1, ...entries.map((entry) => entry.runs))
+  // Floor the meter domain so a 3-run corpus slice never paints full bars —
+  // the same value must look the same on every result set.
+  const maxRuns = Math.max(100, ...entries.map((entry) => entry.runs))
   return (
     <div className="overflow-x-auto">
       <div className="grid min-w-[720px] grid-cols-[minmax(280px,1fr)_150px_190px_74px] text-[11.5px] text-faint">
@@ -200,7 +202,7 @@ export function StartState({
         </div>
       </div>
 
-      <div className="flex flex-wrap items-baseline gap-x-[18px] gap-y-2 pt-3 pb-1 text-[12.5px]">
+      <div className="flex flex-wrap items-center gap-2 pt-3 pb-1">
         {["All families", ...families].map((label) => {
           const value = label === "All families" ? null : label
           const selected = filters.family === value
@@ -208,8 +210,8 @@ export function StartState({
             <Link
               key={label}
               href={browseHref(filters, { family: value })}
-              className={`transition-colors hover:text-fg hover:no-underline ${
-                selected ? "text-accent" : "text-subtle"
+              className={`key px-2.5 py-[3px] text-[12px] whitespace-nowrap hover:no-underline ${
+                selected ? "key-on" : "text-subtle hover:text-fg"
               }`}
             >
               {label}

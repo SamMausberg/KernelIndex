@@ -1,6 +1,5 @@
 import Link from "next/link"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
-import { SiteHeader } from "@/components/site-header"
 import { HeroSearch } from "@/features/home/hero-search"
 import { LatestRecords } from "@/features/home/latest-records"
 import { getHomePage } from "@/lib/catalog"
@@ -17,13 +16,11 @@ export default async function Home() {
       {model.illustrative && <IllustrativeNotice />}
       <main>
         {/* Sparse hero on the bare canvas: headline, search, one hint,
-            slightly above optical center. The header floats inside so the
-            illustrative notice can push everything down. */}
-        <section className="relative flex min-h-[72svh] flex-col">
-          <SiteHeader home />
+            slightly above optical center under the sticky site header. */}
+        <section className="relative flex min-h-[56svh] flex-col">
           <div
             data-hero
-            className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col justify-center px-10 pt-14 pb-[7svh] max-md:px-6"
+            className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col justify-center px-10 pt-6 pb-[4svh] max-md:px-6"
           >
             <h1 className="max-w-[26ch] text-[clamp(32px,3.6vw,46px)] leading-[1.12] font-medium tracking-[-0.022em] text-pretty">
               Find the fastest verified GPU kernel for your exact workload.

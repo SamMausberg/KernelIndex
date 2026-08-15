@@ -10,16 +10,11 @@ import { useRouter } from "next/navigation"
 import { startTransition, useEffect, useState } from "react"
 import { ContextHeader } from "@/components/context-header"
 import { Metric } from "@/components/metric"
+import { TrustCell } from "@/components/trust"
 import type { RecordHolder, RecordsPageModel } from "@/lib/catalog"
-import {
-  evidenceLabel,
-  formatDateShort,
-  formatDateUTC,
-  formatPrimary,
-} from "@/lib/format"
+import { formatDateShort, formatDateUTC, formatPrimary } from "@/lib/format"
 import {
   DAY_MS,
-  isVerifiedHolder,
   type LedgerEvent,
   type LedgerSlice,
   ledgerSlice,
@@ -47,12 +42,58 @@ function loadModel(): Promise<RecordsPageModel | null> {
 }
 
 const CURRENT_GRID =
-  "grid grid-cols-[minmax(300px,1.6fr)_190px_80px_minmax(180px,1fr)_130px_118px_82px_28px] min-w-[1140px]"
+  "grid grid-cols-[minmax(280px,1.5fr)_170px_70px_minmax(150px,0.9fr)_156px_minmax(215px,1fr)_78px_28px] min-w-[1150px]"
+
+/** The lead story (§16.12): the newest broken records under the filters. */
+function LatestBreaks({ latest }: { latest: LedgerEvent[] }) {
+  if (latest.length === 0) return null
+  return (
+    <div className="mt-5">
+      <div className="text-[10.5px] tracking-[0.08em] text-faint uppercase">
+        Latest breaks
+      </div>
+      <div className="mt-2 grid grid-cols-3 gap-3 max-lg:grid-cols-1">
+        {latest.map(({ holder, event }) => (
+          <div key={event.runId} className="plate px-4 py-3">
+            <div className="flex items-baseline justify-between gap-3">
+              <span className="truncate text-[13px] text-fg">
+                {holder.operation.name}
+              </span>
+              <span className="font-mono text-[11.5px] whitespace-nowrap text-faint">
+                {formatDateShort(event.at)}
+              </span>
+            </div>
+            <div className="mt-1.5 font-mono text-[13px]">
+              <span className="text-faint">
+                {event.previousValue ? formatPrimary(event.previousValue) : "—"}
+              </span>{" "}
+              <span className="text-ghost">→</span>{" "}
+              <Link
+                href={`/runs/${event.runId}`}
+                prefetch={false}
+                className="text-[15px] text-fg hover:text-accent-bright"
+              >
+                {formatPrimary(event.value)}
+              </Link>
+              {event.improvementPct !== null && (
+                <span className="ml-2 text-[12px] text-success">
+                  {event.improvementPct.toFixed(1)}%
+                </span>
+              )}
+            </div>
+            <div className="mt-1 truncate text-[12px] text-subtle">
+              {event.implementation.name} · {holder.hardware}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 function HolderRow({ holder }: { holder: RecordHolder }) {
   const record = holder.current
   const isNew = Date.now() - new Date(holder.since).getTime() < 14 * DAY_MS
-  const strong = isVerifiedHolder(holder)
   const margin = holder.history[0].improvementPct
   return (
     <details className="group border-b border-line">
@@ -93,13 +134,10 @@ function HolderRow({ holder }: { holder: RecordHolder }) {
             </span>
           )}
         </div>
-        <div className="truncate pr-3 font-mono text-[12px] text-muted">
+        <div className="pr-3 font-mono text-[12px] whitespace-nowrap text-muted">
           {holder.hardware}
         </div>
-        <div className={`text-[12.5px] ${strong ? "text-fg" : "text-subtle"}`}>
-          {strong && <span className="mr-1.5 text-[9px] text-success">●</span>}
-          {evidenceLabel(record.evidence)}
-        </div>
+        <TrustCell row={record} />
         <div className="font-mono text-[11.5px] whitespace-nowrap text-faint">
           {formatDateShort(holder.since)}
           {isNew && <span className="text-accent"> · new</span>}
@@ -121,10 +159,10 @@ function HolderRow({ holder }: { holder: RecordHolder }) {
         {holder.history.map((event, index) => (
           <div
             key={event.runId}
-            className="mt-2 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-[12.5px]"
+            className="mt-2 grid grid-cols-[92px_minmax(150px,240px)_minmax(0,1fr)] items-baseline gap-x-5 text-[12.5px] max-md:grid-cols-1 max-md:gap-y-0.5"
           >
             <span
-              className={`min-w-[70px] text-right font-mono text-[12.5px] ${
+              className={`text-right font-mono max-md:text-left ${
                 index === 0 ? "text-fg" : "text-subtle"
               }`}
             >
@@ -133,7 +171,7 @@ function HolderRow({ holder }: { holder: RecordHolder }) {
             <Link
               href={`/implementations/${event.implementation.slug}`}
               prefetch={false}
-              className={`font-mono text-[12.5px] ${index === 0 ? "" : "text-subtle"}`}
+              className={`truncate font-mono text-[12.5px] ${index === 0 ? "" : "text-subtle"}`}
             >
               {event.implementation.name}
             </Link>
@@ -146,7 +184,15 @@ function HolderRow({ holder }: { holder: RecordHolder }) {
             </span>
           </div>
         ))}
-        <div className="mt-3.5 flex gap-4 text-[12.5px]">
+        <div className="mt-3.5 flex flex-wrap gap-x-4 gap-y-1 text-[12.5px]">
+          {record.sourceAvailable && (
+            <Link
+              href={`/implementations/${record.implementation.slug}#code`}
+              prefetch={false}
+            >
+              View source →
+            </Link>
+          )}
           {record.runId && (
             <Link href={`/runs/${record.runId}`} prefetch={false}>
               Run dossier →
@@ -170,6 +216,9 @@ function HolderRow({ holder }: { holder: RecordHolder }) {
   )
 }
 
+const BROKEN_GRID =
+  "grid grid-cols-[minmax(230px,1.4fr)_200px_minmax(160px,0.9fr)_96px_156px_minmax(205px,1fr)_78px] min-w-[1130px]"
+
 function BrokenRows({ transitions }: { transitions: LedgerEvent[] }) {
   if (transitions.length === 0) {
     return (
@@ -179,15 +228,17 @@ function BrokenRows({ transitions }: { transitions: LedgerEvent[] }) {
     )
   }
   return (
-    <div className="min-w-[980px]">
+    <div>
       {transitions.map(({ holder, event, previous }) => (
         <div
           key={event.runId}
-          className="grid grid-cols-[minmax(260px,1.4fr)_220px_minmax(200px,1fr)_110px_130px_80px] items-center border-b border-line transition-colors hover:bg-raised"
+          className={`${BROKEN_GRID} items-center border-b border-line transition-colors hover:bg-raised`}
         >
-          <div className="truncate py-3.5 pr-3 font-mono text-[13px] text-fg">
-            {holder.operation.name} · {holder.workloadSummary} ·{" "}
-            {holder.hardware}
+          <div className="min-w-0 truncate py-3.5 pr-3 text-[13px] text-fg">
+            {holder.operation.name}
+            <span className="ml-2 font-mono text-[11.5px] text-faint">
+              {holder.workloadSummary}
+            </span>
           </div>
           <div className="py-3.5 pr-3 font-mono text-[13.5px] whitespace-nowrap">
             <span className="text-faint">
@@ -213,17 +264,16 @@ function BrokenRows({ transitions }: { transitions: LedgerEvent[] }) {
                 </span>
               )}
           </div>
-          <div className="py-3.5 text-[13px] text-fg">
+          <div className="py-3.5 pr-3 text-[13px] whitespace-nowrap text-fg">
             {event.improvementPct !== null
-              ? `${event.improvementPct.toFixed(1)}% faster`
+              ? `${event.improvementPct.toFixed(1)}%`
               : "—"}
           </div>
-          <div
-            className={`py-3.5 text-[12.5px] ${
-              isVerifiedHolder(holder) ? "text-fg" : "text-subtle"
-            }`}
-          >
-            {evidenceLabel(holder.current.evidence)}
+          <div className="py-3.5 pr-3 font-mono text-[12px] whitespace-nowrap text-muted">
+            {holder.hardware}
+          </div>
+          <div className="py-3.5">
+            <TrustCell row={holder.current} />
           </div>
           <div className="py-3.5 font-mono text-[11.5px] text-faint">
             {formatDateShort(event.at)}
@@ -363,9 +413,10 @@ function Pager({
 }
 
 /**
- * The one control strip shared by all three views: hardware scope, evidence
- * toggle, and a text filter on the left; the view's status and sort on the
- * right. The form resubmits every other active filter so nothing resets.
+ * The one control strip shared by all three views: machined filter chips
+ * (hardware scope, verified, has-source) and a text filter on the left; the
+ * view's status and sort on the right. Every interaction resubmits every
+ * other active filter so nothing resets.
  */
 function ControlStrip({
   slice,
@@ -377,36 +428,43 @@ function ControlStrip({
   status: React.ReactNode
 }) {
   const { filters } = slice
+  const chip = (selected: boolean) =>
+    `key px-2.5 py-[3px] text-[12px] whitespace-nowrap hover:no-underline ${
+      selected ? "key-on" : "text-subtle hover:text-fg"
+    }`
   return (
     <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2.5 border-b border-border-strong pt-5 pb-3">
-      <div className="flex flex-wrap items-center gap-x-[18px] gap-y-2 text-[12.5px]">
+      <div className="flex flex-wrap items-center gap-2">
         {["All hardware", ...slice.hardwareOptions].map((label) => {
           const value = label === "All hardware" ? null : label
-          const selected = filters.hardware === value
           return (
             <FilterLink
               key={label}
               filters={filters}
               patch={{ hardware: value }}
               navigate={navigate}
-              className={`transition-colors hover:text-fg hover:no-underline ${
-                selected ? "text-accent" : "text-subtle"
-              }`}
+              className={chip(filters.hardware === value)}
             >
               {label}
             </FilterLink>
           )
         })}
-        <span className="text-ghost">|</span>
+        <span className="mx-1 h-[18px] w-px self-center bg-border" />
         <FilterLink
           filters={filters}
           patch={{ verified: !filters.verified }}
           navigate={navigate}
-          className={`transition-colors hover:text-fg hover:no-underline ${
-            filters.verified ? "text-accent" : "text-subtle"
-          }`}
+          className={chip(filters.verified)}
         >
-          Verified only
+          Verified
+        </FilterLink>
+        <FilterLink
+          filters={filters}
+          patch={{ source: !filters.source }}
+          navigate={navigate}
+          className={chip(filters.source)}
+        >
+          Has source
         </FilterLink>
         <form
           action="/records"
@@ -417,7 +475,7 @@ function ControlStrip({
             ) as HTMLInputElement
             navigate({ filter: input.value.trim() })
           }}
-          className="well flex h-[30px] w-[230px] items-center px-2.5"
+          className="well ml-1 flex h-[30px] w-[220px] items-center px-2.5"
         >
           {filters.view !== "current" && (
             <input type="hidden" name="view" value={filters.view} />
@@ -428,6 +486,7 @@ function ControlStrip({
           {filters.verified && (
             <input type="hidden" name="verified" value="1" />
           )}
+          {filters.source && <input type="hidden" name="source" value="1" />}
           {filters.sort !== "date" && (
             <input type="hidden" name="sort" value={filters.sort} />
           )}
@@ -446,7 +505,7 @@ function ControlStrip({
             filters={filters}
             patch={{ filter: "" }}
             navigate={navigate}
-            className="text-faint transition-colors hover:text-fg hover:no-underline"
+            className="text-[12.5px] text-faint transition-colors hover:text-fg hover:no-underline"
           >
             Clear filter
           </FilterLink>
@@ -499,7 +558,8 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
   const narrowed =
     slice.filters.filter !== "" ||
     slice.filters.hardware !== null ||
-    slice.filters.verified
+    slice.filters.verified ||
+    slice.filters.source
 
   return (
     <>
@@ -512,7 +572,7 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
             filters={slice.filters}
             patch={{ view: view.key }}
             navigate={navigate}
-            className={`transition-colors hover:text-fg hover:no-underline ${
+            className={`whitespace-nowrap transition-colors hover:text-fg hover:no-underline ${
               slice.filters.view === view.key ? "text-fg" : "text-subtle"
             }`}
           >
@@ -533,6 +593,7 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
       <main className="shell animate-fade-in pb-20">
         {slice.filters.view === "current" && slice.holders && (
           <>
+            {slice.latest && <LatestBreaks latest={slice.latest} />}
             <ControlStrip
               slice={slice}
               navigate={navigate}
@@ -543,8 +604,8 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
                       ? `${slice.holders.total} of ${slice.recordsTotal} records`
                       : `${slice.recordsTotal} record${slice.recordsTotal === 1 ? "" : "s"}`}
                   </span>
-                  <span className="flex items-baseline gap-2.5">
-                    <span>sorted by</span>
+                  <span className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
+                    <span className="whitespace-nowrap">sorted by</span>
                     {(
                       [
                         { key: "date", label: "Newest" },
@@ -554,7 +615,10 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
                       ] as const
                     ).map((option) =>
                       slice.filters.sort === option.key ? (
-                        <span key={option.key} className="text-fg">
+                        <span
+                          key={option.key}
+                          className="whitespace-nowrap text-fg"
+                        >
                           {option.label}
                         </span>
                       ) : (
@@ -563,7 +627,7 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
                           filters={slice.filters}
                           patch={{ sort: option.key }}
                           navigate={navigate}
-                          className="text-subtle transition-colors hover:text-fg hover:no-underline"
+                          className="whitespace-nowrap text-subtle transition-colors hover:text-fg hover:no-underline"
                         >
                           {option.label}
                         </FilterLink>
@@ -582,7 +646,7 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
                 <div className="py-2">Margin</div>
                 <div className="py-2">Implementation</div>
                 <div className="py-2">Hardware</div>
-                <div className="py-2">Evidence</div>
+                <div className="py-2">Trust</div>
                 <div className="py-2">Set</div>
                 <div />
               </div>

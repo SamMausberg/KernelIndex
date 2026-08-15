@@ -14,6 +14,7 @@ type Params = {
   view?: string
   hw?: string
   verified?: string
+  source?: string
   f?: string
   sort?: string
   page?: string
@@ -42,6 +43,7 @@ export default async function RecordsPage({
     hardware:
       params.hw && model.hardwareOptions.includes(params.hw) ? params.hw : null,
     verified: params.verified === "1",
+    source: params.source === "1",
     filter: (params.f ?? "").trim(),
     sort: SORTS.has(params.sort as RecordsSort)
       ? (params.sort as RecordsSort)

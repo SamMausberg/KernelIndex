@@ -1,26 +1,12 @@
 import Link from "next/link"
 import { Meter } from "@/components/meter"
 import { Metric } from "@/components/metric"
+import { TierChips, TrustCell } from "@/components/trust"
 import type { PrimaryMetric, ResultRow } from "@/lib/catalog"
-import {
-  evidenceLabel,
-  formatDateShort,
-  formatDateUTC,
-  formatRelative,
-} from "@/lib/format"
-import { deployability } from "@/server/policy/deployability"
+import { formatDateShort, formatRelative, humanizeField } from "@/lib/format"
 
 export const RESULT_GRID =
-  "grid grid-cols-[44px_minmax(220px,1.5fr)_168px_118px_130px_minmax(150px,1fr)_78px_28px] min-w-[1040px]"
-
-/** Reason vector from the one deployability policy (§11.8). */
-function deployabilityReasons(row: ResultRow): string[] {
-  return deployability({
-    sourceAvailable: row.sourceAvailable,
-    installable: row.installable,
-    licenseConcluded: row.license.concluded,
-  }).reasons
-}
+  "grid grid-cols-[44px_minmax(200px,1.6fr)_150px_112px_minmax(205px,1fr)_70px_28px] min-w-[840px]"
 
 /** "Apache-2.0 · pip" — license state plus how the build is obtained. */
 export function availabilityText(row: ResultRow) {
@@ -28,19 +14,9 @@ export function availabilityText(row: ResultRow) {
   const install = row.install
     ? row.install.kind
     : row.sourceAvailable
-      ? "source only"
+      ? "source mirrored"
       : "no source"
   return `${license ?? "License unknown"} · ${install}`
-}
-
-function EvidenceCell({ row }: { row: ResultRow }) {
-  const strong = row.evidence === "verified" || row.evidence === "replicated"
-  return (
-    <div className={`text-[12.5px] ${strong ? "text-fg" : "text-subtle"}`}>
-      {strong && <span className="mr-1.5 text-[9px] text-success">●</span>}
-      {evidenceLabel(row.evidence)}
-    </div>
-  )
 }
 
 /**
@@ -57,8 +33,7 @@ export function ResultTableHead({ relativeLabel }: { relativeLabel?: string }) {
       <div className="py-2">Implementation</div>
       <div className="py-2 pr-3.5 text-right">Latency</div>
       <div className="py-2">{relativeLabel}</div>
-      <div className="py-2">Evidence</div>
-      <div className="py-2">Availability</div>
+      <div className="py-2">Trust</div>
       <div className="py-2">Tested</div>
       <div />
     </div>
@@ -93,16 +68,46 @@ function RelativeCell({
   if (row.mismatches.length > 0) {
     return (
       <div className="truncate pr-3 text-[12px] text-subtle">
-        {row.mismatches.map((mismatch) => mismatch.field).join(", ")}
+        {row.mismatches
+          .map((mismatch) => humanizeField(mismatch.field))
+          .join(", ")}
       </div>
     )
   }
   return <div />
 }
 
+/** One plain-English line for the expansion: why the row sits where it does
+ * plus the caveat that matters. License/source/install state lives in the
+ * chips, so those caveats never repeat here. */
+function whyLine(row: ResultRow, tied: boolean): string {
+  const parts: string[] = []
+  if (row.mismatches.length > 0)
+    parts.push(
+      `Differs from the request — ${row.mismatches
+        .map(
+          (mismatch) =>
+            `${humanizeField(mismatch.field)}: requested ${mismatch.requested}, observed ${mismatch.observed}`,
+        )
+        .join("; ")}.`,
+    )
+  else if (row.match === "exact" && row.rank !== null)
+    parts.push(
+      `Same workload, protocol, environment, and correctness policy as the request${
+        tied ? "; statistically tied ranks share a number" : ""
+      }.`,
+    )
+  for (const caveat of row.caveats)
+    if (!/^(license unknown|no public source)/i.test(caveat))
+      parts.push(`${caveat}.`)
+  return parts.join(" ")
+}
+
 /**
- * One dense result row (§16.7): six scannable facts, secondary actions on
- * hover/focus, full reasoning and evidence one disclosure away (§12).
+ * One dense result row (§16.7): five scannable facts, and one disclosure
+ * away (§12) a single explanatory line, the availability chips, and the
+ * three actions that matter — source, dossier, compare. Everything deeper
+ * lives on the run dossier.
  */
 export function ResultRowItem({
   row,
@@ -121,8 +126,6 @@ export function ResultRowItem({
 }) {
   const tied = row.tiedWithPrevious || tiedWithNext
   const rank = row.rank === null ? "—" : `${row.rank}${tied ? "=" : ""}`
-  const availabilityWarns =
-    row.license.concluded === null || !row.sourceAvailable
   return (
     <details className="group border-b border-line">
       <summary
@@ -158,14 +161,7 @@ export function ResultRowItem({
           />
         </div>
         <RelativeCell row={row} best={best} relative={relative} />
-        <EvidenceCell row={row} />
-        <div
-          className={`truncate pr-3 text-[12.5px] ${
-            availabilityWarns ? "text-warning" : "text-subtle"
-          }`}
-        >
-          {availabilityText(row)}
-        </div>
+        <TrustCell row={row} />
         <div
           className={`font-mono text-[11.5px] ${
             row.stale ? "text-warning" : "text-faint"
@@ -181,94 +177,27 @@ export function ResultRowItem({
         </div>
       </summary>
 
-      <div className="border-t border-line bg-surface pr-3 pb-[18px] pl-11">
-        <div className="grid grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] gap-7 pt-3.5">
-          <div>
-            <div className="text-[11.5px] tracking-[0.03em] text-faint uppercase">
-              {row.mismatches.length > 0
-                ? "Mismatch against the request"
-                : row.primary === null
-                  ? "Why there is no number"
-                  : "Why ranked here"}
-            </div>
-            {row.mismatches.map((mismatch) => (
-              <div
-                key={mismatch.field}
-                className="mt-2 flex gap-[9px] text-[12.5px]"
-              >
-                <span className="flex-none pt-px font-mono text-[11.5px] text-warning">
-                  {mismatch.field}
-                </span>
-                <span className="text-muted">
-                  requested {mismatch.requested}, observed {mismatch.observed}
-                </span>
-              </div>
-            ))}
-            {row.match === "exact" && row.rank !== null && (
-              <p className="mt-2 text-[12.5px] text-muted">
-                Same workload, protocol, environment, and correctness policy as
-                the request. Ordered by primary metric
-                {tied ? "; statistically tied ranks share a number" : ""}.
-              </p>
-            )}
-            {row.caveats.map((caveat) => (
-              <div key={caveat} className="mt-2 flex gap-2 text-[12.5px]">
-                <span className="pt-px text-[9px] text-warning">●</span>
-                <span className="text-muted">{caveat}</span>
-              </div>
-            ))}
-            {deployabilityReasons(row).length > 0 && (
-              <p className="mt-2 font-mono text-[11.5px] text-faint">
-                not deployable: {deployabilityReasons(row).join(", ")}
-              </p>
-            )}
-          </div>
-          <div>
-            <div className="text-[11.5px] tracking-[0.03em] text-faint uppercase">
-              Evidence
-            </div>
-            {[
-              { k: "Implementation", v: row.implementation.slug },
-              {
-                k: "Run",
-                v: row.runId ? `${row.runId.slice(0, 13)}…` : "no run",
-              },
-              { k: "vs #1", v: formatRelative(row.primary, best) },
-              {
-                k: "Statistic",
-                v: row.primary
-                  ? `${row.primary.statistic} of ${row.primary.sampleCount ?? "unknown"}`
-                  : "—",
-              },
-              { k: "License declared", v: row.license.declared ?? "unknown" },
-              { k: "License concluded", v: row.license.concluded ?? "unknown" },
-              { k: "Last tested", v: formatDateUTC(row.lastTestedAt) },
-            ].map((entry) => (
-              <div
-                key={entry.k}
-                className="mt-2 flex justify-between gap-3.5 border-b border-line pb-[6px]"
-              >
-                <span className="text-[12px] text-subtle">{entry.k}</span>
-                <span className="text-right font-mono text-[12px] break-all text-muted">
-                  {entry.v}
-                </span>
-              </div>
-            ))}
-            <div className="mt-3 flex gap-4 text-[12.5px]">
-              {row.runId && (
-                <Link href={`/runs/${row.runId}`}>Run dossier →</Link>
-              )}
-              <Link href={`/implementations/${row.implementation.slug}`}>
-                Implementation
+      <div className="border-t border-line bg-surface py-3.5 pr-4 pl-11 max-md:pl-4">
+        <p className="max-w-[96ch] text-[12.5px] text-muted">
+          {whyLine(row, tied)}
+        </p>
+        <div className="mt-2.5 flex flex-wrap items-center gap-x-6 gap-y-2">
+          <TierChips row={row} />
+          <span className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-[12.5px]">
+            {row.sourceAvailable && (
+              <Link href={`/implementations/${row.implementation.slug}#code`}>
+                View source →
               </Link>
-              <Link href={`/operations/${row.operation.slug}`}>Operation</Link>
-              {row.runId && compareWith && compareWith !== row.runId && (
-                <Link href={`/compare?run=${compareWith}&run=${row.runId}`}>
-                  Compare with #1
-                </Link>
-              )}
-            </div>
-          </div>
+            )}
+            {row.runId && (
+              <Link href={`/runs/${row.runId}`}>Run dossier →</Link>
+            )}
+            {row.runId && compareWith && compareWith !== row.runId && (
+              <Link href={`/compare?run=${compareWith}&run=${row.runId}`}>
+                Compare with #1 →
+              </Link>
+            )}
+          </span>
         </div>
       </div>
     </details>

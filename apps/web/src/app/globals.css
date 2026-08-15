@@ -8,36 +8,38 @@
  * never raw hex, so the palette stays swappable.
  */
 @theme {
-  /* Surfaces: deep matte black with a barely-cool cast, slight separation. */
-  --color-canvas: #030407;
-  --color-surface: #06070b;
-  --color-raised: #0a0b11;
+  /* Surfaces: near-true black; depth lives in the cobalt accents and the
+     surface/raised separation, never in a tinted canvas. */
+  --color-canvas: #020309;
+  --color-surface: #060810;
+  --color-raised: #0b0e18;
 
   /* 1px hairline hierarchy: row separators < section borders < controls. */
-  --color-line: #11131b;
-  --color-border: #191c25;
-  --color-border-strong: #212430;
-  --color-edge: #282c39;
-  --color-edge-hover: #3a3f51;
+  --color-line: #0f1220;
+  --color-border: #171b2b;
+  --color-border-strong: #1f2538;
+  --color-edge: #293049;
+  --color-edge-hover: #3b4463;
 
   /*
    * Text scale, brightest to quietest — four deliberate levels (§16.2):
    * fg = primary, muted = secondary, subtle = metadata, faint = tertiary.
    * ghost is for decorative glyphs (slashes, arrows) only.
    */
-  --color-fg: #f1f2f6;
-  --color-muted: #b5b8c4;
-  --color-subtle: #a4a8b6;
-  --color-faint: #787d8e;
-  --color-ghost: #3d4150;
+  --color-fg: #f2f4f9;
+  --color-muted: #b6bac9;
+  --color-subtle: #a2a8bb;
+  --color-faint: #757c93;
+  --color-ghost: #3b4054;
 
-  /* One cool accent; status colors appear sparingly and always with text. */
-  --color-accent: #a4b9dd;
-  --color-accent-bright: #d6e2f5;
-  --color-accent-dim: #5d6d89;
-  --color-accent-soft: #161e2b;
-  --color-success: #74d3a0;
-  --color-warning: #e3b85b;
+  /* One cobalt accent with real chroma; status colors appear sparingly and
+     always with text. Amber is reserved for genuinely warning states. */
+  --color-accent: #8fb0ef;
+  --color-accent-bright: #c9dcff;
+  --color-accent-dim: #52699f;
+  --color-accent-soft: #0e1729;
+  --color-success: #6fd39c;
+  --color-warning: #d9a54a;
 
   /* ABC Diatype leads when locally available; hosted fallbacks otherwise. */
   --font-sans:
@@ -96,7 +98,7 @@
        in the interface agrees with. Static; scrolls with the page. */
     background-image: radial-gradient(
       96rem 44rem at 82% -12%,
-      rgb(164 185 221 / 0.04),
+      rgb(143 176 239 / 0.05),
       transparent 60%
     );
     background-repeat: no-repeat;
@@ -175,45 +177,62 @@
       var(--color-raised),
       var(--color-surface)
     );
-    box-shadow: inset 0 1px 0 rgb(214 226 245 / 0.05);
+    box-shadow: inset 0 1px 0 rgb(201 220 255 / 0.05);
   }
 
-  /* Shiki output inside a plate: theme background yields to the plate. */
+  /* Shiki output inside a plate: theme background yields to the plate; the
+     wide right padding keeps long lines off the border while scrolling. */
   .source-view pre {
-    padding: 12px 16px;
+    padding: 12px 24px 12px 16px;
     font-size: 12.5px;
     line-height: 1.6;
     background: transparent !important;
+  }
+
+  /* Bounded scroll areas keep a visible thin scrollbar — a clipped box must
+     never pretend to be the whole content. */
+  .scroll-pane {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-edge) transparent;
   }
 
   /* Small machined control — keys, chips, copy. Pressing it sinks it. */
   .key {
     border: 1px solid var(--color-border-strong);
     border-radius: 4px;
-    background: linear-gradient(180deg, #0f121c, #08090f);
+    background: linear-gradient(180deg, #111527, #080a12);
     box-shadow:
-      inset 0 1px 0 rgb(214 226 245 / 0.07),
+      inset 0 1px 0 rgb(201 220 255 / 0.07),
       0 1px 2px rgb(0 0 0 / 0.35);
     transition:
       border-color 0.15s,
       color 0.15s;
   }
-  button.key:hover {
+  button.key:hover,
+  a.key:hover {
     border-color: var(--color-edge-hover);
   }
-  button.key:active {
-    background: linear-gradient(180deg, #08090f, #0d101a);
+  button.key:active,
+  a.key:active {
+    background: linear-gradient(180deg, #080a12, #0e1220);
     box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.5);
+  }
+  /* Engaged key: sunken, cobalt-lit. Filter chips and pickers use this. */
+  .key-on {
+    border-color: var(--color-accent-dim);
+    color: var(--color-accent-bright);
+    background: linear-gradient(180deg, #0c1322, #0e1729);
+    box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.45);
   }
 
   /* Recessed input well: instruments read, they don't glow — until focused. */
   .well {
     border: 1px solid var(--color-border-strong);
     border-radius: 5px;
-    background: linear-gradient(180deg, #040509, #07080d);
+    background: linear-gradient(180deg, #02030a, #060811);
     box-shadow:
       inset 0 1.5px 4px rgb(0 0 0 / 0.4),
-      inset 0 -1px 0 rgb(214 226 245 / 0.03);
+      inset 0 -1px 0 rgb(201 220 255 / 0.03);
     transition:
       border-color 0.16s,
       box-shadow 0.16s;
@@ -222,7 +241,7 @@
     border-color: var(--color-accent-dim);
     box-shadow:
       inset 0 1.5px 4px rgb(0 0 0 / 0.4),
-      0 0 0 3px rgb(164 185 221 / 0.06);
+      0 0 0 3px rgb(143 176 239 / 0.07);
   }
   /* The well is the focus ring; never double-box the inner input. */
   .well input:focus-visible {

@@ -22,7 +22,6 @@ import type {
   HomePageModel,
   ImplementationPageModel,
   ImplementationSummary,
-  KeyValue,
   OperationIndexEntry,
   OperationPageModel,
   RecordEvent,
@@ -1347,6 +1346,13 @@ function sourceLanguage(mediaType: string): "python" | "cpp" | "text" {
  * author's previous imported submission on this operation — the "what
  * changed to make it faster" evidence. Artifact bodies load only here.
  */
+/** SPDX LicenseRef ids shown to humans as the license's actual name, so the
+ * same license never appears under two spellings across pages. */
+const LICENSE_DISPLAY: Record<string, string> = {
+  "LicenseRef-GPUMode-Reciprocity-1.0":
+    "June 9 Researcher Reciprocity License v1.0",
+}
+
 async function implementationSourceCode(
   database: ReturnType<typeof db>,
   implementation: typeof schema.implementations.$inferSelect,
@@ -1437,7 +1443,9 @@ async function implementationSourceCode(
     fileName: spec.fileName ?? null,
     language: sourceLanguage(artifact.mediaType),
     content: artifact.content,
-    license: artifact.license,
+    license: artifact.license
+      ? (LICENSE_DISPLAY[artifact.license] ?? artifact.license)
+      : artifact.license,
     attribution,
     diff,
   }

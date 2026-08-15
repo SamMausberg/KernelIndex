@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { startTransition, useState } from "react"
+import { Fragment, startTransition, useState } from "react"
 import { CopyButton } from "@/components/copy-button"
 import { KeyValueList } from "@/components/key-value-list"
 import type { ResultRow, SearchPageModel } from "@/lib/catalog"
@@ -13,18 +13,22 @@ import {
   formatSpread,
 } from "@/lib/format"
 import { meetsTrust } from "@/lib/search-query"
+import { TRUST_TIERS, trustTier } from "@/lib/trust-tier"
 import { deployability, licenseMatches } from "@/server/policy/deployability"
-import { availabilityText, ResultRowItem, ResultTableHead } from "./result-row"
+import { ResultRowItem, ResultTableHead } from "./result-row"
 import { type BrowseFilters, OperationList, StartState } from "./start-state"
 import { SuggestInput } from "./suggest"
 
 export type ResultMode = "exact" | "compatible" | "supported" | "reported"
-export type ResultSort = "recommended" | "verified" | "deployable" | "newest"
+export type ResultSort = "recommended" | "newest"
 export type SearchFilters = {
   view?: ResultMode
   sort?: ResultSort
   verified: boolean
-  deployable: boolean
+  /** One-click availability filters (§16.7): rows lacking the fact drop. */
+  source: boolean
+  license: boolean
+  installable: boolean
   page?: number
 }
 
@@ -32,34 +36,25 @@ const PAGE_SIZE = 50
 
 const SORTS: { key: ResultSort; label: string }[] = [
   { key: "recommended", label: "Recommended" },
-  { key: "verified", label: "Most verified" },
-  { key: "deployable", label: "Deployable first" },
   { key: "newest", label: "Newest" },
 ]
 
-const EVIDENCE_RANK = {
-  replicated: 4,
-  verified: 3,
-  reproducible: 2,
-  reported: 1,
-}
+const rowTier = (row: ResultRow) =>
+  trustTier({
+    evidence: row.evidence,
+    sourceAvailable: row.sourceAvailable,
+    license: row.license.concluded ?? row.license.declared,
+  })
 
 /**
- * Presentation reorder inside one already-grouped view. "Recommended" is the
- * group's native order (ranking-v1 for the exact cohort); the others are
- * stable re-sorts, so rank numbers keep their cohort meaning.
+ * Presentation reorder inside one already-grouped view. "Recommended" is a
+ * stable best-tier-first sort — inside a tier the group's native order
+ * (ranking-v1 for the exact cohort) is untouched, so rank numbers keep
+ * their cohort meaning and a uniform-tier corpus renders unchanged.
  */
 function sortRows(rows: ResultRow[], sort: ResultSort): ResultRow[] {
-  if (sort === "recommended") return rows
   const sorted = [...rows]
-  if (sort === "verified")
-    sorted.sort(
-      (a, b) =>
-        (b.evidence ? EVIDENCE_RANK[b.evidence] : 0) -
-        (a.evidence ? EVIDENCE_RANK[a.evidence] : 0),
-    )
-  if (sort === "deployable")
-    sorted.sort((a, b) => Number(isDeployable(b)) - Number(isDeployable(a)))
+  if (sort === "recommended") sorted.sort((a, b) => rowTier(a) - rowTier(b))
   if (sort === "newest")
     sorted.sort((a, b) =>
       (b.lastTestedAt ?? "").localeCompare(a.lastTestedAt ?? ""),
@@ -88,14 +83,30 @@ const MODES: { key: ResultMode; label: string; note: string | null }[] = [
 
 const isVerified = (row: ResultRow) =>
   row.evidence === "verified" || row.evidence === "replicated"
-// One policy, one predicate (§11.8): the reason vector renders in the row
-// disclosure; this boolean must never drift from it.
+// One policy, one predicate (§11.8): the chips filter on single facts; this
+// combined boolean drives only the hero's deployability note.
 const isDeployable = (row: ResultRow) =>
   deployability({
     sourceAvailable: row.sourceAvailable,
     installable: row.installable,
     licenseConcluded: row.license.concluded,
   }).eligible
+
+/** The clickable availability filters (§16.7), each one observable fact. */
+const CHIP_FILTERS: {
+  key: "source" | "license" | "installable" | "verified"
+  label: string
+  test: (row: ResultRow) => boolean
+}[] = [
+  { key: "source", label: "Has source", test: (row) => row.sourceAvailable },
+  {
+    key: "license",
+    label: "License known",
+    test: (row) => (row.license.concluded ?? row.license.declared) !== null,
+  },
+  { key: "installable", label: "Installable", test: (row) => row.installable },
+  { key: "verified", label: "Verified", test: isVerified },
+]
 
 function searchHref(
   query: string,
@@ -108,7 +119,9 @@ function searchHref(
   if (next.view && next.view !== "exact") params.set("view", next.view)
   if (next.sort && next.sort !== "recommended") params.set("sort", next.sort)
   if (next.verified) params.set("verified", "1")
-  if (next.deployable) params.set("deployable", "1")
+  if (next.source) params.set("source", "1")
+  if (next.license) params.set("license", "1")
+  if (next.installable) params.set("installable", "1")
   if (next.page > 1) params.set("page", String(next.page))
   return `/search?${params.toString()}`
 }
@@ -150,11 +163,28 @@ function SearchField({ query }: { query: string }) {
   )
 }
 
+/** Quiet labeled rule between trust tiers in the recommended order. */
+function TierDivider({ label, count }: { label: string; count: number }) {
+  return (
+    <div className="flex items-baseline gap-3 pt-4 pb-1.5">
+      <span className="text-[10.5px] tracking-[0.08em] text-faint uppercase">
+        {label}
+      </span>
+      <span className="h-px flex-1 self-center bg-line" />
+      <span className="font-mono text-[11px] text-faint">{count}</span>
+    </div>
+  )
+}
+
 function Recommendation({
   top,
+  fastest,
   model,
 }: {
   top: ResultRow
+  /** The cohort's pure-latency leader; differs from `top` when a stronger
+   * tier surfaced first (§12: the faster number is stated, never hidden). */
+  fastest: ResultRow | null
   model: SearchPageModel
 }) {
   const deployableAlternative = isDeployable(top)
@@ -169,11 +199,20 @@ function Recommendation({
       top.primary !== null &&
       row.primary.value < top.primary.value,
   )
+  const fasterInCohort =
+    fastest &&
+    fastest.runId !== top.runId &&
+    fastest.primary &&
+    top.primary &&
+    fastest.primary.value < top.primary.value
+      ? fastest
+      : null
   return (
     <section className="grid animate-row-in grid-cols-[minmax(0,1.5fr)_minmax(280px,1fr)] gap-11 border-b border-border py-6 [animation-delay:.02s] max-lg:grid-cols-1">
       <div>
         <div className="font-mono text-[10px] tracking-[0.08em] text-faint uppercase">
           {answerLabel(top)}
+          {fasterInCohort ? " with source" : ""}
         </div>
         <div className="mt-3 flex flex-wrap items-baseline gap-4">
           <span className="font-mono text-[34px] leading-none font-medium">
@@ -188,7 +227,9 @@ function Recommendation({
             <span className="font-mono text-[13px] text-subtle">
               {[
                 formatSpread(top.primary),
-                `${top.primary.statistic}${top.primary.sampleCount ? ` of ${top.primary.sampleCount}` : ""}`,
+                top.primary.statistic === "unspecified"
+                  ? null
+                  : `${top.primary.statistic}${top.primary.sampleCount ? ` of ${top.primary.sampleCount}` : ""}`,
               ]
                 .filter(Boolean)
                 .join(" · ")}
@@ -233,8 +274,33 @@ function Recommendation({
             No verified install recipe for this revision.
           </p>
         )}
-        {deployableAlternative?.primary && (
+        <div className="mt-3.5 flex flex-wrap gap-x-5 gap-y-1 text-[13px]">
+          {top.sourceAvailable && (
+            <Link href={`/implementations/${top.implementation.slug}#code`}>
+              View source →
+            </Link>
+          )}
+          {top.runId && <Link href={`/runs/${top.runId}`}>Run dossier →</Link>}
+        </div>
+        {fasterInCohort?.primary && (
           <p className="mt-3.5 text-[13px] text-subtle">
+            Fastest overall in this cohort:{" "}
+            <Link
+              href={`/implementations/${fasterInCohort.implementation.slug}`}
+              className="font-mono text-[13px]"
+            >
+              {fasterInCohort.implementation.name}
+            </Link>{" "}
+            at{" "}
+            <span className="font-mono text-fg">
+              {formatPrimary(fasterInCohort.primary)}
+            </span>{" "}
+            · {TRUST_TIERS[rowTier(fasterInCohort)].toLowerCase()} · row #
+            {fasterInCohort.rank ?? "—"}
+          </p>
+        )}
+        {deployableAlternative?.primary && (
+          <p className="mt-2 text-[13px] text-subtle">
             Fastest deployable:{" "}
             <Link
               href={`/implementations/${deployableAlternative.implementation.slug}`}
@@ -245,8 +311,7 @@ function Recommendation({
             at{" "}
             <span className="font-mono text-fg">
               {formatPrimary(deployableAlternative.primary)}
-            </span>{" "}
-            · {availabilityText(deployableAlternative)}
+            </span>
           </p>
         )}
         {fasterElsewhere?.primary && (
@@ -264,30 +329,19 @@ function Recommendation({
       </div>
       {model.cohort && (
         <div className="border-l border-border pl-9 max-lg:border-l-0 max-lg:pl-0">
-          <details className="group">
-            <summary className="flex cursor-pointer list-none items-baseline justify-between gap-4 text-[12.5px] text-subtle transition-colors hover:text-fg [&::-webkit-details-marker]:hidden">
-              <span>
-                {model.cohort.profile === "source_native"
-                  ? "Source-native cohort"
-                  : "Exact cohort"}
-                <span className="ml-2 text-faint">
-                  {model.cohort.facts.length} facts
-                </span>
-              </span>
-              <span
-                aria-hidden="true"
-                className="font-mono text-[12px] text-faint transition-transform group-open:rotate-90"
-              >
-                ›
-              </span>
-            </summary>
-            <div className="mt-2.5">
-              <KeyValueList items={model.cohort.facts} />
-              <p className="mt-2.5 text-[12.5px]">
-                <Link href="/docs#comparability">Why comparable?</Link>
-              </p>
-            </div>
-          </details>
+          <div className="flex items-baseline justify-between gap-4 text-[12.5px]">
+            <span className="text-subtle">
+              {model.cohort.profile === "source_native"
+                ? "Source-native cohort"
+                : "Exact cohort"}
+            </span>
+            <Link href="/docs#comparability" className="text-[12px] text-faint">
+              Why comparable?
+            </Link>
+          </div>
+          <div className="mt-2.5">
+            <KeyValueList items={model.cohort.facts} />
+          </div>
         </div>
       )}
     </section>
@@ -337,7 +391,10 @@ export function SearchResults({
   const { policy } = model
   const keep = (row: ResultRow) =>
     (!state.verified || isVerified(row)) &&
-    (!state.deployable || isDeployable(row)) &&
+    (!state.source || row.sourceAvailable) &&
+    (!state.license ||
+      (row.license.concluded ?? row.license.declared) !== null) &&
+    (!state.installable || row.installable) &&
     meetsTrust(row.evidence, policy.minimumTrust) &&
     (policy.license === null ||
       licenseMatches(policy.license, row.license.concluded)) &&
@@ -349,10 +406,23 @@ export function SearchResults({
   const pageCount = Math.max(1, Math.ceil(allRows.length / PAGE_SIZE))
   const page = Math.min(Math.max(1, state.page ?? 1), pageCount)
   const rows = allRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
-  const top = model.groups.exact.find(keep)
-  const best = top?.primary ?? null
+  // The cohort's native leader anchors rank/meter semantics; the hero is
+  // the best-tier leader (the tiered list's first row).
+  const exactKept = model.groups.exact.filter(keep)
+  const fastest = exactKept[0] ?? null
+  const top = sortRows(exactKept, "recommended")[0]
+  const best = fastest?.primary ?? null
   const anyTie = rows.some((row) => row.tiedWithPrevious)
   const modeNote = MODES.find((mode) => mode.key === view)?.note
+  // Tier dividers appear only when the recommended order actually spans
+  // more than one tier; a uniform corpus renders as a plain list.
+  const tierCounts = new Map<number, number>()
+  if (sort === "recommended")
+    for (const row of allRows) {
+      const tier = rowTier(row)
+      tierCounts.set(tier, (tierCounts.get(tier) ?? 0) + 1)
+    }
+  const showDividers = tierCounts.size > 1
   // When the active view is empty, point at the nearest view that is not.
   const alternative = MODES.find(
     (mode) => mode.key !== view && groupsByMode[mode.key].length > 0,
@@ -473,7 +543,9 @@ export function SearchResults({
           </section>
         ) : (
           <>
-            {top && <Recommendation top={top} model={model} />}
+            {top && (
+              <Recommendation top={top} fastest={fastest} model={model} />
+            )}
 
             <div className="mt-7 flex flex-wrap items-baseline gap-x-6 gap-y-2 border-b border-border-strong animate-row-in [animation-delay:.08s]">
               {MODES.map((mode) => {
@@ -503,54 +575,52 @@ export function SearchResults({
                   </Link>
                 )
               })}
-              <div className="ml-auto flex items-baseline gap-5 pb-[9px] text-[12.5px]">
-                {hidden > 0 && (
-                  <span className="text-faint">{hidden} hidden by filters</span>
-                )}
-                <Link
-                  href={searchHref(model.query, state, {
-                    verified: !state.verified,
-                  })}
-                  prefetch={false}
-                  onClick={(event) => {
-                    event.preventDefault()
-                    apply({ verified: !state.verified })
-                  }}
-                  className={`transition-colors hover:text-fg hover:no-underline ${
-                    state.verified ? "text-accent" : "text-subtle"
-                  }`}
-                >
-                  Verified only
-                </Link>
-                <Link
-                  href={searchHref(model.query, state, {
-                    deployable: !state.deployable,
-                  })}
-                  prefetch={false}
-                  onClick={(event) => {
-                    event.preventDefault()
-                    apply({ deployable: !state.deployable })
-                  }}
-                  className={`transition-colors hover:text-fg hover:no-underline ${
-                    state.deployable ? "text-accent" : "text-subtle"
-                  }`}
-                >
-                  Deployable only
-                </Link>
-              </div>
             </div>
 
-            <div className="mt-3 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1.5">
-              <p className="text-[12.5px] text-faint">
-                {modeNote ??
-                  "Ranked by the primary latency statistic inside one comparable cohort; statistically tied ranks share a number."}
-                {view === "compatible" &&
-                  model.compatibleOverflow > 0 &&
-                  ` ${model.compatibleOverflow} more compatible rows not shown — narrow the workload.`}
-              </p>
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-x-6 gap-y-2.5">
+              <div className="flex flex-wrap items-center gap-2">
+                {CHIP_FILTERS.map((chip) => {
+                  const count = groupsByMode[view].filter(chip.test).length
+                  const on = state[chip.key]
+                  const dead = count === 0 && !on
+                  return (
+                    <Link
+                      key={chip.key}
+                      href={searchHref(model.query, state, {
+                        [chip.key]: !on,
+                      })}
+                      prefetch={false}
+                      aria-pressed={on}
+                      onClick={(event) => {
+                        event.preventDefault()
+                        if (!dead) apply({ [chip.key]: !on })
+                      }}
+                      className={`key px-2.5 py-[3px] text-[12px] hover:no-underline ${
+                        on
+                          ? "key-on"
+                          : dead
+                            ? "pointer-events-none text-ghost"
+                            : "text-subtle hover:text-fg"
+                      }`}
+                    >
+                      {chip.label}{" "}
+                      <span className="font-mono text-[11px] text-faint">
+                        {count}
+                      </span>
+                    </Link>
+                  )
+                })}
+                {hidden > 0 && (
+                  <span className="ml-1 text-[12px] text-faint">
+                    {hidden} hidden
+                  </span>
+                )}
+              </div>
               {allRows.length > 1 && (
-                <span className="flex items-baseline gap-2.5 text-[12.5px]">
-                  <span className="text-faint">sorted by</span>
+                <span className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1 text-[12.5px]">
+                  <span className="whitespace-nowrap text-faint">
+                    sorted by
+                  </span>
                   {SORTS.map((option) =>
                     sort === option.key ? (
                       <span key={option.key} className="text-fg">
@@ -578,6 +648,14 @@ export function SearchResults({
               )}
             </div>
 
+            <p className="mt-2.5 text-[12.5px] text-faint">
+              {modeNote ??
+                "Ranked by the primary latency statistic inside one comparable cohort; statistically tied ranks share a number."}
+              {view === "compatible" &&
+                model.compatibleOverflow > 0 &&
+                ` ${model.compatibleOverflow} more compatible rows not shown — narrow the workload.`}
+            </p>
+
             <div className="mt-1 animate-row-in overflow-x-auto [animation-delay:.12s]">
               {rows.length > 0 ? (
                 <>
@@ -590,19 +668,32 @@ export function SearchResults({
                           : undefined
                     }
                   />
-                  {rows.map((row, index) => (
-                    <ResultRowItem
-                      key={row.runId ?? row.implementation.slug}
-                      row={row}
-                      best={best}
-                      relative={view === "exact"}
-                      compareWith={top?.runId ?? null}
-                      tiedWithNext={
-                        rows[index + 1]?.tiedWithPrevious &&
-                        rows[index + 1]?.rank === row.rank
-                      }
-                    />
-                  ))}
+                  {rows.map((row, index) => {
+                    const tier = rowTier(row)
+                    const opensTier =
+                      showDividers &&
+                      (index === 0 || rowTier(rows[index - 1]) !== tier)
+                    return (
+                      <Fragment key={row.runId ?? row.implementation.slug}>
+                        {opensTier && (
+                          <TierDivider
+                            label={TRUST_TIERS[tier]}
+                            count={tierCounts.get(tier) ?? 0}
+                          />
+                        )}
+                        <ResultRowItem
+                          row={row}
+                          best={best}
+                          relative={view === "exact"}
+                          compareWith={fastest?.runId ?? null}
+                          tiedWithNext={
+                            rows[index + 1]?.tiedWithPrevious &&
+                            rows[index + 1]?.rank === row.rank
+                          }
+                        />
+                      </Fragment>
+                    )
+                  })}
                 </>
               ) : (
                 <p className="py-8 text-[13px] text-faint">
