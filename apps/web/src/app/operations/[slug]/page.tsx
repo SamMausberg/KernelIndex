@@ -6,6 +6,7 @@ import { IllustrativeNotice } from "@/components/illustrative-notice"
 import { KeyValueList } from "@/components/key-value-list"
 import { Metric } from "@/components/metric"
 import { Section } from "@/components/section"
+import { WorkloadPicker } from "@/features/operations/workload-picker"
 import { ResultRowItem, ResultTableHead } from "@/features/search/result-row"
 import { getOperationPage } from "@/lib/catalog"
 import { evidenceLabel, formatDateUTC } from "@/lib/format"
@@ -71,24 +72,11 @@ export default async function OperationPage({ params, searchParams }: Props) {
 
       <main className="shell animate-fade-in pb-20">
         <Section id="records" title="Current records">
-          {model.workloads.length > 1 && (
-            <div className="mb-3 flex flex-wrap items-baseline gap-x-5 gap-y-1.5 text-[12.5px]">
-              <span className="text-faint">Workload</span>
-              {model.workloads.map((option) => (
-                <Link
-                  key={option.id}
-                  href={`/operations/${operation.slug}?workload=${option.id}`}
-                  className={`font-mono text-[12px] transition-colors hover:text-fg hover:no-underline ${
-                    option.id === model.selectedWorkloadId
-                      ? "text-accent"
-                      : "text-subtle"
-                  }`}
-                >
-                  {option.label}
-                </Link>
-              ))}
-            </div>
-          )}
+          <WorkloadPicker
+            workloads={model.workloads}
+            selectedId={model.selectedWorkloadId}
+            slug={operation.slug}
+          />
           {model.cohort && (
             <p className="mb-1 font-mono text-[12px] text-faint">
               {model.cohort.facts.map((fact) => fact.value).join(" · ")}

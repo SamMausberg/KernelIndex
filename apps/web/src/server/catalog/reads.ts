@@ -1167,6 +1167,7 @@ export async function getOperationPage(
           workloadManifest.kind === "WorkloadCase"
             ? { ...workloadManifest.spec.axes }
             : {},
+        dtypes: row.dtypes,
         toleranceSummary: toleranceSummary(workloadManifest),
       }
     }),

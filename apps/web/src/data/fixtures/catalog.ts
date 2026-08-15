@@ -714,6 +714,7 @@ export async function getOperationPage(
       digest: w.digest,
       label: w.label,
       axes: { ...w.axes },
+      dtypes: ["bf16"],
       toleranceSummary: w.toleranceSummary,
     })),
     selectedWorkloadId: selected,

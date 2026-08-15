@@ -65,7 +65,7 @@ function HolderRow({ holder }: { holder: RecordHolder }) {
             {holder.workloadSummary}
           </span>
         </div>
-        <div className="pr-4 text-right whitespace-nowrap">
+        <div className="min-w-0 overflow-hidden pr-4 text-right whitespace-nowrap">
           <Metric
             primary={record.primary}
             spread

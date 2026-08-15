@@ -312,6 +312,7 @@ export type WorkloadOption = {
   /** e.g. "tokens = 2048 · bf16" */
   label: string
   axes: Record<string, number | string>
+  dtypes: string[]
   toleranceSummary: string
 }
 

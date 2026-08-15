@@ -5,6 +5,7 @@ import type { EvidenceLevel, PrimaryMetric } from "./catalog-models"
 const LATENCY_SCALES = [
   { limit: 1e6, divisor: 1e3, unit: "µs" },
   { limit: 1e9, divisor: 1e6, unit: "ms" },
+  { limit: Number.POSITIVE_INFINITY, divisor: 1e9, unit: "s" },
 ] as const
 
 function scaleFor(ns: number) {
@@ -19,9 +20,11 @@ export function formatLatency(ns: number): string {
   return `${value.toFixed(value < 10 ? 2 : 1)} ${scale.unit}`
 }
 
-/** Primary metric for display; only latency-in-ns gets unit conversion. */
+/** Time-valued metrics get unit conversion (ns-native and second-native —
+ * e.g. aggregate leaderboard scores); anything else prints as reported. */
 export function formatPrimary(primary: PrimaryMetric): string {
   if (primary.unit === "ns") return formatLatency(primary.value)
+  if (primary.unit === "s") return formatLatency(primary.value * 1e9)
   return `${primary.value} ${primary.unit}`.trim()
 }
 
