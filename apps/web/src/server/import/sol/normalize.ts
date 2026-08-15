@@ -15,6 +15,7 @@ import type {
   WorkloadSuiteManifest,
 } from "../../../schemas/kinds.ts"
 import { parseManifestDocument } from "../../../schemas/parse.ts"
+import type { BundleArtifact } from "../../catalog/publication.ts"
 import { sha256Digest } from "../../identity/digest.ts"
 import { evaluateAxisExpression, kebab, toUtcInstant } from "../shared.ts"
 
@@ -495,6 +496,8 @@ export type NormalizedRun = {
   protocol: BenchmarkProtocolManifest
   environment: ExecutionEnvironmentManifest
   externalId: string
+  /** Run-level evidence artifacts (trace logs on the gold-record path). */
+  artifacts?: BundleArtifact[]
 }
 
 /** Correct, non-disqualified leaderboard submission → suite-aggregate run. */
@@ -651,6 +654,15 @@ export function runFromTrace(input: {
   const performance = evaluation.performance
   const correctness = evaluation.correctness
 
+  // The eval log is the trace's raw evidence (§22.15): content-addressed,
+  // referenced from the manifest, stored inline as a run artifact. Without
+  // it the gold record could never derive above `reported` (§8.14).
+  const log =
+    typeof evaluation.log === "string" && evaluation.log.length > 0
+      ? evaluation.log
+      : null
+  const logDigest = log !== null ? sha256Digest(log) : null
+
   const manifest = parseManifestDocument({
     apiVersion: "kernelindex.dev/v1alpha1",
     kind: "BenchmarkRun",
@@ -694,6 +706,15 @@ export function runFromTrace(input: {
             }
           : undefined,
       },
+      evidence:
+        logDigest !== null
+          ? {
+              logs: {
+                uri: `kernelindex:artifact/${logDigest}`,
+                digest: logDigest,
+              },
+            }
+          : undefined,
       observedAt: toUtcInstant(evaluation.timestamp),
     },
   })
@@ -703,6 +724,20 @@ export function runFromTrace(input: {
     protocol: input.protocol,
     environment: input.environment,
     externalId: `trace/${trace.solution ?? "unknown"}/${workloadEntryKey(trace.workload)}`,
+    artifacts:
+      log !== null && logDigest !== null
+        ? [
+            {
+              role: "logs",
+              kind: "log",
+              mediaType: "text/plain",
+              digest: logDigest,
+              sizeBytes: Buffer.byteLength(log),
+              storage: "inline",
+              content: log,
+            },
+          ]
+        : undefined,
   }
 }
 

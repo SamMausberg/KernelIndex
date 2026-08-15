@@ -4,7 +4,7 @@
 // progression chain — the "how the record fell" evidence. Names alone never
 // merge identity; slug conflicts and unparseable evidence become review
 // items, not overwrites.
-import { eq } from "drizzle-orm"
+import { eq, inArray } from "drizzle-orm"
 import type { DbHandle, ImportBundle } from "../../catalog/publication.ts"
 import * as schema from "../../db/schema.ts"
 import { specDigest } from "../../identity/digest.ts"
@@ -371,6 +371,33 @@ export async function reconcileKernelbot(
     }
   }
   report.licenseWarnings = [...new Set(report.licenseWarnings)]
+
+  // Implementation slugs are page identity: a slug already mapping to a
+  // different digest means the newer row will shadow the older page (§14.4).
+  const implementationSlugs = bundle.implementations.map((entry) => entry.slug)
+  if (implementationSlugs.length > 0) {
+    const existing = await database
+      .select({
+        slug: schema.implementations.slug,
+        implementationDigest: schema.implementations.implementationDigest,
+      })
+      .from(schema.implementations)
+      .where(inArray(schema.implementations.slug, implementationSlugs))
+    const proposedBySlug = new Map(
+      bundle.implementations.map((entry) => [
+        entry.slug,
+        specDigest(entry.manifest),
+      ]),
+    )
+    for (const row of existing) {
+      const proposed = proposedBySlug.get(row.slug)
+      if (proposed !== undefined && proposed !== row.implementationDigest) {
+        report.ambiguities.push(
+          `implementation slug '${row.slug}' already maps to ${row.implementationDigest}; import proposes ${proposed} — the newer row will shadow the older page`,
+        )
+      }
+    }
+  }
 
   report.proposed = await proposedObjects(database, bundle)
   const inserts = report.proposed.filter(

@@ -118,6 +118,11 @@ const implementationColumns = {
   installKind: schema.implementations.installKind,
   installCommand: schema.implementations.installCommand,
   licenseDeclared: schema.implementations.licenseDeclared,
+  // Live availability facts: the run rows freeze these at insert (§10.4),
+  // and a later mirror/license conclusion must show through.
+  sourceAvailable: schema.implementations.sourceAvailable,
+  installable: schema.implementations.installable,
+  licenseExpression: schema.implementations.licenseExpression,
 }
 const projectColumns = {
   name: schema.projects.name,
@@ -196,8 +201,9 @@ function rowCaveats(joined: JoinedRun): string[] {
   if (!joined.run.reproducedByKernelindex) {
     caveats.push("Reported by source; not independently reproduced")
   }
-  if (!joined.run.sourceAvailable) caveats.push("No public source")
-  if (joined.run.licenseExpression === null) caveats.push("License unknown")
+  if (!joined.implementation.sourceAvailable) caveats.push("No public source")
+  if (joined.implementation.licenseExpression === null)
+    caveats.push("License unknown")
   return caveats
 }
 
@@ -266,11 +272,11 @@ function resultRow(
     mismatches: extras.mismatches ?? [],
     rank: extras.rank ?? null,
     tiedWithPrevious: extras.tiedWithPrevious ?? false,
-    sourceAvailable: run.sourceAvailable,
-    installable: run.installable,
+    sourceAvailable: implementation.sourceAvailable,
+    installable: implementation.installable,
     license: {
       declared: implementation.licenseDeclared,
-      concluded: run.licenseExpression,
+      concluded: implementation.licenseExpression,
     },
     lastTestedAt: run.observedAt.toISOString(),
     stale: isStale(run.observedAt),
@@ -858,7 +864,7 @@ export async function getRecordsPage(): Promise<RecordsPageModel> {
  */
 export async function getOperationIndex(): Promise<OperationIndexEntry[]> {
   const database = db()
-  const [operations, runStats] = await Promise.all([
+  const [operations, aliasRows, runStats] = await Promise.all([
     database
       .select({
         name: schema.operations.name,
@@ -867,6 +873,12 @@ export async function getOperationIndex(): Promise<OperationIndexEntry[]> {
         id: schema.operations.id,
       })
       .from(schema.operations),
+    database
+      .select({
+        operationId: schema.operationAliases.operationId,
+        alias: schema.operationAliases.alias,
+      })
+      .from(schema.operationAliases),
     database
       .select({
         operationId: schema.workloads.operationId,
@@ -882,12 +894,19 @@ export async function getOperationIndex(): Promise<OperationIndexEntry[]> {
       .groupBy(schema.workloads.operationId),
   ])
   const statsById = new Map(runStats.map((row) => [row.operationId, row]))
+  const aliasesById = new Map<string, string[]>()
+  for (const row of aliasRows) {
+    const bucket = aliasesById.get(row.operationId)
+    if (bucket) bucket.push(row.alias)
+    else aliasesById.set(row.operationId, [row.alias])
+  }
   return operations.map((operation) => {
     const stats = statsById.get(operation.id)
     return {
       name: humanizeOperationName(operation.name),
       slug: operation.slug,
       family: operation.family,
+      aliases: aliasesById.get(operation.id) ?? [],
       runs: stats?.n ?? 0,
       lastObservedAt: stats?.lastObservedAt?.toISOString() ?? null,
     }
@@ -927,6 +946,7 @@ export async function searchCatalog(
     matches: null,
     cohort: null,
     groups: EMPTY_GROUPS,
+    compatibleOverflow: 0,
     related: [],
     sources: [],
   }
@@ -1010,6 +1030,13 @@ export async function searchCatalog(
       summary: `Operation in the ${op.family} family`,
     }))
 
+  // Payload guard at corpus scale: the compatible group can hold every other
+  // workload's runs for a large operation; the view reports what was cut.
+  const COMPATIBLE_CAP = 400
+  const compatibleOverflow = Math.max(
+    0,
+    groups.compatible.length - COMPATIBLE_CAP,
+  )
   return {
     ...base,
     illustrative: pageIllustrative(joined),
@@ -1019,9 +1046,10 @@ export async function searchCatalog(
     ),
     operation: opRef(operation),
     cohort: groups.cohort,
+    compatibleOverflow,
     groups: {
       exact: groups.exact,
-      compatible: groups.compatible,
+      compatible: groups.compatible.slice(0, COMPATIBLE_CAP),
       supportedUnmeasured: supportedUnmeasuredRows(operation, joined, implRows),
       reported: groups.reported,
     },
@@ -1713,7 +1741,10 @@ export async function getRunPage(id: string): Promise<RunPageModel | null> {
         run.retractedAt !== null
           ? {
               at: run.retractedAt.toISOString(),
-              reason: JSON.stringify(run.retractionReason ?? "unspecified"),
+              reason:
+                typeof run.retractionReason === "string"
+                  ? run.retractionReason
+                  : JSON.stringify(run.retractionReason ?? "unspecified"),
             }
           : null,
       disputed: null,
@@ -1966,7 +1997,7 @@ export async function getComparePage(
       ineligibleReasons: reasons,
       license: base.license,
       install: base.install,
-      sourceAvailable: row.run.sourceAvailable,
+      sourceAvailable: row.implementation.sourceAvailable,
       observedAt: row.run.observedAt.toISOString(),
     }
   })
@@ -2019,9 +2050,9 @@ export async function getComparePage(
       row.run.sampleCount !== null ? String(row.run.sampleCount) : null,
     ),
     field("evidence", false, (row) => runEvidence(row.run)),
-    field("license", false, (row) => row.run.licenseExpression),
+    field("license", false, (row) => row.implementation.licenseExpression),
     field("source", false, (row) =>
-      row.run.sourceAvailable ? "available" : "unavailable",
+      row.implementation.sourceAvailable ? "available" : "unavailable",
     ),
     field("status", false, (row) => row.run.status),
     field("observed", false, (row) =>

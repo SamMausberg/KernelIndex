@@ -7,7 +7,8 @@
 //   pnpm --filter @kernelindex/web import:gpumode -- --group amd --publish
 //
 // Flags: --dry-run --publish --group <name> --leaderboards <a,b> --top <n>
-//        --authors <n> --max-per-author <n> --depth <n> --output <file>
+//        --authors <n> --max-per-author <n> --depth <n> --limit <n>
+//        --output <file>
 // Dry-run is the default; nothing is written without --publish.
 import { writeFileSync } from "node:fs"
 import { parseArgs } from "node:util"
@@ -44,6 +45,7 @@ const { values } = parseArgs({
     authors: { type: "string", default: "10" },
     "max-per-author": { type: "string", default: "12" },
     depth: { type: "string", default: "500" },
+    limit: { type: "string" },
     output: { type: "string" },
   },
 })
@@ -68,13 +70,20 @@ if (!url) {
 const client = postgres(url, { max: 1 })
 const database = drizzle(client, { schema })
 
-const leaderboards = values.leaderboards
+let leaderboards = values.leaderboards
   ? values.leaderboards.split(",").map((entry) => entry.trim())
   : values.group !== undefined
     ? CURATED_PROBLEMS.filter(
         (problem) => problem.config === GROUPS[values.group as string],
       ).map((problem) => problem.leaderboard)
     : undefined
+// §14.2 --limit: bound discovery volume (boards processed this run).
+if (values.limit !== undefined) {
+  const limit = Number(values.limit)
+  leaderboards = (
+    leaderboards ?? CURATED_PROBLEMS.map((problem) => problem.leaderboard)
+  ).slice(0, limit)
+}
 
 try {
   const data = await discoverKernelbot({

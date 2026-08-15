@@ -58,7 +58,7 @@ const database = drizzle(client, { schema })
 
 try {
   const data = values.snapshot
-    ? discoverLocal(values.snapshot)
+    ? discoverLocal(values.snapshot, process.env.SOL_EXAMPLES_COMMIT)
     : await discoverLeaderboard({
         kernels: values.kernels
           ? values.kernels.split(",").map((k) => k.trim())

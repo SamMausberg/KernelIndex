@@ -51,6 +51,11 @@ async function reads(): Promise<CatalogReads> {
 // namespaced by backend: locally the fixtures (e2e) and postgres servers
 // share .next/cache, and entries must never cross the seam.
 const REVALIDATE_SECONDS = 300
+// Outside the Next server (vitest, CLI scripts) there is no incremental
+// cache; the seam then runs uncached rather than crashing.
+const cached: typeof unstable_cache = process.env.NEXT_RUNTIME
+  ? unstable_cache
+  : (fn) => fn
 // The database identity is part of the namespace too: two local servers on
 // different databases share .next/cache and must never trade entries.
 const BACKEND =
@@ -62,7 +67,7 @@ const BACKEND =
     : "fx"
 
 export const getHomePage = cache(
-  unstable_cache(
+  cached(
     async (): Promise<HomePageModel> => {
       return (await reads()).getHomePage()
     },
@@ -88,7 +93,7 @@ export const getRecordsPage = cache(async (): Promise<RecordsPageModel> => {
 })
 
 export const getOperationIndex = cache(
-  unstable_cache(
+  cached(
     async (): Promise<OperationIndexEntry[]> => {
       return (await reads()).getOperationIndex()
     },
@@ -98,7 +103,7 @@ export const getOperationIndex = cache(
 )
 
 export const searchCatalog = cache(
-  unstable_cache(
+  cached(
     async (input: SearchInput): Promise<SearchPageModel> => {
       return (await reads()).searchCatalog(input)
     },
@@ -108,7 +113,7 @@ export const searchCatalog = cache(
 )
 
 export const getOperationPage = cache(
-  unstable_cache(
+  cached(
     async (
       slug: string,
       workload?: string,
@@ -122,7 +127,7 @@ export const getOperationPage = cache(
 )
 
 export const getImplementationPage = cache(
-  unstable_cache(
+  cached(
     async (slug: string): Promise<ImplementationPageModel | null> => {
       return (await reads()).getImplementationPage(slug)
     },
@@ -132,7 +137,7 @@ export const getImplementationPage = cache(
 )
 
 export const getRunPage = cache(
-  unstable_cache(
+  cached(
     async (id: string): Promise<RunPageModel | null> => {
       return (await reads()).getRunPage(id)
     },
@@ -142,7 +147,7 @@ export const getRunPage = cache(
 )
 
 export const getComparePage = cache(
-  unstable_cache(
+  cached(
     async (runIds: string[]): Promise<ComparePageModel> => {
       return (await reads()).getComparePage(runIds)
     },

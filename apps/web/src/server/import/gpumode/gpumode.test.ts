@@ -9,6 +9,7 @@ import { publishBundle } from "../../catalog/publication.ts"
 import { db } from "../../db/client.ts"
 import * as schema from "../../db/schema.ts"
 import { specDigest } from "../../identity/digest.ts"
+import { evidenceLevel } from "../../policy/trust.ts"
 import type { GmImportData } from "./discover.ts"
 import {
   aggregateRunFromRow,
@@ -307,6 +308,35 @@ describe.skipIf(!url)("gpumode import pipeline (database)", () => {
           .where(eq(schema.artifacts.contentDigest, digest as string))
         expect(artifact.content).toBe(code)
         expect(artifact.storage).toBe("inline")
+
+        // Trust outcome (§8.14): mirrored code flips source availability but
+        // never inflates evidence — no raw samples means `reported`.
+        const [published] = await tx
+          .select({
+            sourceAvailable: schema.implementations.sourceAvailable,
+            hasRawEvidence: schema.benchmarkRuns.hasRawEvidence,
+          })
+          .from(schema.benchmarkRuns)
+          .innerJoin(
+            schema.implementations,
+            eq(
+              schema.benchmarkRuns.implementationId,
+              schema.implementations.id,
+            ),
+          )
+          .where(eq(schema.benchmarkRuns.id, first.runIds[0]))
+        expect(published.sourceAvailable).toBe(true)
+        expect(published.hasRawEvidence).toBe(false)
+        expect(
+          evidenceLevel({
+            reproducedByKernelindex: false,
+            independentReplicationCount: 0,
+            sourceAvailable: published.sourceAvailable,
+            installable: false,
+            hasRawEvidence: published.hasRawEvidence,
+            identityComplete: true,
+          }),
+        ).toBe("reported")
         throw new Rollback("rollback")
       })
       .catch((error) => {

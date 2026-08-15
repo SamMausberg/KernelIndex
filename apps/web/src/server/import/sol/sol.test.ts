@@ -14,7 +14,10 @@ import {
   leaderboardProtocol,
   operationFromDefinition,
   runFromSubmission,
+  runFromTrace,
   toUtcInstant,
+  traceEnvironment,
+  traceProtocol,
 } from "./normalize.ts"
 import {
   parseDefinition,
@@ -66,6 +69,54 @@ describe("sol parsing", () => {
 describe("sol normalization", () => {
   const definition = parseDefinition(read("rmsnorm/definition.json"), "fx")
     .values[0]
+
+  it("maps a trace log to content-addressed raw evidence (gold record)", () => {
+    const trace = parseTraces(read("rmsnorm/trace.jsonl"), "fx").values[0]
+    const withLog = {
+      ...trace,
+      evaluation: {
+        ...(trace.evaluation as NonNullable<typeof trace.evaluation>),
+        log: "eval: 200 iterations, mean 7810ns, all cases matched",
+      },
+    }
+    const protocol = traceProtocol()
+    const environment = traceEnvironment(
+      (
+        withLog.evaluation as {
+          environment: { hardware: string; libs: Record<string, string> }
+        }
+      ).environment,
+    )
+    const run = runFromTrace({
+      trace: withLog,
+      implementationDigest: `sha256:${"1".repeat(64)}`,
+      workloadDigest: `sha256:${"2".repeat(64)}`,
+      protocol,
+      protocolDigest: specDigest(protocol),
+      environment,
+      environmentDigest: specDigest(environment),
+    })
+    const logs = run.manifest.spec.evidence?.logs
+    expect(logs?.digest).toMatch(/^sha256:[0-9a-f]{64}$/)
+    expect(logs?.uri).toBe(`kernelindex:artifact/${logs?.digest}`)
+    expect(run.artifacts?.[0]).toMatchObject({
+      role: "logs",
+      storage: "inline",
+      digest: logs?.digest,
+    })
+    // An empty log is not evidence: the fixture trace emits neither.
+    const bare = runFromTrace({
+      trace,
+      implementationDigest: `sha256:${"1".repeat(64)}`,
+      workloadDigest: `sha256:${"2".repeat(64)}`,
+      protocol,
+      protocolDigest: specDigest(protocol),
+      environment,
+      environmentDigest: specDigest(environment),
+    })
+    expect(bare.manifest.spec.evidence).toBeUndefined()
+    expect(bare.artifacts).toBeUndefined()
+  })
 
   it("maps a definition to a deterministic OperationSpec", () => {
     const first = operationFromDefinition(
@@ -166,8 +217,7 @@ describe.skipIf(!url)("sol import pipeline (database)", () => {
   }
 
   it("imports the local fixture snapshot end to end, idempotently", async () => {
-    process.env.SOL_EXAMPLES_COMMIT = EXAMPLES_COMMIT
-    const data = discoverLocal(path.join(fixtures, "rmsnorm"))
+    const data = discoverLocal(path.join(fixtures, "rmsnorm"), EXAMPLES_COMMIT)
     expect(data.issues).toHaveLength(0)
     expect(data.definitions.size).toBe(1)
     expect(data.traces).toHaveLength(2)
@@ -265,7 +315,11 @@ describe.skipIf(!url)("sol import pipeline (database)", () => {
 
       const result = await publishBundle(tx, bundle, { publish: true })
       expect(result.counts.runs.inserted).toBe(2)
-      expect(result.counts.workloads.inserted).toBe(17)
+      // Deterministic on any database state: a workload row either inserts
+      // fresh or already exists from a prior publish of the same digests.
+      expect(
+        result.counts.workloads.inserted + result.counts.workloads.existing,
+      ).toBe(17)
     })
   })
 })

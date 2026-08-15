@@ -19,7 +19,7 @@ const manifest = (file: string) => parseManifestText(read(file))
 describe("registry examples", () => {
   it("every valid example parses", () => {
     const files = readdirSync(examplesDir).filter((f) => f.endsWith(".yaml"))
-    expect(files.length).toBeGreaterThanOrEqual(7)
+    expect(files.length).toBeGreaterThanOrEqual(8)
     for (const file of files) expect(() => manifest(file), file).not.toThrow()
   })
 
@@ -48,6 +48,9 @@ describe("registry examples", () => {
       throw new Error("wrong kind")
     if (run.kind !== "BenchmarkRun") throw new Error("wrong kind")
 
+    const suite = manifest("workload-suite.yaml")
+    if (suite.kind !== "WorkloadSuite") throw new Error("wrong kind")
+    expect(suite.spec.operationSpecDigest).toBe(specDigest(operation))
     expect(workload.spec.operationSpecDigest).toBe(specDigest(operation))
     expect(implementation.spec.operation.specDigest).toBe(specDigest(operation))
     expect(run.spec.implementationDigest).toBe(specDigest(implementation))

@@ -130,7 +130,9 @@ export function operationFromProblem(problem: CuratedProblem): {
   return {
     manifest,
     slug: problem.slug,
-    aliases: [problem.leaderboard],
+    // The upstream board name plus the curated human title (lowercased):
+    // "triangle multiplicative update" must resolve as well as "trimul".
+    aliases: [...new Set([problem.leaderboard, problem.title.toLowerCase()])],
     tags: [
       ...new Set(
         problem.tags.map((tag) =>

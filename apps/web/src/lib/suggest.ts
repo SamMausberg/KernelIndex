@@ -25,13 +25,15 @@ export function matchSuggestions(
         ? 4
         : lowered.every((term) => words.some((word) => word.startsWith(term)))
           ? 3
-          : name.includes(phrase)
+          : name.includes(phrase) ||
+              entry.aliases.some((alias) => alias.includes(phrase))
             ? 2
             : lowered.every(
                   (term) =>
                     name.includes(term) ||
                     entry.slug.includes(term) ||
-                    entry.family.includes(term),
+                    entry.family.includes(term) ||
+                    entry.aliases.some((alias) => alias.includes(term)),
                 )
               ? 1
               : 0

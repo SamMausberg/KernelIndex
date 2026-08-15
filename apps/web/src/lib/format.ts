@@ -42,9 +42,11 @@ export function formatPrimaryParts(primary: PrimaryMetric): {
 
 /** "±0.03" — half-width of the uncertainty interval in the display unit. */
 export function formatSpread(primary: PrimaryMetric): string | null {
-  if (!primary.uncertainty || primary.unit !== "ns") return null
-  const half = (primary.uncertainty.high - primary.uncertainty.low) / 2
-  const divisor = scaleFor(primary.value)?.divisor ?? 1
+  if (!primary.uncertainty) return null
+  const toNs = primary.unit === "ns" ? 1 : primary.unit === "s" ? 1e9 : null
+  if (toNs === null) return null
+  const half = ((primary.uncertainty.high - primary.uncertainty.low) / 2) * toNs
+  const divisor = scaleFor(primary.value * toNs)?.divisor ?? 1
   return `±${(half / divisor).toFixed(2)}`
 }
 

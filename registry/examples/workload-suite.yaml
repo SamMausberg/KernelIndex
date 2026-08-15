@@ -1,0 +1,23 @@
+# Illustrative example manifest. Fictional; not real benchmark evidence.
+# A suite-scoped result is a source-native aggregate over this closed case
+# list (§11.7); it never claims a per-case measurement.
+apiVersion: kernelindex.dev/v1alpha1
+kind: WorkloadSuite
+metadata:
+  name: rmsnorm-h4096-suite
+  title: RMSNorm h4096 leaderboard suite
+spec:
+  operationSpecDigest: sha256:7a3b25630f0628b21ed74b6adb588d28f7e29191f9038bed6f56ed393deefb5b
+  cases:
+    - externalId: "0"
+      axes: { tokens: 1024, hidden: 4096 }
+    - externalId: "1"
+      axes: { tokens: 2048, hidden: 4096 }
+    - externalId: "2"
+      axes: { tokens: 8192, hidden: 4096 }
+  correctness:
+    comparator: illustrative_eval
+    description: Every case must match the reference within suite tolerance.
+  aggregation:
+    metric: latency
+    statistic: geomean

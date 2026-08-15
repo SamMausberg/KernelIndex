@@ -5,7 +5,7 @@ metadata:
   name: example-meridian-rmsnorm-b200
   title: Example benchmark run (fictional)
 spec:
-  implementationDigest: sha256:5456302b3bbc7a5913867f424ddf985ae3f3f17b13ea12a6c9f9d3bb622d91ea
+  implementationDigest: sha256:c560b43111f315d75a81c1cf194c827b1c294110fe5b20ad2d4467c09c24809e
   workloadDigest: sha256:944ceb3a7d7d4a4c47f1f8ed239363f4be78a2a90293b4325fb18a274cf97aa3
   protocolDigest: sha256:6ac212f99724757d058e7a7f440314debd2fed235c5178bc006b62c0d5e0d295
   environmentDigest: sha256:46cf7b24b586c71505152d0103b9e84101de1ac5b66cdd76aabc88356e93db79

@@ -8,9 +8,19 @@ import {
   formatDateUTC,
   formatRelative,
 } from "@/lib/format"
+import { deployability } from "@/server/policy/deployability"
 
 export const RESULT_GRID =
   "grid grid-cols-[44px_minmax(220px,1.5fr)_168px_118px_130px_minmax(150px,1fr)_78px_28px] min-w-[1040px]"
+
+/** Reason vector from the one deployability policy (§11.8). */
+function deployabilityReasons(row: ResultRow): string[] {
+  return deployability({
+    sourceAvailable: row.sourceAvailable,
+    installable: row.installable,
+    licenseConcluded: row.license.concluded,
+  }).reasons
+}
 
 /** "Apache-2.0 · pip" — license state plus how the build is obtained. */
 export function availabilityText(row: ResultRow) {
@@ -207,6 +217,11 @@ export function ResultRowItem({
                 <span className="text-muted">{caveat}</span>
               </div>
             ))}
+            {deployabilityReasons(row).length > 0 && (
+              <p className="mt-2 font-mono text-[11.5px] text-faint">
+                not deployable: {deployabilityReasons(row).join(", ")}
+              </p>
+            )}
           </div>
           <div>
             <div className="text-[11.5px] tracking-[0.03em] text-faint uppercase">

@@ -528,6 +528,7 @@ export async function getOperationIndex(): Promise<OperationIndexEntry[]> {
       name: "RMSNorm, hidden 4096",
       slug: "rmsnorm-h4096",
       family: "rmsnorm",
+      aliases: ["rms_norm", "root mean square norm"],
       runs: 8,
       lastObservedAt: FRESH,
     },
@@ -535,6 +536,7 @@ export async function getOperationIndex(): Promise<OperationIndexEntry[]> {
       name: "Fused residual + RMSNorm",
       slug: "fused-residual-rmsnorm",
       family: "fused-residual-rmsnorm",
+      aliases: [],
       runs: 0,
       lastObservedAt: null,
     },
@@ -565,6 +567,7 @@ export async function searchCatalog(
       requireSource: intent.requireSource,
       requireInstallable: intent.requireInstallable,
     },
+    compatibleOverflow: 0,
   }
 
   const matched = /rms[\s_-]?norm/i.test(query)

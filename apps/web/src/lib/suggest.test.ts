@@ -7,7 +7,15 @@ const entry = (
   slug: string,
   family: string,
   runs: number,
-): OperationIndexEntry => ({ name, slug, family, runs, lastObservedAt: null })
+  aliases: string[] = [],
+): OperationIndexEntry => ({
+  name,
+  slug,
+  family,
+  aliases,
+  runs,
+  lastObservedAt: null,
+})
 
 const INDEX = [
   entry("GEMM n128 k2048", "004-gemm-n128-k2048", "gemm", 3),
@@ -15,9 +23,18 @@ const INDEX = [
   entry("Fused add RMSNorm h2048", "001-fused-add-rmsnorm-h2048", "rmsnorm", 5),
   entry("AMD FP8 blockwise GEMM", "gpumode-amd-fp8-mm", "gemm", 12),
   entry("Attention softmax dropout", "001-attention-softmax", "other", 2),
+  entry("Trimul", "gpumode-trimul", "trimul", 4, [
+    "trimul",
+    "triangle multiplicative update",
+  ]),
 ]
 
 describe("matchSuggestions", () => {
+  it("matches curated aliases the display name does not contain", () => {
+    const names = matchSuggestions(["triangle"], INDEX).map((m) => m.name)
+    expect(names).toContain("Trimul")
+  })
+
   it("ranks phrase prefixes first, then by run count", () => {
     const names = matchSuggestions(["gemm"], INDEX).map((m) => m.name)
     expect(names.slice(0, 2)).toEqual(["GEMM n4096 k4096", "GEMM n128 k2048"])

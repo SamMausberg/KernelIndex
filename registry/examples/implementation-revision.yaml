@@ -25,6 +25,12 @@ spec:
     axes: ["tokens >= 1", "hidden == 4096"]
     dtypes: [bf16]
     layouts: [row_major]
+  # Mirrored source identity (§8.13): the revision's own file, content-
+  # addressed; the digest is part of the implementation's identity.
+  source:
+    contentDigest: sha256:1f2a5b8c1f2a5b8c1f2a5b8c1f2a5b8c1f2a5b8c1f2a5b8c1f2a5b8c1f2a5b8c
+    fileName: kernels/rmsnorm.py
+    sizeBytes: 4821
   buildVariants:
     - name: source
       install:

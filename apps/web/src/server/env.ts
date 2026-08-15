@@ -9,6 +9,12 @@ const environmentSchema = z
     DATABASE_DIRECT_URL: z.url().optional(),
     SITE_ORIGIN: z.url().optional(),
     RELEASE_SHA: z.string().optional(),
+    /** Pinned nvidia/sol-execbench commit for `import:sol --snapshot`
+        solutions (§22.15); unpinned solutions are skipped for review. */
+    SOL_EXAMPLES_COMMIT: z
+      .string()
+      .regex(/^[0-9a-f]{40}$/)
+      .optional(),
   })
   .refine(
     (env) =>

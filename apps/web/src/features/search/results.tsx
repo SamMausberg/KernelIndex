@@ -13,7 +13,7 @@ import {
   formatSpread,
 } from "@/lib/format"
 import { meetsTrust } from "@/lib/search-query"
-import { licenseMatches } from "@/server/policy/deployability"
+import { deployability, licenseMatches } from "@/server/policy/deployability"
 import { availabilityText, ResultRowItem, ResultTableHead } from "./result-row"
 import { type BrowseFilters, OperationList, StartState } from "./start-state"
 import { SuggestInput } from "./suggest"
@@ -88,8 +88,14 @@ const MODES: { key: ResultMode; label: string; note: string | null }[] = [
 
 const isVerified = (row: ResultRow) =>
   row.evidence === "verified" || row.evidence === "replicated"
+// One policy, one predicate (§11.8): the reason vector renders in the row
+// disclosure; this boolean must never drift from it.
 const isDeployable = (row: ResultRow) =>
-  row.install !== null && row.sourceAvailable && row.license.concluded !== null
+  deployability({
+    sourceAvailable: row.sourceAvailable,
+    installable: row.installable,
+    licenseConcluded: row.license.concluded,
+  }).eligible
 
 function searchHref(
   query: string,
@@ -538,6 +544,9 @@ export function SearchResults({
               <p className="text-[12.5px] text-faint">
                 {modeNote ??
                   "Ranked by the primary latency statistic inside one comparable cohort; statistically tied ranks share a number."}
+                {view === "compatible" &&
+                  model.compatibleOverflow > 0 &&
+                  ` ${model.compatibleOverflow} more compatible rows not shown — narrow the workload.`}
               </p>
               {allRows.length > 1 && (
                 <span className="flex items-baseline gap-2.5 text-[12.5px]">

@@ -147,7 +147,10 @@ export async function discoverLeaderboard(
 }
 
 /** Snapshot mode: walk a local directory of SOL files (§14.2 --snapshot). */
-export function discoverLocal(root: string): SolImportData {
+export function discoverLocal(
+  root: string,
+  examplesCommit?: string,
+): SolImportData {
   const data = emptyData()
   const entries = readdirSync(root, { recursive: true }) as string[]
 
@@ -198,7 +201,7 @@ export function discoverLocal(root: string): SolImportData {
           solution,
           definitionName: solution.definition,
           repository: "https://github.com/nvidia/sol-execbench",
-          commit: process.env.SOL_EXAMPLES_COMMIT ?? "",
+          commit: examplesCommit ?? "",
           examplePath: path.dirname(relative),
         })
       }

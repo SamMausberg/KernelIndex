@@ -142,6 +142,8 @@ export type OperationIndexEntry = {
   name: string
   slug: string
   family: string
+  /** Lowercased source and curated aliases, matchable by the suggest input. */
+  aliases: string[]
   runs: number
   /** Newest published run's observation date; null when unmeasured. */
   lastObservedAt: string | null
@@ -231,6 +233,8 @@ export type SearchPageModel = {
     supportedUnmeasured: ResultRow[]
     reported: ResultRow[]
   }
+  /** Compatible rows dropped by the server-side cap (payload guard). */
+  compatibleOverflow: number
   related: RelatedItem[]
   /** Source coverage and freshness for the resolved operation (§22.4). */
   sources: SourceRef[]
