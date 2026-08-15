@@ -2316,15 +2316,24 @@ Preserve the source-native problem/solution/trace identity and score. Source-nat
 ### 14.6 Source expansion order
 
 Prioritize sources by structured evidence and user utility, not brand count.
+The 2026-08-14 source vetting (licenses and data formats verified per source;
+see `docs/source-policy.md`) reordered the queue around what actually
+publishes structured, redistributable results:
 
-| Priority | Source type | Initial use |
-|---:|---|---|
-| 1 | NVIDIA SOL-ExecBench | full operation/workload/solution/trace vertical slice |
-| 2 | one curated library with strong source/install metadata, such as FlashInfer or Hugging Face Kernels | compatibility and deployability |
-| 3 | GPU MODE index/repositories | discovery and project metadata; benchmark claims only with evidence |
-| 4 | CUTLASS and major library repositories | implementation/build coverage |
-| 5 | papers and independent repositories | reported evidence with explicit protocol limitations |
-| 6 | vLLM, SGLang, TensorRT-LLM, AIPerf | separate serving resolver |
+| Priority | Source | Status | Use |
+|---:|---|---|---|
+| 1 | NVIDIA SOL-ExecBench (public leaderboard API only — never the HF dataset, whose license forbids redistribution) | active | full vertical slice; all leaderboard kernels, B200, `model:` workload provenance tags |
+| 2 | GPU MODE KernelBot (`GPUMODE/kernelbot-data`, reciprocity license permits redistribution with attribution) | next importer | per-shape timings + code + system info; AMD MI300 hardware breadth |
+| 3 | FlashInfer-Bench (`flashinfer-ai/flashinfer-trace`, Apache-2.0) | planned | baseline library kernels, B200; near-1:1 schema match; reconcile overlap with SOL |
+| 4 | Liger-Kernel committed benchmark CSVs (BSD-2) | planned | multi-GPU medians with baseline pairs; environment-incomplete, reported-only |
+| 5 | papers and independent repositories | as evidence appears | reported evidence with explicit protocol limitations |
+| 6 | MLPerf Inference, InferenceX; vLLM/SGLang only if bulk access opens | Phase 3 | separate serving domain (§8.16) |
+
+Rejected for now: Artificial Analysis (no redistribution rights), HF LLM-perf
+leaderboard (stale, unlicensed), PyTorch HUD ClickHouse (credential-gated),
+README-only repos (DeepGEMM, FlashMLA, ThunderKittens, CUTLASS, Triton).
+Hugging Face Kernel Hub publishes no structured results but remains the best
+implementation/install registry for deployability metadata.
 
 A source can contribute links and metadata without contributing comparable performance records.
 
@@ -2387,6 +2396,9 @@ For every source, record:
 - parser owner and review date.
 
 Facts may be indexable while source code or artifacts remain link-only. Never infer redistribution rights from public availability.
+
+The per-source legal record lives in `docs/source-policy.md`; it is reviewed
+before a source's first import and whenever an importer's channel changes.
 
 ## 15. Source of truth, claims, submissions, and governance
 
