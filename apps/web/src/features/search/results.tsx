@@ -2,7 +2,12 @@ import Link from "next/link"
 import { CopyButton } from "@/components/copy-button"
 import { KeyValueList } from "@/components/key-value-list"
 import { Meter } from "@/components/meter"
-import type { BrowseFamily, ResultRow, SearchPageModel } from "@/lib/catalog"
+import type {
+  BrowseFamily,
+  OperationIndexEntry,
+  ResultRow,
+  SearchPageModel,
+} from "@/lib/catalog"
 import {
   evidenceLabel,
   formatDateUTC,
@@ -13,6 +18,7 @@ import {
 import { meetsTrust } from "@/lib/search-query"
 import { licenseMatches } from "@/server/policy/deployability"
 import { availabilityText, ResultRowItem, ResultTableHead } from "./result-row"
+import { SuggestInput } from "./suggest"
 
 export type ResultMode = "exact" | "compatible" | "supported" | "reported"
 export type SearchFilters = {
@@ -80,19 +86,24 @@ function contextLine(model: SearchPageModel) {
   return parts.length > 0 ? parts.join(" · ") : model.interpretedQuery
 }
 
-function SearchField({ query }: { query: string }) {
+function SearchField({
+  query,
+  suggest,
+}: {
+  query: string
+  suggest: OperationIndexEntry[]
+}) {
   return (
     <form
       action="/search"
       id="workload-search"
-      className="well flex h-12 items-center gap-3 pr-3.5 pl-4"
+      className="well relative flex h-12 items-center gap-3 pr-3.5 pl-4"
     >
-      <input
-        id="header-search-input"
-        name="q"
+      <SuggestInput
+        key={query}
+        index={suggest}
+        inputId="header-search-input"
         defaultValue={query}
-        autoComplete="off"
-        spellCheck={false}
         placeholder="Search operation, GPU, dtype, shape, framework…"
         className="min-w-0 flex-1 border-0 bg-transparent p-0 font-mono text-[14px] outline-none"
       />
@@ -324,9 +335,11 @@ function Recommendation({
 export function SearchResults({
   model,
   filters,
+  suggest = [],
 }: {
   model: SearchPageModel
   filters: SearchFilters
+  suggest?: OperationIndexEntry[]
 }) {
   const groupsByMode: Record<ResultMode, ResultRow[]> = {
     exact: model.groups.exact,
@@ -369,7 +382,7 @@ export function SearchResults({
 
       <div className="border-b border-border bg-surface">
         <div className="shell animate-fade-in pt-5 pb-4">
-          <SearchField query={model.query} />
+          <SearchField query={model.query} suggest={suggest} />
           {(model.facets.length > 0 || model.queryIssues.length > 0) && (
             <div className="mt-2.5 flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
               {model.facets.map((facet) => (

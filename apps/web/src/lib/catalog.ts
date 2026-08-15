@@ -7,6 +7,7 @@ import type {
   ComparePageModel,
   HomePageModel,
   ImplementationPageModel,
+  OperationIndexEntry,
   OperationPageModel,
   RecordsPageModel,
   RunPageModel,
@@ -19,6 +20,7 @@ export type * from "./catalog-models"
 type CatalogReads = {
   getHomePage(): Promise<HomePageModel>
   getRecordsPage(): Promise<RecordsPageModel>
+  getOperationIndex(): Promise<OperationIndexEntry[]>
   searchCatalog(input: SearchInput): Promise<SearchPageModel>
   getOperationPage(
     slug: string,
@@ -47,6 +49,12 @@ export const getHomePage = cache(async (): Promise<HomePageModel> => {
 export const getRecordsPage = cache(async (): Promise<RecordsPageModel> => {
   return (await reads()).getRecordsPage()
 })
+
+export const getOperationIndex = cache(
+  async (): Promise<OperationIndexEntry[]> => {
+    return (await reads()).getOperationIndex()
+  },
+)
 
 export const searchCatalog = cache(
   async (input: SearchInput): Promise<SearchPageModel> => {

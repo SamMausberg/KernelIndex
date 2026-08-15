@@ -137,6 +137,21 @@ export type BrowseFamily = {
   runs: number
 }
 
+/**
+ * One operation in the compact corpus index that powers search suggestions
+ * and the browse start state. Small by design — the whole index ships inline
+ * with the page; move it behind a suggest route only if it outgrows a few
+ * tens of KB.
+ */
+export type OperationIndexEntry = {
+  name: string
+  slug: string
+  family: string
+  runs: number
+  /** Newest published run's observation date; null when unmeasured. */
+  lastObservedAt: string | null
+}
+
 /** §16.5: homepage read — the most recent published records, newest first. */
 export type HomePageModel = {
   illustrative: boolean

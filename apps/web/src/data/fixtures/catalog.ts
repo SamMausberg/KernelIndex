@@ -12,6 +12,7 @@ import type {
   LicenseInfo,
   MatchQuality,
   Mismatch,
+  OperationIndexEntry,
   OperationPageModel,
   PrimaryMetric,
   RecordHolder,
@@ -517,6 +518,26 @@ const FIXTURE_SOURCE_REF = {
   url: null,
   externalId: null,
   observedAt: FRESH,
+}
+
+/** The corpus index behind suggestions and browse (two fixture operations). */
+export async function getOperationIndex(): Promise<OperationIndexEntry[]> {
+  return [
+    {
+      name: "RMSNorm, hidden 4096",
+      slug: "rmsnorm-h4096",
+      family: "rmsnorm",
+      runs: 8,
+      lastObservedAt: FRESH,
+    },
+    {
+      name: "Fused residual + RMSNorm",
+      slug: "fused-residual-rmsnorm",
+      family: "fused-residual-rmsnorm",
+      runs: 0,
+      lastObservedAt: null,
+    },
+  ]
 }
 
 export async function searchCatalog(

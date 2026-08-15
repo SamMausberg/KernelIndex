@@ -3,14 +3,17 @@ import { IllustrativeNotice } from "@/components/illustrative-notice"
 import { SiteHeader } from "@/components/site-header"
 import { HeroSearch } from "@/features/home/hero-search"
 import { LatestRecords } from "@/features/home/latest-records"
-import { getHomePage } from "@/lib/catalog"
+import { getHomePage, getOperationIndex } from "@/lib/catalog"
 import { releaseSha } from "@/server/env"
 
 // The homepage reads live records; never freeze them into the build.
 export const dynamic = "force-dynamic"
 
 export default async function Home() {
-  const model = await getHomePage()
+  const [model, suggest] = await Promise.all([
+    getHomePage(),
+    getOperationIndex(),
+  ])
   return (
     <>
       {model.illustrative && <IllustrativeNotice />}
@@ -27,7 +30,7 @@ export default async function Home() {
             <h1 className="max-w-[26ch] text-[clamp(32px,3.6vw,46px)] leading-[1.12] font-medium tracking-[-0.022em] text-pretty">
               Find the fastest verified GPU kernel for your exact workload.
             </h1>
-            <HeroSearch />
+            <HeroSearch suggest={suggest} />
             <div className="mt-3 flex max-w-[620px] items-baseline justify-between gap-6">
               <p className="text-[12.5px] text-faint">
                 Ranked only inside comparable workloads and environments.

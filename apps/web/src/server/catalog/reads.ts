@@ -4,7 +4,17 @@
 // shows any published run including failed, superseded, and retracted
 // evidence. Search interprets the query through the deterministic parser
 // (§12.2–12.3) and ranks only inside cohorts under ranking-v1 (§11.5).
-import { and, asc, count, desc, eq, inArray, isNotNull, sql } from "drizzle-orm"
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  inArray,
+  isNotNull,
+  max,
+  sql,
+} from "drizzle-orm"
 import type {
   BrowseFamily,
   CohortContext,
@@ -14,6 +24,7 @@ import type {
   ImplementationPageModel,
   ImplementationSummary,
   KeyValue,
+  OperationIndexEntry,
   OperationPageModel,
   RecordEvent,
   RecordHolder,
@@ -715,6 +726,50 @@ export async function getRecordsPage(): Promise<RecordsPageModel> {
     hardwareOptions: [...new Set(records.map((holder) => holder.hardware))],
     records,
   }
+}
+
+/**
+ * The compact corpus index behind search suggestions and browse: every
+ * operation with its humanized name, family, eligible run count, and newest
+ * observation date. Two grouped queries; the result ships inline with the
+ * page (§16.5).
+ */
+export async function getOperationIndex(): Promise<OperationIndexEntry[]> {
+  const database = db()
+  const [operations, runStats] = await Promise.all([
+    database
+      .select({
+        name: schema.operations.name,
+        slug: schema.operations.slug,
+        family: schema.operations.family,
+        id: schema.operations.id,
+      })
+      .from(schema.operations),
+    database
+      .select({
+        operationId: schema.workloads.operationId,
+        n: count(),
+        lastObservedAt: max(schema.benchmarkRuns.observedAt),
+      })
+      .from(schema.benchmarkRuns)
+      .innerJoin(
+        schema.workloads,
+        eq(schema.benchmarkRuns.workloadId, schema.workloads.id),
+      )
+      .where(eligibleRunFilter())
+      .groupBy(schema.workloads.operationId),
+  ])
+  const statsById = new Map(runStats.map((row) => [row.operationId, row]))
+  return operations.map((operation) => {
+    const stats = statsById.get(operation.id)
+    return {
+      name: humanizeOperationName(operation.name),
+      slug: operation.slug,
+      family: operation.family,
+      runs: stats?.n ?? 0,
+      lastObservedAt: stats?.lastObservedAt?.toISOString() ?? null,
+    }
+  })
 }
 
 /** §16.5 start state: the published corpus grouped by operation family. */

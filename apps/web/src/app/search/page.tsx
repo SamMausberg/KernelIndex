@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
 import { type ResultMode, SearchResults } from "@/features/search/results"
-import { searchCatalog } from "@/lib/catalog"
+import { getOperationIndex, searchCatalog } from "@/lib/catalog"
 
 export const metadata: Metadata = { title: "Search" }
 
@@ -22,13 +22,17 @@ export default async function SearchPage({
 }) {
   const params = await searchParams
   const query = params.q ?? ""
-  const model = await searchCatalog({ query })
+  const [model, suggest] = await Promise.all([
+    searchCatalog({ query }),
+    getOperationIndex(),
+  ])
   const page = Number.parseInt(params.page ?? "1", 10)
   return (
     <>
       {model.illustrative && <IllustrativeNotice />}
       <SearchResults
         model={model}
+        suggest={suggest}
         filters={{
           view:
             params.view && MODES.has(params.view)

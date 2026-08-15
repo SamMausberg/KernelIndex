@@ -11,9 +11,7 @@ describe("humanizeOperationName", () => {
     expect(humanizeOperationName("001_fused_add_rmsnorm_h2048")).toBe(
       "Fused add RMSNorm h2048",
     )
-    expect(humanizeOperationName("004_gemm_n128_k2048")).toBe(
-      "GEMM n128 k2048",
-    )
+    expect(humanizeOperationName("004_gemm_n128_k2048")).toBe("GEMM n128 k2048")
     expect(humanizeOperationName("005_fp8_moe_router_projection")).toBe(
       "FP8 MoE router projection",
     )

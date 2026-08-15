@@ -74,8 +74,7 @@ export function humanizeOperationName(raw: string): string {
   return words.join(" ")
 }
 
-const kebabish = (text: string) =>
-  text.toLowerCase().replaceAll(/[_\s]+/g, "-")
+const kebabish = (text: string) => text.toLowerCase().replaceAll(/[_\s]+/g, "-")
 
 /**
  * Display name for an implementation from its manifest title, dropping the

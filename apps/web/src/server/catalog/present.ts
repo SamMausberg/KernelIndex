@@ -161,8 +161,10 @@ export function workloadLabel(
   workload: AnyWorkloadManifest,
   dtypes: string[],
 ): string {
+  // The suite's own title only repeats the operation, which every surface
+  // already names beside this label.
   if (workload.kind === "WorkloadSuite") {
-    return `${workload.metadata.title ?? workload.metadata.name} · suite of ${workload.spec.cases.length} cases · ${workload.spec.aggregation.statistic} ${workload.spec.aggregation.metric}`
+    return `suite of ${workload.spec.cases.length} cases · ${workload.spec.aggregation.statistic} ${workload.spec.aggregation.metric}`
   }
   const axes = Object.entries(workload.spec.axes)
     .map(([name, value]) => `${name} = ${value}`)
