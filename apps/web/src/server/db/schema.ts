@@ -40,6 +40,9 @@ export const operations = pgTable(
     schemaVersion: text("schema_version").notNull(),
     semanticDigest: text("semantic_digest").notNull(),
     manifest: jsonb("manifest").notNull(),
+    /* Editorial taxonomy tags (§8.2): source families plus model:<slug>
+       workload provenance. Mutable metadata — never part of the digest. */
+    tags: text("tags").array().notNull().default([]),
     createdAt: createdAt(),
     supersedesId: uuid("supersedes_id").references(
       (): AnyPgColumn => operations.id,
@@ -49,6 +52,7 @@ export const operations = pgTable(
     uniqueIndex("operations_slug_unique").on(t.slug),
     uniqueIndex("operations_semantic_digest_unique").on(t.semanticDigest),
     index("operations_family_idx").on(t.family),
+    index("operations_tags_idx").using("gin", t.tags),
     digestCheck("operations_semantic_digest_format", t.semanticDigest),
   ],
 )

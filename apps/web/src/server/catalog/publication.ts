@@ -61,6 +61,8 @@ export type ImportBundle = {
     manifest: OperationSpecManifest
     slug: string
     aliases?: string[]
+    /** Editorial taxonomy tags (§8.2); mutable, never digest-bearing. */
+    tags?: string[]
     externalId?: string
   }[]
   workloads: { manifest: AnyWorkloadManifest; externalId?: string }[]
@@ -238,6 +240,17 @@ export async function publishBundle(
         .where(eq(schema.operations.semanticDigest, digest))
       if (row) {
         counts.operations.existing++
+        // Tags are editorial metadata: refresh them without touching identity.
+        const tags = operation.tags ?? []
+        if (
+          tags.length > 0 &&
+          JSON.stringify(tags) !== JSON.stringify(row.tags)
+        ) {
+          await tx
+            .update(schema.operations)
+            .set({ tags })
+            .where(eq(schema.operations.id, row.id))
+        }
       } else {
         const [slugTaken] = await tx
           .select({ semanticDigest: schema.operations.semanticDigest })
@@ -257,6 +270,7 @@ export async function publishBundle(
             schemaVersion: API_VERSION,
             semanticDigest: digest,
             manifest,
+            tags: operation.tags ?? [],
           })
           .returning()
         counts.operations.inserted++
