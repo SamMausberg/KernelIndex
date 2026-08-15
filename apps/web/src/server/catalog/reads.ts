@@ -25,6 +25,10 @@ import type {
   SourceRef,
 } from "../../lib/catalog-models.ts"
 import {
+  humanizeOperationName,
+  implementationDisplayName,
+} from "../../lib/names.ts"
+import {
   describeIntent,
   parseQuery,
   removeToken,
@@ -123,6 +127,11 @@ function rowCaveats(joined: JoinedRun): string[] {
   return caveats
 }
 
+/** Display ref for an operation row: humanized name over the stable slug. */
+function opRef(operation: { name: string; slug: string }) {
+  return { name: humanizeOperationName(operation.name), slug: operation.slug }
+}
+
 function resultRow(
   joined: JoinedRun,
   operation: { name: string; slug: string },
@@ -135,18 +144,27 @@ function resultRow(
 ): ResultRow {
   const { run, implementation, project, workload } = joined
   const stored = run.manifest as StoredRunManifest
-  const variant = (implementation.manifest as ImplementationRevisionManifest)
-    .spec.buildVariants?.[0]
+  const manifest = implementation.manifest as ImplementationRevisionManifest
+  const variant = manifest.spec.buildVariants?.[0]
   return {
     runId: run.id,
-    implementation: { name: implementation.slug, slug: implementation.slug },
+    implementation: {
+      name: implementationDisplayName(
+        manifest.metadata.title,
+        operation,
+        implementation.slug,
+      ),
+      slug: implementation.slug,
+    },
     install: variant?.install.command
       ? { kind: variant.install.kind, command: variant.install.command }
       : null,
     project: { name: project.name, slug: project.slug },
     revision: implementation.sourceRevision?.slice(0, 7) ?? null,
-    operation,
-    workloadSummary: `${workload.dtypes.join("/")} · ${workload.shapeSummary}`,
+    operation: opRef(operation),
+    workloadSummary: [workload.dtypes.join("/"), workload.shapeSummary]
+      .filter(Boolean)
+      .join(" · "),
     hardware: {
       model: run.hardwareModel,
       architecture: run.hardwareArchitecture,
@@ -671,7 +689,7 @@ export async function getRecordsPage(): Promise<RecordsPageModel> {
     const holderRow = resultRow(previous, operation)
     records.push({
       cohortKey,
-      operation,
+      operation: opRef(operation),
       workloadSummary: holderRow.workloadSummary,
       hardware: previous.run.hardwareModel,
       environmentSummary: [
@@ -824,7 +842,7 @@ export async function searchCatalog(
     .slice(0, 6)
     .map((op) => ({
       kind: "operation" as const,
-      name: op.name,
+      name: humanizeOperationName(op.name),
       slug: op.slug,
       summary: `Operation in the ${op.family} family`,
     }))
@@ -832,8 +850,11 @@ export async function searchCatalog(
   return {
     ...base,
     illustrative: pageIllustrative(joined),
-    interpretedQuery: describeIntent(intent, operation.name),
-    operation: { name: operation.name, slug: operation.slug },
+    interpretedQuery: describeIntent(
+      intent,
+      humanizeOperationName(operation.name),
+    ),
+    operation: opRef(operation),
     cohort: groups.cohort,
     groups: {
       exact: groups.exact,
@@ -879,7 +900,11 @@ function supportedUnmeasuredRows(
       return {
         runId: null,
         implementation: {
-          name: implementation.slug,
+          name: implementationDisplayName(
+            manifest.metadata.title,
+            operation,
+            implementation.slug,
+          ),
           slug: implementation.slug,
         },
         install: variant?.install.command
@@ -887,7 +912,7 @@ function supportedUnmeasuredRows(
           : null,
         project: { name: project.name, slug: project.slug },
         revision: implementation.sourceRevision?.slice(0, 7) ?? null,
-        operation: { name: operation.name, slug: operation.slug },
+        operation: opRef(operation),
         workloadSummary: manifest.spec.support.dtypes.join("/"),
         hardware: {
           model:
@@ -960,7 +985,7 @@ export async function getOperationPage(
       )
     : { exact: [], reported: [], compatible: [], cohort: null }
 
-  const implementations = implementationSummaries(implRows, joined)
+  const implementations = implementationSummaries(implRows, joined, operation)
   const evidence = joined.map((j) => runEvidence(j.run))
 
   return {
@@ -968,7 +993,7 @@ export async function getOperationPage(
     operation: {
       id: operation.id,
       slug: operation.slug,
-      name: operation.name,
+      name: humanizeOperationName(operation.name),
       family: operation.family,
       aliases: aliases.map((row) => row.alias),
       models: operation.tags
@@ -1047,13 +1072,18 @@ function sourceRefs(joined: JoinedRun[]): SourceRef[] {
 function implementationSummaries(
   rows: ImplementationRows,
   joined: JoinedRun[],
+  operation: { name: string; slug: string },
 ): ImplementationSummary[] {
   return rows.map(({ implementation, project }) => {
     const best = joined.find((j) => j.implementation.id === implementation.id)
     const manifest = implementation.manifest as ImplementationRevisionManifest
     return {
       slug: implementation.slug,
-      name: implementation.slug,
+      name: implementationDisplayName(
+        manifest.metadata.title,
+        operation,
+        implementation.slug,
+      ),
       project: { name: project.name, slug: project.slug },
       language: implementation.language,
       framework: implementation.framework,
@@ -1111,7 +1141,11 @@ export async function getImplementationPage(
     implementation: {
       id: implementation.id,
       slug: implementation.slug,
-      name: implementation.slug,
+      name: implementationDisplayName(
+        manifest.metadata.title,
+        operation,
+        implementation.slug,
+      ),
       digest: implementation.implementationDigest,
       revision: implementation.sourceRevision,
       supersededById: null,
@@ -1336,12 +1370,17 @@ export async function getRunPage(id: string): Promise<RunPageModel | null> {
       ineligibleReasons,
     },
     implementation: {
-      name: implementation.slug,
+      name: implementationDisplayName(
+        (implementation.manifest as ImplementationRevisionManifest).metadata
+          .title,
+        operation,
+        implementation.slug,
+      ),
       slug: implementation.slug,
       revision: implementation.sourceRevision,
     },
     project: { name: project.name, slug: project.slug },
-    operation: { name: operation.name, slug: operation.slug },
+    operation: opRef(operation),
     workload: {
       id: workload.id,
       digest: workload.workloadDigest,
