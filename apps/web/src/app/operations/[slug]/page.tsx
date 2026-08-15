@@ -40,6 +40,14 @@ export default async function OperationPage({ params, searchParams }: Props) {
             {operation.aliases.length > 0 && (
               <> · aliases {operation.aliases.join(", ")}</>
             )}
+            {operation.models.length > 0 && (
+              <>
+                {" · models "}
+                {operation.models.slice(0, 4).join(", ")}
+                {operation.models.length > 4 &&
+                  ` +${operation.models.length - 4}`}
+              </>
+            )}
             {" · "}
             <span className="text-faint">
               {operation.semanticDigest.slice(0, 23)}…

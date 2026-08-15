@@ -385,11 +385,12 @@ type OperationRow = typeof schema.operations.$inferSelect
 
 /**
  * Tiered operation resolution in one explainable SQL query (§12.3–12.4):
- * exact slug (400) beats exact alias (300) beats exact family (200), then
- * weighted full-text rank and per-term trigram word similarity break the
+ * exact slug (400) beats exact alias (300) beats a model-tag match (250)
+ * beats exact family (200), then weighted full-text rank and per-term
+ * trigram word similarity (over name, slug, family, and tags) break the
  * fuzzy tier. Hyphen/underscore-insensitive, so "rmsnorm" also finds
- * "069-rms-norm". Facet tokens never reach this function; only free text
- * resolves the operation.
+ * "069-rms-norm". A `model:` facet resolves even with no free text; other
+ * facet tokens never reach this function.
  */
 async function resolveOperation(intent: SearchIntent): Promise<{
   operation: OperationRow | null
@@ -404,7 +405,9 @@ async function resolveOperation(intent: SearchIntent): Promise<{
         .filter((term) => !SEARCH_STOPWORDS.has(term)),
     ),
   ]
-  if (terms.length === 0) return { operation: null, nearMisses: [] }
+  if (terms.length === 0 && intent.model === null) {
+    return { operation: null, nearMisses: [] }
+  }
   const phrase = terms.join(" ")
   // Exact tiers must cover the whole request: a one-token alias hit must not
   // outrank full term coverage of a longer query (§12.4). All three phrase
@@ -433,12 +436,25 @@ async function resolveOperation(intent: SearchIntent): Promise<{
         when o.family in (${phrase}, ${phraseSlug}) then 200
         else 0
       end
+      + case
+        when ${intent.model}::text is not null and exists (
+          select 1 from unnest(o.tags) as g(tag)
+          where g.tag like 'model:' || ${intent.model} || '%'
+        ) then 250
+        else 0
+      end
       + ts_rank(o.search_vector, websearch_to_tsquery('english', ${phrase})) * 50
       + (
         select coalesce(sum(greatest(
           word_similarity(t.term, o.name),
           word_similarity(t.term, o.slug),
-          word_similarity(t.term, o.family))), 0)
+          word_similarity(t.term, o.family),
+          (
+            select coalesce(max(word_similarity(t.term,
+              case when g.tag like 'model:%' then substr(g.tag, 7) else g.tag end
+            )), 0)
+            from unnest(o.tags) as g(tag)
+          ))), 0)
         from unnest(${termsArray}::text[]) as t(term)
       ) * 10
     ) as score
@@ -955,6 +971,9 @@ export async function getOperationPage(
       name: operation.name,
       family: operation.family,
       aliases: aliases.map((row) => row.alias),
+      models: operation.tags
+        .filter((tag) => tag.startsWith("model:"))
+        .map((tag) => tag.slice(6)),
       semanticDigest: operation.semanticDigest,
       summary:
         manifest.metadata.description ??

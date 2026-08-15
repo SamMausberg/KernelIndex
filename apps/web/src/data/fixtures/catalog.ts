@@ -638,6 +638,7 @@ export async function getOperationPage(
       name: "RMSNorm, hidden 4096",
       family: "rmsnorm",
       aliases: ["rms_norm", "RMSLayerNorm"],
+      models: ["llama-3.1-8b"],
       semanticDigest: digest("operation:rmsnorm-h4096"),
       summary:
         "Root-mean-square normalization over the last axis with a learned scale, bf16 in and out with fp32 accumulation.",

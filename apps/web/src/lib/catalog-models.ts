@@ -318,6 +318,8 @@ export type OperationPageModel = {
     name: string
     family: string
     aliases: string[]
+    /** Model slugs whose workloads this operation serves (from model: tags). */
+    models: string[]
     semanticDigest: string
     summary: string
     supersededById: string | null

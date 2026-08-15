@@ -52,6 +52,7 @@ export default function DocsPage() {
           <pre className="plate mt-3 overflow-x-auto px-4 py-3 font-mono text-[12.5px] leading-relaxed">
             {`rmsnorm
 rmsnorm B200 bf16 [2048,4096] tokens=2048
+model:deepseek-v3
 rmsnorm gpu:B200 dtype:bf16 shape:[2048,4096] framework=pytorch trust:verified`}
           </pre>
           <p className="mt-3">
@@ -61,16 +62,18 @@ rmsnorm gpu:B200 dtype:bf16 shape:[2048,4096] framework=pytorch trust:verified`}
             <span className="font-mono text-[12.5px]">key=value</span> with the
             keys{" "}
             <span className="font-mono text-[12.5px]">
-              op family gpu arch dtype shape layout framework language cuda
-              trust license source installable
+              op family model gpu arch dtype shape layout framework language
+              cuda trust license source installable
             </span>
             , plus <span className="font-mono text-[12.5px]">name=integer</span>{" "}
             axis bindings such as{" "}
-            <span className="font-mono text-[12.5px]">tokens=2048</span>.
-            Workload and environment facets decide exact versus compatible;
-            trust, license, source, and installable filter rows without ever
-            reclassifying evidence. An unknown filter returns a correction hint,
-            never silent free text.
+            <span className="font-mono text-[12.5px]">tokens=2048</span>. A{" "}
+            <span className="font-mono text-[12.5px]">model:</span> facet
+            resolves operations tagged with that model&apos;s workloads, alone
+            or beside free text. Workload and environment facets decide exact
+            versus compatible; trust, license, source, and installable filter
+            rows without ever reclassifying evidence. An unknown filter returns
+            a correction hint, never silent free text.
           </p>
         </Section>
 

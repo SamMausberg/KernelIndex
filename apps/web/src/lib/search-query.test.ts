@@ -23,6 +23,13 @@ describe("parseQuery", () => {
     expect(intent.text).toEqual(["gemm"])
   })
 
+  it("kebab-normalizes model facets to match stored model tags", () => {
+    const intent = parseQuery("mla model:DeepSeek-V3 model=FLUX.1-Kontext-dev")
+    expect(intent.model).toBe("flux-1-kontext-dev")
+    expect(parseQuery("model:DeepSeek-V3").model).toBe("deepseek-v3")
+    expect(intent.facets.filter((f) => f.field === "model")).toHaveLength(2)
+  })
+
   it("treats name=integer as an axis binding", () => {
     const intent = parseQuery("rmsnorm tokens=2048 hidden=4096")
     expect(intent.axes).toEqual({ tokens: 2048, hidden: 4096 })

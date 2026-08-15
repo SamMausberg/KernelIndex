@@ -19,6 +19,8 @@ export type SearchIntent = {
   /** Free-text terms left for operation resolution. */
   text: string[]
   family: string | null
+  /** Model workload provenance (model:deepseek-v3); prefix-matches op tags. */
+  model: string | null
   gpu: string | null
   architecture: string | null
   dtypes: string[]
@@ -99,6 +101,7 @@ const KEY_ALIASES: Record<string, string> = {
   op: "op",
   operation: "op",
   family: "family",
+  model: "model",
   gpu: "gpu",
   hardware: "gpu",
   arch: "arch",
@@ -161,6 +164,7 @@ export function parseQuery(query: string): SearchIntent {
   const intent: SearchIntent = {
     text: [],
     family: null,
+    model: null,
     gpu: null,
     architecture: null,
     dtypes: [],
@@ -212,6 +216,13 @@ export function parseQuery(query: string): SearchIntent {
       case "family":
         intent.family = lower
         facet(token, "family", `family ${lower}`)
+        return
+      case "model":
+        // Kebab-normalized to match stored model:<slug> operation tags.
+        intent.model = lower
+          .replaceAll(/[^a-z0-9]+/g, "-")
+          .replaceAll(/^-+|-+$/g, "")
+        facet(token, "model", `model ${intent.model}`)
         return
       case "gpu":
         intent.gpu = value
