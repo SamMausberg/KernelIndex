@@ -9,10 +9,14 @@ import {
 } from "@/lib/format"
 
 export type RecordsView = "current" | "broken" | "history"
+export type RecordsSort = "date" | "operation"
 export type RecordsFilters = {
   view: RecordsView
   hardware: string | null
   verified: boolean
+  /** Free-text filter over everything a cohort row displays (§16.12). */
+  filter: string
+  sort: RecordsSort
   page: number
 }
 
@@ -29,9 +33,64 @@ export function recordsHref(
   if (next.view !== "current") params.set("view", next.view)
   if (next.hardware) params.set("hw", next.hardware)
   if (next.verified) params.set("verified", "1")
+  if (next.filter) params.set("f", next.filter)
+  if (next.sort === "operation") params.set("sort", "operation")
   if (next.page > 1) params.set("page", String(next.page))
   const suffix = params.toString()
   return suffix ? `/records?${suffix}` : "/records"
+}
+
+/** One record transition joined to its cohort and the record it displaced. */
+export type LedgerEvent = {
+  holder: RecordHolder
+  event: RecordEvent
+  previous: RecordEvent | null
+}
+
+/** Every record event in the ledger, newest first. */
+export function allRecordEvents(model: RecordsPageModel): LedgerEvent[] {
+  return model.records
+    .flatMap((holder) =>
+      holder.history.map((event, index) => ({
+        holder,
+        event,
+        previous: holder.history[index + 1] ?? null,
+      })),
+    )
+    .sort((a, b) => b.event.at.localeCompare(a.event.at))
+}
+
+/** Transitions of the last 30 days, largest improvement first. */
+export function recentlyBroken(events: LedgerEvent[]): LedgerEvent[] {
+  return events
+    .filter(
+      ({ event }) =>
+        event.previousValue !== null &&
+        Date.now() - new Date(event.at).getTime() < 30 * DAY_MS,
+    )
+    .sort(
+      (a, b) => (b.event.improvementPct ?? 0) - (a.event.improvementPct ?? 0),
+    )
+}
+
+const isVerifiedHolder = (holder: RecordHolder) =>
+  holder.current.evidence === "verified" ||
+  holder.current.evidence === "replicated"
+
+/** One filter policy for all three views: nothing is silently ignored. */
+function keepHolder(holder: RecordHolder, filters: RecordsFilters) {
+  if (filters.hardware !== null && holder.hardware !== filters.hardware)
+    return false
+  if (filters.verified && !isVerifiedHolder(holder)) return false
+  if (filters.filter === "") return true
+  const needle = filters.filter.toLowerCase()
+  return [
+    holder.operation.name,
+    holder.workloadSummary,
+    holder.hardware,
+    holder.environmentSummary,
+    ...holder.history.map((event) => event.implementation.name),
+  ].some((text) => text.toLowerCase().includes(needle))
 }
 
 /** Page slice plus the pager strip shared by the current and history views. */
@@ -61,17 +120,97 @@ function paginate<T>(rows: T[], filters: RecordsFilters) {
   return { rows: rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), pager }
 }
 
-const isVerifiedHolder = (holder: RecordHolder) =>
-  holder.current.evidence === "verified" ||
-  holder.current.evidence === "replicated"
+/**
+ * The one control strip shared by all three views: hardware scope, evidence
+ * toggle, and a text filter on the left; the view's status and sort on the
+ * right. The form resubmits every other active filter so nothing resets.
+ */
+function ControlStrip({
+  model,
+  filters,
+  status,
+}: {
+  model: RecordsPageModel
+  filters: RecordsFilters
+  status: React.ReactNode
+}) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2.5 border-b border-border-strong pt-5 pb-3">
+      <div className="flex flex-wrap items-center gap-x-[18px] gap-y-2 text-[12.5px]">
+        {["All hardware", ...model.hardwareOptions].map((label) => {
+          const value = label === "All hardware" ? null : label
+          const selected = filters.hardware === value
+          return (
+            <Link
+              key={label}
+              href={recordsHref(filters, { hardware: value })}
+              className={`transition-colors hover:text-fg hover:no-underline ${
+                selected ? "text-accent" : "text-subtle"
+              }`}
+            >
+              {label}
+            </Link>
+          )
+        })}
+        <span className="text-ghost">|</span>
+        <Link
+          href={recordsHref(filters, { verified: !filters.verified })}
+          className={`transition-colors hover:text-fg hover:no-underline ${
+            filters.verified ? "text-accent" : "text-subtle"
+          }`}
+        >
+          Verified only
+        </Link>
+        <form
+          action="/records"
+          className="well flex h-[30px] w-[230px] items-center px-2.5"
+        >
+          {filters.view !== "current" && (
+            <input type="hidden" name="view" value={filters.view} />
+          )}
+          {filters.hardware !== null && (
+            <input type="hidden" name="hw" value={filters.hardware} />
+          )}
+          {filters.verified && (
+            <input type="hidden" name="verified" value="1" />
+          )}
+          {filters.sort === "operation" && (
+            <input type="hidden" name="sort" value="operation" />
+          )}
+          <input
+            name="f"
+            defaultValue={filters.filter}
+            placeholder="Filter operation or kernel"
+            aria-label="Filter records"
+            autoComplete="off"
+            spellCheck={false}
+            className="min-w-0 flex-1 border-0 bg-transparent p-0 font-mono text-[12px] outline-none"
+          />
+        </form>
+        {filters.filter !== "" && (
+          <Link
+            href={recordsHref(filters, { filter: "" })}
+            className="text-faint transition-colors hover:text-fg hover:no-underline"
+          >
+            Clear filter
+          </Link>
+        )}
+      </div>
+      <div className="flex flex-wrap items-baseline gap-x-4 text-[12.5px] text-faint">
+        {status}
+      </div>
+    </div>
+  )
+}
 
 const CURRENT_GRID =
-  "grid grid-cols-[minmax(280px,1.5fr)_160px_minmax(220px,1.2fr)_130px_120px_96px_28px] min-w-[1120px]"
+  "grid grid-cols-[minmax(280px,1.5fr)_160px_90px_minmax(210px,1.2fr)_130px_120px_96px_28px] min-w-[1210px]"
 
 function HolderRow({ holder }: { holder: RecordHolder }) {
   const record = holder.current
   const isNew = Date.now() - new Date(holder.since).getTime() < 14 * DAY_MS
   const strong = isVerifiedHolder(holder)
+  const margin = holder.history[0].improvementPct
   return (
     <details className="group border-b border-line">
       <summary
@@ -94,6 +233,13 @@ function HolderRow({ holder }: { holder: RecordHolder }) {
           <div className="h-4 font-mono text-[11px] leading-4 text-faint">
             {record.primary ? formatSpread(record.primary) : null}
           </div>
+        </div>
+        <div className="py-3 pr-3 font-mono text-[12px] leading-[20px]">
+          {margin !== null ? (
+            <span className="text-subtle">{margin.toFixed(1)}%</span>
+          ) : (
+            <span className="text-faint">first</span>
+          )}
         </div>
         <div className="min-w-0 truncate py-3 pr-3 leading-[20px]">
           <Link
@@ -176,21 +322,17 @@ function HolderRow({ holder }: { holder: RecordHolder }) {
   )
 }
 
-function BrokenRows({
-  transitions,
-}: {
-  transitions: { holder: RecordHolder; event: RecordEvent }[]
-}) {
+function BrokenRows({ transitions }: { transitions: LedgerEvent[] }) {
   if (transitions.length === 0) {
     return (
       <p className="py-8 text-[13px] text-faint">
-        No records were broken in the last 30 days.
+        No records were broken in the last 30 days under the active filters.
       </p>
     )
   }
   return (
     <div className="min-w-[980px]">
-      {transitions.map(({ holder, event }) => (
+      {transitions.map(({ holder, event, previous }) => (
         <div
           key={event.runId}
           className="grid grid-cols-[minmax(260px,1.4fr)_220px_minmax(200px,1fr)_110px_130px_80px] items-center border-b border-line transition-colors hover:bg-raised"
@@ -208,13 +350,19 @@ function BrokenRows({
               {formatPrimary(event.value)}
             </Link>
           </div>
-          <div className="truncate py-3.5 pr-3">
+          <div className="min-w-0 truncate py-3.5 pr-3">
             <Link
               href={`/implementations/${event.implementation.slug}`}
               className="font-mono text-[12.5px]"
             >
               {event.implementation.name}
             </Link>
+            {previous &&
+              previous.implementation.slug !== event.implementation.slug && (
+                <span className="ml-2 text-[11.5px] text-faint">
+                  over {previous.implementation.name}
+                </span>
+              )}
           </div>
           <div className="py-3.5 text-[13px] text-fg">
             {event.improvementPct !== null
@@ -237,14 +385,17 @@ function BrokenRows({
   )
 }
 
-function HistoryRows({
-  events,
-}: {
-  events: { holder: RecordHolder; event: RecordEvent }[]
-}) {
+function HistoryRows({ events }: { events: LedgerEvent[] }) {
+  if (events.length === 0) {
+    return (
+      <p className="py-8 text-[13px] text-faint">
+        No record events under the active filters.
+      </p>
+    )
+  }
   return (
     <div>
-      {events.map(({ holder, event }) => (
+      {events.map(({ holder, event, previous }) => (
         <div
           key={event.runId}
           className="grid grid-cols-[110px_minmax(0,1fr)] gap-5 border-b border-line transition-colors hover:bg-raised"
@@ -269,6 +420,10 @@ function HistoryRows({
                   <span className="font-mono">
                     {formatPrimary(event.previousValue)}
                   </span>
+                  {previous &&
+                    previous.implementation.slug !==
+                      event.implementation.slug &&
+                    ` held by ${previous.implementation.name}`}
                   {event.improvementPct !== null &&
                     ` (${event.improvementPct.toFixed(1)}% faster)`}
                 </>
@@ -290,68 +445,70 @@ export function RecordsLedger({
   model: RecordsPageModel
   filters: RecordsFilters
 }) {
-  const holders = model.records.filter(
-    (holder) =>
-      (filters.hardware === null || holder.hardware === filters.hardware) &&
-      (!filters.verified || isVerifiedHolder(holder)),
+  const holders = model.records.filter((holder) => keepHolder(holder, filters))
+  if (filters.sort === "operation")
+    holders.sort(
+      (a, b) =>
+        a.operation.name.localeCompare(b.operation.name) ||
+        a.workloadSummary.localeCompare(b.workloadSummary) ||
+        a.hardware.localeCompare(b.hardware),
+    )
+  const events = allRecordEvents(model).filter(({ holder }) =>
+    keepHolder(holder, filters),
   )
+  const broken = recentlyBroken(events)
   const currentPage = paginate(holders, filters)
-  const allEvents = model.records
-    .flatMap((holder) => holder.history.map((event) => ({ holder, event })))
-    .sort((a, b) => b.event.at.localeCompare(a.event.at))
-  const historyPage = paginate(allEvents, filters)
-  const broken = allEvents
-    .filter(
-      ({ event }) =>
-        event.previousValue !== null &&
-        Date.now() - new Date(event.at).getTime() < 30 * DAY_MS,
-    )
-    .sort(
-      (a, b) => (b.event.improvementPct ?? 0) - (a.event.improvementPct ?? 0),
-    )
+  const historyPage = paginate(events, filters)
+  const narrowed =
+    filters.filter !== "" || filters.hardware !== null || filters.verified
 
   return (
     <main className="shell animate-fade-in pb-20">
       {filters.view === "current" && (
         <>
-          <div className="flex flex-wrap items-baseline justify-between gap-5 border-b border-border-strong pt-5 pb-3">
-            <div className="flex items-baseline gap-[18px] text-[12.5px]">
-              {["All hardware", ...model.hardwareOptions].map((label) => {
-                const value = label === "All hardware" ? null : label
-                const selected = filters.hardware === value
-                return (
-                  <Link
-                    key={label}
-                    href={recordsHref(filters, { hardware: value })}
-                    className={`transition-colors hover:text-fg hover:no-underline ${
-                      selected ? "text-accent" : "text-subtle"
-                    }`}
-                  >
-                    {label}
-                  </Link>
-                )
-              })}
-              <span className="text-ghost">|</span>
-              <Link
-                href={recordsHref(filters, { verified: !filters.verified })}
-                className={`transition-colors hover:text-fg hover:no-underline ${
-                  filters.verified ? "text-accent" : "text-subtle"
-                }`}
-              >
-                Verified only
-              </Link>
-            </div>
-            <span className="text-[12.5px] text-faint">
-              {holders.length} record{holders.length === 1 ? "" : "s"} · sorted
-              by record date
-            </span>
-          </div>
+          <ControlStrip
+            model={model}
+            filters={filters}
+            status={
+              <>
+                <span>
+                  {narrowed
+                    ? `${holders.length} of ${model.records.length} records`
+                    : `${model.records.length} record${model.records.length === 1 ? "" : "s"}`}
+                </span>
+                <span className="flex items-baseline gap-2.5">
+                  <span>sorted by</span>
+                  {(
+                    [
+                      { key: "date", label: "record date" },
+                      { key: "operation", label: "operation" },
+                    ] as const
+                  ).map((option) =>
+                    filters.sort === option.key ? (
+                      <span key={option.key} className="text-fg">
+                        {option.label}
+                      </span>
+                    ) : (
+                      <Link
+                        key={option.key}
+                        href={recordsHref(filters, { sort: option.key })}
+                        className="text-subtle transition-colors hover:text-fg hover:no-underline"
+                      >
+                        {option.label}
+                      </Link>
+                    ),
+                  )}
+                </span>
+              </>
+            }
+          />
           <div className="overflow-x-auto">
             <div
               className={`${CURRENT_GRID} border-b border-border-strong text-[11.5px] text-faint`}
             >
               <div className="py-2">Operation / workload</div>
               <div className="py-2 pr-4 text-right">Current record</div>
+              <div className="py-2">Margin</div>
               <div className="py-2">Implementation</div>
               <div className="py-2">Hardware</div>
               <div className="py-2">Evidence</div>
@@ -372,22 +529,38 @@ export function RecordsLedger({
       )}
 
       {filters.view === "broken" && (
-        <div className="overflow-x-auto pt-4">
-          <p className="border-b border-border-strong pb-3 text-[12.5px] text-faint">
-            Records broken in the last 30 days · sorted by improvement
-          </p>
-          <BrokenRows transitions={broken} />
-        </div>
+        <>
+          <ControlStrip
+            model={model}
+            filters={filters}
+            status={
+              <span>
+                {broken.length} broken in the last 30 days · sorted by
+                improvement
+              </span>
+            }
+          />
+          <div className="overflow-x-auto">
+            <BrokenRows transitions={broken} />
+          </div>
+        </>
       )}
 
       {filters.view === "history" && (
-        <div className="pt-4">
-          <p className="border-b border-border-strong pb-3 text-[12.5px] text-faint">
-            Append-only ledger of record events · newest first
-          </p>
+        <>
+          <ControlStrip
+            model={model}
+            filters={filters}
+            status={
+              <span>
+                {events.length} record event{events.length === 1 ? "" : "s"} ·
+                newest first
+              </span>
+            }
+          />
           <HistoryRows events={historyPage.rows} />
           {historyPage.pager}
-        </div>
+        </>
       )}
 
       <div className="mt-11 flex flex-wrap items-baseline justify-between gap-5 border-t border-border pt-5">

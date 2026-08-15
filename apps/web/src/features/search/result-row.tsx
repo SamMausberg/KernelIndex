@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { Meter } from "@/components/meter"
 import type { PrimaryMetric, ResultRow } from "@/lib/catalog"
 import {
   evidenceLabel,
@@ -10,7 +11,7 @@ import {
 } from "@/lib/format"
 
 export const RESULT_GRID =
-  "grid grid-cols-[44px_minmax(240px,1.7fr)_150px_140px_minmax(150px,1fr)_78px_120px_28px] min-w-[1080px]"
+  "grid grid-cols-[44px_minmax(240px,1.6fr)_150px_118px_140px_minmax(150px,1fr)_78px_120px_28px] min-w-[1190px]"
 
 /** "Apache-2.0 · pip" — license state plus how the build is obtained. */
 export function availabilityText(row: ResultRow) {
@@ -33,8 +34,12 @@ function EvidenceCell({ row }: { row: ResultRow }) {
   )
 }
 
-/** Header row for the result grid; kept beside the row so columns stay in sync. */
-export function ResultTableHead() {
+/**
+ * Header row for the result grid; kept beside the row so columns stay in
+ * sync. `relativeLabel` titles the comparison column: "vs #1" when every row
+ * shares one cohort, "Differs" for compatible matches, empty otherwise.
+ */
+export function ResultTableHead({ relativeLabel }: { relativeLabel?: string }) {
   return (
     <div
       className={`${RESULT_GRID} border-b border-border-strong text-[11.5px] text-faint`}
@@ -42,6 +47,7 @@ export function ResultTableHead() {
       <div className="py-2">#</div>
       <div className="py-2">Implementation</div>
       <div className="py-2 pr-3.5 text-right">Median</div>
+      <div className="py-2">{relativeLabel}</div>
       <div className="py-2">Evidence</div>
       <div className="py-2">Availability</div>
       <div className="py-2">Tested</div>
@@ -49,6 +55,41 @@ export function ResultTableHead() {
       <div />
     </div>
   )
+}
+
+/**
+ * The comparison cell: inside one cohort a meter against the leader (fuller
+ * is faster, the text states the exact multiple); for compatible matches the
+ * fields that differ from the request; otherwise nothing — cross-cohort
+ * numbers are never implied comparable.
+ */
+function RelativeCell({
+  row,
+  best,
+  relative,
+}: {
+  row: ResultRow
+  best: PrimaryMetric | null
+  relative: boolean
+}) {
+  if (relative && row.primary && best) {
+    return (
+      <div className="flex items-center gap-2 pr-3">
+        <Meter fraction={best.value / row.primary.value} className="w-11" />
+        <span className="font-mono text-[11.5px] text-subtle">
+          {formatRelative(row.primary, best)}
+        </span>
+      </div>
+    )
+  }
+  if (row.mismatches.length > 0) {
+    return (
+      <div className="truncate pr-3 text-[12px] text-subtle">
+        {row.mismatches.map((mismatch) => mismatch.field).join(", ")}
+      </div>
+    )
+  }
+  return <div />
 }
 
 /**
@@ -60,12 +101,15 @@ export function ResultRowItem({
   best,
   compareWith = null,
   tiedWithNext = false,
+  relative = false,
 }: {
   row: ResultRow
   best: PrimaryMetric | null
   /** Cohort leader's run ID; enables the row's compare action (§16.7). */
   compareWith?: string | null
   tiedWithNext?: boolean
+  /** True only when every row shares one cohort with `best` (§16.7). */
+  relative?: boolean
 }) {
   const tied = row.tiedWithPrevious || tiedWithNext
   const rank = row.rank === null ? "—" : `${row.rank}${tied ? "=" : ""}`
@@ -106,6 +150,7 @@ export function ResultRowItem({
             {row.primary ? formatSpread(row.primary) : null}
           </span>
         </div>
+        <RelativeCell row={row} best={best} relative={relative} />
         <EvidenceCell row={row} />
         <div
           className={`truncate pr-3 text-[12.5px] ${

@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { CopyButton } from "@/components/copy-button"
 import { KeyValueList } from "@/components/key-value-list"
+import { Meter } from "@/components/meter"
 import type { BrowseFamily, ResultRow, SearchPageModel } from "@/lib/catalog"
 import {
   evidenceLabel,
@@ -102,10 +103,22 @@ function SearchField({ query }: { query: string }) {
   )
 }
 
+/** Filter grammar shown once on the start state; the values are syntax. */
+const SYNTAX_HINTS = [
+  "gpu:B200",
+  "dtype:bf16",
+  "shape:[2048,4096]",
+  "model:deepseek-v3",
+  "framework:pytorch",
+  "trust:verified",
+  "license:mit",
+]
+
 /** Empty-query start state (§16.5): the published corpus, ready to browse. */
 function StartState({ families }: { families: BrowseFamily[] }) {
   const totalOperations = families.reduce((n, f) => n + f.operations, 0)
   const totalRuns = families.reduce((n, f) => n + f.runs, 0)
+  const maxRuns = Math.max(1, ...families.map((f) => f.runs))
   const examples = families.slice(0, 2).map((f) => `${f.family} B200 bf16`)
   return (
     <section className="animate-row-in pt-6">
@@ -127,6 +140,14 @@ function StartState({ families }: { families: BrowseFamily[] }) {
           Query syntax
         </Link>
       </div>
+      <div className="mt-3 flex flex-wrap items-baseline gap-x-3.5 gap-y-1.5 text-[12px]">
+        <span className="text-faint">Filter with</span>
+        {SYNTAX_HINTS.map((hint) => (
+          <code key={hint} className="font-mono text-[11.5px] text-subtle">
+            {hint}
+          </code>
+        ))}
+      </div>
       <div className="mt-8 flex flex-wrap items-baseline justify-between gap-4 border-b border-border-strong pb-3">
         <h2 className="text-[15px] font-medium tracking-[-0.01em]">
           Browse the index
@@ -135,7 +156,7 @@ function StartState({ families }: { families: BrowseFamily[] }) {
           {totalOperations} operations · {totalRuns} published runs
         </span>
       </div>
-      <div className="grid grid-cols-[minmax(220px,1fr)_140px_140px] text-[11.5px] text-faint">
+      <div className="grid grid-cols-[minmax(220px,1fr)_140px_220px] text-[11.5px] text-faint">
         <div className="py-2">Family</div>
         <div className="py-2 text-right">Operations</div>
         <div className="py-2 text-right">Published runs</div>
@@ -144,7 +165,7 @@ function StartState({ families }: { families: BrowseFamily[] }) {
         <Link
           key={entry.family}
           href={`/search?q=${encodeURIComponent(entry.family)}`}
-          className="grid h-[47px] grid-cols-[minmax(220px,1fr)_140px_140px] items-center border-t border-line transition-colors hover:bg-raised hover:no-underline"
+          className="grid h-[47px] grid-cols-[minmax(220px,1fr)_140px_220px] items-center border-t border-line transition-colors hover:bg-raised hover:no-underline"
         >
           <span className="truncate pr-3 font-mono text-[13px] text-fg">
             {entry.family}
@@ -152,12 +173,20 @@ function StartState({ families }: { families: BrowseFamily[] }) {
           <span className="text-right font-mono text-[13px] text-muted">
             {entry.operations}
           </span>
-          <span
-            className={`text-right font-mono text-[13px] ${
-              entry.runs > 0 ? "text-muted" : "text-faint"
-            }`}
-          >
-            {entry.runs > 0 ? entry.runs : "none yet"}
+          <span className="flex items-center justify-end gap-2.5">
+            {entry.runs > 0 && (
+              <Meter
+                fraction={entry.runs / maxRuns}
+                className="w-[96px] max-sm:hidden"
+              />
+            )}
+            <span
+              className={`min-w-[52px] text-right font-mono text-[13px] ${
+                entry.runs > 0 ? "text-muted" : "text-faint"
+              }`}
+            >
+              {entry.runs > 0 ? entry.runs : "none yet"}
+            </span>
           </span>
         </Link>
       ))}
@@ -329,6 +358,10 @@ export function SearchResults({
   const best = top?.primary ?? null
   const anyTie = rows.some((row) => row.tiedWithPrevious)
   const modeNote = MODES.find((mode) => mode.key === view)?.note
+  // When the active view is empty, point at the nearest view that is not.
+  const alternative = MODES.find(
+    (mode) => mode.key !== view && groupsByMode[mode.key].length > 0,
+  )
 
   return (
     <>
@@ -367,7 +400,16 @@ export function SearchResults({
             <>
               <div className="mt-4 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
                 <h1 className="text-[20px] leading-tight font-medium tracking-[-0.012em]">
-                  {model.operation?.name ?? model.interpretedQuery}
+                  {model.operation ? (
+                    <Link
+                      href={`/operations/${model.operation.slug}`}
+                      className="text-fg transition-colors hover:text-accent-bright hover:no-underline"
+                    >
+                      {model.operation.name}
+                    </Link>
+                  ) : (
+                    model.interpretedQuery
+                  )}
                 </h1>
                 <div className="flex items-baseline gap-5 text-[12.5px]">
                   <span className="text-subtle">
@@ -436,7 +478,7 @@ export function SearchResults({
               })}
               <div className="ml-auto flex items-baseline gap-5 pb-[9px] text-[12.5px]">
                 {hidden > 0 && (
-                  <span className="text-faint">{hidden} hidden</span>
+                  <span className="text-faint">{hidden} hidden by filters</span>
                 )}
                 <Link
                   href={searchHref(model.query, filters, {
@@ -471,12 +513,21 @@ export function SearchResults({
             <div className="mt-1 animate-row-in overflow-x-auto [animation-delay:.12s]">
               {rows.length > 0 ? (
                 <>
-                  <ResultTableHead />
+                  <ResultTableHead
+                    relativeLabel={
+                      view === "exact"
+                        ? "vs #1"
+                        : view === "compatible"
+                          ? "Differs"
+                          : undefined
+                    }
+                  />
                   {rows.map((row, index) => (
                     <ResultRowItem
                       key={row.runId ?? row.implementation.slug}
                       row={row}
                       best={best}
+                      relative={view === "exact"}
                       compareWith={top?.runId ?? null}
                       tiedWithNext={
                         rows[index + 1]?.tiedWithPrevious &&
@@ -489,6 +540,21 @@ export function SearchResults({
                 <p className="py-8 text-[13px] text-faint">
                   No {view} results for this workload
                   {hidden > 0 ? " under the active filters" : ""}.
+                  {alternative && (
+                    <>
+                      {" "}
+                      <Link
+                        href={searchHref(model.query, filters, {
+                          view: alternative.key,
+                        })}
+                      >
+                        {groupsByMode[alternative.key].length}{" "}
+                        {alternative.label.toLowerCase()} result
+                        {groupsByMode[alternative.key].length === 1 ? "" : "s"}{" "}
+                        →
+                      </Link>
+                    </>
+                  )}
                 </p>
               )}
             </div>

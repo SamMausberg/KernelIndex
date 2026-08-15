@@ -92,6 +92,8 @@ export default async function DesignLabPage() {
             view: "current",
             hardware: null,
             verified: false,
+            filter: "",
+            sort: "date",
             page: 1,
           }}
         />
@@ -100,7 +102,14 @@ export default async function DesignLabPage() {
       <State label="records · recently broken">
         <RecordsLedger
           model={records}
-          filters={{ view: "broken", hardware: null, verified: false, page: 1 }}
+          filters={{
+            view: "broken",
+            hardware: null,
+            verified: false,
+            filter: "",
+            sort: "date",
+            page: 1,
+          }}
         />
       </State>
     </div>

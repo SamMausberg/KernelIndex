@@ -96,12 +96,13 @@ export default async function OperationPage({ params, searchParams }: Props) {
           <div className="overflow-x-auto">
             {model.records.length > 0 ? (
               <>
-                <ResultTableHead />
+                <ResultTableHead relativeLabel="vs #1" />
                 {model.records.map((row) => (
                   <ResultRowItem
                     key={row.runId ?? row.implementation.slug}
                     row={row}
                     best={best}
+                    relative
                   />
                 ))}
               </>

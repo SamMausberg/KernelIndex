@@ -3,8 +3,10 @@ import Link from "next/link"
 import { ContextHeader } from "@/components/context-header"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
 import {
+  allRecordEvents,
   RecordsLedger,
   type RecordsView,
+  recentlyBroken,
   recordsHref,
 } from "@/features/records/ledger"
 import { getRecordsPage } from "@/lib/catalog"
@@ -17,7 +19,14 @@ const VIEWS: { key: RecordsView; label: string }[] = [
   { key: "history", label: "Record history" },
 ]
 
-type Params = { view?: string; hw?: string; verified?: string; page?: string }
+type Params = {
+  view?: string
+  hw?: string
+  verified?: string
+  f?: string
+  sort?: string
+  page?: string
+}
 
 export default async function RecordsPage({
   searchParams,
@@ -34,14 +43,40 @@ export default async function RecordsPage({
     hardware:
       params.hw && model.hardwareOptions.includes(params.hw) ? params.hw : null,
     verified: params.verified === "1",
+    filter: (params.f ?? "").trim(),
+    sort:
+      params.sort === "operation" ? ("operation" as const) : ("date" as const),
     page: Number.isNaN(page) ? 1 : page,
   }
+
+  const events = allRecordEvents(model)
+  const counts: Record<RecordsView, number> = {
+    current: model.records.length,
+    broken: recentlyBroken(events).length,
+    history: events.length,
+  }
+  const operations = new Set(
+    model.records.map((holder) => holder.operation.slug),
+  ).size
+  const context =
+    model.records.length > 0
+      ? [
+          `${model.records.length} records`,
+          `${operations} operations`,
+          ...model.hardwareOptions.map(
+            (hardware) =>
+              `${model.records.filter((holder) => holder.hardware === hardware).length} on ${hardware}`,
+          ),
+        ].join(" · ")
+      : undefined
+
   return (
     <>
       {model.illustrative && <IllustrativeNotice />}
       <div className="scan-line" />
       <ContextHeader
         title="Performance records"
+        context={context}
         meta={VIEWS.map((view) => (
           <Link
             key={view.key}
@@ -50,7 +85,10 @@ export default async function RecordsPage({
               filters.view === view.key ? "text-fg" : "text-subtle"
             }`}
           >
-            {view.label}
+            {view.label}{" "}
+            <span className="font-mono text-[11px] text-faint">
+              {counts[view.key]}
+            </span>
           </Link>
         ))}
       >
