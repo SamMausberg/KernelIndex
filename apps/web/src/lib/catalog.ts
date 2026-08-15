@@ -2,6 +2,7 @@
 // know which backend produced the model. `CATALOG_BACKEND` selects the
 // implementation: "fixtures" (default, deterministic, visibly illustrative)
 // or "postgres" (real published records).
+import { createHash } from "node:crypto"
 import { unstable_cache } from "next/cache"
 import { cache } from "react"
 import type {
@@ -50,7 +51,15 @@ async function reads(): Promise<CatalogReads> {
 // namespaced by backend: locally the fixtures (e2e) and postgres servers
 // share .next/cache, and entries must never cross the seam.
 const REVALIDATE_SECONDS = 300
-const BACKEND = process.env.CATALOG_BACKEND === "postgres" ? "pg" : "fx"
+// The database identity is part of the namespace too: two local servers on
+// different databases share .next/cache and must never trade entries.
+const BACKEND =
+  process.env.CATALOG_BACKEND === "postgres"
+    ? `pg-${createHash("sha256")
+        .update(process.env.DATABASE_URL ?? "")
+        .digest("hex")
+        .slice(0, 8)}`
+    : "fx"
 
 export const getHomePage = cache(
   unstable_cache(
