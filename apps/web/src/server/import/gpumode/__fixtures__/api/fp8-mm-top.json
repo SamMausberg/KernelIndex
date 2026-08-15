@@ -1,0 +1,131 @@
+{
+  "rows": [
+    {
+      "row": {
+        "submission_id": 30771,
+        "leaderboard_id": 399,
+        "user_id": 44,
+        "submission_time": "2025-06-02T19:14:36.811714",
+        "file_name": "submission.py",
+        "code": null,
+        "code_id": 20171,
+        "run_id": 60985,
+        "run_start_time": "2025-06-02T19:15:54.793273",
+        "run_end_time": "2025-06-02T19:16:21.369926",
+        "run_mode": "leaderboard",
+        "run_score": 0.0001033188475318776,
+        "run_passed": true,
+        "run_result": {
+          "benchmark-count": "3",
+          "benchmark.0.best": "77737.0",
+          "benchmark.0.err": "110.74411117800378",
+          "benchmark.0.mean": "79544.11",
+          "benchmark.0.runs": "100",
+          "benchmark.0.spec": "k: 7168; m: 1024; n: 1536; seed: 8135",
+          "benchmark.0.std": "1107.4411117800378",
+          "benchmark.0.worst": "84790.0",
+          "benchmark.0.report": null,
+          "benchmark.1.best": "50274.0",
+          "benchmark.1.err": "146.70111420190648",
+          "benchmark.1.mean": "52111.81",
+          "benchmark.1.runs": "100",
+          "benchmark.1.spec": "k: 1536; m: 1024; n: 3072; seed: 6251",
+          "benchmark.1.std": "1467.0111420190647",
+          "benchmark.1.worst": "60990.0",
+          "benchmark.1.report": null,
+          "benchmark.2.best": "53861.0",
+          "benchmark.2.err": "270.189791319608",
+          "benchmark.2.mean": "55826.9",
+          "benchmark.2.runs": "100",
+          "benchmark.2.spec": "k: 7168; m: 1024; n: 576; seed: 12346",
+          "benchmark.2.std": "2701.89791319608",
+          "benchmark.2.worst": "70112.0",
+          "benchmark.2.report": null
+        },
+        "run_compilation": null,
+        "run_meta": {
+          "command": "python eval.py leaderboard /tmp/tmpf11q3ixv",
+          "duration": 18.592851107008755,
+          "exit_code": 0,
+          "stderr": "\u001b[92mSuccessfully preprocessed all matching files.\u001b[0m\n",
+          "stdout": "/home/runner/.cache/torch_extensions/py310_cpu/fp8_mm/main.cpp -> /home/runner/.cache/torch_extensions/py310_cpu/fp8_mm/main.cpp [skipped, no changes]\n/home/runner/.cache/torch_extensions/py310_cpu/fp8_mm/cuda.cu -> /home/runner/.cache/torch_extensions/py310_cpu/fp8_mm/hip.hip [skipped, already hipified]\nTotal number of unsupported CUDA function calls: 0\n\n\nTotal number of replaced kernel launches: 3\nninja: no work to do.\n",
+          "success": true
+        },
+        "run_system_info": {
+          "cpu": "Intel(R) Xeon(R) Platinum 8462Y+",
+          "gpu": "AMD Instinct MI300X",
+          "platform": "Linux-5.15.0-136-generic-x86_64-with-glibc2.35",
+          "torch": "2.8.0.dev20250601+rocm6.3",
+          "device_count": null,
+          "runtime": null
+        },
+        "__index_level_0__": 5583
+      },
+      "truncated_cells": []
+    },
+    {
+      "row": {
+        "submission_id": 30786,
+        "leaderboard_id": 399,
+        "user_id": 44,
+        "submission_time": "2025-06-02T20:05:20.135658",
+        "file_name": "submission.py",
+        "code": null,
+        "code_id": 20171,
+        "run_id": 61053,
+        "run_start_time": "2025-06-02T20:06:38.913236",
+        "run_end_time": "2025-06-02T20:07:05.262386",
+        "run_mode": "leaderboard",
+        "run_score": 0.0001033246226281556,
+        "run_passed": true,
+        "run_result": {
+          "benchmark-count": "3",
+          "benchmark.0.best": "77234.0",
+          "benchmark.0.err": "96.02148168745649",
+          "benchmark.0.mean": "78892.52",
+          "benchmark.0.runs": "100",
+          "benchmark.0.spec": "k: 7168; m: 1024; n: 1536; seed: 8135",
+          "benchmark.0.std": "960.2148168745649",
+          "benchmark.0.worst": "83423.0",
+          "benchmark.0.report": null,
+          "benchmark.1.best": "50840.0",
+          "benchmark.1.err": "199.2782432715979",
+          "benchmark.1.mean": "52517.29",
+          "benchmark.1.runs": "100",
+          "benchmark.1.spec": "k: 1536; m: 1024; n: 3072; seed: 6251",
+          "benchmark.1.std": "1992.782432715979",
+          "benchmark.1.worst": "60572.0",
+          "benchmark.1.report": null,
+          "benchmark.2.best": "53720.0",
+          "benchmark.2.err": "205.66634532659933",
+          "benchmark.2.mean": "55188.84",
+          "benchmark.2.runs": "100",
+          "benchmark.2.spec": "k: 7168; m: 1024; n: 576; seed: 12346",
+          "benchmark.2.std": "2056.663453265993",
+          "benchmark.2.worst": "68445.0",
+          "benchmark.2.report": null
+        },
+        "run_compilation": null,
+        "run_meta": {
+          "command": "python eval.py leaderboard /tmp/tmpg6rnkcry",
+          "duration": 18.70444804057479,
+          "exit_code": 0,
+          "stderr": "\u001b[92mSuccessfully preprocessed all matching files.\u001b[0m\n",
+          "stdout": "/home/runner/.cache/torch_extensions/py310_cpu/fp8_mm/main.cpp -> /home/runner/.cache/torch_extensions/py310_cpu/fp8_mm/main.cpp [skipped, no changes]\n/home/runner/.cache/torch_extensions/py310_cpu/fp8_mm/cuda.cu -> /home/runner/.cache/torch_extensions/py310_cpu/fp8_mm/hip.hip [skipped, already hipified]\nTotal number of unsupported CUDA function calls: 0\n\n\nTotal number of replaced kernel launches: 3\nninja: no work to do.\n",
+          "success": true
+        },
+        "run_system_info": {
+          "cpu": "Intel(R) Xeon(R) Platinum 8462Y+",
+          "gpu": "AMD Instinct MI300X",
+          "platform": "Linux-5.15.0-136-generic-x86_64-with-glibc2.35",
+          "torch": "2.8.0.dev20250601+rocm6.3",
+          "device_count": null,
+          "runtime": null
+        },
+        "__index_level_0__": 5638
+      },
+      "truncated_cells": []
+    }
+  ],
+  "num_rows_total": 4910
+}

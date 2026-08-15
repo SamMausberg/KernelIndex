@@ -1,0 +1,34 @@
+{
+  "rows": [
+    {
+      "row": {
+        "id": 399,
+        "name": "amd-fp8-mm",
+        "deadline": "2025-09-02T00:00:00Z",
+        "description": "\nYou will implement a custom fp8-blockwise matmul kernel optimized for MI300.\nYou will be given single-precision scaling factors for your matrices.\nThe shapes of all outer and inner dimensions of tensors are from DeepSeek-R1.\nTo be explicit, you will be given a tuple of tensors:\n```\n(a, b, a_scale, b_scale, c)\n```\nwhere `a` and `b` are the input matrices, `a_scale` and `b_scale` are the scaling factors for `a` and `b` respectively,\nand `c` is the output matrix:\n* `a` is M x K in column-major order in e4m3fnuz\n* `b` is N x K in column-major order in e4m3fnuz\n* `a_scale` is M x K // 128 in column-major order in fp32\n* `b_scale` is N // 128 x K // 128 in column-major order in fp32\n* `c` is M x N in ROW-major order in bf16\n\nMatrix sizes `m` and `n` are divisible by 64, `k` is divisible by 128.\n\nThe ranking criteria is the geometric mean of the benchmark results.\n\nFor the grand price, your kernel will be evaluated against the speed of light analysis\nand the solution closest to the speed of light will be awarded the grand price.\n```\nThe speed of light analysis is:\n M       N       K     time[us]\n1024    1536    7168      8.63\n1024    4608    7168     25.89\n6144    1536    7168     51.78\n6144    4608    7168    155.30\n1024    7168     256      3.17\n6144    7168     256     17.27\n```\n",
+        "gpu_types": ["MI300"]
+      },
+      "truncated_cells": []
+    },
+    {
+      "row": {
+        "id": 430,
+        "name": "amd-mixture-of-experts",
+        "deadline": "2025-09-02T00:00:00Z",
+        "description": "For a more complete description, see: https://tinyurl.com/amd-comp-moe\nImplement a DeepSeek-style Mixture of Experts (MoE) layer for efficient transformer models\non a single MI300X device.\n\nMoE is a technique that allows scaling model capacity without proportionally increasing computational costs\nby using a routing mechanism to selectively activate only a subset of parameters for each token.\n\nYour task:\n- Implement token routing using a simple softmax-based learned router\n- Route tokens to the top-k experts based on router probabilities\n- Process tokens through their assigned experts\n- Combine expert outputs weighted by router probabilities\n- Calculate appropriate auxiliary losses for training stability\n\nInput:\n- `data`: Tuple of (input: torch.Tensor, weights: Dict[str, torch.Tensor], config: Dict)\n  - input: Input tensor of shape [bs, seq_len, d_hidden]\n  - weights: Dictionary containing model weights\n  - config: Dictionary containing model configuration parameters\n\nOutput:\n- Tuple containing:\n  - output: Processed tensor [bs, seq_len, d_model]\n  - aux_data: Dictionary with auxiliary data like router probabilities and losses\n",
+        "gpu_types": ["MI300"]
+      },
+      "truncated_cells": []
+    },
+    {
+      "row": {
+        "id": 463,
+        "name": "amd-mla-decode",
+        "deadline": "2025-09-02T00:00:00Z",
+        "description": "You will implement a custom mla decode kernel optimized for MI300, a few things simplified here:\n\n1. Q, K, V data type as bfloat16\n  \n2. decode only with pre-allocated non-paged latent kv cache\n\n3. return the update kv cache with MLA output\n\nThe shapes of all outer and inner dimensions of tensors are from DeepSeek-R1, and split number of heads to fit in one GPU. \nTo be explicit, you will be given a tuple to tensors:\n\n```yml\ninput [bs, sq, dim]\nattn_output [bs, n_heads, sq, v_head_dim]\nkv_cache [bs, sq, kv_lora_rank + qk_rope_head_dim]\n``` \n\nwhere \n\n0. bs::128 # batch size\n1. prefill::[512, 2048, 4096, 6144] # as kv length\n2. sq::1 # as only consider decoding\n3. dim::7168 # hidden size of deepseek v3\n4. kv_lora_rank::[512] # kv lora rank of deepseek v3\n5. qk_rope_head_dim::[64] # rope embedding dimension\n6. v_head_dim::128 # head size\n7. n_heads::128 # num of attn heads\n\nThe ranking criteria is the geometric mean of the benchmark results.\n\nFor the grand prize, your kernel will be evaluated against the speed of light analysis\nand the solution closest to the speed of light will be awarded the grand prize.\n\nThe speed of light analysis is::\n| bs | prefill | sq | dtype |  roofline time(us) |\n|---|---|---|---|---|\n| 128 | 512 | 1 | bf16 | 54.62 |\n| 128 | 2048 | 1 | bf16 | 141.16 |\n| 128 | 4096 | 1 | bf16 | 210.75 |\n| 128 | 6144 | 1 | bf16 | 280.87 | \n",
+        "gpu_types": ["MI300"]
+      },
+      "truncated_cells": []
+    }
+  ]
+}

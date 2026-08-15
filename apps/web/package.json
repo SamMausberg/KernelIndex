@@ -17,6 +17,7 @@
     "db:seed": "node --env-file-if-exists=.env.local scripts/seed.ts",
     "db:sync-records": "node --env-file-if-exists=.env.local scripts/sync-record-events.ts",
     "import:sol": "node --env-file-if-exists=.env.local scripts/import-sol.ts",
+    "import:gpumode": "node --env-file-if-exists=.env.local scripts/import-gpumode.ts",
     "test:e2e": "playwright test"
   },
   "dependencies": {
