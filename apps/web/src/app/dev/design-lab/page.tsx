@@ -4,6 +4,7 @@ import type { ReactNode } from "react"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
 import * as fixtures from "@/data/fixtures/catalog"
 import { RecordsLedger } from "@/features/records/ledger"
+import { ledgerSlice } from "@/features/records/ledger-model"
 import { SearchResults } from "@/features/search/results"
 
 // Preview-only design lab (§16.19): the real shell and components rendered
@@ -99,43 +100,40 @@ export default async function DesignLabPage() {
 
       <State label="records · current ledger with history and tie">
         <RecordsLedger
-          model={records}
-          filters={{
+          initial={ledgerSlice(records, {
             view: "current",
             hardware: null,
             verified: false,
             filter: "",
             sort: "date",
             page: 1,
-          }}
+          })}
         />
       </State>
 
       <State label="records · recently broken">
         <RecordsLedger
-          model={records}
-          filters={{
+          initial={ledgerSlice(records, {
             view: "broken",
             hardware: null,
             verified: false,
             filter: "",
             sort: "date",
             page: 1,
-          }}
+          })}
         />
       </State>
 
       <State label="records · sorted by largest improvement">
         <RecordsLedger
-          model={records}
-          filters={{
+          initial={ledgerSlice(records, {
             view: "current",
             hardware: null,
             verified: false,
             filter: "",
             sort: "improvement",
             page: 1,
-          }}
+          })}
         />
       </State>
     </div>
