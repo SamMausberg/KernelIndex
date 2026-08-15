@@ -21,7 +21,7 @@ test("an incomparable selection never receives a winner", async ({ page }) => {
       exact: false,
     }),
   ).toBeVisible()
-  await expect(page.getByText("no ranks — not comparable")).toBeVisible()
+  await expect(page.getByText("no ranks: not comparable")).toBeVisible()
   // The aligned diff marks the differing identity field.
   await expect(page.getByText("workload ≠")).toBeVisible()
 })

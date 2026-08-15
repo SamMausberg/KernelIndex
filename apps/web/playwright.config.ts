@@ -9,7 +9,7 @@ export default defineConfig({
   timeout: 20_000,
   use: { baseURL: "http://127.0.0.1:3105" },
   webServer: {
-    command: "pnpm start -- -p 3105",
+    command: "pnpm exec next start -p 3105",
     url: "http://127.0.0.1:3105",
     env: { CATALOG_BACKEND: "fixtures" },
     reuseExistingServer: true,
