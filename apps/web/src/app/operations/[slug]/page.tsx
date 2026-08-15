@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function OperationPage({ params, searchParams }: Props) {
   const { slug } = await params
   const { workload } = await searchParams
-  const model = await getOperationPage(slug, { workload })
+  const model = await getOperationPage(slug, workload)
   if (!model) notFound()
   const { operation, semantics, coverage } = model
   const best = model.records[0]?.primary ?? null

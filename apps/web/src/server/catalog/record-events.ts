@@ -60,10 +60,9 @@ export async function syncRecordEvents(
 
   const byCohort = new Map<string, typeof runs>()
   for (const run of runs) {
-    byCohort.set(run.comparisonKey, [
-      ...(byCohort.get(run.comparisonKey) ?? []),
-      run,
-    ])
+    const bucket = byCohort.get(run.comparisonKey)
+    if (bucket) bucket.push(run)
+    else byCohort.set(run.comparisonKey, [run])
   }
 
   const events: (typeof schema.recordEvents.$inferInsert)[] = []

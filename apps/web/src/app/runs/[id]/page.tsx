@@ -14,6 +14,9 @@ import {
   formatSpread,
 } from "@/lib/format"
 
+// Run dossiers are immutable once published; ISR on first hit.
+export const revalidate = 300
+
 type Props = { params: Promise<{ id: string }> }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

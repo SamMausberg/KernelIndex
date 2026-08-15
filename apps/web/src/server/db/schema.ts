@@ -134,6 +134,12 @@ export const implementations = pgTable(
     licenseExpression: text("license_expression"),
     sourceAvailable: boolean("source_available").notNull(),
     installable: boolean("installable").notNull(),
+    /* Read-path projections of the manifest so list surfaces never load
+       JSONB: display title, first build variant's install, declared license. */
+    title: text("title"),
+    installKind: text("install_kind"),
+    installCommand: text("install_command"),
+    licenseDeclared: text("license_declared"),
     manifest: jsonb("manifest").notNull(),
     createdAt: createdAt(),
     supersedesId: uuid("supersedes_id").references(
@@ -210,6 +216,13 @@ export const benchmarkRuns = pgTable(
     sourceAvailable: boolean("source_available").notNull(),
     installable: boolean("installable").notNull(),
     licenseExpression: text("license_expression"),
+    /* Read-path projections of the manifest (statistic label, evidence and
+       source-native flags, environment line) so ranked surfaces select only
+       scalars; the canonical facts stay inside the manifest. */
+    primaryStatistic: text("primary_statistic"),
+    hasRawEvidence: boolean("has_raw_evidence").notNull().default(false),
+    sourceNative: boolean("source_native").notNull().default(false),
+    environmentSummary: text("environment_summary"),
     manifest: jsonb("manifest").notNull(),
     supersedesId: uuid("supersedes_id").references(
       (): AnyPgColumn => benchmarkRuns.id,
@@ -233,6 +246,16 @@ export const benchmarkRuns = pgTable(
       t.hardwareArchitecture,
       t.hardwareModel,
     ),
+    // Serves the not-superseded anti-join applied by every ranked read.
+    index("benchmark_runs_supersedes_idx")
+      .on(t.supersedesId)
+      .where(sql`${t.supersedesId} is not null`),
+    // Eligible-runs-per-workload scan behind joinedRunsForOperation.
+    index("benchmark_runs_workload_eligible_idx")
+      .on(t.workloadId, t.primaryValue)
+      .where(
+        sql`${t.publishedAt} is not null and ${t.status} = 'passed' and ${t.retractedAt} is null`,
+      ),
     digestCheck("benchmark_runs_digest_format", t.runDigest),
     // NaN compares greater-than in PostgreSQL, so exclude it explicitly.
     check(

@@ -37,18 +37,23 @@ export function isStale(observedAt: Date): boolean {
   )
 }
 
-export function runEvidence(run: RunRow): EvidenceLevel {
-  const stored = run.manifest as StoredRunManifest
-  const hasRawEvidence =
-    stored.run.spec.timing?.rawSamples !== undefined ||
-    stored.run.spec.evidence?.rawSamples !== undefined ||
-    stored.run.spec.evidence?.logs !== undefined
+/** The scalar columns trust derivation needs; every run select includes them. */
+export type RunEvidenceInput = Pick<
+  RunRow,
+  | "reproducedByKernelindex"
+  | "independentReplicationCount"
+  | "sourceAvailable"
+  | "installable"
+  | "hasRawEvidence"
+>
+
+export function runEvidence(run: RunEvidenceInput): EvidenceLevel {
   return evidenceLevel({
     reproducedByKernelindex: run.reproducedByKernelindex,
     independentReplicationCount: run.independentReplicationCount,
     sourceAvailable: run.sourceAvailable,
     installable: run.installable,
-    hasRawEvidence,
+    hasRawEvidence: run.hasRawEvidence,
     identityComplete: true,
   })
 }

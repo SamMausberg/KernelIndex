@@ -648,11 +648,10 @@ export async function searchCatalog(
 
 export async function getOperationPage(
   slug: string,
-  options?: { workload?: string },
+  workload?: string,
 ): Promise<OperationPageModel | null> {
   if (slug !== "rmsnorm-h4096") return null
-  const selected: WorkloadId =
-    options?.workload === "wl-1024" ? "wl-1024" : "wl-2048"
+  const selected: WorkloadId = workload === "wl-1024" ? "wl-1024" : "wl-2048"
   const records =
     selected === "wl-2048"
       ? RANKED.map(rowFromRun)

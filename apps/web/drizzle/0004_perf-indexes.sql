@@ -1,0 +1,2 @@
+CREATE INDEX "benchmark_runs_supersedes_idx" ON "benchmark_runs" USING btree ("supersedes_id") WHERE "benchmark_runs"."supersedes_id" is not null;--> statement-breakpoint
+CREATE INDEX "benchmark_runs_workload_eligible_idx" ON "benchmark_runs" USING btree ("workload_id","primary_value") WHERE "benchmark_runs"."published_at" is not null and "benchmark_runs"."status" = 'passed' and "benchmark_runs"."retracted_at" is null;

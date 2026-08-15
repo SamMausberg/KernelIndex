@@ -82,25 +82,88 @@ import { eligibleRunFilter } from "./record-events.ts"
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 
+// Lean projections for ranked surfaces: scalar columns only, never the JSONB
+// manifests, which dominate transfer and parse cost at corpus scale (§16).
+const runColumns = {
+  id: schema.benchmarkRuns.id,
+  observedAt: schema.benchmarkRuns.observedAt,
+  comparisonKey: schema.benchmarkRuns.comparisonKey,
+  hardwareModel: schema.benchmarkRuns.hardwareModel,
+  hardwareArchitecture: schema.benchmarkRuns.hardwareArchitecture,
+  cudaMajor: schema.benchmarkRuns.cudaMajor,
+  primaryMetric: schema.benchmarkRuns.primaryMetric,
+  primaryValue: schema.benchmarkRuns.primaryValue,
+  primaryUnit: schema.benchmarkRuns.primaryUnit,
+  primaryStatistic: schema.benchmarkRuns.primaryStatistic,
+  sampleCount: schema.benchmarkRuns.sampleCount,
+  uncertaintyLow: schema.benchmarkRuns.uncertaintyLow,
+  uncertaintyHigh: schema.benchmarkRuns.uncertaintyHigh,
+  reproducedByKernelindex: schema.benchmarkRuns.reproducedByKernelindex,
+  independentReplicationCount: schema.benchmarkRuns.independentReplicationCount,
+  sourceAvailable: schema.benchmarkRuns.sourceAvailable,
+  installable: schema.benchmarkRuns.installable,
+  licenseExpression: schema.benchmarkRuns.licenseExpression,
+  hasRawEvidence: schema.benchmarkRuns.hasRawEvidence,
+  sourceNative: schema.benchmarkRuns.sourceNative,
+  environmentSummary: schema.benchmarkRuns.environmentSummary,
+}
+const implementationColumns = {
+  id: schema.implementations.id,
+  slug: schema.implementations.slug,
+  sourceRevision: schema.implementations.sourceRevision,
+  language: schema.implementations.language,
+  framework: schema.implementations.framework,
+  title: schema.implementations.title,
+  installKind: schema.implementations.installKind,
+  installCommand: schema.implementations.installCommand,
+  licenseDeclared: schema.implementations.licenseDeclared,
+}
+const projectColumns = {
+  name: schema.projects.name,
+  slug: schema.projects.slug,
+}
+const sourceColumns = {
+  slug: schema.sources.slug,
+  kind: schema.sources.kind,
+  name: schema.sources.name,
+}
+
+type ImplementationRow = typeof schema.implementations.$inferSelect
+type WorkloadRow = typeof schema.workloads.$inferSelect
+
 type JoinedRun = {
-  run: RunRow
-  implementation: typeof schema.implementations.$inferSelect
-  project: typeof schema.projects.$inferSelect
-  workload: typeof schema.workloads.$inferSelect
-  source: typeof schema.sources.$inferSelect
+  run: Pick<RunRow, keyof typeof runColumns>
+  implementation: Pick<ImplementationRow, keyof typeof implementationColumns>
+  project: Pick<typeof schema.projects.$inferSelect, "name" | "slug">
+  workload: Pick<WorkloadRow, "id" | "dtypes" | "shapeSummary">
+  source: Pick<typeof schema.sources.$inferSelect, "slug" | "kind" | "name">
+}
+
+/** Operation-scoped rows additionally carry the workload manifest for match. */
+type OperationJoinedRun = JoinedRun & {
+  workload: Pick<
+    WorkloadRow,
+    "id" | "dtypes" | "shapeSummary" | "layoutKeys" | "manifest"
+  >
 }
 
 /** Published eligible runs for one operation, fastest first. */
 async function joinedRunsForOperation(
   operationId: string,
-): Promise<JoinedRun[]> {
+): Promise<OperationJoinedRun[]> {
   return db()
     .select({
-      run: schema.benchmarkRuns,
-      implementation: schema.implementations,
-      project: schema.projects,
-      workload: schema.workloads,
-      source: schema.sources,
+      run: runColumns,
+      implementation: implementationColumns,
+      project: projectColumns,
+      workload: {
+        id: schema.workloads.id,
+        dtypes: schema.workloads.dtypes,
+        shapeSummary: schema.workloads.shapeSummary,
+        layoutKeys: schema.workloads.layoutKeys,
+        manifest: schema.workloads.manifest,
+      },
+      source: sourceColumns,
     })
     .from(schema.benchmarkRuns)
     .innerJoin(
@@ -153,22 +216,24 @@ function resultRow(
   > = {},
 ): ResultRow {
   const { run, implementation, project, workload } = joined
-  const stored = run.manifest as StoredRunManifest
-  const manifest = implementation.manifest as ImplementationRevisionManifest
-  const variant = manifest.spec.buildVariants?.[0]
   return {
     runId: run.id,
     implementation: {
       name: implementationDisplayName(
-        manifest.metadata.title,
+        implementation.title ?? undefined,
         operation,
         implementation.slug,
       ),
       slug: implementation.slug,
     },
-    install: variant?.install.command
-      ? { kind: variant.install.kind, command: variant.install.command }
-      : null,
+    install:
+      implementation.installCommand !== null &&
+      implementation.installKind !== null
+        ? {
+            kind: implementation.installKind,
+            command: implementation.installCommand,
+          }
+        : null,
     project: { name: project.name, slug: project.slug },
     revision: implementation.sourceRevision?.slice(0, 7) ?? null,
     operation: opRef(operation),
@@ -186,7 +251,7 @@ function resultRow(
         ? {
             metric: run.primaryMetric,
             unit: run.primaryUnit ?? "",
-            statistic: stored.run.spec.timing?.primaryStatistic ?? "value",
+            statistic: run.primaryStatistic ?? "value",
             value: run.primaryValue,
             sampleCount: run.sampleCount,
             uncertainty:
@@ -203,9 +268,7 @@ function resultRow(
     sourceAvailable: run.sourceAvailable,
     installable: run.installable,
     license: {
-      declared:
-        (implementation.manifest as ImplementationRevisionManifest).spec
-          .licensing.declared ?? null,
+      declared: implementation.licenseDeclared,
       concluded: run.licenseExpression,
     },
     lastTestedAt: run.observedAt.toISOString(),
@@ -248,19 +311,18 @@ function rankInputOf(joined: JoinedRun): RankInput {
  * compatible with their differences enumerated.
  */
 function groupRuns(
-  joined: JoinedRun[],
+  joined: OperationJoinedRun[],
   operation: { name: string; slug: string },
   operationManifest: OperationSpecManifest,
   selectedWorkloadId: string,
   intent: SearchIntent,
 ) {
   const selected = joined.filter((j) => j.workload.id === selectedWorkloadId)
-  const byCohort = new Map<string, JoinedRun[]>()
+  const byCohort = new Map<string, OperationJoinedRun[]>()
   for (const j of selected) {
-    byCohort.set(j.run.comparisonKey, [
-      ...(byCohort.get(j.run.comparisonKey) ?? []),
-      j,
-    ])
+    const bucket = byCohort.get(j.run.comparisonKey)
+    if (bucket) bucket.push(j)
+    else byCohort.set(j.run.comparisonKey, [j])
   }
   const primaryCohort =
     [...byCohort.values()].sort((a, b) => b.length - a.length)[0] ?? []
@@ -270,7 +332,7 @@ function groupRuns(
     | undefined
 
   const opDtypes = operationDtypes(operationManifest)
-  const target = (j: JoinedRun): MatchTarget => ({
+  const target = (j: OperationJoinedRun): MatchTarget => ({
     hardwareModel: j.run.hardwareModel,
     hardwareArchitecture: j.run.hardwareArchitecture,
     cudaMajor: j.run.cudaMajor,
@@ -282,8 +344,8 @@ function groupRuns(
   })
 
   const compatible: ResultRow[] = []
-  const rankable: JoinedRun[] = []
-  const unrankable: JoinedRun[] = []
+  const rankable: OperationJoinedRun[] = []
+  const unrankable: OperationJoinedRun[] = []
   for (const j of primaryCohort) {
     const mismatches = intentMismatches(intent, target(j))
     if (mismatches.length > 0) {
@@ -297,16 +359,13 @@ function groupRuns(
     }
   }
 
-  const sourceNative = primaryCohort.some(
-    (j) =>
-      (j.run.manifest as StoredRunManifest).run.spec.sourceNative !== undefined,
-  )
+  const sourceNative = primaryCohort.some((j) => j.run.sourceNative)
   const profile = sourceNative
     ? ("source_native" as const)
     : ("strict_exact" as const)
   const byId = new Map(rankable.map((j) => [j.run.id, j]))
   const exact = rankCohort(rankable.map(rankInputOf), profile).map((entry) =>
-    resultRow(byId.get(entry.id) as JoinedRun, operation, {
+    resultRow(byId.get(entry.id) as OperationJoinedRun, operation, {
       rank: entry.rank,
       tiedWithPrevious: entry.tiedWithPrevious,
     }),
@@ -356,16 +415,39 @@ function groupRuns(
         description: sourceNative
           ? `Source-native cohort: identical workload, protocol, and environment under the upstream harness. Ranked by the source's primary metric under ${RANKING_POLICY_VERSION}; unequal values keep the source order.`
           : `Identical workload, protocol, environment, and correctness policy. Ranked by primary metric under ${RANKING_POLICY_VERSION}; overlapping confidence intervals share a rank.`,
-        facts: cohortFacts(primaryCohort[0] ?? selected[0] ?? joined[0]),
+        facts: [],
       }
     : null
 
-  return { exact, reported, compatible, cohort }
+  const headRunId =
+    (primaryCohort[0] ?? selected[0] ?? joined[0])?.run.id ?? null
+  return { exact, reported, compatible, cohort, headRunId }
 }
 
-/** Facts every row in the cohort shares (§16.6) — rendered once, not per row. */
-function cohortFacts(joined: JoinedRun): KeyValue[] {
-  const stored = joined.run.manifest as StoredRunManifest
+/**
+ * Facts every row in the cohort shares (§16.6) — rendered once, not per row.
+ * The protocol/environment details live only in the manifest, so this loads
+ * exactly one run's JSONB after grouping instead of shipping it per row.
+ */
+async function fillCohortFacts(groups: {
+  cohort: CohortContext | null
+  headRunId: string | null
+}): Promise<void> {
+  if (!groups.cohort || groups.headRunId === null) return
+  const [joined] = await db()
+    .select({
+      manifest: schema.benchmarkRuns.manifest,
+      workloadManifest: schema.workloads.manifest,
+      dtypes: schema.workloads.dtypes,
+    })
+    .from(schema.benchmarkRuns)
+    .innerJoin(
+      schema.workloads,
+      eq(schema.benchmarkRuns.workloadId, schema.workloads.id),
+    )
+    .where(eq(schema.benchmarkRuns.id, groups.headRunId))
+  if (!joined) return
+  const stored = joined.manifest as StoredRunManifest
   const { hardware, software } = stored.environment.spec
   const measurement = stored.protocol.spec.measurement
   const framework = software.framework
@@ -380,16 +462,21 @@ function cohortFacts(joined: JoinedRun): KeyValue[] {
   ]
     .filter(Boolean)
     .join(" · ")
-  const workloadManifest = joined.workload.manifest as AnyWorkloadManifest
   const entries: [string, string | null | undefined][] = [
     ["GPU", hardware.product],
-    ["Workload", workloadLabel(workloadManifest, joined.workload.dtypes)],
+    [
+      "Workload",
+      workloadLabel(
+        joined.workloadManifest as AnyWorkloadManifest,
+        joined.dtypes,
+      ),
+    ],
     ["CUDA", software.cudaToolkit],
     ["Driver", software.driver],
     ["Framework", framework],
     ["Protocol", protocol],
   ]
-  return entries
+  groups.cohort.facts = entries
     .filter((entry): entry is [string, string] => Boolean(entry[1]))
     .map(([key, value]) => ({ key, value }))
 }
@@ -410,6 +497,11 @@ const SEARCH_STOPWORDS = new Set([
 ])
 
 type OperationRow = typeof schema.operations.$inferSelect
+/** The columns operation resolution carries forward into result assembly. */
+type ResolvedOperation = Pick<
+  OperationRow,
+  "id" | "slug" | "family" | "name" | "manifest"
+>
 
 /**
  * Tiered operation resolution in one explainable SQL query (§12.3–12.4):
@@ -424,7 +516,7 @@ type OperationRow = typeof schema.operations.$inferSelect
  */
 async function resolveOperation(
   intent: SearchIntent,
-): Promise<{ operation: OperationRow; score: number }[]> {
+): Promise<{ operation: ResolvedOperation; score: number }[]> {
   const terms = [
     ...new Set(
       (intent.family !== null ? [intent.family, ...intent.text] : intent.text)
@@ -450,7 +542,7 @@ async function resolveOperation(
 
   const database = db()
   const scored = await database.execute(sql`
-    select o.id, (
+    select o.id, o.slug, o.family, o.name, o.manifest, (
       case
         when lower(o.slug) = ${phraseSlug}
           or replace(lower(o.slug), '-', '') = ${phraseCollapsed} then 400
@@ -489,25 +581,18 @@ async function resolveOperation(
     order by score desc, o.created_at asc
     limit 20
   `)
-  const hits = [...scored]
-    .map((row) => ({ id: row.id as string, score: Number(row.score) }))
+  return [...scored]
+    .map((row) => ({
+      operation: {
+        id: row.id,
+        slug: row.slug,
+        family: row.family,
+        name: row.name,
+        manifest: row.manifest,
+      } as ResolvedOperation,
+      score: Number(row.score),
+    }))
     .filter((hit) => hit.score >= 8)
-  if (hits.length === 0) return []
-
-  const rows = await database
-    .select()
-    .from(schema.operations)
-    .where(
-      inArray(
-        schema.operations.id,
-        hits.map((hit) => hit.id),
-      ),
-    )
-  const byId = new Map(rows.map((row) => [row.id, row]))
-  return hits.flatMap((hit) => {
-    const operation = byId.get(hit.id)
-    return operation ? [{ operation, score: hit.score }] : []
-  })
 }
 
 /**
@@ -579,12 +664,19 @@ function pageIllustrative(rows: JoinedRun[]): boolean {
 export async function getHomePage(): Promise<HomePageModel> {
   const rows = await db()
     .select({
-      run: schema.benchmarkRuns,
-      implementation: schema.implementations,
-      project: schema.projects,
-      workload: schema.workloads,
-      source: schema.sources,
-      operation: schema.operations,
+      run: runColumns,
+      implementation: implementationColumns,
+      project: projectColumns,
+      workload: {
+        id: schema.workloads.id,
+        dtypes: schema.workloads.dtypes,
+        shapeSummary: schema.workloads.shapeSummary,
+      },
+      source: sourceColumns,
+      operation: {
+        name: schema.operations.name,
+        slug: schema.operations.slug,
+      },
     })
     .from(schema.benchmarkRuns)
     .innerJoin(
@@ -627,13 +719,23 @@ export async function getHomePage(): Promise<HomePageModel> {
 export async function getRecordsPage(): Promise<RecordsPageModel> {
   const rows = await db()
     .select({
-      event: schema.recordEvents,
-      run: schema.benchmarkRuns,
-      implementation: schema.implementations,
-      project: schema.projects,
-      workload: schema.workloads,
-      source: schema.sources,
-      operation: schema.operations,
+      event: {
+        comparisonKey: schema.recordEvents.comparisonKey,
+        at: schema.recordEvents.at,
+      },
+      run: runColumns,
+      implementation: implementationColumns,
+      project: projectColumns,
+      workload: {
+        id: schema.workloads.id,
+        dtypes: schema.workloads.dtypes,
+        shapeSummary: schema.workloads.shapeSummary,
+      },
+      source: sourceColumns,
+      operation: {
+        name: schema.operations.name,
+        slug: schema.operations.slug,
+      },
     })
     .from(schema.recordEvents)
     .innerJoin(
@@ -665,10 +767,9 @@ export async function getRecordsPage(): Promise<RecordsPageModel> {
 
   const byCohort = new Map<string, typeof rows>()
   for (const row of rows) {
-    byCohort.set(row.event.comparisonKey, [
-      ...(byCohort.get(row.event.comparisonKey) ?? []),
-      row,
-    ])
+    const bucket = byCohort.get(row.event.comparisonKey)
+    if (bucket) bucket.push(row)
+    else byCohort.set(row.event.comparisonKey, [row])
   }
 
   const records: RecordHolder[] = []
@@ -676,15 +777,14 @@ export async function getRecordsPage(): Promise<RecordsPageModel> {
   for (const [cohortKey, cohortRows] of byCohort) {
     const events: RecordEvent[] = []
     let previous: (typeof rows)[number] | null = null
+    let previousPrimary: ResultRow["primary"] = null
+    let holderRow: ResultRow | null = null
     for (const row of cohortRows) {
       const operation = {
         name: row.operation.name,
         slug: row.operation.slug,
       }
       const current = resultRow(row, operation)
-      const previousPrimary = previous
-        ? resultRow(previous, operation).primary
-        : null
       events.unshift({
         at: row.event.at.toISOString(),
         runId: row.run.id,
@@ -699,38 +799,25 @@ export async function getRecordsPage(): Promise<RecordsPageModel> {
             : null,
       })
       previous = row
+      previousPrimary = current.primary
+      holderRow = current
     }
-    if (previous === null) continue
+    if (previous === null || holderRow === null) continue
     holderRows.push(previous)
-    const stored = previous.run.manifest as StoredRunManifest
-    const operation = {
-      name: previous.operation.name,
-      slug: previous.operation.slug,
-    }
-    const holderRow = resultRow(previous, operation)
     records.push({
       cohortKey,
-      operation: opRef(operation),
+      operation: holderRow.operation,
       workloadSummary: holderRow.workloadSummary,
       hardware: previous.run.hardwareModel,
-      environmentSummary: [
-        stored.environment.spec.software.cudaToolkit
-          ? `CUDA ${stored.environment.spec.software.cudaToolkit}`
-          : null,
-        stored.environment.spec.software.framework
-          ? `${stored.environment.spec.software.framework.name} ${stored.environment.spec.software.framework.version}`
-          : null,
-        stored.protocol.spec.harness.name,
-      ]
-        .filter(Boolean)
-        .join(" · "),
+      environmentSummary: previous.run.environmentSummary ?? "",
       current: holderRow,
       since: events[0].at,
       history: events,
     })
   }
 
-  records.sort((a, b) => b.since.localeCompare(a.since))
+  // ISO-8601 strings order lexicographically; plain comparison beats collation.
+  records.sort((a, b) => (a.since < b.since ? 1 : a.since > b.since ? -1 : 0))
   return {
     illustrative: pageIllustrative(holderRows),
     hardwareOptions: [...new Set(records.map((holder) => holder.hardware))],
@@ -882,7 +969,8 @@ export async function searchCatalog(
         selectedWorkloadId,
         intent,
       )
-    : { ...EMPTY_GROUPS, cohort: null }
+    : { ...EMPTY_GROUPS, cohort: null, headRunId: null }
+  await fillCohortFacts(groups)
   const relatedItems = [...related, ...nearMisses]
     .filter(
       (op, index, all) =>
@@ -937,7 +1025,7 @@ type ImplementationRows = Awaited<ReturnType<typeof implementationRows>>
 
 /** Implementations declaring support for the operation but with no run. */
 function supportedUnmeasuredRows(
-  operation: typeof schema.operations.$inferSelect,
+  operation: { name: string; slug: string },
   joined: JoinedRun[],
   rows: ImplementationRows,
 ): ResultRow[] {
@@ -994,7 +1082,7 @@ function supportedUnmeasuredRows(
 
 export async function getOperationPage(
   slug: string,
-  options?: { workload?: string },
+  workload?: string,
 ): Promise<OperationPageModel | null> {
   const database = db()
   const [operation] = await database
@@ -1017,7 +1105,7 @@ export async function getOperationPage(
     implementationRows(operation.id),
   ])
   const requestedWorkload = workloadRows.find(
-    (w) => w.id === options?.workload || w.workloadDigest === options?.workload,
+    (w) => w.id === workload || w.workloadDigest === workload,
   )
   const selectedWorkloadId =
     requestedWorkload?.id ??
@@ -1033,7 +1121,8 @@ export async function getOperationPage(
         selectedWorkloadId,
         parseQuery(""),
       )
-    : { exact: [], reported: [], compatible: [], cohort: null }
+    : { exact: [], reported: [], compatible: [], cohort: null, headRunId: null }
+  await fillCohortFacts(groups)
 
   const implementations = implementationSummaries(implRows, joined, operation)
   const evidence = joined.map((j) => runEvidence(j.run))
@@ -1177,9 +1266,44 @@ export async function getImplementationPage(
   const { implementation, project, operation } = row
   const manifest = implementation.manifest as ImplementationRevisionManifest
 
-  const joined = (await joinedRunsForOperation(operation.id)).filter(
-    (j) => j.implementation.id === implementation.id,
-  )
+  // benchmark_runs_implementation_idx serves this directly; never load the
+  // whole operation's runs to show one implementation.
+  const joined: JoinedRun[] = await database
+    .select({
+      run: runColumns,
+      implementation: implementationColumns,
+      project: projectColumns,
+      workload: {
+        id: schema.workloads.id,
+        dtypes: schema.workloads.dtypes,
+        shapeSummary: schema.workloads.shapeSummary,
+      },
+      source: sourceColumns,
+    })
+    .from(schema.benchmarkRuns)
+    .innerJoin(
+      schema.implementations,
+      eq(schema.benchmarkRuns.implementationId, schema.implementations.id),
+    )
+    .innerJoin(
+      schema.projects,
+      eq(schema.implementations.projectId, schema.projects.id),
+    )
+    .innerJoin(
+      schema.workloads,
+      eq(schema.benchmarkRuns.workloadId, schema.workloads.id),
+    )
+    .innerJoin(
+      schema.sources,
+      eq(schema.benchmarkRuns.sourceId, schema.sources.id),
+    )
+    .where(
+      and(
+        eq(schema.benchmarkRuns.implementationId, implementation.id),
+        eligibleRunFilter(),
+      ),
+    )
+    .orderBy(schema.benchmarkRuns.primaryValue)
   const bestResults = joined.map((j) =>
     resultRow(j, { name: operation.name, slug: operation.slug }),
   )
@@ -1327,7 +1451,19 @@ export async function getRunPage(id: string): Promise<RunPageModel | null> {
           ),
         ),
       database
-        .select()
+        .select({
+          id: schema.benchmarkRuns.id,
+          primaryValue: schema.benchmarkRuns.primaryValue,
+          uncertaintyLow: schema.benchmarkRuns.uncertaintyLow,
+          uncertaintyHigh: schema.benchmarkRuns.uncertaintyHigh,
+          observedAt: schema.benchmarkRuns.observedAt,
+          reproducedByKernelindex: schema.benchmarkRuns.reproducedByKernelindex,
+          independentReplicationCount:
+            schema.benchmarkRuns.independentReplicationCount,
+          sourceAvailable: schema.benchmarkRuns.sourceAvailable,
+          installable: schema.benchmarkRuns.installable,
+          hasRawEvidence: schema.benchmarkRuns.hasRawEvidence,
+        })
         .from(schema.benchmarkRuns)
         .where(
           and(
@@ -1355,10 +1491,9 @@ export async function getRunPage(id: string): Promise<RunPageModel | null> {
     primaryValue: run.primaryValue,
   })
   const eligible = ineligibleReasons.length === 0
-  const profile =
-    stored.run.spec.sourceNative !== undefined
-      ? ("source_native" as const)
-      : ("strict_exact" as const)
+  const profile = run.sourceNative
+    ? ("source_native" as const)
+    : ("strict_exact" as const)
   const ranked = rankCohort(
     cohortRuns.map((cohortRun) => ({
       id: cohortRun.id,
@@ -1404,7 +1539,7 @@ export async function getRunPage(id: string): Promise<RunPageModel | null> {
     primary: {
       metric: run.primaryMetric,
       unit: run.primaryUnit ?? "",
-      statistic: stored.run.spec.timing?.primaryStatistic ?? "value",
+      statistic: run.primaryStatistic ?? "value",
       value: run.primaryValue ?? 0,
       sampleCount: run.sampleCount,
       uncertainty:
@@ -1598,11 +1733,7 @@ export async function getComparePage(
       }),
     ]),
   )
-  const sourceNative = ordered.some(
-    (row) =>
-      (row.run.manifest as StoredRunManifest).run.spec.sourceNative !==
-      undefined,
-  )
+  const sourceNative = ordered.some((row) => row.run.sourceNative)
   const profile = sourceNative
     ? ("source_native" as const)
     : ("strict_exact" as const)
@@ -1684,8 +1815,7 @@ export async function getComparePage(
     ),
     field("correctness policy", true, (row) => short(row.run.correctnessKey)),
     field("metric", true, (row) => {
-      const stored = row.run.manifest as StoredRunManifest
-      return `${row.run.primaryMetric} ${stored.run.spec.timing?.primaryStatistic ?? "value"} (${row.run.primaryUnit ?? "—"})`
+      return `${row.run.primaryMetric} ${row.run.primaryStatistic ?? "value"} (${row.run.primaryUnit ?? "—"})`
     }),
     field("architecture", false, (row) => row.run.hardwareArchitecture),
     field("CUDA", false, (row) => {

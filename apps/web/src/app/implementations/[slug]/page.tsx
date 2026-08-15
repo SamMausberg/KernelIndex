@@ -10,6 +10,9 @@ import { ResultRowItem, ResultTableHead } from "@/features/search/result-row"
 import { getImplementationPage } from "@/lib/catalog"
 import { evidenceLabel, formatDateUTC } from "@/lib/format"
 
+// Implementation dossiers change only on importer runs; ISR on first hit.
+export const revalidate = 300
+
 type Props = { params: Promise<{ slug: string }> }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

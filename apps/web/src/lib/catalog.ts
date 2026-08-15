@@ -1,7 +1,8 @@
-// The fixture/read seam (§27.5). Pages call these six functions and never
+// The fixture/read seam (§27.5). Pages call these functions and never
 // know which backend produced the model. `CATALOG_BACKEND` selects the
 // implementation: "fixtures" (default, deterministic, visibly illustrative)
 // or "postgres" (real published records).
+import { unstable_cache } from "next/cache"
 import { cache } from "react"
 import type {
   ComparePageModel,
@@ -24,7 +25,7 @@ type CatalogReads = {
   searchCatalog(input: SearchInput): Promise<SearchPageModel>
   getOperationPage(
     slug: string,
-    options?: { workload?: string },
+    workload?: string,
   ): Promise<OperationPageModel | null>
   getImplementationPage(slug: string): Promise<ImplementationPageModel | null>
   getRunPage(id: string): Promise<RunPageModel | null>
@@ -41,50 +42,97 @@ async function reads(): Promise<CatalogReads> {
   return await import("@/data/fixtures/catalog")
 }
 
-// React request-level cache: a page and its generateMetadata share one read.
-export const getHomePage = cache(async (): Promise<HomePageModel> => {
-  return (await reads()).getHomePage()
-})
+// Two cache layers: React request-level `cache` (a page and its
+// generateMetadata share one read) over `unstable_cache` (results survive
+// across requests for five minutes). Data changes only through the CLI
+// importer, so short time-based staleness is acceptable (§16).
+const REVALIDATE_SECONDS = 300
 
+export const getHomePage = cache(
+  unstable_cache(
+    async (): Promise<HomePageModel> => {
+      return (await reads()).getHomePage()
+    },
+    ["home"],
+    { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },
+  ),
+)
+
+// The full ledger model outgrows the framework data cache's entry limit as
+// the corpus scales, so it memoizes in-process instead.
+const RECORDS_MEMO_MS = 60_000
+let recordsMemo: { at: number; value: Promise<RecordsPageModel> } | null = null
 export const getRecordsPage = cache(async (): Promise<RecordsPageModel> => {
-  return (await reads()).getRecordsPage()
+  if (recordsMemo && Date.now() - recordsMemo.at < RECORDS_MEMO_MS) {
+    return recordsMemo.value
+  }
+  const value = (async () => (await reads()).getRecordsPage())()
+  recordsMemo = { at: Date.now(), value }
+  value.catch(() => {
+    recordsMemo = null
+  })
+  return value
 })
 
 export const getOperationIndex = cache(
-  async (): Promise<OperationIndexEntry[]> => {
-    return (await reads()).getOperationIndex()
-  },
+  unstable_cache(
+    async (): Promise<OperationIndexEntry[]> => {
+      return (await reads()).getOperationIndex()
+    },
+    ["operation-index"],
+    { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },
+  ),
 )
 
 export const searchCatalog = cache(
-  async (input: SearchInput): Promise<SearchPageModel> => {
-    return (await reads()).searchCatalog(input)
-  },
+  unstable_cache(
+    async (input: SearchInput): Promise<SearchPageModel> => {
+      return (await reads()).searchCatalog(input)
+    },
+    ["search"],
+    { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },
+  ),
 )
 
 export const getOperationPage = cache(
-  async (
-    slug: string,
-    options?: { workload?: string },
-  ): Promise<OperationPageModel | null> => {
-    return (await reads()).getOperationPage(slug, options)
-  },
+  unstable_cache(
+    async (
+      slug: string,
+      workload?: string,
+    ): Promise<OperationPageModel | null> => {
+      return (await reads()).getOperationPage(slug, workload)
+    },
+    ["operation"],
+    { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },
+  ),
 )
 
 export const getImplementationPage = cache(
-  async (slug: string): Promise<ImplementationPageModel | null> => {
-    return (await reads()).getImplementationPage(slug)
-  },
+  unstable_cache(
+    async (slug: string): Promise<ImplementationPageModel | null> => {
+      return (await reads()).getImplementationPage(slug)
+    },
+    ["implementation"],
+    { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },
+  ),
 )
 
 export const getRunPage = cache(
-  async (id: string): Promise<RunPageModel | null> => {
-    return (await reads()).getRunPage(id)
-  },
+  unstable_cache(
+    async (id: string): Promise<RunPageModel | null> => {
+      return (await reads()).getRunPage(id)
+    },
+    ["run"],
+    { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },
+  ),
 )
 
 export const getComparePage = cache(
-  async (runIds: string[]): Promise<ComparePageModel> => {
-    return (await reads()).getComparePage(runIds)
-  },
+  unstable_cache(
+    async (runIds: string[]): Promise<ComparePageModel> => {
+      return (await reads()).getComparePage(runIds)
+    },
+    ["compare"],
+    { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },
+  ),
 )

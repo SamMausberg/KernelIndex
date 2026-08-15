@@ -391,6 +391,11 @@ export async function publishBundle(
             sourceAvailable:
               manifest.spec.projectRevision.repository !== undefined,
             installable: (manifest.spec.buildVariants ?? []).length > 0,
+            title: manifest.metadata.title ?? null,
+            installKind: manifest.spec.buildVariants?.[0]?.install.kind ?? null,
+            installCommand:
+              manifest.spec.buildVariants?.[0]?.install.command ?? null,
+            licenseDeclared: licensing.declared ?? null,
             manifest,
           })
           .returning()
@@ -565,6 +570,24 @@ export async function publishBundle(
           sourceAvailable: implementation.sourceAvailable,
           installable: implementation.installable,
           licenseExpression: implementation.license,
+          primaryStatistic: primary?.statistic ?? null,
+          hasRawEvidence:
+            timing?.rawSamples !== undefined ||
+            manifest.spec.evidence?.rawSamples !== undefined ||
+            manifest.spec.evidence?.logs !== undefined,
+          sourceNative: manifest.spec.sourceNative !== undefined,
+          environmentSummary:
+            [
+              environment.spec.software.cudaToolkit
+                ? `CUDA ${environment.spec.software.cudaToolkit}`
+                : null,
+              environment.spec.software.framework
+                ? `${environment.spec.software.framework.name} ${environment.spec.software.framework.version}`
+                : null,
+              protocol.spec.harness.name,
+            ]
+              .filter(Boolean)
+              .join(" · ") || null,
           manifest: { run: manifest, protocol, environment },
         })
         .returning()

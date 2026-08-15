@@ -6,6 +6,11 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.join(import.meta.dirname, "../.."),
   },
+  experimental: {
+    // Back/forward navigation reuses the client router cache briefly instead
+    // of refetching every dynamic page.
+    staleTimes: { dynamic: 30 },
+  },
 }
 
 export default nextConfig

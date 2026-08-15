@@ -6,8 +6,9 @@ import { LatestRecords } from "@/features/home/latest-records"
 import { getHomePage, getOperationIndex } from "@/lib/catalog"
 import { releaseSha } from "@/server/env"
 
-// The homepage reads live records; never freeze them into the build.
-export const dynamic = "force-dynamic"
+// The homepage reads live records; revalidate on a short cycle instead of
+// freezing them into the build (data changes only on importer runs).
+export const revalidate = 300
 
 export default async function Home() {
   const [model, suggest] = await Promise.all([
