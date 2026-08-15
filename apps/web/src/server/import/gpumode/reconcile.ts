@@ -1,27 +1,32 @@
 // Reconciliation (§14.4): curated problems and ranked rows onto canonical
-// identity, keeping the top N distinct users per leaderboard. Names alone
-// never merge identity; slug conflicts and unparseable evidence become
-// review items, not overwrites.
+// identity. Per cohort (board × runner) the best submission of the top N
+// distinct authors is selected, plus each leading author's personal-best
+// progression chain — the "how the record fell" evidence. Names alone never
+// merge identity; slug conflicts and unparseable evidence become review
+// items, not overwrites.
 import { eq } from "drizzle-orm"
 import type { DbHandle, ImportBundle } from "../../catalog/publication.ts"
 import * as schema from "../../db/schema.ts"
 import { specDigest } from "../../identity/digest.ts"
 import { snapshotRow } from "../fetch.ts"
 import { type ProposedObject, proposedObjects } from "../report.ts"
-import type { GmImportData } from "./discover.ts"
+import { cohortAuthorKey, type GmImportData } from "./discover.ts"
 import {
+  aggregateRunFromRow,
   benchmarkKey,
   caseFromBenchmark,
   implementationFromRow,
   kernelbotEnvironment,
   kernelbotProtocol,
+  kernelbotRankedProtocol,
   operationFromProblem,
   projectForUser,
   runFromBenchmark,
+  suiteFromProblem,
 } from "./normalize.ts"
 import { parseRunResult } from "./parse.ts"
 import {
-  type GmBenchmark,
+  type GmCandidate,
   type GmSubmissionRow,
   GPUMODE_SOURCE,
   PARSER,
@@ -30,9 +35,18 @@ import {
 export type GmImportReport = {
   source: string
   parserVersion: string
-  discovered: { leaderboards: number; rows: number; snapshots: number }
+  discovered: { boards: number; rows: number; snapshots: number }
   selectedSubmissions: number
-  skippedSubmissions: { duplicateUser: number; invalid: number }
+  skippedSubmissions: { invalid: number }
+  /** Selection counts per board × runner cohort (dry-run tuning input). */
+  cohorts: {
+    leaderboard: string
+    runner: string
+    top: number
+    progression: number
+    withCode: number
+  }[]
+  code: { submissionsWithCode: number; uniqueBlobs: number; totalBytes: number }
   operationsByFamily: Record<string, number>
   proposed: ProposedObject[]
   ambiguities: string[]
@@ -43,50 +57,87 @@ export type GmImportReport = {
 }
 
 export type GmReconcileOptions = {
-  /** Best N distinct users per leaderboard become records. */
+  /** Best N distinct authors per cohort become records. */
   topPerBoard: number
+  /** Leading authors per cohort whose improving chain is kept. */
+  authors: number
+  /** Progression steps kept per author (evenly spaced, first and best). */
+  maxPerAuthor: number
+}
+
+/** Keep at most `max` entries, always including the first and the last. */
+function evenlySpaced<T>(list: T[], max: number): T[] {
+  if (list.length <= max) return list
+  const out: T[] = []
+  for (let index = 0; index < max; index++) {
+    out.push(list[Math.round((index * (list.length - 1)) / (max - 1))])
+  }
+  return [...new Set(out)]
 }
 
 /**
- * Best submission per user, best score first, capped at N users. The
- * per-shape benchmarks parse here: some passed rows carry a null or partial
- * run_result, and such a row must not consume a top-N user slot it cannot
- * fill with evidence.
+ * One cohort's selection: best-per-author top N (rank order), plus each
+ * leading author's strictly-improving submission chain from their fetched
+ * history, capped and deduplicated by submission.
  */
-function selectRows(
-  all: GmSubmissionRow[],
-  options: GmReconcileOptions,
-  report: GmImportReport,
-): { row: GmSubmissionRow; benchmarks: GmBenchmark[] }[] {
+function selectCohort(input: {
+  ranked: GmCandidate[]
+  histories: GmImportData["boards"][number]["histories"]
+  runner: string
+  options: GmReconcileOptions
+  valid: (candidate: GmCandidate) => boolean
+  report: GmImportReport
+  leaderboard: string
+}): GmCandidate[] {
+  const { ranked, histories, runner, options, valid, report } = input
+  const bestByUser: GmCandidate[] = []
   const seenUsers = new Set<string>()
-  const selected: { row: GmSubmissionRow; benchmarks: GmBenchmark[] }[] = []
-  for (const row of all) {
-    let benchmarks: GmBenchmark[]
-    try {
-      if (
-        row.run_passed !== true ||
-        row.run_mode !== "leaderboard" ||
-        typeof row.run_score !== "number" ||
-        row.run_score <= 0 ||
-        !row.run_result
-      ) {
-        throw new Error("not a scored leaderboard result")
-      }
-      benchmarks = parseRunResult(row.run_result)
-    } catch {
+  for (const candidate of ranked) {
+    if (seenUsers.has(candidate.userId)) continue
+    if (!valid(candidate)) {
       report.skippedSubmissions.invalid++
       continue
     }
-    const user = String(row.user_id)
-    if (seenUsers.has(user)) {
-      report.skippedSubmissions.duplicateUser++
-      continue
-    }
-    seenUsers.add(user)
-    selected.push({ row, benchmarks })
-    if (selected.length >= options.topPerBoard) break
+    seenUsers.add(candidate.userId)
+    bestByUser.push(candidate)
+    if (bestByUser.length >= options.topPerBoard) break
   }
-  return selected
+
+  const selected = new Map<number, GmCandidate>()
+  for (const candidate of bestByUser) {
+    selected.set(candidate.submissionId, candidate)
+  }
+
+  let progression = 0
+  for (const leader of bestByUser.slice(0, options.authors)) {
+    const history = histories.get(cohortAuthorKey(runner, leader.userId)) ?? []
+    let best = Number.POSITIVE_INFINITY
+    const chain: GmCandidate[] = []
+    for (const candidate of history) {
+      if (!valid(candidate) || candidate.score >= best) continue
+      best = candidate.score
+      chain.push(candidate)
+    }
+    // A truncated history may not reach the author's known best; the chain
+    // must still end there so the cohort's record story is complete.
+    if (leader.score < best) chain.push(leader)
+    for (const candidate of evenlySpaced(chain, options.maxPerAuthor)) {
+      if (!selected.has(candidate.submissionId)) {
+        selected.set(candidate.submissionId, candidate)
+        progression++
+      }
+    }
+  }
+
+  const all = [...selected.values()]
+  report.cohorts.push({
+    leaderboard: input.leaderboard,
+    runner,
+    top: bestByUser.length,
+    progression,
+    withCode: all.filter((c) => c.code !== null && c.code.length > 0).length,
+  })
+  return all
 }
 
 export async function reconcileKernelbot(
@@ -98,12 +149,19 @@ export async function reconcileKernelbot(
     source: GPUMODE_SOURCE.slug,
     parserVersion: PARSER.version,
     discovered: {
-      leaderboards: data.problems.length,
-      rows: [...data.rows.values()].reduce((n, list) => n + list.length, 0),
+      boards: data.boards.length,
+      rows: data.boards.reduce(
+        (n, board) =>
+          n +
+          [...board.cohorts.values()].reduce((m, list) => m + list.length, 0),
+        0,
+      ),
       snapshots: data.snapshots.length,
     },
     selectedSubmissions: 0,
-    skippedSubmissions: { duplicateUser: 0, invalid: 0 },
+    skippedSubmissions: { invalid: 0 },
+    cohorts: [],
+    code: { submissionsWithCode: 0, uniqueBlobs: 0, totalBytes: 0 },
     operationsByFamily: {},
     proposed: [],
     ambiguities: [],
@@ -122,11 +180,16 @@ export async function reconcileKernelbot(
     runs: [],
   }
 
-  const protocol = kernelbotProtocol()
-  const protocolDigest = specDigest(protocol)
+  const perShapeProtocol = kernelbotProtocol()
+  const perShapeProtocolDigest = specDigest(perShapeProtocol)
+  const rankedProtocolByStatistic = new Map<
+    string,
+    { manifest: ReturnType<typeof kernelbotRankedProtocol>; digest: string }
+  >()
   const seenProjects = new Set<string>()
+  const codeDigests = new Set<string>()
 
-  for (const { problem, board } of data.problems) {
+  for (const { problem, cohorts, histories } of data.boards) {
     const operation = operationFromProblem(problem)
     const operationDigest = specDigest(operation.manifest)
     bundle.operations.push(operation)
@@ -142,85 +205,168 @@ export async function reconcileKernelbot(
       )
     }
 
+    // Aggregate boards share one suite workload and one ranked protocol.
+    let suiteDigest: string | null = null
+    let rankedProtocol: {
+      manifest: ReturnType<typeof kernelbotRankedProtocol>
+      digest: string
+    } | null = null
+    if (problem.scoring === "aggregate") {
+      const suite = suiteFromProblem(problem, operationDigest)
+      suiteDigest = specDigest(suite)
+      bundle.workloads.push({
+        manifest: suite,
+        externalId: `${problem.leaderboard}/suite`,
+      })
+      const statistic = problem.suite?.statistic ?? "unspecified"
+      rankedProtocol = rankedProtocolByStatistic.get(statistic) ?? null
+      if (!rankedProtocol) {
+        const manifest = kernelbotRankedProtocol(statistic)
+        rankedProtocol = { manifest, digest: specDigest(manifest) }
+        rankedProtocolByStatistic.set(statistic, rankedProtocol)
+      }
+    }
+
     const caseDigestByKey = new Map<string, string>()
     const environmentByGpu = new Map<
       string,
       { manifest: ReturnType<typeof kernelbotEnvironment>; digest: string }
     >()
-
-    const selected = selectRows(
-      data.rows.get(problem.leaderboard) ?? [],
-      options,
-      report,
-    )
-    report.selectedSubmissions += selected.length
-    for (const { row, benchmarks } of selected) {
-      // The runner's own system report names the exact product; the board
-      // label ("MI300") is only a fallback class.
-      const gpuName =
-        row.run_system_info?.gpu ?? (board.gpu_types ?? [])[0] ?? "unknown"
+    const environmentFor = (gpuName: string) => {
       let environment = environmentByGpu.get(gpuName)
       if (!environment) {
-        const manifest = kernelbotEnvironment(gpuName)
+        // Flat boards' runner label is the fleet; it keeps distinct runner
+        // pools in distinct cohorts even on identical GPU products.
+        const manifest = kernelbotEnvironment(
+          gpuName,
+          problem.scoring === "aggregate" ? gpuName : undefined,
+        )
         environment = { manifest, digest: specDigest(manifest) }
         environmentByGpu.set(gpuName, environment)
       }
-      const implementation = implementationFromRow(
-        row,
-        problem,
-        operationDigest,
-        gpuName,
-      )
-      const implementationDigest = specDigest(implementation.manifest)
-      if (!seenProjects.has(implementation.projectSlug)) {
-        seenProjects.add(implementation.projectSlug)
-        const project = projectForUser(row.user_id)
-        bundle.projects.push({ manifest: project.manifest, slug: project.slug })
+      return environment
+    }
+
+    const valid = (candidate: GmCandidate): boolean => {
+      if (problem.scoring === "aggregate") return true
+      try {
+        const raw = candidate.raw as GmSubmissionRow
+        if (!raw.run_result) return false
+        parseRunResult(raw.run_result)
+        return true
+      } catch {
+        return false
       }
-      bundle.implementations.push(implementation)
-      report.licenseWarnings.push(
-        `submission ${row.submission_id}: code published in the KernelBot dataset without a per-submission license; record is reported-only`,
-      )
-      for (const benchmark of benchmarks) {
-        try {
-          const key = benchmarkKey(benchmark.axes)
-          let caseDigest = caseDigestByKey.get(key)
-          if (!caseDigest) {
-            const manifest = caseFromBenchmark(
-              problem,
-              operationDigest,
-              benchmark.axes,
-            )
-            caseDigest = specDigest(manifest)
-            caseDigestByKey.set(key, caseDigest)
-            bundle.workloads.push({
-              manifest,
-              externalId: `${problem.leaderboard}/${key}`,
-            })
+    }
+
+    for (const [runner, ranked] of cohorts) {
+      const selected = selectCohort({
+        ranked,
+        histories,
+        runner,
+        options,
+        valid,
+        report,
+        leaderboard: problem.leaderboard,
+      })
+      report.selectedSubmissions += selected.length
+
+      for (const candidate of selected) {
+        const environment = environmentFor(candidate.runner)
+        const implementation = implementationFromRow(
+          candidate,
+          problem,
+          operationDigest,
+        )
+        const implementationDigest = specDigest(implementation.manifest)
+        if (!seenProjects.has(implementation.projectSlug)) {
+          seenProjects.add(implementation.projectSlug)
+          const project = projectForUser(candidate.userId)
+          bundle.projects.push({
+            manifest: project.manifest,
+            slug: project.slug,
+          })
+        }
+        bundle.implementations.push(implementation)
+        const source = implementation.manifest.spec.source
+        if (source) {
+          report.code.submissionsWithCode++
+          if (!codeDigests.has(source.contentDigest)) {
+            codeDigests.add(source.contentDigest)
+            report.code.uniqueBlobs++
+            report.code.totalBytes += source.sizeBytes ?? 0
           }
+        }
+
+        if (problem.scoring === "aggregate") {
           bundle.runs.push(
-            runFromBenchmark({
-              row,
+            aggregateRunFromRow({
+              candidate,
               problem,
-              benchmark,
               implementationDigest,
-              workloadDigest: caseDigest,
-              protocol,
-              protocolDigest,
+              workloadDigest: suiteDigest as string,
+              protocol: (rankedProtocol as NonNullable<typeof rankedProtocol>)
+                .manifest,
+              protocolDigest: (
+                rankedProtocol as NonNullable<typeof rankedProtocol>
+              ).digest,
               environment: environment.manifest,
               environmentDigest: environment.digest,
             }),
           )
-        } catch (error) {
-          report.issues.push({
-            locator: "normalize",
-            item: `submission/${row.submission_id}/benchmark/${benchmark.index}`,
-            problem: (error as Error).message,
-          })
+          continue
+        }
+
+        const row = candidate.raw as GmSubmissionRow
+        for (const benchmark of parseRunResult(
+          row.run_result as Record<string, unknown>,
+        )) {
+          try {
+            const key = benchmarkKey(benchmark.axes)
+            let caseDigest = caseDigestByKey.get(key)
+            if (!caseDigest) {
+              const manifest = caseFromBenchmark(
+                problem,
+                operationDigest,
+                benchmark.axes,
+              )
+              caseDigest = specDigest(manifest)
+              caseDigestByKey.set(key, caseDigest)
+              bundle.workloads.push({
+                manifest,
+                externalId: `${problem.leaderboard}/${key}`,
+              })
+            }
+            bundle.runs.push(
+              runFromBenchmark({
+                row,
+                problem,
+                benchmark,
+                implementationDigest,
+                workloadDigest: caseDigest,
+                protocol: perShapeProtocol,
+                protocolDigest: perShapeProtocolDigest,
+                environment: environment.manifest,
+                environmentDigest: environment.digest,
+              }),
+            )
+          } catch (error) {
+            report.issues.push({
+              locator: "normalize",
+              item: `submission/${candidate.submissionId}/benchmark/${benchmark.index}`,
+              problem: (error as Error).message,
+            })
+          }
         }
       }
     }
+    if (report.code.submissionsWithCode > 0) {
+      report.licenseWarnings.push(
+        `${problem.leaderboard}: mirrored submission code carries no per-submission license; displayed under ${GPUMODE_SOURCE.policy.license} with attribution, records stay reported-only`,
+      )
+    }
   }
+  report.licenseWarnings = [...new Set(report.licenseWarnings)]
 
   report.proposed = await proposedObjects(database, bundle)
   const inserts = report.proposed.filter(

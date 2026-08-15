@@ -4,20 +4,31 @@
 // with attribution to GPU Mode — see docs/source-policy.md.
 import { z } from "zod"
 
+export const DATASET = "GPUMODE/kernelbot-data"
+export const DATASETS_SERVER = "https://datasets-server.huggingface.co"
+export const DATASET_URL = `https://huggingface.co/datasets/${DATASET}`
+export const REFERENCE_KERNELS_REPO = "gpu-mode/reference-kernels"
+
 export const GPUMODE_SOURCE = {
   slug: "gpumode-kernelbot",
   kind: "leaderboard",
   name: "GPU MODE KernelBot",
+  /** Rendered as the mandatory attribution + terms line (§14.10). */
+  policy: {
+    license: "June 9 Researcher Reciprocity License v1.0",
+    attribution: "GPU Mode and the KernelBot dataset",
+    url: DATASET_URL,
+    terms:
+      "Redistribution and public display permitted with notice retention and attribution; use for AI training requires researcher reciprocity.",
+    verified: "2026-08-15",
+  },
 } as const
 
-export const PARSER = { name: "gpumode-kernelbot", version: "1" } as const
+/** version 2: flat aggregate configs + mirrored submission source code. */
+export const PARSER = { name: "gpumode-kernelbot", version: "2" } as const
 
-export const DATASET = "GPUMODE/kernelbot-data"
-export const DATASETS_SERVER = "https://datasets-server.huggingface.co"
 /** The only config publishing per-shape timings plus system info today. */
 export const SUBMISSIONS_CONFIG = "amd_successful_submissions"
-export const DATASET_URL = `https://huggingface.co/datasets/${DATASET}`
-export const REFERENCE_KERNELS_REPO = "gpu-mode/reference-kernels"
 
 /** One row of the leaderboards config. */
 export const gmLeaderboard = z.looseObject({
@@ -53,8 +64,46 @@ export const gmSubmissionRow = z.looseObject({
     .nullish(),
 })
 
+/** One flat-config row (aggregate leaderboard score per submission). The
+ * pmpp variant adds nullable extras; looseObject tolerates them. */
+export const gmFlatRow = z.looseObject({
+  submission_id: z.int(),
+  leaderboard_id: z.int().nullish(),
+  problem_name: z.string(),
+  user_id: z.union([z.int(), z.string()]),
+  user_name: z.string().nullish(),
+  code_id: z.union([z.int(), z.string()]).nullish(),
+  file_name: z.string().nullish(),
+  submission_time: z.string(),
+  status: z.string().nullish(),
+  score: z.number().nullish(),
+  passed: z.boolean().nullish(),
+  mode: z.string().nullish(),
+  runner: z.string().nullish(),
+  code: z.string().nullish(),
+})
+
 export type GmLeaderboard = z.output<typeof gmLeaderboard>
 export type GmSubmissionRow = z.output<typeof gmSubmissionRow>
+export type GmFlatRow = z.output<typeof gmFlatRow>
+
+/**
+ * Source-agnostic candidate envelope discovery hands to selection: the
+ * fields ranking, progression chains, and code mirroring need, plus the raw
+ * row for per-shape evidence unfolding.
+ */
+export type GmCandidate = {
+  submissionId: number
+  userId: string
+  submissionTime: string
+  fileName: string | null
+  /** Leaderboard score in seconds; lower is better. */
+  score: number
+  code: string | null
+  /** Cohort label: flat runner column, or the per-shape system GPU name. */
+  runner: string
+  raw: GmSubmissionRow | GmFlatRow
+}
 
 /** One benchmark case unfolded from the flattened run_result map. Some
  * competitions recorded only mean/std/runs — best/worst may be absent. */

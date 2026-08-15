@@ -231,12 +231,19 @@ export default async function OperationPage({ params, searchParams }: Props) {
             {model.sources.length > 0 ? (
               <>
                 Sources:{" "}
-                {model.sources
-                  .map(
-                    (source) =>
-                      `${source.name}${source.observedAt ? ` (${formatDateUTC(source.observedAt)})` : ""}`,
-                  )
-                  .join(" · ")}
+                {model.sources.map((source, index) => (
+                  <span key={source.name}>
+                    {index > 0 && " · "}
+                    {source.url ? (
+                      <a href={source.url}>{source.name}</a>
+                    ) : (
+                      source.name
+                    )}
+                    {source.observedAt &&
+                      ` (${formatDateUTC(source.observedAt)})`}
+                    {source.license && ` · ${source.license}`}
+                  </span>
+                ))}
               </>
             ) : (
               "No source imports for this operation yet."

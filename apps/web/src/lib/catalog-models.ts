@@ -76,6 +76,8 @@ export type SourceRef = {
   name: string
   kind: string
   url: string | null
+  /** Upstream data license name; rendered beside the attribution link. */
+  license: string | null
   externalId: string | null
   observedAt: string | null
 }
@@ -410,6 +412,22 @@ export type ImplementationPageModel = {
     authors: string[]
     importedAt: string | null
   }
+  /** Mirrored kernel source (§8.13), when the revision carries one. */
+  sourceCode: {
+    fileName: string | null
+    /** Highlighting grammar: derived from the artifact media type. */
+    language: "python" | "cpp" | "text"
+    content: string
+    /** KernelIndex's display right and the mandatory attribution line. */
+    license: string | null
+    attribution: { text: string; url: string | null } | null
+    /** Line diff against the same author's previous imported submission. */
+    diff: {
+      previousSlug: string
+      previousName: string
+      lines: { kind: "add" | "del" | "ctx"; text: string }[]
+    } | null
+  } | null
 }
 
 /** §16.10: the run page is a permanent evidence dossier. */

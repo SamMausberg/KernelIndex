@@ -23,8 +23,14 @@ test("homepage search reaches an exact ranked answer with evidence", async ({
   // The headline answer states its evidence level, never a bare superlative.
   await expect(page.getByText("Fastest verified").first()).toBeVisible()
 
-  // Expanding a row explains its rank inside the cohort.
-  await page.locator("summary").first().click()
+  // Expanding a row explains its rank inside the cohort. (The cohort facts
+  // panel also renders a <details>, so target the row's specifically.)
+  await page
+    .locator("details")
+    .filter({ hasText: "Why ranked here" })
+    .first()
+    .locator("summary")
+    .click()
   await expect(page.getByText("Why ranked here").first()).toBeVisible()
 
   // Row → run dossier: the permanent evidence citation.

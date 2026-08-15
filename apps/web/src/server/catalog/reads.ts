@@ -78,6 +78,7 @@ import {
   workloadTensorKeyValues,
 } from "./present.ts"
 import { eligibleRunFilter } from "./record-events.ts"
+import { diffSource } from "./source-diff.ts"
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
@@ -1001,7 +1002,7 @@ export async function searchCatalog(
       reported: groups.reported,
     },
     related: relatedItems,
-    sources: sourceRefs(joined),
+    sources: await sourceRefs(joined),
     noResult: null,
   }
 }
@@ -1186,11 +1187,21 @@ export async function getOperationPage(
             ).toISOString()
           : null,
     },
-    sources: sourceRefs(joined),
+    sources: await sourceRefs(joined),
   }
 }
 
-function sourceRefs(joined: JoinedRun[]): SourceRef[] {
+/** The per-source ingestion policy jsonb (§14.10), defensively read. */
+type SourcePolicy = { license?: string; attribution?: string; url?: string }
+function sourcePolicy(policy: unknown): SourcePolicy {
+  return policy !== null && typeof policy === "object"
+    ? (policy as SourcePolicy)
+    : {}
+}
+
+/** Distinct sources behind a row set, with their attribution link and
+ * license from sources.policy — a display condition of the upstream terms. */
+async function sourceRefs(joined: JoinedRun[]): Promise<SourceRef[]> {
   const bySlug = new Map<string, SourceRef>()
   for (const j of joined) {
     const last = bySlug.get(j.source.slug)
@@ -1200,9 +1211,23 @@ function sourceRefs(joined: JoinedRun[]): SourceRef[] {
         name: j.source.name,
         kind: j.source.kind,
         url: null,
+        license: null,
         externalId: null,
         observedAt,
       })
+    }
+  }
+  if (bySlug.size === 0) return []
+  const rows = await db()
+    .select({ slug: schema.sources.slug, policy: schema.sources.policy })
+    .from(schema.sources)
+    .where(inArray(schema.sources.slug, [...bySlug.keys()]))
+  for (const row of rows) {
+    const ref = bySlug.get(row.slug)
+    const policy = sourcePolicy(row.policy)
+    if (ref) {
+      ref.url = policy.url ?? null
+      ref.license = policy.license ?? null
     }
   }
   return [...bySlug.values()]
@@ -1238,6 +1263,121 @@ function implementationSummaries(
       },
     }
   })
+}
+
+const SUBMISSION_VERSION = /^submission-(\d+)$/
+
+function submissionNumber(version: string | undefined): number | null {
+  const match = version?.match(SUBMISSION_VERSION)
+  return match ? Number(match[1]) : null
+}
+
+function sourceLanguage(mediaType: string): "python" | "cpp" | "text" {
+  if (mediaType === "text/x-python") return "python"
+  if (mediaType === "text/x-cuda") return "cpp"
+  return "text"
+}
+
+/**
+ * Mirrored source for one implementation (§16.9): the inline artifact named
+ * by the manifest's source digest, plus a line diff against the same
+ * author's previous imported submission on this operation — the "what
+ * changed to make it faster" evidence. Artifact bodies load only here.
+ */
+async function implementationSourceCode(
+  database: ReturnType<typeof db>,
+  implementation: typeof schema.implementations.$inferSelect,
+  operation: { name: string; slug: string },
+  sourceSlug: string | null,
+): Promise<ImplementationPageModel["sourceCode"]> {
+  const manifest = implementation.manifest as ImplementationRevisionManifest
+  const spec = manifest.spec.source
+  if (!spec) return null
+  const [artifact] = await database
+    .select({
+      content: schema.artifacts.content,
+      mediaType: schema.artifacts.mediaType,
+      license: schema.artifacts.license,
+    })
+    .from(schema.artifacts)
+    .where(eq(schema.artifacts.contentDigest, spec.contentDigest))
+  if (!artifact || artifact.content === null) return null
+
+  let attribution: { text: string; url: string | null } | null = null
+  if (sourceSlug !== null) {
+    const [sourceRow] = await database
+      .select({ name: schema.sources.name, policy: schema.sources.policy })
+      .from(schema.sources)
+      .where(eq(schema.sources.slug, sourceSlug))
+    if (sourceRow) {
+      const policy = sourcePolicy(sourceRow.policy)
+      attribution = {
+        text: policy.attribution ?? sourceRow.name,
+        url: policy.url ?? null,
+      }
+    }
+  }
+
+  let diff: NonNullable<ImplementationPageModel["sourceCode"]>["diff"] = null
+  const current = submissionNumber(manifest.spec.projectRevision.version)
+  if (current !== null) {
+    const siblings = await database
+      .select({
+        slug: schema.implementations.slug,
+        title: schema.implementations.title,
+        manifest: schema.implementations.manifest,
+      })
+      .from(schema.implementations)
+      .where(
+        and(
+          eq(schema.implementations.projectId, implementation.projectId),
+          eq(schema.implementations.operationId, implementation.operationId),
+        ),
+      )
+    const previous = siblings
+      .map((sibling) => {
+        const siblingSpec = (sibling.manifest as ImplementationRevisionManifest)
+          .spec
+        return {
+          sibling,
+          digest: siblingSpec.source?.contentDigest,
+          number: submissionNumber(siblingSpec.projectRevision.version),
+        }
+      })
+      .filter(
+        (entry): entry is typeof entry & { digest: string; number: number } =>
+          entry.digest !== undefined &&
+          entry.number !== null &&
+          entry.number < current,
+      )
+      .sort((a, b) => b.number - a.number)[0]
+    if (previous) {
+      const [previousArtifact] = await database
+        .select({ content: schema.artifacts.content })
+        .from(schema.artifacts)
+        .where(eq(schema.artifacts.contentDigest, previous.digest))
+      if (previousArtifact?.content) {
+        diff = {
+          previousSlug: previous.sibling.slug,
+          previousName: implementationDisplayName(
+            previous.sibling.title ?? undefined,
+            operation,
+            previous.sibling.slug,
+          ),
+          lines: diffSource(previousArtifact.content, artifact.content),
+        }
+      }
+    }
+  }
+
+  return {
+    fileName: spec.fileName ?? null,
+    language: sourceLanguage(artifact.mediaType),
+    content: artifact.content,
+    license: artifact.license,
+    attribution,
+    diff,
+  }
 }
 
 export async function getImplementationPage(
@@ -1309,6 +1449,13 @@ export async function getImplementationPage(
   )
   const variant = manifest.spec.buildVariants?.[0]
   const evidence = joined.length > 0 ? runEvidence(joined[0].run) : null
+  const refs = await sourceRefs(joined)
+  const sourceCode = await implementationSourceCode(
+    database,
+    implementation,
+    { name: operation.name, slug: operation.slug },
+    joined[0]?.source.slug ?? null,
+  )
 
   return {
     illustrative: pageIllustrative(joined),
@@ -1374,12 +1521,13 @@ export async function getImplementationPage(
     bestResults,
     limitations: manifest.spec.support.axes ?? [],
     provenance: {
-      source: null,
+      source: refs[0] ?? null,
       authors: (manifest.metadata.authors ?? [])
         .map((author) => author.github ?? author.name)
         .filter((author): author is string => author !== undefined),
       importedAt: implementation.createdAt.toISOString(),
     },
+    sourceCode,
   }
 }
 
@@ -1612,7 +1760,8 @@ export async function getRunPage(id: string): Promise<RunPageModel | null> {
       source: {
         name: source.name,
         kind: source.kind,
-        url: null,
+        url: sourcePolicy(source.policy).url ?? null,
+        license: sourcePolicy(source.policy).license ?? null,
         externalId: link?.externalId ?? null,
         observedAt: run.observedAt.toISOString(),
       },

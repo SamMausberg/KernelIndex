@@ -94,7 +94,7 @@
             "properties": {
               "role": {
                 "type": "string",
-                "enum": ["variable", "constant"]
+                "enum": ["variable", "constant", "derived"]
               },
               "type": {
                 "type": "string",
@@ -114,6 +114,11 @@
                 "type": "integer",
                 "minimum": -9007199254740991,
                 "maximum": 9007199254740991
+              },
+              "expression": {
+                "type": "string",
+                "maxLength": 200,
+                "pattern": "^[a-z0-9_+\\-*%/() ]+$"
               }
             },
             "required": ["role", "type"],

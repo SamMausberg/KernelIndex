@@ -328,6 +328,9 @@ export const artifacts = pgTable(
     sizeBytes: bigint("size_bytes", { mode: "number" }),
     storage: text("storage").notNull(),
     uri: text("uri"),
+    /* Inline body for storage='inline' artifacts (e.g. mirrored kernel
+       source); larger evidence stays digest+uri only. */
+    content: text("content"),
     license: text("license"),
     createdAt: createdAt(),
   },

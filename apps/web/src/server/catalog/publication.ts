@@ -35,6 +35,10 @@ export type BundleArtifact = {
   uri?: string
   sizeBytes?: number
   storage: "upstream" | "inline" | "object"
+  /** Inline body for storage='inline' (e.g. mirrored kernel source). */
+  content?: string
+  /** KernelIndex's right to display/redistribute this artifact (SPDX-ish). */
+  license?: string
 }
 
 export type ImportBundle = {
@@ -71,6 +75,8 @@ export type ImportBundle = {
     slug: string
     projectSlug: string
     externalId?: string
+    /** Source artifacts referenced by manifest.spec.source (no run link). */
+    artifacts?: BundleArtifact[]
   }[]
   runs: {
     manifest: BenchmarkRunManifest
@@ -161,7 +167,8 @@ export async function publishBundle(
       runs: { inserted: 0, existing: 0 },
     }
 
-    // Source registration.
+    // Source registration. Policy is mutable ingestion metadata (§14.10):
+    // refresh it when the bundle carries a newer statement.
     await tx
       .insert(schema.sources)
       .values({ ...bundle.source, policy: bundle.source.policy ?? null })
@@ -170,6 +177,37 @@ export async function publishBundle(
       .select()
       .from(schema.sources)
       .where(eq(schema.sources.slug, bundle.source.slug))
+    if (
+      bundle.source.policy !== undefined &&
+      JSON.stringify(bundle.source.policy) !== JSON.stringify(source.policy)
+    ) {
+      await tx
+        .update(schema.sources)
+        .set({ policy: bundle.source.policy })
+        .where(eq(schema.sources.id, source.id))
+    }
+
+    /** Content-addressed artifact upsert shared by implementations and runs. */
+    async function artifactIdFor(artifact: BundleArtifact): Promise<string> {
+      await tx
+        .insert(schema.artifacts)
+        .values({
+          contentDigest: artifact.digest,
+          kind: artifact.kind,
+          mediaType: artifact.mediaType,
+          sizeBytes: artifact.sizeBytes ?? null,
+          storage: artifact.storage,
+          uri: artifact.uri ?? null,
+          content: artifact.content ?? null,
+          license: artifact.license ?? null,
+        })
+        .onConflictDoNothing()
+      const [row] = await tx
+        .select({ id: schema.artifacts.id })
+        .from(schema.artifacts)
+        .where(eq(schema.artifacts.contentDigest, artifact.digest))
+      return row.id
+    }
 
     // Immutable source snapshots, deduplicated by content and locator (§14.3).
     for (const snapshot of bundle.snapshots ?? []) {
@@ -389,7 +427,8 @@ export async function publishBundle(
             targetArchitectures: manifest.spec.support.hardwareArchitectures,
             licenseExpression: license.concluded,
             sourceAvailable:
-              manifest.spec.projectRevision.repository !== undefined,
+              manifest.spec.projectRevision.repository !== undefined ||
+              manifest.spec.source !== undefined,
             installable: (manifest.spec.buildVariants ?? []).length > 0,
             title: manifest.metadata.title ?? null,
             installKind: manifest.spec.buildVariants?.[0]?.install.kind ?? null,
@@ -407,6 +446,9 @@ export async function publishBundle(
         installable: row.installable,
         license: row.licenseExpression,
       })
+      for (const artifact of implementation.artifacts ?? []) {
+        await artifactIdFor(artifact)
+      }
       await linkSource(
         tx,
         source.id,
@@ -639,28 +681,10 @@ export async function publishBundle(
       }
 
       for (const artifact of run.artifacts ?? []) {
-        await tx
-          .insert(schema.artifacts)
-          .values({
-            contentDigest: artifact.digest,
-            kind: artifact.kind,
-            mediaType: artifact.mediaType,
-            sizeBytes: artifact.sizeBytes ?? null,
-            storage: artifact.storage,
-            uri: artifact.uri ?? null,
-          })
-          .onConflictDoNothing()
-        const [artifactRow] = await tx
-          .select({ id: schema.artifacts.id })
-          .from(schema.artifacts)
-          .where(eq(schema.artifacts.contentDigest, artifact.digest))
+        const artifactId = await artifactIdFor(artifact)
         await tx
           .insert(schema.runArtifacts)
-          .values({
-            runId: row.id,
-            artifactId: artifactRow.id,
-            role: artifact.role,
-          })
+          .values({ runId: row.id, artifactId, role: artifact.role })
           .onConflictDoNothing()
       }
     }

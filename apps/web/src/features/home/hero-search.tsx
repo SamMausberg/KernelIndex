@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation"
 import { SuggestInput } from "@/features/search/suggest"
-import type { OperationIndexEntry } from "@/lib/catalog-models"
 
 /**
  * The homepage's primary search. On submit the bar morphs into the search
@@ -11,7 +10,7 @@ import type { OperationIndexEntry } from "@/lib/catalog-models"
  * the real `#workload-search` element once it exists. Plain GET fallback
  * without JavaScript; no motion under prefers-reduced-motion.
  */
-export function HeroSearch({ suggest }: { suggest: OperationIndexEntry[] }) {
+export function HeroSearch() {
   const router = useRouter()
 
   const submit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -104,7 +103,6 @@ export function HeroSearch({ suggest }: { suggest: OperationIndexEntry[] }) {
       className="well relative z-30 mt-7 flex h-[46px] max-w-[620px] items-center gap-3 pr-2 pl-4"
     >
       <SuggestInput
-        index={suggest}
         placeholder="Search operation, GPU, dtype, shape, framework…"
         className="min-w-0 flex-1 border-0 bg-transparent p-0 font-mono text-[14px] outline-none"
       />

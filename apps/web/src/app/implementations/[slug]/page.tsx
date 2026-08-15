@@ -6,6 +6,10 @@ import { CopyButton } from "@/components/copy-button"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
 import { KeyValueList } from "@/components/key-value-list"
 import { Section } from "@/components/section"
+import {
+  SourceCodeView,
+  SourceDiffView,
+} from "@/features/implementations/source-view"
 import { ResultRowItem, ResultTableHead } from "@/features/search/result-row"
 import { getImplementationPage } from "@/lib/catalog"
 import { evidenceLabel, formatDateUTC } from "@/lib/format"
@@ -235,6 +239,18 @@ export default async function ImplementationPage({ params }: Props) {
             />
           </div>
         </Section>
+
+        {model.sourceCode && (
+          <Section id="code" title="Kernel source">
+            <SourceCodeView code={model.sourceCode} />
+          </Section>
+        )}
+
+        {model.sourceCode?.diff && (
+          <Section id="diff" title="Changes from previous submission">
+            <SourceDiffView diff={model.sourceCode.diff} />
+          </Section>
+        )}
 
         {model.limitations.length > 0 && (
           <Section id="limitations" title="Limitations">

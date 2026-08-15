@@ -3,18 +3,23 @@
 // database) reconcile → publish inside a rolled-back transaction.
 import { readFileSync } from "node:fs"
 import path from "node:path"
+import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 import { publishBundle } from "../../catalog/publication.ts"
 import { db } from "../../db/client.ts"
+import * as schema from "../../db/schema.ts"
 import { specDigest } from "../../identity/digest.ts"
 import type { GmImportData } from "./discover.ts"
 import {
+  aggregateRunFromRow,
   caseFromBenchmark,
   implementationFromRow,
   kernelbotEnvironment,
   kernelbotProtocol,
+  kernelbotRankedProtocol,
   operationFromProblem,
   runFromBenchmark,
+  suiteFromProblem,
 } from "./normalize.ts"
 import {
   parseBenchmarkSpec,
@@ -22,8 +27,9 @@ import {
   parseRunResult,
   parseSubmissionRows,
 } from "./parse.ts"
-import { CURATED_PROBLEMS } from "./problems.ts"
+import { CURATED_PROBLEMS, type CuratedProblem } from "./problems.ts"
 import { reconcileKernelbot } from "./reconcile.ts"
+import type { GmCandidate, GmSubmissionRow } from "./types.ts"
 
 const fixtures = path.resolve(import.meta.dirname, "__fixtures__")
 const read = (relative: string) =>
@@ -31,6 +37,23 @@ const read = (relative: string) =>
 
 const fp8 = CURATED_PROBLEMS.find((p) => p.leaderboard === "amd-fp8-mm")
 if (!fp8) throw new Error("fp8-mm curation missing")
+
+function candidateOf(
+  row: GmSubmissionRow,
+  runner = "MI300",
+  code: string | null = null,
+): GmCandidate {
+  return {
+    submissionId: row.submission_id,
+    userId: String(row.user_id),
+    submissionTime: row.submission_time,
+    fileName: row.file_name ?? null,
+    score: row.run_score as number,
+    code: code ?? row.code ?? null,
+    runner,
+    raw: row,
+  }
+}
 
 describe("gpumode parsing", () => {
   it("parses leaderboards and ranked submission rows", () => {
@@ -132,12 +155,94 @@ describe("gpumode normalization", () => {
   it("declares no source license for submissions (reported-only)", () => {
     const row = parseSubmissionRows(read("api/fp8-mm-top.json"), "fx").values[0]
     const implementation = implementationFromRow(
-      row,
+      candidateOf(row),
       fp8,
       `sha256:${"3".repeat(64)}`,
-      "MI300",
     )
     expect(implementation.manifest.spec.licensing).toEqual({})
+    expect(implementation.manifest.spec.source).toBeUndefined()
+    expect(implementation.artifacts).toBeUndefined()
+  })
+
+  it("mirrors submission code as a content-addressed inline artifact", () => {
+    const row = parseSubmissionRows(read("api/fp8-mm-top.json"), "fx").values[0]
+    const code = "import torch\n\ndef custom_kernel(data):\n    return data\n"
+    const withCode = implementationFromRow(
+      candidateOf(row, "MI300", code),
+      fp8,
+      `sha256:${"3".repeat(64)}`,
+    )
+    const source = withCode.manifest.spec.source
+    expect(source?.contentDigest).toMatch(/^sha256:[0-9a-f]{64}$/)
+    expect(withCode.artifacts?.[0]).toMatchObject({
+      role: "source",
+      storage: "inline",
+      content: code,
+      digest: source?.contentDigest,
+    })
+    // Code content is identity: same row without code digests differently.
+    const withoutCode = implementationFromRow(
+      candidateOf(row),
+      fp8,
+      `sha256:${"3".repeat(64)}`,
+    )
+    expect(specDigest(withCode.manifest)).not.toBe(
+      specDigest(withoutCode.manifest),
+    )
+  })
+
+  it("builds suite workloads and aggregate runs for flat boards", () => {
+    const aggregate: CuratedProblem = {
+      leaderboard: "trimul-test",
+      slug: "gpumode-trimul-test",
+      title: "Trimul test",
+      family: "trimul",
+      description: "test",
+      taskPath: "problems/x/task.yml",
+      axes: { n: { role: "variable" }, seed: { role: "variable" } },
+      inputs: [{ name: "x", shape: ["n", "n"], dtype: "fp32" }],
+      outputs: [{ name: "y", shape: ["n", "n"], dtype: "fp32" }],
+      tags: ["trimul"],
+      config: "trimul_submissions",
+      scoring: "aggregate",
+      suite: {
+        statistic: "geomean",
+        cases: [
+          { externalId: "0", axes: { n: 128, seed: 1 } },
+          { externalId: "1", axes: { n: 256, seed: 2 } },
+        ],
+      },
+    }
+    const operation = operationFromProblem(aggregate)
+    const suite = suiteFromProblem(aggregate, specDigest(operation.manifest))
+    expect(suite.spec.cases).toHaveLength(2)
+    expect(suite.spec.aggregation).toEqual({
+      metric: "score",
+      statistic: "geomean",
+    })
+    const protocol = kernelbotRankedProtocol("geomean")
+    const environment = kernelbotEnvironment("B200")
+    const row = parseSubmissionRows(read("api/fp8-mm-top.json"), "fx").values[0]
+    const run = aggregateRunFromRow({
+      candidate: { ...candidateOf(row, "B200"), score: 1.234 },
+      problem: aggregate,
+      implementationDigest: `sha256:${"1".repeat(64)}`,
+      workloadDigest: specDigest(suite),
+      protocol,
+      protocolDigest: specDigest(protocol),
+      environment,
+      environmentDigest: specDigest(environment),
+    })
+    expect(run.manifest.spec.timing).toBeUndefined()
+    expect(run.manifest.spec.measurements?.[0]).toMatchObject({
+      metric: "score",
+      unit: "s",
+      statistic: "geomean",
+      value: 1.234,
+    })
+    expect(run.manifest.spec.sourceNative?.metrics?.leaderboard_score_s).toBe(
+      1.234,
+    )
   })
 })
 
@@ -147,13 +252,19 @@ describe.skipIf(!url)("gpumode import pipeline (database)", () => {
   class Rollback extends Error {}
 
   it("reconciles, dedupes users, and publishes idempotently", async () => {
-    const boards = parseLeaderboards(read("api/leaderboards.json"), "fx")
-    const board = boards.values.find((b) => b.name === "amd-fp8-mm")
-    if (!board) throw new Error("fixture board missing")
     const rows = parseSubmissionRows(read("api/fp8-mm-top.json"), "fx").values
+    const code = "import torch\n\ndef custom_kernel(data):\n    return data\n"
+    const candidates = rows.map((row, index) =>
+      candidateOf(row, "MI300", index === 0 ? code : null),
+    )
     const data: GmImportData = {
-      problems: [{ problem: fp8, board }],
-      rows: new Map([["amd-fp8-mm", rows]]),
+      boards: [
+        {
+          problem: fp8,
+          cohorts: new Map([["MI300", candidates]]),
+          histories: new Map(),
+        },
+      ],
       snapshots: [],
       issues: [],
       driftWarnings: [],
@@ -162,10 +273,21 @@ describe.skipIf(!url)("gpumode import pipeline (database)", () => {
       .transaction(async (tx) => {
         const { bundle, report } = await reconcileKernelbot(tx, data, {
           topPerBoard: 5,
+          authors: 5,
+          maxPerAuthor: 12,
         })
         // Both fixture rows are one user: dedupe keeps the best submission.
         expect(report.selectedSubmissions).toBe(1)
-        expect(report.skippedSubmissions.duplicateUser).toBe(1)
+        expect(report.cohorts).toEqual([
+          {
+            leaderboard: "amd-fp8-mm",
+            runner: "MI300",
+            top: 1,
+            progression: 0,
+            withCode: 1,
+          },
+        ])
+        expect(report.code.uniqueBlobs).toBe(1)
         expect(report.licenseWarnings).toHaveLength(1)
         expect(report.issues).toHaveLength(0)
         expect(bundle.operations).toHaveLength(1)
@@ -176,6 +298,15 @@ describe.skipIf(!url)("gpumode import pipeline (database)", () => {
         expect(first.counts.runs.inserted).toBe(3)
         const again = await publishBundle(tx, bundle, { publish: true })
         expect(again.counts.runs).toEqual({ inserted: 0, existing: 3 })
+
+        // The mirrored source landed as one inline content-addressed artifact.
+        const digest = bundle.implementations[0].artifacts?.[0].digest
+        const [artifact] = await tx
+          .select()
+          .from(schema.artifacts)
+          .where(eq(schema.artifacts.contentDigest, digest as string))
+        expect(artifact.content).toBe(code)
+        expect(artifact.storage).toBe("inline")
         throw new Rollback("rollback")
       })
       .catch((error) => {

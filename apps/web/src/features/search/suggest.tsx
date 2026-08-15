@@ -6,21 +6,33 @@ import type { OperationIndexEntry } from "@/lib/catalog-models"
 import { parseQuery } from "@/lib/search-query"
 import { matchSuggestions } from "@/lib/suggest"
 
+// The corpus index loads once per session from the CDN-cached /suggest
+// route instead of riding every page's payload (§16.5). Module-level so all
+// inputs share one fetch; failures clear it for a later retry.
+let indexPromise: Promise<OperationIndexEntry[]> | null = null
+function loadIndex(): Promise<OperationIndexEntry[]> {
+  indexPromise ??= fetch("/suggest")
+    .then((response) => (response.ok ? response.json() : []))
+    .catch(() => {
+      indexPromise = null
+      return []
+    })
+  return indexPromise
+}
+
 /**
  * Progressive search input: a plain `q` field that, with JavaScript, suggests
- * operations from the inline corpus index as an ARIA combobox. Selecting
- * navigates to `op:<slug>` (keeping any facets already typed) — the exact
- * resolution tier — while plain Enter submits the surrounding form exactly as
- * without JavaScript. The parent form must be positioned (`relative`).
+ * operations from the corpus index as an ARIA combobox. Selecting navigates
+ * to `op:<slug>` (keeping any facets already typed) — the exact resolution
+ * tier — while plain Enter submits the surrounding form exactly as without
+ * JavaScript. The parent form must be positioned (`relative`).
  */
 export function SuggestInput({
-  index,
   inputId,
   defaultValue = "",
   placeholder,
   className,
 }: {
-  index: OperationIndexEntry[]
   inputId?: string
   defaultValue?: string
   placeholder?: string
@@ -28,9 +40,17 @@ export function SuggestInput({
 }) {
   const router = useRouter()
   const listId = useId()
+  const [index, setIndex] = useState<OperationIndexEntry[]>([])
   const [value, setValue] = useState(defaultValue)
   const [open, setOpen] = useState(false)
   const [active, setActive] = useState(-1)
+
+  // A navigation hands the input a new query without remounting it.
+  const [lastDefault, setLastDefault] = useState(defaultValue)
+  if (defaultValue !== lastDefault) {
+    setLastDefault(defaultValue)
+    setValue(defaultValue)
+  }
 
   const matches = useMemo(() => {
     const intent = parseQuery(value)
@@ -80,6 +100,9 @@ export function SuggestInput({
         id={inputId}
         name="q"
         value={value}
+        onFocus={() => {
+          loadIndex().then(setIndex)
+        }}
         onChange={(event) => {
           setValue(event.target.value)
           setOpen(true)

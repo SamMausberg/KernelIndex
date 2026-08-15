@@ -203,6 +203,22 @@ rmsnorm gpu:B200 dtype:bf16 shape:[2048,4096] framework=pytorch trust:verified`}
             same resolver semantics as these pages, never scraped HTML.
           </p>
         </Section>
+
+        <Section id="sources" title="Sources and licensing">
+          <p>
+            Records are imported from{" "}
+            <a href="https://huggingface.co/datasets/GPUMODE/kernelbot-data">
+              GPU Mode and the KernelBot dataset
+            </a>{" "}
+            (June 9 Researcher Reciprocity License v1.0 — redistribution and
+            display with attribution; AI-training use restricted) and the NVIDIA
+            SOL-ExecBench public leaderboard API. Mirrored submission source is
+            shown under the KernelBot dataset license; each submission&apos;s
+            own license remains unknown and is never inferred. Rights holders
+            can request removal at any time and contested records are retracted
+            before any dispute.
+          </p>
+        </Section>
       </main>
     </>
   )

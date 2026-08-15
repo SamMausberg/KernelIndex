@@ -283,7 +283,15 @@ export default async function RunPage({ params }: Props) {
         <div className="mt-12 flex flex-wrap items-baseline justify-between gap-5 border-t border-border pt-5 text-[12.5px]">
           <span className="text-subtle">
             Published {formatDateUTC(model.run.publishedAt)} ·{" "}
-            {model.provenance.source.name}
+            {model.provenance.source.url ? (
+              <a href={model.provenance.source.url}>
+                {model.provenance.source.name}
+              </a>
+            ) : (
+              model.provenance.source.name
+            )}
+            {model.provenance.source.license &&
+              ` · ${model.provenance.source.license}`}
           </span>
           <Link href={`/operations/${model.operation.slug}`}>
             All results for {model.operation.name} →

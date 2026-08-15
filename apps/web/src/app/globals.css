@@ -178,6 +178,14 @@
     box-shadow: inset 0 1px 0 rgb(214 226 245 / 0.05);
   }
 
+  /* Shiki output inside a plate: theme background yields to the plate. */
+  .source-view pre {
+    padding: 12px 16px;
+    font-size: 12.5px;
+    line-height: 1.6;
+    background: transparent !important;
+  }
+
   /* Small machined control — keys, chips, copy. Pressing it sinks it. */
   .key {
     border: 1px solid var(--color-border-strong);

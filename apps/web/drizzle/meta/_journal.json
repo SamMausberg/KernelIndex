@@ -43,6 +43,13 @@
       "when": 1786816998368,
       "tag": "0005_read-scalars",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1786817794542,
+      "tag": "0006_artifact-content",
+      "breakpoints": true
     }
   ]
 }

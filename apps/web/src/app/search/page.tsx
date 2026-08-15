@@ -6,7 +6,7 @@ import {
   SearchResults,
 } from "@/features/search/results"
 import type { BrowseSort } from "@/features/search/start-state"
-import { getOperationIndex, searchCatalog } from "@/lib/catalog"
+import { searchCatalog } from "@/lib/catalog"
 
 export const metadata: Metadata = { title: "Search" }
 
@@ -36,17 +36,13 @@ export default async function SearchPage({
 }) {
   const params = await searchParams
   const query = params.q ?? ""
-  const [model, suggest] = await Promise.all([
-    searchCatalog({ query }),
-    getOperationIndex(),
-  ])
+  const model = await searchCatalog({ query })
   const page = Number.parseInt(params.page ?? "1", 10)
   return (
     <>
       {model.illustrative && <IllustrativeNotice />}
       <SearchResults
         model={model}
-        suggest={suggest}
         filters={{
           view:
             params.view && MODES.has(params.view)

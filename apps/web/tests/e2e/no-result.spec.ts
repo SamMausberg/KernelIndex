@@ -10,7 +10,7 @@ test("an unmatched query returns guidance with suggestions", async ({
     page.getByText("No comparable public evidence found", { exact: false }),
   ).toBeVisible()
   await expect(
-    page.getByRole("link", { name: /rmsnorm B200 bf16/ }),
+    page.getByRole("link", { name: "rmsnorm bf16 pytorch" }),
   ).toBeVisible()
 })
 

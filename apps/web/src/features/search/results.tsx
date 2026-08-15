@@ -1,11 +1,10 @@
+"use client"
+
 import Link from "next/link"
+import { startTransition, useState } from "react"
 import { CopyButton } from "@/components/copy-button"
 import { KeyValueList } from "@/components/key-value-list"
-import type {
-  OperationIndexEntry,
-  ResultRow,
-  SearchPageModel,
-} from "@/lib/catalog"
+import type { ResultRow, SearchPageModel } from "@/lib/catalog"
 import {
   evidenceLabel,
   formatDateUTC,
@@ -125,13 +124,7 @@ function contextLine(model: SearchPageModel) {
   return parts.length > 0 ? parts.join(" · ") : model.interpretedQuery
 }
 
-function SearchField({
-  query,
-  suggest,
-}: {
-  query: string
-  suggest: OperationIndexEntry[]
-}) {
+function SearchField({ query }: { query: string }) {
   return (
     <form
       action="/search"
@@ -139,8 +132,6 @@ function SearchField({
       className="well relative flex h-12 items-center gap-3 pr-3.5 pl-4"
     >
       <SuggestInput
-        key={query}
-        index={suggest}
         inputId="header-search-input"
         defaultValue={query}
         placeholder="Search operation, GPU, dtype, shape, framework…"
@@ -301,13 +292,30 @@ export function SearchResults({
   model,
   filters,
   browse,
-  suggest = [],
 }: {
   model: SearchPageModel
   filters: SearchFilters
   browse?: BrowseFilters
-  suggest?: OperationIndexEntry[]
 }) {
+  // Filter, sort, view, and pagination are instant client transitions over
+  // the already-delivered model; the URL tracks state for shareability and
+  // the server renders any deep link identically (no-JS unchanged).
+  const [state, setState] = useState<SearchFilters>(filters)
+  const [lastQuery, setLastQuery] = useState(model.query)
+  if (lastQuery !== model.query) {
+    setLastQuery(model.query)
+    setState(filters)
+  }
+  const apply = (patch: Partial<SearchFilters>) => {
+    const next = { ...state, page: patch.page ?? 1, ...patch }
+    startTransition(() => setState(next))
+    window.history.replaceState(
+      null,
+      "",
+      searchHref(model.query, next, { page: next.page }),
+    )
+  }
+
   const groupsByMode: Record<ResultMode, ResultRow[]> = {
     exact: model.groups.exact,
     compatible: model.groups.compatible,
@@ -315,25 +323,25 @@ export function SearchResults({
     reported: model.groups.reported,
   }
   const view =
-    filters.view ??
+    state.view ??
     MODES.find((mode) => groupsByMode[mode.key].length > 0)?.key ??
     "exact"
   // Policy facets from the query (trust:, license:, source:, installable:)
   // filter rows inside a group; they never reclassify evidence (§11.4).
   const { policy } = model
   const keep = (row: ResultRow) =>
-    (!filters.verified || isVerified(row)) &&
-    (!filters.deployable || isDeployable(row)) &&
+    (!state.verified || isVerified(row)) &&
+    (!state.deployable || isDeployable(row)) &&
     meetsTrust(row.evidence, policy.minimumTrust) &&
     (policy.license === null ||
       licenseMatches(policy.license, row.license.concluded)) &&
     (!policy.requireSource || row.sourceAvailable) &&
     (!policy.requireInstallable || row.installable)
-  const sort = filters.sort ?? "recommended"
+  const sort = state.sort ?? "recommended"
   const allRows = sortRows(groupsByMode[view].filter(keep), sort)
   const hidden = groupsByMode[view].length - allRows.length
   const pageCount = Math.max(1, Math.ceil(allRows.length / PAGE_SIZE))
-  const page = Math.min(Math.max(1, filters.page ?? 1), pageCount)
+  const page = Math.min(Math.max(1, state.page ?? 1), pageCount)
   const rows = allRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
   const top = model.groups.exact.find(keep)
   const best = top?.primary ?? null
@@ -351,7 +359,7 @@ export function SearchResults({
       {/* z-30: the suggest popup must paint above the result sections. */}
       <div className="relative z-30 border-b border-border bg-surface">
         <div className="shell animate-fade-in pt-5 pb-4">
-          <SearchField query={model.query} suggest={suggest} />
+          <SearchField query={model.query} />
           {(model.facets.length > 0 || model.queryIssues.length > 0) && (
             <div className="mt-2.5 flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
               {model.facets.map((facet) => (
@@ -468,7 +476,12 @@ export function SearchResults({
                 return (
                   <Link
                     key={mode.key}
-                    href={searchHref(model.query, filters, { view: mode.key })}
+                    href={searchHref(model.query, state, { view: mode.key })}
+                    prefetch={false}
+                    onClick={(event) => {
+                      event.preventDefault()
+                      apply({ view: mode.key })
+                    }}
                     className={`pb-[9px] text-[13.5px] transition-colors hover:text-fg hover:no-underline ${
                       selected
                         ? "-mb-px border-b border-fg font-medium text-fg"
@@ -489,21 +502,31 @@ export function SearchResults({
                   <span className="text-faint">{hidden} hidden by filters</span>
                 )}
                 <Link
-                  href={searchHref(model.query, filters, {
-                    verified: !filters.verified,
+                  href={searchHref(model.query, state, {
+                    verified: !state.verified,
                   })}
+                  prefetch={false}
+                  onClick={(event) => {
+                    event.preventDefault()
+                    apply({ verified: !state.verified })
+                  }}
                   className={`transition-colors hover:text-fg hover:no-underline ${
-                    filters.verified ? "text-accent" : "text-subtle"
+                    state.verified ? "text-accent" : "text-subtle"
                   }`}
                 >
                   Verified only
                 </Link>
                 <Link
-                  href={searchHref(model.query, filters, {
-                    deployable: !filters.deployable,
+                  href={searchHref(model.query, state, {
+                    deployable: !state.deployable,
                   })}
+                  prefetch={false}
+                  onClick={(event) => {
+                    event.preventDefault()
+                    apply({ deployable: !state.deployable })
+                  }}
                   className={`transition-colors hover:text-fg hover:no-underline ${
-                    filters.deployable ? "text-accent" : "text-subtle"
+                    state.deployable ? "text-accent" : "text-subtle"
                   }`}
                 >
                   Deployable only
@@ -527,10 +550,15 @@ export function SearchResults({
                     ) : (
                       <Link
                         key={option.key}
-                        href={searchHref(model.query, filters, {
+                        href={searchHref(model.query, state, {
                           view,
                           sort: option.key,
                         })}
+                        prefetch={false}
+                        onClick={(event) => {
+                          event.preventDefault()
+                          apply({ view, sort: option.key })
+                        }}
                         className="text-subtle transition-colors hover:text-fg hover:no-underline"
                       >
                         {option.label}
@@ -575,9 +603,14 @@ export function SearchResults({
                     <>
                       {" "}
                       <Link
-                        href={searchHref(model.query, filters, {
+                        href={searchHref(model.query, state, {
                           view: alternative.key,
                         })}
+                        prefetch={false}
+                        onClick={(event) => {
+                          event.preventDefault()
+                          apply({ view: alternative.key })
+                        }}
                       >
                         {groupsByMode[alternative.key].length}{" "}
                         {alternative.label.toLowerCase()} result
@@ -594,10 +627,15 @@ export function SearchResults({
               <div className="mt-4 flex items-baseline gap-5 text-[12.5px]">
                 {page > 1 ? (
                   <Link
-                    href={searchHref(model.query, filters, {
+                    href={searchHref(model.query, state, {
                       view,
                       page: page - 1,
                     })}
+                    prefetch={false}
+                    onClick={(event) => {
+                      event.preventDefault()
+                      apply({ view, page: page - 1 })
+                    }}
                   >
                     ← Previous
                   </Link>
@@ -609,10 +647,15 @@ export function SearchResults({
                 </span>
                 {page < pageCount ? (
                   <Link
-                    href={searchHref(model.query, filters, {
+                    href={searchHref(model.query, state, {
                       view,
                       page: page + 1,
                     })}
+                    prefetch={false}
+                    onClick={(event) => {
+                      event.preventDefault()
+                      apply({ view, page: page + 1 })
+                    }}
                   >
                     Next →
                   </Link>

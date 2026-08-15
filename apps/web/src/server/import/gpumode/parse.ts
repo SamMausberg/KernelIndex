@@ -4,8 +4,10 @@
 import type { z } from "zod"
 import {
   type GmBenchmark,
+  type GmFlatRow,
   type GmLeaderboard,
   type GmSubmissionRow,
+  gmFlatRow,
   gmLeaderboard,
   gmSubmissionRow,
 } from "./types.ts"
@@ -39,10 +41,15 @@ function parseRows<S extends z.ZodType>(
     return outcome
   }
   for (const [index, entry] of (document.rows ?? []).entries()) {
-    if ((entry.truncated_cells ?? []).length > 0) {
+    const truncated = entry.truncated_cells ?? []
+    if (truncated.length > 0) {
       outcome.driftWarnings.push(
-        `${label}: datasets-server truncated cells ${entry.truncated_cells?.join(", ")} (${locator})`,
+        `${label}: datasets-server truncated cells ${truncated.join(", ")} (${locator})`,
       )
+      // Never keep a truncated source blob; the row imports without code.
+      if (truncated.includes("code") && typeof entry.row === "object") {
+        ;(entry.row as Record<string, unknown>).code = null
+      }
     }
     const result = schema.safeParse(entry.row)
     if (!result.success) {
@@ -72,6 +79,13 @@ export function parseSubmissionRows(
   locator: string,
 ): GmParseOutcome<GmSubmissionRow> {
   return parseRows(gmSubmissionRow, body, locator, "submission")
+}
+
+export function parseFlatRows(
+  body: string,
+  locator: string,
+): GmParseOutcome<GmFlatRow> {
+  return parseRows(gmFlatRow, body, locator, "submission")
 }
 
 /** "k: 7168; m: 1024; n: 1536; seed: 8135" → integer axis bindings. */

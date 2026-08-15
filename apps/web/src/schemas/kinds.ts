@@ -216,6 +216,17 @@ const implementationRevisionBody = z.strictObject({
     dtypes: setLike(token),
     layouts: setLike(z.string().max(50)).optional(),
   }),
+  // Content identity of the revision's own source file when the source is
+  // mirrored as an artifact (§8.13): different code ⇒ different digest ⇒
+  // different implementation. Optional, so pointer-only revisions are
+  // unchanged.
+  source: z
+    .strictObject({
+      contentDigest: digestString,
+      fileName: z.string().max(200).optional(),
+      sizeBytes: z.int().positive().optional(),
+    })
+    .optional(),
   buildVariants: z.array(buildVariant).optional(),
   licensing: z.strictObject({
     declared: z.string().max(200).optional(),
