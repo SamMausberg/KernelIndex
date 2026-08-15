@@ -17,7 +17,7 @@ const VIEWS: { key: RecordsView; label: string }[] = [
   { key: "history", label: "Record history" },
 ]
 
-type Params = { view?: string; hw?: string; verified?: string }
+type Params = { view?: string; hw?: string; verified?: string; page?: string }
 
 export default async function RecordsPage({
   searchParams,
@@ -26,6 +26,7 @@ export default async function RecordsPage({
 }) {
   const params = await searchParams
   const model = await getRecordsPage()
+  const page = Number.parseInt(params.page ?? "1", 10)
   const filters = {
     view: VIEWS.some((view) => view.key === params.view)
       ? (params.view as RecordsView)
@@ -33,6 +34,7 @@ export default async function RecordsPage({
     hardware:
       params.hw && model.hardwareOptions.includes(params.hw) ? params.hw : null,
     verified: params.verified === "1",
+    page: Number.isNaN(page) ? 1 : page,
   }
   return (
     <>

@@ -88,14 +88,19 @@ export default async function DesignLabPage() {
       <State label="records · current ledger with history and tie">
         <RecordsLedger
           model={records}
-          filters={{ view: "current", hardware: null, verified: false }}
+          filters={{
+            view: "current",
+            hardware: null,
+            verified: false,
+            page: 1,
+          }}
         />
       </State>
 
       <State label="records · recently broken">
         <RecordsLedger
           model={records}
-          filters={{ view: "broken", hardware: null, verified: false }}
+          filters={{ view: "broken", hardware: null, verified: false, page: 1 }}
         />
       </State>
     </div>

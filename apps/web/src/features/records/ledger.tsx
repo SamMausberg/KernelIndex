@@ -13,21 +13,52 @@ export type RecordsFilters = {
   view: RecordsView
   hardware: string | null
   verified: boolean
+  page: number
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000
+const PAGE_SIZE = 100
 
 export function recordsHref(
   filters: RecordsFilters,
   patch: Partial<RecordsFilters>,
 ) {
-  const next = { ...filters, ...patch }
+  // Any change other than paging restarts at page 1.
+  const next = { ...filters, page: patch.page ?? 1, ...patch }
   const params = new URLSearchParams()
   if (next.view !== "current") params.set("view", next.view)
   if (next.hardware) params.set("hw", next.hardware)
   if (next.verified) params.set("verified", "1")
+  if (next.page > 1) params.set("page", String(next.page))
   const suffix = params.toString()
   return suffix ? `/records?${suffix}` : "/records"
+}
+
+/** Page slice plus the pager strip shared by the current and history views. */
+function paginate<T>(rows: T[], filters: RecordsFilters) {
+  const pageCount = Math.max(1, Math.ceil(rows.length / PAGE_SIZE))
+  const page = Math.min(Math.max(1, filters.page), pageCount)
+  const pager =
+    pageCount > 1 ? (
+      <div className="mt-4 flex items-baseline gap-5 text-[12.5px]">
+        {page > 1 ? (
+          <Link href={recordsHref(filters, { page: page - 1 })}>
+            ← Previous
+          </Link>
+        ) : (
+          <span className="text-ghost">← Previous</span>
+        )}
+        <span className="font-mono text-[12px] text-faint">
+          page {page} of {pageCount}
+        </span>
+        {page < pageCount ? (
+          <Link href={recordsHref(filters, { page: page + 1 })}>Next →</Link>
+        ) : (
+          <span className="text-ghost">Next →</span>
+        )}
+      </div>
+    ) : null
+  return { rows: rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), pager }
 }
 
 const isVerifiedHolder = (holder: RecordHolder) =>
@@ -264,9 +295,11 @@ export function RecordsLedger({
       (filters.hardware === null || holder.hardware === filters.hardware) &&
       (!filters.verified || isVerifiedHolder(holder)),
   )
+  const currentPage = paginate(holders, filters)
   const allEvents = model.records
     .flatMap((holder) => holder.history.map((event) => ({ holder, event })))
     .sort((a, b) => b.event.at.localeCompare(a.event.at))
+  const historyPage = paginate(allEvents, filters)
   const broken = allEvents
     .filter(
       ({ event }) =>
@@ -325,7 +358,7 @@ export function RecordsLedger({
               <div className="py-2">Set</div>
               <div />
             </div>
-            {holders.map((holder) => (
+            {currentPage.rows.map((holder) => (
               <HolderRow key={holder.cohortKey} holder={holder} />
             ))}
             {holders.length === 0 && (
@@ -334,6 +367,7 @@ export function RecordsLedger({
               </p>
             )}
           </div>
+          {currentPage.pager}
         </>
       )}
 
@@ -351,7 +385,8 @@ export function RecordsLedger({
           <p className="border-b border-border-strong pb-3 text-[12.5px] text-faint">
             Append-only ledger of record events · newest first
           </p>
-          <HistoryRows events={allEvents} />
+          <HistoryRows events={historyPage.rows} />
+          {historyPage.pager}
         </div>
       )}
 
