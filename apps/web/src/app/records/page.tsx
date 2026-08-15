@@ -5,6 +5,7 @@ import { IllustrativeNotice } from "@/components/illustrative-notice"
 import {
   allRecordEvents,
   RecordsLedger,
+  type RecordsSort,
   type RecordsView,
   recentlyBroken,
   recordsHref,
@@ -28,6 +29,13 @@ type Params = {
   page?: string
 }
 
+const SORTS = new Set<RecordsSort>([
+  "date",
+  "improvement",
+  "leads",
+  "operation",
+])
+
 export default async function RecordsPage({
   searchParams,
 }: {
@@ -44,8 +52,9 @@ export default async function RecordsPage({
       params.hw && model.hardwareOptions.includes(params.hw) ? params.hw : null,
     verified: params.verified === "1",
     filter: (params.f ?? "").trim(),
-    sort:
-      params.sort === "operation" ? ("operation" as const) : ("date" as const),
+    sort: SORTS.has(params.sort as RecordsSort)
+      ? (params.sort as RecordsSort)
+      : ("date" as const),
     page: Number.isNaN(page) ? 1 : page,
   }
 

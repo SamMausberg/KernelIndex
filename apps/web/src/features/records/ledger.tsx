@@ -1,15 +1,15 @@
 import Link from "next/link"
+import { Metric } from "@/components/metric"
 import type { RecordEvent, RecordHolder, RecordsPageModel } from "@/lib/catalog"
 import {
   evidenceLabel,
   formatDateShort,
   formatDateUTC,
   formatPrimary,
-  formatSpread,
 } from "@/lib/format"
 
 export type RecordsView = "current" | "broken" | "history"
-export type RecordsSort = "date" | "operation"
+export type RecordsSort = "date" | "improvement" | "leads" | "operation"
 export type RecordsFilters = {
   view: RecordsView
   hardware: string | null
@@ -34,7 +34,7 @@ export function recordsHref(
   if (next.hardware) params.set("hw", next.hardware)
   if (next.verified) params.set("verified", "1")
   if (next.filter) params.set("f", next.filter)
-  if (next.sort === "operation") params.set("sort", "operation")
+  if (next.sort !== "date") params.set("sort", next.sort)
   if (next.page > 1) params.set("page", String(next.page))
   const suffix = params.toString()
   return suffix ? `/records?${suffix}` : "/records"
@@ -174,8 +174,8 @@ function ControlStrip({
           {filters.verified && (
             <input type="hidden" name="verified" value="1" />
           )}
-          {filters.sort === "operation" && (
-            <input type="hidden" name="sort" value="operation" />
+          {filters.sort !== "date" && (
+            <input type="hidden" name="sort" value={filters.sort} />
           )}
           <input
             name="f"
@@ -204,7 +204,7 @@ function ControlStrip({
 }
 
 const CURRENT_GRID =
-  "grid grid-cols-[minmax(280px,1.5fr)_160px_90px_minmax(210px,1.2fr)_130px_120px_96px_28px] min-w-[1210px]"
+  "grid grid-cols-[minmax(300px,1.6fr)_190px_80px_minmax(180px,1fr)_130px_118px_82px_28px] min-w-[1140px]"
 
 function HolderRow({ holder }: { holder: RecordHolder }) {
   const record = holder.current
@@ -214,66 +214,64 @@ function HolderRow({ holder }: { holder: RecordHolder }) {
   return (
     <details className="group border-b border-line">
       <summary
-        className={`${CURRENT_GRID} cursor-pointer list-none items-start transition-colors hover:bg-raised [&::-webkit-details-marker]:hidden`}
+        className={`${CURRENT_GRID} h-[47px] cursor-pointer list-none items-center transition-colors hover:bg-raised [&::-webkit-details-marker]:hidden`}
       >
-        <div className="min-w-0 py-3 pr-3">
-          <div className="truncate font-mono text-[13px] leading-[20px] text-fg">
-            {holder.operation.name} · {holder.workloadSummary}
-          </div>
-          <div className="truncate font-mono text-[11.5px] leading-4 text-faint">
-            {holder.environmentSummary}
-          </div>
-        </div>
-        <div className="py-3 pr-4 text-right whitespace-nowrap">
-          <span className="block font-mono text-[14.5px] leading-[20px] text-fg">
-            {record.primary ? formatPrimary(record.primary) : "—"}
+        <div className="min-w-0 truncate pr-3">
+          <span className="text-[13px] text-fg">{holder.operation.name}</span>
+          <span className="ml-2 font-mono text-[11.5px] text-faint">
+            {holder.workloadSummary}
           </span>
-          {/* Fixed height with or without a spread: every record cell is
-              exactly two lines, so row rhythm never drifts. */}
-          <div className="h-4 font-mono text-[11px] leading-4 text-faint">
-            {record.primary ? formatSpread(record.primary) : null}
-          </div>
         </div>
-        <div className="py-3 pr-3 font-mono text-[12px] leading-[20px]">
+        <div className="pr-4 text-right whitespace-nowrap">
+          <Metric
+            primary={record.primary}
+            spread
+            valueClassName="font-mono text-[14px] text-fg"
+          />
+        </div>
+        <div className="pr-3 font-mono text-[12px]">
           {margin !== null ? (
             <span className="text-subtle">{margin.toFixed(1)}%</span>
           ) : (
             <span className="text-faint">first</span>
           )}
         </div>
-        <div className="min-w-0 truncate py-3 pr-3 leading-[20px]">
+        <div className="min-w-0 truncate pr-3">
           <Link
             href={`/implementations/${record.implementation.slug}`}
-            className="font-mono text-[13px]"
+            className="text-[13px]"
           >
             {record.implementation.name}
           </Link>
-          <span className="ml-2 text-[12px] text-faint">
-            {record.project.name}
-          </span>
+          {record.project.name !== record.implementation.name && (
+            <span className="ml-2 text-[12px] text-faint">
+              {record.project.name}
+            </span>
+          )}
         </div>
-        <div className="truncate py-3 pr-3 font-mono text-[12px] leading-[20px] text-muted">
+        <div className="truncate pr-3 font-mono text-[12px] text-muted">
           {holder.hardware}
         </div>
-        <div
-          className={`py-3 text-[12.5px] leading-[20px] ${strong ? "text-fg" : "text-subtle"}`}
-        >
+        <div className={`text-[12.5px] ${strong ? "text-fg" : "text-subtle"}`}>
           {strong && <span className="mr-1.5 text-[9px] text-success">●</span>}
           {evidenceLabel(record.evidence)}
         </div>
-        <div className="py-3 font-mono text-[11.5px] leading-[20px] whitespace-nowrap text-faint">
+        <div className="font-mono text-[11.5px] whitespace-nowrap text-faint">
           {formatDateShort(holder.since)}
           {isNew && <span className="text-accent"> · new</span>}
         </div>
         <div
           aria-hidden="true"
-          className="py-3 pr-1 text-right font-mono text-[12px] leading-[20px] text-faint transition-transform group-open:rotate-90"
+          className="pr-1 text-right font-mono text-[12px] text-faint transition-transform group-open:rotate-90"
         >
           ›
         </div>
       </summary>
       <div className="border-t border-line bg-surface pb-4">
-        <div className="pt-3 text-[11.5px] tracking-[0.03em] text-faint uppercase">
+        <div className="pt-3 font-mono text-[11.5px] text-faint">
+          {holder.environmentSummary}
+        </div>
+        <div className="mt-3 text-[11.5px] tracking-[0.03em] text-faint uppercase">
           Record history
         </div>
         {holder.history.map((event, index) => (
@@ -446,12 +444,26 @@ export function RecordsLedger({
   filters: RecordsFilters
 }) {
   const holders = model.records.filter((holder) => keepHolder(holder, filters))
+  // "date" keeps the backend order: newest record first.
   if (filters.sort === "operation")
     holders.sort(
       (a, b) =>
-        a.operation.name.localeCompare(b.operation.name) ||
+        a.operation.name.localeCompare(b.operation.name, undefined, {
+          numeric: true,
+        }) ||
         a.workloadSummary.localeCompare(b.workloadSummary) ||
         a.hardware.localeCompare(b.hardware),
+    )
+  if (filters.sort === "improvement")
+    holders.sort(
+      (a, b) =>
+        (b.history[0].improvementPct ?? -1) -
+        (a.history[0].improvementPct ?? -1),
+    )
+  if (filters.sort === "leads")
+    holders.sort(
+      (a, b) =>
+        b.history.length - a.history.length || b.since.localeCompare(a.since),
     )
   const events = allRecordEvents(model).filter(({ holder }) =>
     keepHolder(holder, filters),
@@ -480,8 +492,10 @@ export function RecordsLedger({
                   <span>sorted by</span>
                   {(
                     [
-                      { key: "date", label: "record date" },
-                      { key: "operation", label: "operation" },
+                      { key: "date", label: "Newest" },
+                      { key: "improvement", label: "Largest improvement" },
+                      { key: "leads", label: "Most lead changes" },
+                      { key: "operation", label: "A–Z" },
                     ] as const
                   ).map((option) =>
                     filters.sort === option.key ? (
