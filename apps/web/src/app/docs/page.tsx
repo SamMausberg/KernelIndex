@@ -24,6 +24,17 @@ const EVIDENCE_LEVELS = [
   ],
 ] as const
 
+const SECTIONS = [
+  ["what", "What KernelIndex is"],
+  ["query-syntax", "Query syntax"],
+  ["views", "Views and sorting"],
+  ["comparability", "Why comparable?"],
+  ["ranking", "How ranking works"],
+  ["evidence", "Evidence levels"],
+  ["records", "How records are decided"],
+  ["data", "Data and API"],
+] as const
+
 export default function DocsPage() {
   return (
     <>
@@ -32,6 +43,22 @@ export default function DocsPage() {
         title="Documentation"
         context="query syntax · comparability · evidence · records"
       />
+      {/* Quiet section index on very wide screens (§16.3); the anchored
+          headings remain the navigation everywhere else. */}
+      <nav
+        aria-label="Sections"
+        className="fixed top-28 right-10 hidden w-52 2xl:block"
+      >
+        {SECTIONS.map(([id, label]) => (
+          <a
+            key={id}
+            href={`#${id}`}
+            className="block py-1 text-[12px] text-faint transition-colors hover:text-fg hover:no-underline"
+          >
+            {label}
+          </a>
+        ))}
+      </nav>
       <main className="shell-narrow animate-fade-in pb-24 text-[14px] leading-relaxed text-muted">
         <Section id="what" title="What KernelIndex is">
           <p>
@@ -39,13 +66,19 @@ export default function DocsPage() {
             known compatible implementation, with source, license, environment,
             benchmark protocol, raw evidence, and an explicit trust level. Names
             are aliases, not identity: results are compared only when their
-            workload, protocol, and environment digests actually match.
+            workload, protocol, and environment digests actually match. Imported
+            identifiers are displayed in humanized form — the canonical slugs
+            and digests they alias are preserved unchanged on every detail view.
           </p>
         </Section>
 
         <Section id="query-syntax" title="Query syntax">
           <p>
-            Type anything. An operation name is enough. Recognized hardware,
+            Type anything. An operation name is enough — the search field
+            suggests matching operations as you type, and picking one submits an
+            exact <span className="font-mono text-[12.5px]">op:</span> query.
+            When several operations plausibly match and none dominates, the
+            result page lists them instead of guessing. Recognized hardware,
             dtype, and shape tokens refine the workload; structured syntax is
             optional.
           </p>
@@ -53,6 +86,7 @@ export default function DocsPage() {
             {`rmsnorm
 rmsnorm B200 bf16 [2048,4096] tokens=2048
 model:deepseek-v3
+op:004-gemm-n128-k2048
 rmsnorm gpu:B200 dtype:bf16 shape:[2048,4096] framework=pytorch trust:verified`}
           </pre>
           <p className="mt-3">
@@ -74,6 +108,23 @@ rmsnorm gpu:B200 dtype:bf16 shape:[2048,4096] framework=pytorch trust:verified`}
             versus compatible; trust, license, source, and installable filter
             rows without ever reclassifying evidence. An unknown filter returns
             a correction hint, never silent free text.
+          </p>
+        </Section>
+
+        <Section id="views" title="Views and sorting">
+          <p>
+            Search groups evidence into Exact, Compatible, Supported, and
+            Reported views that are never interleaved. Inside a view,{" "}
+            <em>Recommended</em> is the default order — ranking-v1 for the exact
+            cohort — and <em>Most verified</em>, <em>Deployable first</em>, and{" "}
+            <em>Newest</em> are presentation re-sorts that never change a
+            row&apos;s cohort rank. The records ledger defaults to newest record
+            first, with <em>Largest improvement</em> (margin over the previous
+            record), <em>Most lead changes</em> (how many times the
+            cohort&apos;s record has changed hands — a competition measure, not
+            a dispute measure), and operation A–Z. Browse orders the corpus by
+            indexed run count, recent activity, or name. No sort ever ranks
+            incomparable workloads against each other by latency.
           </p>
         </Section>
 

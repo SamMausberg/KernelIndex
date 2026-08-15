@@ -2706,6 +2706,23 @@ Result groups are visually and semantically separate:
 
 Never place these in one undifferentiated ranking.
 
+Entry into the corpus is effortless (2026-08-15):
+
+- every search field suggests operations as the user types, from a compact
+  inline operation index (humanized name, slug, family, run count) shipped
+  with the page; selection submits `op:<slug>`, the exact resolution tier,
+  and preserves any facets already typed. Move suggestions behind a server
+  route only when the index outgrows a few tens of KB;
+- when several operations plausibly match and none dominates (no exact
+  slug/alias/model tier and no decisive fuzzy gap), the result page lists the
+  matching operations as a chooser instead of guessing or failing (§12.1's
+  "state the inferred mode and let the user correct it");
+- the empty query browses the corpus at operation level with family scoping
+  and Most indexed / Recently active / A–Z ordering;
+- inside a selected result group, Recommended (the group's native ranked
+  order) is default; Most verified, Deployable first, and Newest are
+  presentation re-sorts that never alter cohort rank or grouping.
+
 ### 16.7 Result row
 
 Use a dense row, not a large card grid. A desktop row contains:
@@ -2866,6 +2883,13 @@ date/current-history
 
 Each row names the exact workload and environment. Historical record transitions remain accessible. No “overall fastest kernel” title is displayed across unrelated operations.
 
+Ledger ordering (2026-08-15): newest record first by default, with Largest
+improvement (margin over the displaced record), Most lead changes (count of
+record transitions in the cohort — a competition measure derived from
+`record_events`, explicitly not a dispute measure until the §15.6 dispute
+write path exists), and operation A–Z. None of these rank cohorts against
+each other by latency.
+
 ### 16.13 Serving experience
 
 Serving remains a distinct mode because end-to-end serving performance has different objects and objectives.
@@ -2954,6 +2978,17 @@ A component should accept domain-ready display data. It should not fetch, rank, 
 ### 16.16 Language and status presentation
 
 Product copy is factual and restrained.
+
+Display names (2026-08-15): imported identifiers are humanized at the read
+layer, never in stored data — identity remains the digest and slug (§2.2).
+Operation names drop numeric prefixes, de-underscore, and apply a curated
+technical-casing table (GEMM, FP8, RMSNorm, …); unknown tokens stay lowercase
+rather than guessing. Implementation display names come from the manifest
+title with the redundant operation segment removed (leaderboard titles are
+"author · op"), and author handles are never re-cased. Wherever a display
+name differs from the slug, the slug stays visible as the canonical ID in
+expansions and detail headers. Humanized names render in the sans face;
+monospace remains reserved for code, slugs, digests, and metrics.
 
 Use:
 
@@ -3985,7 +4020,14 @@ This sequence is optimized for a solo founder using strong AI coding assistance.
 - Ranked-surface visibility now excludes superseded runs via an anti-join on `supersedes_id` (the previous filter kept the superseded original instead of the correction).
 - `record_events` (§11.10, migration 0002) is appended inside the publication transaction for touched cohorts; `db:sync-records` backfills catalogs published before the table existed. The ledger reads events; the current holder is derived only from still-eligible runs. Retraction-cause events arrive with the Week 6 correction write path.
 - `/compare` accepts up to eight runs by ID or digest, aligns cohort-identity fields (material) against context fields, names the first material mismatch, and ranks only when all selections share one cohort and are eligible. Markdown/JSON exports are copy actions rendered from the same model.
-- Corpus: 48 real SOL-ExecBench records across 12 reviewed kernels (norm, GQA/MLA attention, GEMM, RoPE, SwiGLU families; top 4 correct submissions each) plus the one labeled illustrative example pending the §22.15 gold record. Playwright covers search-to-evidence, no-result/parse-error, retracted/superseded states, and comparable/incomparable compare in CI against fixtures.
+- Corpus: 48 real SOL-ExecBench records across 12 reviewed kernels (norm, GQA/MLA attention, GEMM, RoPE, SwiGLU families; top 4 correct submissions each) plus the one labeled illustrative example pending the §22.15 gold record. Playwright covers search-to-evidence, no-result/parse-error, retracted/superseded states, and comparable/incomparable compare in CI against fixtures. Since expanded: 753 published records across 238 operations (235 SOL-ExecBench kernels at top-3 correct submissions on B200, 3 GPU MODE KernelBot boards on MI300X).
+
+**Product-UX simplification notes (2026-08-15).** A dedicated pass on “answer first, proof on demand,” shipped between Week 4 and Week 5:
+
+- Display-name policy per §16.16: humanization at the read layer (`lib/names.ts`), applied in both catalog backends’ projections; suite workload summaries stopped rendering the raw suite title and leading separators.
+- Search suggestions, the multi-match chooser, operation-level browse, and per-surface sort vocabularies per §16.6 and §16.12. The suggest/browse data is one compact `getOperationIndex()` read shipped inline; the extraction trigger is documented in §16.6.
+- Result rows dropped the hover-only action column (actions live in the disclosure), moved the cohort fact panel behind a disclosure on the search answer block, and adopted a fixed-width unit slot (`components/metric.tsx`) so digits align down mixed µs/ms columns. Ledger rows became single-line; the environment summary moved into the row expansion.
+- Entrance animations fill `backwards` instead of `both`: a forwards fill left every animated wrapper a permanent stacking context, painting later content over the suggestion popup.
 
 ### 22.6 Week 5: public API and CLI preview
 

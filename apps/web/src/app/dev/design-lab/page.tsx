@@ -33,6 +33,8 @@ export default async function DesignLabPage() {
   const results = await fixtures.searchCatalog({ query: "rmsnorm B200 bf16" })
   const noResult = await fixtures.searchCatalog({ query: "unknown-op" })
   const emptyQuery = await fixtures.searchCatalog({ query: "" })
+  const multiMatch = await fixtures.searchCatalog({ query: "norm" })
+  const suggest = await fixtures.getOperationIndex()
   const records = await fixtures.getRecordsPage()
   const noFilters = { view: undefined, verified: false, deployable: false }
 
@@ -77,12 +79,27 @@ export default async function DesignLabPage() {
         />
       </State>
 
+      <State label="search · newest sort (presentation reorder)">
+        <SearchResults
+          model={results}
+          filters={{ ...noFilters, sort: "newest" }}
+        />
+      </State>
+
+      <State label="search · multi-match operation chooser">
+        <SearchResults model={multiMatch} filters={noFilters} />
+      </State>
+
       <State label="search · no matching operation">
         <SearchResults model={noResult} filters={noFilters} />
       </State>
 
-      <State label="search · empty query start state">
-        <SearchResults model={emptyQuery} filters={noFilters} />
+      <State label="search · empty query start state with suggestions wired">
+        <SearchResults
+          model={emptyQuery}
+          filters={noFilters}
+          suggest={suggest}
+        />
       </State>
 
       <State label="records · current ledger with history and tie">
@@ -108,6 +125,20 @@ export default async function DesignLabPage() {
             verified: false,
             filter: "",
             sort: "date",
+            page: 1,
+          }}
+        />
+      </State>
+
+      <State label="records · sorted by largest improvement">
+        <RecordsLedger
+          model={records}
+          filters={{
+            view: "current",
+            hardware: null,
+            verified: false,
+            filter: "",
+            sort: "improvement",
             page: 1,
           }}
         />
