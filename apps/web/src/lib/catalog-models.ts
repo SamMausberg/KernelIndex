@@ -134,9 +134,9 @@ export type SearchInput = { query: string }
 
 /**
  * One operation in the compact corpus index that powers search suggestions
- * and the browse start state. Small by design — the whole index ships inline
- * with the page; move it behind a suggest route only if it outgrows a few
- * tens of KB.
+ * and the browse start state. Served by the CDN-cached /suggest route and
+ * fetched once per session; the browse start state still receives it inside
+ * the search model.
  */
 export type OperationIndexEntry = {
   name: string

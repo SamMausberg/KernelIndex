@@ -348,7 +348,7 @@ Moving files between folders inside one repository is cheaper than maintaining p
 | Hosting | Vercel web deployment | runtime, region, cost, or portability requirements fail |
 | Catalog | fixtures, then managed PostgreSQL | PostgreSQL cannot satisfy a measured requirement |
 | Search | PostgreSQL FTS, trigram, filters, and ranking views | relevance or latency misses a documented SLO at real scale |
-| Cache | framework/CDN caching and PostgreSQL | measured hot-read pressure remains after query/index work |
+| Cache | framework/CDN caching and PostgreSQL (in place since 2026-08-15: unstable_cache over the catalog seam, ISR on home/run/implementation pages, CDN-cached /suggest and /records/data routes, functions pinned to pdx1 beside the database) | a dedicated cache system is needed beyond the framework layers |
 | Imports | local command or GitHub Actions | retries, concurrency, or review workflows need durable jobs |
 | Queue | PostgreSQL row state, then Graphile Worker | a persistent worker has real jobs |
 | Artifacts | upstream immutable links, small DB metadata, reviewed Git files | durable binaries or large logs require S3-compatible storage |
@@ -2323,7 +2323,7 @@ publishes structured, redistributable results:
 | Priority | Source | Status | Use |
 |---:|---|---|---|
 | 1 | NVIDIA SOL-ExecBench (public leaderboard API only — never the HF dataset, whose license forbids redistribution) | active | full vertical slice; all leaderboard kernels, B200, `model:` workload provenance tags |
-| 2 | GPU MODE KernelBot (`GPUMODE/kernelbot-data`, reciprocity license permits redistribution with attribution) | next importer | per-shape timings + code + system info; AMD MI300 hardware breadth |
+| 2 | GPU MODE KernelBot (`GPUMODE/kernelbot-data`, reciprocity license permits redistribution with attribution) | active | per-shape timings and aggregate leaderboard scores + mirrored submission code + system info; MI300X/MI355X, B200 fleets, A100/H100/L4, 29 curated boards |
 | 3 | FlashInfer-Bench (`flashinfer-ai/flashinfer-trace`, Apache-2.0) | planned | baseline library kernels, B200; near-1:1 schema match; reconcile overlap with SOL |
 | 4 | Liger-Kernel committed benchmark CSVs (BSD-2) | planned | multi-GPU medians with baseline pairs; environment-incomplete, reported-only |
 | 5 | papers and independent repositories | as evidence appears | reported evidence with explicit protocol limitations |
@@ -3054,7 +3054,8 @@ Methods:
 - route-level code splitting;
 - no chart bundle on pages without charts;
 - raw tables before virtualization;
-- bounded queries and precomputed record views;
+- bounded queries and precomputed read scalars (denormalized manifest projections on `benchmark_runs`/`implementations`; ranked reads never load JSONB);
+- ledger and search interactions as client transitions over one cached model fetch, with URL state preserved and identical no-JS server rendering;
 - no analytics script until a concrete product question requires it.
 
 Machine discoverability:
@@ -4020,12 +4021,12 @@ This sequence is optimized for a solo founder using strong AI coding assistance.
 - Ranked-surface visibility now excludes superseded runs via an anti-join on `supersedes_id` (the previous filter kept the superseded original instead of the correction).
 - `record_events` (§11.10, migration 0002) is appended inside the publication transaction for touched cohorts; `db:sync-records` backfills catalogs published before the table existed. The ledger reads events; the current holder is derived only from still-eligible runs. Retraction-cause events arrive with the Week 6 correction write path.
 - `/compare` accepts up to eight runs by ID or digest, aligns cohort-identity fields (material) against context fields, names the first material mismatch, and ranks only when all selections share one cohort and are eligible. Markdown/JSON exports are copy actions rendered from the same model.
-- Corpus: 48 real SOL-ExecBench records across 12 reviewed kernels (norm, GQA/MLA attention, GEMM, RoPE, SwiGLU families; top 4 correct submissions each) plus the one labeled illustrative example pending the §22.15 gold record. Playwright covers search-to-evidence, no-result/parse-error, retracted/superseded states, and comparable/incomparable compare in CI against fixtures. Since expanded: 753 published records across 238 operations (235 SOL-ExecBench kernels at top-3 correct submissions on B200, 3 GPU MODE KernelBot boards on MI300X).
+- Corpus: 48 real SOL-ExecBench records across 12 reviewed kernels (norm, GQA/MLA attention, GEMM, RoPE, SwiGLU families; top 4 correct submissions each) plus the one labeled illustrative example pending the §22.15 gold record. Playwright covers search-to-evidence, no-result/parse-error, retracted/superseded states, and comparable/incomparable compare in CI against fixtures. Since expanded: 753 published records across 238 operations (235 SOL-ExecBench kernels at top-3 correct submissions on B200, 3 GPU MODE KernelBot boards on MI300X). The 2026-08-15 10k-corpus push (§22.16) re-imported KernelBot at depth — 29 curated boards across the AMD $100K/$1.1M, NVIDIA NVFP4, PMPP v2, linear-algebra, trimul, and Helion competitions, selecting the top ~50 authors per board × runner cohort plus each leading author's personal-best progression chain, with submission source mirrored as content-addressed artifacts (docs/source-policy.md) and rendered with per-submission diffs on implementation pages.
 
 **Product-UX simplification notes (2026-08-15).** A dedicated pass on “answer first, proof on demand,” shipped between Week 4 and Week 5:
 
 - Display-name policy per §16.16: humanization at the read layer (`lib/names.ts`), applied in both catalog backends’ projections; suite workload summaries stopped rendering the raw suite title and leading separators.
-- Search suggestions, the multi-match chooser, operation-level browse, and per-surface sort vocabularies per §16.6 and §16.12. The suggest/browse data is one compact `getOperationIndex()` read shipped inline; the extraction trigger is documented in §16.6.
+- Search suggestions, the multi-match chooser, operation-level browse, and per-surface sort vocabularies per §16.6 and §16.12. The suggest data moved behind the CDN-cached `/suggest` route on 2026-08-15 (fetched once per session on focus); browse still rides the search model.
 - Result rows dropped the hover-only action column (actions live in the disclosure), moved the cohort fact panel behind a disclosure on the search answer block, and adopted a fixed-width unit slot (`components/metric.tsx`) so digits align down mixed µs/ms columns. Ledger rows became single-line; the environment summary moved into the row expansion.
 - Entrance animations fill `backwards` instead of `both`: a forwards fill left every animated wrapper a permanent stacking context, painting later content over the suggestion popup.
 

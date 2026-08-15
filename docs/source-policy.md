@@ -44,7 +44,7 @@ legalnotices@ the project contact removes the contested records immediately
   written permission. Open item: ask the SOL team for explicit blessing.
 - **Parser owner / review.** `import/sol`, reviewed 2026-08-14.
 
-## GPU MODE KernelBot (planned second importer)
+## GPU MODE KernelBot (active — `gpumode-kernelbot`)
 
 - **Data.** HF dataset `GPUMODE/kernelbot-data` under the **June 9
   Researcher Reciprocity License v1.0** (verified 2026-08-14): explicit
@@ -53,11 +53,25 @@ legalnotices@ the project contact removes the contested records immediately
   and the KernelBot dataset", link to the dataset). The use-based
   restriction covers AI training only — not indexing.
 - **Store vs link.** Store: per-submission metrics, protocol/system
-  metadata, normalized manifests. Submission source code: store digests and
-  dataset coordinates, link rather than mirror (allowed but unnecessary).
-- **Attribution.** "GPU Mode · KernelBot" with dataset link on derived pages.
+  metadata, normalized manifests, and — decided 2026-08-15, reversing the
+  earlier link-only stance — **submission source code mirrored inline as
+  content-addressed artifacts** (the grant covers reproduction, display,
+  and distribution; mirroring is what enables on-site source display and
+  submission diffs, the product's core value). Each submission's own
+  license remains unknown and is never inferred; artifacts record
+  `LicenseRef-GPUMode-Reciprocity-1.0` as KernelIndex's display right.
+  Truncated code cells are never stored.
+- **Attribution.** "GPU Mode and the KernelBot dataset" with dataset link,
+  rendered on every page displaying imported data or mirrored code
+  (`sources.policy` drives the read layer).
 - **Protocol provenance.** Cite the matching `gpu-mode/reference-kernels`
   eval revision (same license family) per problem set.
+- **Operational note (2026-08-15).** datasets-server `/rows` is permanently
+  broken for the `amd_1_1m_competition` and `nvidia_nvfp4_submissions`
+  configs (parquet scan limit); use `/filter`, whose first query per config
+  builds an index upstream (minutes of 500s — retry generously).
+- **Parser owner / review.** `import/gpumode` (parser v2), reviewed
+  2026-08-15.
 
 ## FlashInfer-Bench (planned)
 
