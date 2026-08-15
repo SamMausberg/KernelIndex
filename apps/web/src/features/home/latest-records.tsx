@@ -1,6 +1,7 @@
 import Link from "next/link"
+import { Metric } from "@/components/metric"
 import type { ResultRow } from "@/lib/catalog"
-import { evidenceLabel, formatDateUTC, formatPrimaryParts } from "@/lib/format"
+import { evidenceLabel, formatDateUTC } from "@/lib/format"
 
 const GRID =
   "grid grid-cols-[1.2fr_1.4fr_110px_150px_150px_110px] min-w-[920px]"
@@ -34,28 +35,25 @@ export function LatestRecords({ rows }: { rows: ResultRow[] }) {
             key={row.runId ?? row.implementation.slug}
             className={`${GRID} h-[52px] items-center border-b border-line transition-colors hover:bg-raised`}
           >
-            <div className="truncate px-4 font-mono text-[13px] text-fg">
-              {row.operation.name} · {row.workloadSummary}
+            <div className="truncate px-4 text-[13px]">
+              <span className="text-fg">{row.operation.name}</span>
+              <span className="ml-2 font-mono text-[11.5px] text-faint">
+                {row.workloadSummary}
+              </span>
             </div>
             <div className="truncate px-4">
               <Link
                 href={`/implementations/${row.implementation.slug}`}
-                className="font-mono text-[13px]"
+                className="text-[13px]"
               >
                 {row.implementation.name}
               </Link>
             </div>
-            <div className="px-4 text-right font-mono text-[13.5px]">
-              {row.primary ? (
-                <>
-                  {formatPrimaryParts(row.primary).value}
-                  <span className="ml-1 text-[11px] text-faint">
-                    {formatPrimaryParts(row.primary).unit}
-                  </span>
-                </>
-              ) : (
-                "—"
-              )}
+            <div className="px-4 text-right whitespace-nowrap">
+              <Metric
+                primary={row.primary}
+                valueClassName="font-mono text-[13.5px] text-fg"
+              />
             </div>
             <div className="truncate px-4 font-mono text-[12.5px] text-muted">
               {row.hardware.model}

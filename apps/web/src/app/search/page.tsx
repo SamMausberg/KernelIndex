@@ -1,6 +1,10 @@
 import type { Metadata } from "next"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
-import { type ResultMode, SearchResults } from "@/features/search/results"
+import {
+  type ResultMode,
+  type ResultSort,
+  SearchResults,
+} from "@/features/search/results"
 import type { BrowseSort } from "@/features/search/start-state"
 import { getOperationIndex, searchCatalog } from "@/lib/catalog"
 
@@ -17,6 +21,12 @@ type Params = {
 }
 
 const MODES = new Set(["exact", "compatible", "supported", "reported"])
+const RESULT_SORTS = new Set([
+  "recommended",
+  "verified",
+  "deployable",
+  "newest",
+])
 const BROWSE_SORTS = new Set(["indexed", "active", "az"])
 
 export default async function SearchPage({
@@ -41,6 +51,10 @@ export default async function SearchPage({
           view:
             params.view && MODES.has(params.view)
               ? (params.view as ResultMode)
+              : undefined,
+          sort:
+            params.sort && RESULT_SORTS.has(params.sort)
+              ? (params.sort as ResultSort)
               : undefined,
           verified: params.verified === "1",
           deployable: params.deployable === "1",

@@ -20,14 +20,53 @@ import { type BrowseFilters, OperationList, StartState } from "./start-state"
 import { SuggestInput } from "./suggest"
 
 export type ResultMode = "exact" | "compatible" | "supported" | "reported"
+export type ResultSort = "recommended" | "verified" | "deployable" | "newest"
 export type SearchFilters = {
   view?: ResultMode
+  sort?: ResultSort
   verified: boolean
   deployable: boolean
   page?: number
 }
 
 const PAGE_SIZE = 50
+
+const SORTS: { key: ResultSort; label: string }[] = [
+  { key: "recommended", label: "Recommended" },
+  { key: "verified", label: "Most verified" },
+  { key: "deployable", label: "Deployable first" },
+  { key: "newest", label: "Newest" },
+]
+
+const EVIDENCE_RANK = {
+  replicated: 4,
+  verified: 3,
+  reproducible: 2,
+  reported: 1,
+}
+
+/**
+ * Presentation reorder inside one already-grouped view. "Recommended" is the
+ * group's native order (ranking-v1 for the exact cohort); the others are
+ * stable re-sorts, so rank numbers keep their cohort meaning.
+ */
+function sortRows(rows: ResultRow[], sort: ResultSort): ResultRow[] {
+  if (sort === "recommended") return rows
+  const sorted = [...rows]
+  if (sort === "verified")
+    sorted.sort(
+      (a, b) =>
+        (b.evidence ? EVIDENCE_RANK[b.evidence] : 0) -
+        (a.evidence ? EVIDENCE_RANK[a.evidence] : 0),
+    )
+  if (sort === "deployable")
+    sorted.sort((a, b) => Number(isDeployable(b)) - Number(isDeployable(a)))
+  if (sort === "newest")
+    sorted.sort((a, b) =>
+      (b.lastTestedAt ?? "").localeCompare(a.lastTestedAt ?? ""),
+    )
+  return sorted
+}
 
 const MODES: { key: ResultMode; label: string; note: string | null }[] = [
   { key: "exact", label: "Exact", note: null },
@@ -62,6 +101,7 @@ function searchHref(
   const next = { ...filters, page: patch.page ?? 1, ...patch }
   const params = new URLSearchParams({ q: query })
   if (next.view && next.view !== "exact") params.set("view", next.view)
+  if (next.sort && next.sort !== "recommended") params.set("sort", next.sort)
   if (next.verified) params.set("verified", "1")
   if (next.deployable) params.set("deployable", "1")
   if (next.page > 1) params.set("page", String(next.page))
@@ -161,13 +201,15 @@ function Recommendation({
         <div className="mt-3">
           <Link
             href={`/implementations/${top.implementation.slug}`}
-            className="font-mono text-[15px]"
+            className="text-[15px] font-medium"
           >
             {top.implementation.name}
           </Link>
           <span className="ml-2.5 text-[13px] text-subtle">
             {[
-              top.project.name,
+              top.project.name === top.implementation.name
+                ? null
+                : top.project.name,
               top.license.concluded ??
                 top.license.declared ??
                 "License unknown",
@@ -225,15 +267,30 @@ function Recommendation({
       </div>
       {model.cohort && (
         <div className="border-l border-border pl-9 max-lg:border-l-0 max-lg:pl-0">
-          <div className="mb-2.5 flex items-baseline justify-between gap-4 text-[12.5px] text-subtle">
-            <span>
-              {model.cohort.profile === "source_native"
-                ? "Source-native cohort"
-                : "Exact cohort"}
-            </span>
-            <Link href="/docs#comparability">Why comparable?</Link>
-          </div>
-          <KeyValueList items={model.cohort.facts} />
+          <details className="group">
+            <summary className="flex cursor-pointer list-none items-baseline justify-between gap-4 text-[12.5px] text-subtle transition-colors hover:text-fg [&::-webkit-details-marker]:hidden">
+              <span>
+                {model.cohort.profile === "source_native"
+                  ? "Source-native cohort"
+                  : "Exact cohort"}
+                <span className="ml-2 text-faint">
+                  {model.cohort.facts.length} facts
+                </span>
+              </span>
+              <span
+                aria-hidden="true"
+                className="font-mono text-[12px] text-faint transition-transform group-open:rotate-90"
+              >
+                ›
+              </span>
+            </summary>
+            <div className="mt-2.5">
+              <KeyValueList items={model.cohort.facts} />
+              <p className="mt-2.5 text-[12.5px]">
+                <Link href="/docs#comparability">Why comparable?</Link>
+              </p>
+            </div>
+          </details>
         </div>
       )}
     </section>
@@ -272,7 +329,8 @@ export function SearchResults({
       licenseMatches(policy.license, row.license.concluded)) &&
     (!policy.requireSource || row.sourceAvailable) &&
     (!policy.requireInstallable || row.installable)
-  const allRows = groupsByMode[view].filter(keep)
+  const sort = filters.sort ?? "recommended"
+  const allRows = sortRows(groupsByMode[view].filter(keep), sort)
   const hidden = groupsByMode[view].length - allRows.length
   const pageCount = Math.max(1, Math.ceil(allRows.length / PAGE_SIZE))
   const page = Math.min(Math.max(1, filters.page ?? 1), pageCount)
@@ -449,15 +507,38 @@ export function SearchResults({
                 >
                   Deployable only
                 </Link>
-                {view === "exact" && (
-                  <span className="text-faint">Sorted by median</span>
-                )}
               </div>
             </div>
 
-            {modeNote && (
-              <p className="mt-3 text-[12.5px] text-faint">{modeNote}</p>
-            )}
+            <div className="mt-3 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1.5">
+              <p className="text-[12.5px] text-faint">
+                {modeNote ??
+                  "Ranked by median latency inside one comparable cohort; statistically tied ranks share a number."}
+              </p>
+              {allRows.length > 1 && (
+                <span className="flex items-baseline gap-2.5 text-[12.5px]">
+                  <span className="text-faint">sorted by</span>
+                  {SORTS.map((option) =>
+                    sort === option.key ? (
+                      <span key={option.key} className="text-fg">
+                        {option.label}
+                      </span>
+                    ) : (
+                      <Link
+                        key={option.key}
+                        href={searchHref(model.query, filters, {
+                          view,
+                          sort: option.key,
+                        })}
+                        className="text-subtle transition-colors hover:text-fg hover:no-underline"
+                      >
+                        {option.label}
+                      </Link>
+                    ),
+                  )}
+                </span>
+              )}
+            </div>
 
             <div className="mt-1 animate-row-in overflow-x-auto [animation-delay:.12s]">
               {rows.length > 0 ? (

@@ -1,17 +1,16 @@
 import Link from "next/link"
 import { Meter } from "@/components/meter"
+import { Metric } from "@/components/metric"
 import type { PrimaryMetric, ResultRow } from "@/lib/catalog"
 import {
   evidenceLabel,
   formatDateShort,
   formatDateUTC,
-  formatPrimary,
   formatRelative,
-  formatSpread,
 } from "@/lib/format"
 
 export const RESULT_GRID =
-  "grid grid-cols-[44px_minmax(240px,1.6fr)_150px_118px_140px_minmax(150px,1fr)_78px_120px_28px] min-w-[1190px]"
+  "grid grid-cols-[44px_minmax(220px,1.5fr)_168px_118px_130px_minmax(150px,1fr)_78px_28px] min-w-[1040px]"
 
 /** "Apache-2.0 · pip" — license state plus how the build is obtained. */
 export function availabilityText(row: ResultRow) {
@@ -51,7 +50,6 @@ export function ResultTableHead({ relativeLabel }: { relativeLabel?: string }) {
       <div className="py-2">Evidence</div>
       <div className="py-2">Availability</div>
       <div className="py-2">Tested</div>
-      <div />
       <div />
     </div>
   )
@@ -130,25 +128,24 @@ export function ResultRowItem({
         <div className="min-w-0 truncate pr-3">
           <Link
             href={`/implementations/${row.implementation.slug}`}
-            className="font-mono text-[13px] text-fg hover:text-accent-bright"
+            className="text-[13.5px] text-fg hover:text-accent-bright"
           >
             {row.implementation.name}
           </Link>
-          <span className="ml-2 text-[12px] text-faint">
-            {row.project.name}
-          </span>
+          {row.project.name !== row.implementation.name && (
+            <span className="ml-2 text-[12px] text-faint">
+              {row.project.name}
+            </span>
+          )}
         </div>
         <div className="pr-3.5 text-right whitespace-nowrap">
-          <span
-            className={`font-mono ${
+          <Metric
+            primary={row.primary}
+            spread
+            valueClassName={`font-mono ${
               row.rank === 1 ? "text-[14.5px]" : "text-[13.5px]"
-            } ${row.primary ? "text-fg" : "text-faint"}`}
-          >
-            {row.primary ? formatPrimary(row.primary) : "no run"}
-          </span>{" "}
-          <span className="font-mono text-[11px] text-faint">
-            {row.primary ? formatSpread(row.primary) : null}
-          </span>
+            } text-fg`}
+          />
         </div>
         <RelativeCell row={row} best={best} relative={relative} />
         <EvidenceCell row={row} />
@@ -165,17 +162,6 @@ export function ResultRowItem({
           }`}
         >
           {formatDateShort(row.lastTestedAt)}
-        </div>
-        <div className="text-right text-[12px] whitespace-nowrap opacity-0 transition-opacity group-hover:opacity-100 group-open:opacity-100 group-focus-within:opacity-100">
-          <Link href={`/implementations/${row.implementation.slug}`}>
-            Source
-          </Link>
-          {row.runId && (
-            <>
-              <span className="text-ghost"> · </span>
-              <Link href={`/runs/${row.runId}`}>Evidence</Link>
-            </>
-          )}
         </div>
         <div
           aria-hidden="true"
@@ -227,6 +213,7 @@ export function ResultRowItem({
               Evidence
             </div>
             {[
+              { k: "Implementation", v: row.implementation.slug },
               {
                 k: "Run",
                 v: row.runId ? `${row.runId.slice(0, 13)}…` : "no run",
