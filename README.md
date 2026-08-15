@@ -21,7 +21,7 @@ pnpm check      # lint + typecheck + production build
 pnpm test       # unit tests; database tests run when DATABASE_URL is set
 ```
 
-Pages read the catalog through four functions in `apps/web/src/lib/catalog.ts`.
+Pages read the catalog through the read seam in `apps/web/src/lib/catalog.ts`.
 `CATALOG_BACKEND=fixtures` (the default, no configuration needed) serves a
 deterministic, visibly illustrative catalog; `CATALOG_BACKEND=postgres` serves
 real published records.
@@ -45,6 +45,8 @@ pnpm --filter @kernelindex/web db:migrate   # apply committed SQL migrations
 pnpm --filter @kernelindex/web db:seed      # illustrative registry examples
 pnpm --filter @kernelindex/web import:sol -- --dry-run   # review report only
 pnpm --filter @kernelindex/web import:sol -- --publish   # real SOL records
+pnpm --filter @kernelindex/web import:gpumode -- --group helion --dry-run
+pnpm --filter @kernelindex/web import:gpumode -- --group helion --publish
 ```
 
 The importer is idempotent: re-running with unchanged upstream data inserts
