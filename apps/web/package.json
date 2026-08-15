@@ -20,7 +20,9 @@
     "import:gpumode": "node --env-file-if-exists=.env.local scripts/import-gpumode.ts",
     "test:e2e": "playwright test",
     "export:catalog": "node --env-file-if-exists=.env.local scripts/export-catalog.ts",
-    "import:submission": "node --env-file-if-exists=.env.local scripts/import-submission.ts"
+    "import:submission": "node --env-file-if-exists=.env.local scripts/import-submission.ts",
+    "import:flashinfer": "node --env-file-if-exists=.env.local scripts/import-flashinfer.ts",
+    "check:invariants": "node --env-file-if-exists=.env.local scripts/check-invariants.ts"
   },
   "dependencies": {
     "@hono/zod-openapi": "^1.6.0",

@@ -1,0 +1,100 @@
+# Scheduled imports (§22.8, §19.10): weekly, idempotent, machine-gated.
+# Kill switch: repo variable IMPORTS_ENABLED=false skips everything.
+# Secrets: DATABASE_URL (prod pooled), REVALIDATE_TOKEN, and the site URL.
+name: import
+on:
+  schedule:
+    - cron: "17 6 * * 1" # Mondays 06:17 UTC
+  workflow_dispatch:
+    inputs:
+      sources:
+        description: "comma list: sol,gpumode,flashinfer (default all)"
+        default: "sol,gpumode,flashinfer"
+
+concurrency:
+  group: import
+  cancel-in-progress: false
+
+jobs:
+  import:
+    if: vars.IMPORTS_ENABLED != 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      SOURCES: ${{ github.event.inputs.sources || 'sol,gpumode,flashinfer' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: package.json
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      # Each source: dry-run → machine gate (no unexpected issues or
+      # ambiguities) → publish. A failed gate uploads the report and stops
+      # that source without touching the catalog.
+      - name: import sol
+        if: contains(env.SOURCES, 'sol')
+        run: |
+          cd apps/web
+          node scripts/import-sol.ts --dry-run --output /tmp/sol.json
+          node -e '
+            const r = require("/tmp/sol.json");
+            const bad = r.issues.length + r.ambiguities.length;
+            if (bad > 0) { console.error("gate failed:", bad, "items"); process.exit(1) }'
+          node scripts/import-sol.ts --publish
+      - name: import gpumode
+        if: contains(env.SOURCES, 'gpumode') && always() && !cancelled()
+        run: |
+          cd apps/web
+          for GROUP in helion amd trimul linalg amd-1-1m pmpp nvfp4; do
+            node scripts/import-gpumode.ts --group "$GROUP" --dry-run --output "/tmp/gm-$GROUP.json"
+            node -e '
+              const r = require(process.argv[1]);
+              const bad = r.issues.filter(i => i.locator !== "history").length + r.ambiguities.length;
+              if (bad > 0) { console.error("gate failed:", bad, "items"); process.exit(1) }' "/tmp/gm-$GROUP.json"
+            NODE_OPTIONS=--max-old-space-size=12288 node scripts/import-gpumode.ts --group "$GROUP" --publish
+          done
+      - name: import flashinfer
+        if: contains(env.SOURCES, 'flashinfer') && always() && !cancelled()
+        run: |
+          cd apps/web
+          node scripts/import-flashinfer.ts --dry-run --output /tmp/fi.json
+          node -e '
+            const r = require("/tmp/fi.json");
+            if (r.issues.length > 0) { console.error("gate failed"); process.exit(1) }'
+          node scripts/import-flashinfer.ts --publish
+
+      - name: data-quality invariants
+        run: cd apps/web && node scripts/check-invariants.ts
+
+      - name: sync record events
+        run: cd apps/web && node scripts/sync-record-events.ts
+
+      - name: refresh catalog export
+        run: |
+          cd apps/web && node scripts/export-catalog.ts
+          cd ../..
+          git config user.name kernelindex-import
+          git config user.email import@kernelindex.dev
+          git add registry/exports
+          git diff --cached --quiet || git commit -m "chore(exports): scheduled catalog snapshot"
+          git push
+
+      - name: revalidate caches
+        if: env.SITE != ''
+        env:
+          SITE: ${{ vars.SITE_ORIGIN }}
+        run: |
+          curl -sf -X POST "$SITE/api/v1/revalidate" \
+            -H "Authorization: Bearer ${{ secrets.REVALIDATE_TOKEN }}"
+
+      - name: upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: import-reports
+          path: /tmp/*.json
+          if-no-files-found: ignore

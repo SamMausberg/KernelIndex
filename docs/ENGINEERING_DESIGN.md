@@ -4023,6 +4023,26 @@ This sequence is optimized for a solo founder using strong AI coding assistance.
 - `/compare` accepts up to eight runs by ID or digest, aligns cohort-identity fields (material) against context fields, names the first material mismatch, and ranks only when all selections share one cohort and are eligible. Markdown/JSON exports are copy actions rendered from the same model.
 - Corpus: 48 real SOL-ExecBench records across 12 reviewed kernels (norm, GQA/MLA attention, GEMM, RoPE, SwiGLU families; top 4 correct submissions each) plus the one labeled illustrative example pending the §22.15 gold record. Playwright covers search-to-evidence, no-result/parse-error, retracted/superseded states, and comparable/incomparable compare in CI against fixtures. Since expanded: 753 published records across 238 operations (235 SOL-ExecBench kernels at top-3 correct submissions on B200, 3 GPU MODE KernelBot boards on MI300X). The 2026-08-15 10k-corpus push (§22.16) re-imported KernelBot at depth — 29 curated boards across the AMD $100K/$1.1M, NVIDIA NVFP4, PMPP v2, linear-algebra, trimul, and Helion competitions, selecting the top ~50 authors per board × runner cohort plus each leading author's personal-best progression chain, with submission source mirrored as content-addressed artifacts (docs/source-policy.md) and rendered with per-submission diffs on implementation pages.
 
+**Weeks 5–7 reality notes (2026-08-15).** Shipped in one pass: `/api/v1`
+(Hono + zod-openapi over the read seam, §13.2's nine routes, RFC 9457
+problems, cursor-paginated records, authenticated cache revalidation
+closing §10.8 step 9), versioned zstd JSONL exports in `registry/exports/`
+committed by the scheduled workflow, `apps/cli` (`ki`) with a generated
+OpenAPI client and local schema-level manifest validation plus canonical
+digests, Better Auth GitHub identity with KernelIndex roles and a
+centralized authorization policy, the §10.7 correction write path
+(retraction with caused record-event transitions — `record_events`
+uniqueness now includes `cause` — and supersession linking), the §15.4
+submission model behind both the web flow and `registry/submissions` PR
+path (acceptance publishes through the one transaction), minimal project
+claims, the FlashInfer-Bench importer (baseline solutions/traces at a
+pinned dataset revision, Apache-2.0 sources mirrored), scheduled gated
+auto-publish imports with a kill switch (`.github/workflows/import.yml`),
+and the §20.3 invariant checker (`check:invariants`). Deferred by decision:
+API keys, webhooks, the multi-step wizard, watch notifications
+(demand-gated per §13.6/§13.11/§22.9); operational procedures live in
+`docs/runbook.md`.
+
 **Product-UX simplification notes (2026-08-15).** A dedicated pass on “answer first, proof on demand,” shipped between Week 4 and Week 5:
 
 - Display-name policy per §16.16: humanization at the read layer (`lib/names.ts`), applied in both catalog backends’ projections; suite workload summaries stopped rendering the raw suite title and leading separators.

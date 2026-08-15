@@ -166,6 +166,12 @@ const dimension = (value: string | number): string | number =>
       ? Number(value)
       : axisKey(value)
 
+export function operationArgumentsOf(
+  record: Record<string, { shape?: (string | number)[] | null; dtype: string }>,
+) {
+  return operationArguments(record)
+}
+
 function operationArguments(
   record: Record<string, { shape?: (string | number)[] | null; dtype: string }>,
 ) {
@@ -645,6 +651,8 @@ export function runFromTrace(input: {
   protocolDigest: string
   environment: ExecutionEnvironmentManifest
   environmentDigest: string
+  /** Trace-format sources share this mapper; SOL is the default. */
+  sourceSlug?: string
 }): NormalizedRun {
   const { trace } = input
   const evaluation = trace.evaluation
@@ -692,7 +700,7 @@ export function runFromTrace(input: {
           }
         : undefined,
       sourceNative: {
-        source: "sol-execbench",
+        source: input.sourceSlug ?? "sol-execbench",
         benchmark: trace.definition,
         metrics: performance
           ? {

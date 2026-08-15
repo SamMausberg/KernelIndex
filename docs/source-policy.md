@@ -73,13 +73,22 @@ legalnotices@ the project contact removes the contested records immediately
 - **Parser owner / review.** `import/gpumode` (parser v2), reviewed
   2026-08-15.
 
-## FlashInfer-Bench (planned)
+## FlashInfer-Bench (active — `flashinfer-bench`)
 
 - HF dataset `flashinfer-ai/flashinfer-trace`, **Apache-2.0** (verified
-  2026-08-14). Redistribution fine with license notice. Import baseline
-  (human/library) traces first; agent-generated traces only with explicit
-  author labeling. Overlaps SOL definitions (FlashInfer-Bench tag) —
-  reconcile identities, never auto-merge on names (§14.4).
+  2026-08-14). Redistribution fine with license notice. Imported 2026-08-15:
+  **baseline (human/library) solutions and traces only** — the importer
+  reads `solutions/baseline/` and `traces/baseline/` exclusively;
+  agent-generated traces require explicit author labeling before any
+  import. Solution sources are mirrored inline as content-addressed
+  artifacts (Apache-2.0 permits it; enables on-site source display).
+  Overlaps SOL definitions (FlashInfer-Bench tag) — identical semantics
+  dedupe by canonical digest; slug-vs-digest conflicts surface as review
+  ambiguities, never auto-merge on names (§14.4). Every run is fetched at
+  one pinned dataset revision. LFS-tracked trace files whose downloads
+  redirect off the fetch allowlist are skipped with a review issue.
+- **Parser owner / review.** `import/flashinfer` (parser v1), reviewed
+  2026-08-15.
 
 ## Liger-Kernel (planned)
 
