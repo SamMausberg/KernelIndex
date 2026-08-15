@@ -102,7 +102,7 @@ rmsnorm gpu:B200 dtype:bf16 shape:[2048,4096] framework=pytorch trust:verified`}
             , plus <span className="font-mono text-[12.5px]">name=integer</span>{" "}
             axis bindings such as{" "}
             <span className="font-mono text-[12.5px]">tokens=2048</span>. A{" "}
-            <span className="font-mono text-[12.5px]">model:</span> facet
+            <span className="font-mono text-[12.5px]">model:</span>&#32;facet
             resolves operations tagged with that model&apos;s workloads, alone
             or beside free text. Workload and environment facets decide exact
             versus compatible; trust, license, source, and installable filter
@@ -115,17 +115,17 @@ rmsnorm gpu:B200 dtype:bf16 shape:[2048,4096] framework=pytorch trust:verified`}
           <p>
             Search groups evidence into Exact, Compatible, Supported, and
             Reported views that are never interleaved. Inside a view,{" "}
-            <em>Recommended</em> surfaces the strongest available trust tier
+            <em>Recommended</em>&#32;surfaces the strongest available trust tier
             first — verified, then reproducible, then license + source, then
             source available, then no source — with the cohort&apos;s ranking-v1
             latency order untouched inside each tier, so rank numbers keep their
             cohort meaning. Labeled dividers appear only when tiers actually
             differ, and the availability chips (has source, license known,
             installable, verified) filter on single observable facts.{" "}
-            <em>Newest</em> is a presentation re-sort that never changes a
+            <em>Newest</em>&#32;is a presentation re-sort that never changes a
             row&apos;s cohort rank. The records ledger defaults to newest record
-            first, with <em>Largest improvement</em> (margin over the previous
-            record), <em>Most lead changes</em> (how many times the
+            first, with <em>Largest improvement</em>&#32;(margin over the
+            previous record), <em>Most lead changes</em>&#32;(how many times the
             cohort&apos;s record has changed hands — a competition measure, not
             a dispute measure), and operation A–Z. Browse orders the corpus by
             indexed run count, recent activity, or name. No sort ever ranks
