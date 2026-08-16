@@ -11,3 +11,12 @@ allowBuilds:
   esbuild: true
   sharp: true
 
+# Supply-chain cooldown (design Section 7.5, closed out in Week 11): a
+# release must be at least this old before pnpm resolves to it. 2 days for
+# now — the deliberately fresh pins (next 16.3.1 security patch, better-auth
+# 1.6.29, biome 2.5.8) are 2-3 days old and must not be downgraded; raise to
+# 10080 (7 days) after 2026-08-21 when they age past the floor. Urgent
+# security patches then go through a reviewed minimumReleaseAgeExclude
+# entry, never by dropping the floor.
+minimumReleaseAge: 2880
+

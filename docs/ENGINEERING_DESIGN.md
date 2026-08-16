@@ -530,6 +530,8 @@ Pin exact versions in the lockfile and project manifests. This table is a bootst
 
 TypeScript 7 is intentionally excluded from the bootstrap (7.0.2 is the npm `latest` tag as of 2026-08-14). The 7.0 package does not expose the JavaScript compiler API used by Next.js 16.2 stable, so a superficially newer pin can break `next build`. Revisit it only after the selected stable Next.js line officially supports it and a clean-clone build passes.
 
+**Reality note (2026-08-16).** Production moved off the bootstrap's 16.2 line to Next.js 16.3.1 in the Week 10 hardening pass (commit `cdfcd60`), with `pnpm check` and the full test suite green on the new line. The table above remains the historical bootstrap snapshot. A pnpm `minimumReleaseAge` floor now enforces §7.5's cooldown (2 days at first, raised to 7 once the deliberately fresh pins age past the floor; see `pnpm-workspace.yaml`).
+
 ### 7.2 Day 1 dependencies
 
 The web application should initially depend on only:
@@ -4170,6 +4172,8 @@ API keys, webhooks, the multi-step wizard, watch notifications
 
 **Gate:** the site can be restored from documented backups, a bad import can be disabled, and a bad deployment/migration has a tested recovery path.
 
+**Week 11 implementation notes (2026-08-16).** The restore path was rehearsed end-to-end, not merely documented: `pg_dump` of production through the local compose container, restore into a scratch database, row counts identical to live production (7,857 kernel runs, 722 serving runs, 2,948 record events), and `check:invariants` green against the restore; exact commands and the outcome live in `docs/runbook.md` alongside the Neon PITR procedure. Alerting stays deliberately small — the weekly import workflow fails loudly (gates, invariants, freshness) and GitHub notifies the owner; there is no pager because there is no SLA. §7.5's `minimumReleaseAge` shipped (the Week 10 deferral), floor-limited to 2 days until the deliberately fresh pins age, with the raise date recorded in `pnpm-workspace.yaml`. The §28.5 Week-12 checklist was walked item by item and recorded in the runbook; the one open item is manual and external (GitHub OAuth production credentials).
+
 ### 22.13 Week 12: production beta
 
 **Build:**
@@ -4184,6 +4188,15 @@ API keys, webhooks, the multi-step wizard, watch notifications
 **Target corpus:** 50 to 100 kernel records plus a smaller coherent serving corpus. Quality takes precedence over count.
 
 **Gate:** a new technical user reaches a defensible answer, understands every caveat, obtains usable code when available, and reproduces the same decision through a machine interface.
+
+**Week 12 implementation notes (2026-08-16).** Shipped in the production-readiness pass:
+
+- **Product events (§20.5):** a `product_events` table storing event name plus coarse facets only — no cookies, no user id, no IP, no raw query text. `search_submitted` and `serving_resolved` record server-side at render time (those pages are per-request dynamic, via `after()`); `evidence_opened`, `install_copied`, and `citation_copied` arrive through a `sendBeacon` route (`/e`, allowlisted, always 204) because run dossiers are ISR/CDN-cached. `/admin` derives the §20.4 north star (exact useful resolution rate) and zero-result rate over 30 days; retention is 90 days, pruned by the weekly workflow; the policy is public in `/docs` under Privacy.
+- **Correction/report intake (§15.6, §22.13):** every run and serving-run dossier carries a "Report an issue" disclosure — structured reason, bounded detail, optional evidence URL, anonymous allowed with an optional contact — into a `reports` table (per-target daily cap), reviewed on `/admin` with audited resolve/dismiss transitions; accepted reports flow through the existing retraction/supersession path.
+- **Methodology version history:** `/docs` gained a Versions section (manifest `v1alpha1`, `ranking-v1`, `deployability-v1`, `serving-v1`, per-run parser provenance, git-log pointer) and a Privacy section.
+- **Beyond-plan surfaces chosen by the founder:** `/coverage` (live per-source counts, snapshot freshness against declared intervals, upstream license terms, an explicit known-limitations list), "cite this record" copy actions on both dossier classes (permalink + digest + access date), `/llms.txt` plus a `/docs` Agents section (one-paste MCP config), and an Atom feed of record changes at `/records/feed.xml` advertised via `rel=alternate`.
+- **Identity refinements:** `/signin` honors a validated same-site `?next=` return path and contextual CTAs carry it (signed-out watch offers a real link back); first-run guidance on `/account`; self-service account deletion that removes identity and cascades ownership rows while submissions, claims, and audit events survive with the user reference detached (migration 0012).
+- The targeted launch itself and the demand-driven roadmap (§22.16) are founder actions, not code, and remain open.
 
 ### 22.14 Recommended first corpus
 
