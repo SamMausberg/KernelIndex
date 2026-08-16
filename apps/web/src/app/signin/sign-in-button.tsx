@@ -19,7 +19,7 @@ export function SignInButton() {
           })
           if (error) setState("error")
         }}
-        className="key flex h-[40px] w-full max-w-[360px] cursor-pointer items-center justify-center gap-2.5 text-[13.5px] text-fg transition-colors hover:border-edge-hover disabled:cursor-default disabled:text-subtle"
+        className="key-primary flex h-[40px] w-full max-w-[360px] cursor-pointer items-center justify-center text-[13.5px] disabled:cursor-default disabled:text-subtle"
       >
         {state === "pending"
           ? "Redirecting to GitHub…"

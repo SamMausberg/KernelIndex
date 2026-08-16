@@ -35,24 +35,26 @@ export default async function SignInPage() {
       <main className="shell-narrow animate-fade-in pt-10 pb-24">
         <div className="max-w-[560px]">
           {authConfigured ? (
-            <>
+            <div className="plate px-6 py-6">
               <SignInButton />
               <p className="mt-4 max-w-[52ch] text-[12.5px] leading-relaxed text-subtle">
                 GitHub is the only identity KernelIndex uses: benchmark
                 provenance ties to code identity, and no password is ever
-                created or stored here. Sessions are secure HTTP-only cookies;
-                sign out at any time from your account.
+                created or stored here. Sessions are HTTP-only cookies; sign out
+                at any time from your account.
               </p>
-            </>
+            </div>
           ) : (
-            <p className="max-w-[52ch] text-[13.5px] leading-relaxed text-muted">
-              Sign-in is not configured on this deployment (no GitHub OAuth
-              credentials). Evidence can still be contributed through the{" "}
-              <a href="https://github.com/SamMausberg/KernelIndex/tree/main/registry/submissions">
-                registry PR path
-              </a>
-              .
-            </p>
+            <div className="plate px-6 py-6">
+              <p className="max-w-[52ch] text-[13.5px] leading-relaxed text-muted">
+                Sign-in is not configured on this deployment (no GitHub OAuth
+                credentials). Evidence can still be contributed through the{" "}
+                <a href="https://github.com/SamMausberg/KernelIndex/tree/main/registry/submissions">
+                  registry PR path
+                </a>
+                , which runs the identical validation and review.
+              </p>
+            </div>
           )}
 
           <div className="mt-10 border-t border-border pt-6">

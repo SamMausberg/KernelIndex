@@ -6,8 +6,10 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { ContextHeader } from "@/components/context-header"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
+import { Select } from "@/components/select"
 import { ServingCohorts } from "@/features/serving/results"
 import { resolveServing } from "@/lib/catalog"
+import { countNoun } from "@/lib/format"
 import type { ServingResolveInput } from "@/lib/serving-models"
 import { servingEnabled } from "@/server/env"
 
@@ -60,6 +62,68 @@ function inputOf(params: Params): ServingResolveInput {
   }
 }
 
+/** Labeled console cluster: a tiny uppercase caption over a row of fields. */
+function ConsoleGroup({
+  label,
+  children,
+}: {
+  label: string
+  children: React.ReactNode
+}) {
+  return (
+    <div className="flex flex-col gap-2.5">
+      <div className="font-mono text-[10px] tracking-[0.08em] text-faint uppercase">
+        {label}
+      </div>
+      <div className="flex flex-wrap items-end gap-x-4 gap-y-3">{children}</div>
+    </div>
+  )
+}
+
+/** Visible field caption; controls carry their own aria-label, since a
+    wrapping <label> cannot associate with the custom Select button. */
+function Field({
+  label,
+  children,
+}: {
+  label: string
+  children: React.ReactNode
+}) {
+  return (
+    <div className="flex flex-col gap-1.5 text-[12px]">
+      <span className="text-subtle">{label}</span>
+      {children}
+    </div>
+  )
+}
+
+/** Recessed numeric input with a quiet unit suffix inside the well. */
+function UnitInput({
+  name,
+  ariaLabel,
+  defaultValue,
+  placeholder,
+}: {
+  name: string
+  ariaLabel: string
+  defaultValue?: string
+  placeholder: string
+}) {
+  return (
+    <span className="well flex h-[30px] w-[96px] items-center gap-1 px-2">
+      <input
+        name={name}
+        aria-label={ariaLabel}
+        defaultValue={defaultValue ?? ""}
+        inputMode="numeric"
+        placeholder={placeholder}
+        className="w-full min-w-0 bg-transparent font-mono text-[12px] outline-none"
+      />
+      <span className="font-mono text-[11px] text-faint">ms</span>
+    </span>
+  )
+}
+
 export default async function ServingPage({
   searchParams,
 }: {
@@ -68,6 +132,11 @@ export default async function ServingPage({
   if (!servingEnabled) notFound()
   const params = await searchParams
   const model = await resolveServing(inputOf(params))
+  const feasible = model.groups.reduce((n, group) => n + group.rows.length, 0)
+  const excluded = model.groups.reduce(
+    (n, group) => n + group.excluded.length,
+    0,
+  )
 
   return (
     <>
@@ -80,110 +149,121 @@ export default async function ServingPage({
       <main className="shell animate-fade-in pb-20">
         <form
           method="GET"
-          className="flex flex-wrap items-end gap-x-5 gap-y-3 border-b border-border py-5 text-[12.5px]"
+          className="flex flex-wrap items-stretch gap-x-6 gap-y-4 border-b border-border py-5"
         >
-          <label className="flex flex-col gap-1.5">
-            <span className="text-faint">Model</span>
-            <select
-              name="model"
-              defaultValue={params.model ?? ""}
-              className="well h-[30px] min-w-[220px] px-2 font-mono text-[12px] outline-none"
-            >
-              <option value="">any</option>
-              {model.facets.models.map((entry) => (
-                <option key={entry.slug} value={entry.slug}>
-                  {entry.name} ({entry.runs})
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex flex-col gap-1.5">
-            <span className="text-faint">Workload</span>
-            <select
-              name="workload"
-              defaultValue={params.workload ?? ""}
-              className="well h-[30px] min-w-[220px] px-2 font-mono text-[12px] outline-none"
-            >
-              <option value="">any</option>
-              {model.facets.workloads.map((entry) => (
-                <option key={entry.slug} value={entry.slug}>
-                  {entry.name} ({entry.runs})
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex flex-col gap-1.5">
-            <span className="text-faint">Hardware</span>
-            <select
-              name="hw"
-              defaultValue={params.hw ?? ""}
-              className="well h-[30px] min-w-[180px] px-2 font-mono text-[12px] outline-none"
-            >
-              <option value="">any</option>
-              {model.facets.hardware.map((entry) => (
-                <option key={entry} value={entry}>
-                  {entry}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex flex-col gap-1.5">
-            <span className="text-faint">Max GPUs</span>
-            <input
-              name="gpus"
-              defaultValue={params.gpus ?? ""}
-              inputMode="numeric"
-              placeholder="8"
-              className="well h-[30px] w-[74px] px-2 font-mono text-[12px] outline-none"
-            />
-          </label>
-          <label className="flex flex-col gap-1.5">
-            <span className="text-faint">Objective</span>
-            <select
-              name="objective"
-              defaultValue={params.objective ?? "throughput"}
-              className="well h-[30px] min-w-[200px] px-2 font-mono text-[12px] outline-none"
-            >
-              <option value="throughput">maximize tokens/s</option>
-              <option value="ttft">minimize TTFT p99</option>
-              <option value="none">none · Pareto frontier</option>
-            </select>
-          </label>
-          <label className="flex flex-col gap-1.5">
-            <span className="text-faint">p99 TTFT ≤ ms</span>
-            <input
-              name="ttft"
-              defaultValue={params.ttft ?? ""}
-              inputMode="numeric"
-              placeholder="450"
-              className="well h-[30px] w-[84px] px-2 font-mono text-[12px] outline-none"
-            />
-          </label>
-          <label className="flex flex-col gap-1.5">
-            <span className="text-faint">p99 TPOT ≤ ms</span>
-            <input
-              name="tpot"
-              defaultValue={params.tpot ?? ""}
-              inputMode="numeric"
-              placeholder="40"
-              className="well h-[30px] w-[84px] px-2 font-mono text-[12px] outline-none"
-            />
-          </label>
+          <ConsoleGroup label="Scope">
+            <Field label="Model">
+              <Select
+                name="model"
+                ariaLabel="Model"
+                defaultValue={params.model ?? ""}
+                className="min-w-[220px]"
+                options={[
+                  { value: "", label: "any" },
+                  ...model.facets.models.map((entry) => ({
+                    value: entry.slug,
+                    label: entry.name,
+                    detail: `${entry.runs} runs`,
+                  })),
+                ]}
+              />
+            </Field>
+            <Field label="Workload">
+              <Select
+                name="workload"
+                ariaLabel="Workload"
+                defaultValue={params.workload ?? ""}
+                className="min-w-[220px]"
+                options={[
+                  { value: "", label: "any" },
+                  ...model.facets.workloads.map((entry) => ({
+                    value: entry.slug,
+                    label: entry.name,
+                    detail: `${entry.runs} runs`,
+                  })),
+                ]}
+              />
+            </Field>
+            <Field label="Hardware">
+              <Select
+                name="hw"
+                ariaLabel="Hardware"
+                defaultValue={params.hw ?? ""}
+                className="min-w-[170px]"
+                options={[
+                  { value: "", label: "any" },
+                  ...model.facets.hardware.map((entry) => ({
+                    value: entry,
+                    label: entry,
+                  })),
+                ]}
+              />
+            </Field>
+            <Field label="Max GPUs">
+              <input
+                name="gpus"
+                aria-label="Max GPUs"
+                defaultValue={params.gpus ?? ""}
+                inputMode="numeric"
+                placeholder="8"
+                className="well h-[30px] w-[70px] px-2 font-mono text-[12px] outline-none"
+              />
+            </Field>
+          </ConsoleGroup>
+          <div aria-hidden="true" className="w-px bg-border" />
+          <ConsoleGroup label="Objective">
+            <Field label="Rank by">
+              <Select
+                name="objective"
+                ariaLabel="Objective"
+                defaultValue={params.objective ?? "throughput"}
+                className="min-w-[200px]"
+                options={[
+                  { value: "throughput", label: "maximize tokens/s" },
+                  { value: "ttft", label: "minimize TTFT p99" },
+                  { value: "none", label: "none · Pareto frontier" },
+                ]}
+              />
+            </Field>
+          </ConsoleGroup>
+          <div aria-hidden="true" className="w-px bg-border" />
+          <ConsoleGroup label="SLO bounds">
+            <Field label="TTFT p99 ≤">
+              <UnitInput
+                name="ttft"
+                ariaLabel="TTFT p99 bound (ms)"
+                defaultValue={params.ttft}
+                placeholder="450"
+              />
+            </Field>
+            <Field label="TPOT p99 ≤">
+              <UnitInput
+                name="tpot"
+                ariaLabel="TPOT p99 bound (ms)"
+                defaultValue={params.tpot}
+                placeholder="40"
+              />
+            </Field>
+          </ConsoleGroup>
           <button
             type="submit"
-            className="key h-[30px] cursor-pointer px-4 text-[12.5px] hover:text-fg"
+            className="key-primary h-[30px] cursor-pointer self-end px-5 text-[12.5px]"
           >
             Resolve
           </button>
         </form>
 
-        <p className="max-w-[86ch] py-4 text-[12.5px] text-subtle">
-          Serving results compare only when model, workload, protocol, hardware
-          topology, and quality policy match; each group below is one such
-          cohort. Constraints on unreported metrics exclude a candidate rather
-          than assuming it. Imported results are Reported evidence, preserved
-          exactly as published.
-        </p>
+        <div className="flex flex-wrap items-baseline justify-between gap-x-8 gap-y-1.5 py-4">
+          <p className="font-mono text-[12.5px] text-muted">
+            {countNoun(model.groups.length, "cohort")} · {feasible} feasible ·{" "}
+            {excluded} excluded
+          </p>
+          <p className="max-w-[68ch] text-[12px] text-faint">
+            Comparable only within a cohort: same model, workload, protocol,
+            hardware topology, and quality policy. A constraint on an unreported
+            metric excludes the run rather than assuming it.
+          </p>
+        </div>
 
         {model.groups.length > 0 ? (
           <>
@@ -193,7 +273,7 @@ export default async function ServingPage({
             <ServingCohorts groups={model.groups.slice(0, 30)} />
             {model.groups.length > 30 && (
               <p className="mt-8 text-[12.5px] text-faint">
-                {model.groups.length - 30} more cohorts not shown — narrow by
+                {model.groups.length - 30} more cohorts not shown. Narrow by
                 model, workload, or hardware to reach them.
               </p>
             )}

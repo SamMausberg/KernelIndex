@@ -12,6 +12,10 @@ function scaleFor(ns: number) {
   return LATENCY_SCALES.find((scale) => ns < scale.limit)
 }
 
+/** "3 cohorts", "1 issue": counted noun for summary lines. */
+export const countNoun = (n: number, noun: string) =>
+  `${n} ${noun}${n === 1 ? "" : "s"}`
+
 /** "7.81 µs" from integer nanoseconds: two decimals under 10, one above. */
 export function formatLatency(ns: number): string {
   const scale = scaleFor(ns)

@@ -235,6 +235,31 @@
     background: linear-gradient(180deg, #080a12, #0e1220);
     box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.5);
   }
+  /* Primary action key: the one main action per page (Resolve, Submit for
+     review, Continue with GitHub). Cobalt-lit like an engaged key, but
+     raised and pressable — same geometry as .key, accent tokens only. */
+  .key-primary {
+    border: 1px solid var(--color-accent-dim);
+    border-radius: 4px;
+    color: var(--color-accent-bright);
+    background: linear-gradient(180deg, #101c36, #0c1322);
+    box-shadow:
+      inset 0 1px 0 rgb(201 220 255 / 0.1),
+      0 1px 2px rgb(0 0 0 / 0.35);
+    transition:
+      border-color 0.15s,
+      color 0.15s;
+  }
+  button.key-primary:hover:not(:disabled),
+  a.key-primary:hover {
+    border-color: var(--color-accent);
+  }
+  button.key-primary:active:not(:disabled),
+  a.key-primary:active {
+    background: linear-gradient(180deg, #0c1322, #0e1729);
+    box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.5);
+  }
+
   /* Engaged key: sunken, cobalt-lit. Filter chips and pickers use this. */
   .key-on {
     border-color: var(--color-accent-dim);

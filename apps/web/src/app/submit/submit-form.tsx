@@ -5,6 +5,7 @@
 // review. The preview never promises ranking — comparability is evaluated
 // at review and publication.
 import { useActionState } from "react"
+import { countNoun } from "@/lib/format"
 import { type SubmitState, submitAction, validateAction } from "./actions"
 
 const INITIAL: SubmitState = {
@@ -41,12 +42,12 @@ export function SubmitForm({
           placeholder={`projects:\n  - apiVersion: kernelindex.dev/v1alpha1\n    kind: SoftwareProject\n    …\nruns:\n  - run: { … }\n    protocol: { … }\n    environment: { … }`}
           className="well w-full px-4 py-3 font-mono text-[12.5px] leading-relaxed outline-none"
         />
-        <div className="mt-3 flex items-baseline gap-4">
+        <div className="mt-3 flex items-center gap-3">
           <button
             type="submit"
             formAction={validate}
             disabled={validating}
-            className="key cursor-pointer px-3 py-1 text-[12.5px] hover:text-fg"
+            className="key h-[30px] cursor-pointer px-4 text-[12.5px] hover:text-fg"
           >
             Validate
           </button>
@@ -54,7 +55,7 @@ export function SubmitForm({
             type="submit"
             formAction={submit}
             disabled={submitting || !signedIn}
-            className="key cursor-pointer px-3 py-1 text-[12.5px] hover:text-fg disabled:cursor-not-allowed disabled:text-ghost"
+            className="key-primary h-[30px] cursor-pointer px-4 text-[12.5px] disabled:cursor-not-allowed disabled:border-border-strong disabled:text-ghost"
           >
             Submit for review
           </button>
@@ -77,9 +78,22 @@ export function SubmitForm({
         </p>
       )}
       {state.report && (
-        <div className="mt-5">
-          <div className="text-[11.5px] tracking-[0.03em] text-faint uppercase">
-            Validation report
+        <div className="plate mt-5 px-4 py-3.5">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-4 border-b border-line pb-2.5">
+            <div className="text-[11.5px] tracking-[0.03em] text-faint uppercase">
+              Validation report
+            </div>
+            <div className="font-mono text-[12px]">
+              {state.report.valid ? (
+                <span className="text-success">
+                  valid · {countNoun(state.report.objects.length, "object")}
+                </span>
+              ) : (
+                <span className="text-warning">
+                  {countNoun(state.report.issues.length, "issue")}
+                </span>
+              )}
+            </div>
           </div>
           {state.report.issues.map((issue) => (
             <p

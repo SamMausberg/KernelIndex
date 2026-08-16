@@ -13,14 +13,19 @@ function metric(
   row: ServingResultRow,
   name: string,
   statistic: string,
-): string {
+): string | null {
   const found = row.measurements.find(
     (m) => m.metric === name && m.statistic === statistic,
   )
-  if (!found) return "—"
+  if (!found) return null
   return name.includes("throughput")
     ? Math.round(found.value).toLocaleString("en-US")
     : `${found.value.toLocaleString("en-US")}`
+}
+
+/** A measured value, or an explicit quiet "n/r" (not reported) marker. */
+function cell(value: string | null) {
+  return value ?? <span className="text-[11px] text-faint">n/r</span>
 }
 
 function ResultRow({ row }: { row: ServingResultRow }) {
@@ -39,13 +44,13 @@ function ResultRow({ row }: { row: ServingResultRow }) {
           {row.stack}
         </div>
         <div className="pr-3 text-right font-mono text-[13px] text-fg">
-          {metric(row, "output_token_throughput_tps", "reported")}
+          {cell(metric(row, "output_token_throughput_tps", "reported"))}
         </div>
         <div className="pr-3 text-right font-mono text-[12px] text-subtle">
-          {metric(row, "ttft_ms", "p99")}
+          {cell(metric(row, "ttft_ms", "p99"))}
         </div>
         <div className="pr-3 text-right font-mono text-[12px] text-subtle">
-          {metric(row, "tpot_ms", "p99")}
+          {cell(metric(row, "tpot_ms", "p99"))}
         </div>
         <div className="pr-3 text-right font-mono text-[12px] text-muted">
           {row.hardware.total}
@@ -136,7 +141,7 @@ export function ServingCohorts({ groups }: { groups: ServingCohortGroup[] }) {
           {group.excluded.length > 0 && (
             <details className="mt-3">
               <summary className="cursor-pointer list-none text-[12.5px] text-subtle [&::-webkit-details-marker]:hidden">
-                {group.excluded.length} excluded — constraint unsatisfied or
+                {group.excluded.length} excluded: constraint unsatisfied or
                 metric not reported ›
               </summary>
               <div className="mt-2 space-y-1">

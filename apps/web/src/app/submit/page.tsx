@@ -26,11 +26,13 @@ export default async function SubmitPage() {
         }
       >
         <p className="mt-1.5 max-w-[72ch] text-[13px] text-subtle">
-          A submission carries canonical manifests: projects, operations,
-          workloads, implementations (with projectSlug), and runs with their
-          protocol and environment. The PR path, a reviewed file under
-          registry/submissions, runs the identical validation and publication
-          transaction.
+          Paste one YAML document of{" "}
+          <a href="/docs#data">canonical manifests</a> describing your evidence:
+          the projects, workloads, implementations, and runs with their protocol
+          and environment. Validate previews the parsed objects and digests
+          before anything is sent; submitting queues them for review. Prefer a
+          pull request? A reviewed file under registry/submissions runs the
+          identical validation and publication transaction.
         </p>
       </ContextHeader>
       <main className="shell-narrow animate-fade-in pb-20">
