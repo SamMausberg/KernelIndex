@@ -25,7 +25,8 @@
     "check:invariants": "node --env-file-if-exists=.env.local scripts/check-invariants.ts",
     "report:health": "node --env-file-if-exists=.env.local scripts/report-health.ts",
     "openapi:generate": "node scripts/generate-openapi.ts",
-    "import:mlperf": "node --env-file-if-exists=.env.local scripts/import-mlperf.ts"
+    "import:mlperf": "node --env-file-if-exists=.env.local scripts/import-mlperf.ts",
+    "check:bundles": "node scripts/check-bundle-budget.ts"
   },
   "dependencies": {
     "@hono/zod-openapi": "^1.6.0",
