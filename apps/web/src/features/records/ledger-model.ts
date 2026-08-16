@@ -18,7 +18,9 @@ export type RecordsFilters = {
 }
 
 export const DAY_MS = 24 * 60 * 60 * 1000
-export const PAGE_SIZE = 100
+// 50 keeps the first paint light (each server-rendered row costs ~5KB of
+// HTML+flight); once the model loads, paging is an instant client slice.
+export const PAGE_SIZE = 50
 
 export function recordsHref(
   filters: RecordsFilters,
