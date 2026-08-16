@@ -34,8 +34,10 @@ const SECTIONS = [
   ["evidence", "Evidence levels"],
   ["records", "How records are decided"],
   ["data", "Data and API"],
+  ["agents", "Agents"],
   ["serving", "Serving"],
   ["sources", "Sources and licensing"],
+  ["versions", "Versions"],
   ["privacy", "Privacy"],
 ] as const
 
@@ -314,6 +316,34 @@ curl -L https://kernelindex.com/api/v1/exports/catalog.jsonl.zst`}
           </p>
         </Section>
 
+        <Section id="agents" title="Agents">
+          <p>
+            Point an agent at <a href="/llms.txt">/llms.txt</a>: it states in
+            one page what may be claimed from this index and lists every machine
+            surface. One-paste MCP setup from a repository checkout:
+          </p>
+          <pre className="plate mt-4 overflow-x-auto px-4 py-3 font-mono text-[12.5px] leading-relaxed text-muted">
+            {`{
+  "mcpServers": {
+    "kernelindex": {
+      "command": "node",
+      "args": ["apps/mcp/src/server.ts"],
+      "cwd": "/path/to/KernelIndex",
+      "env": { "KI_API": "https://kernelindex.com/api/v1" }
+    }
+  }
+}`}
+          </pre>
+          <p className="mt-4">
+            REST, the CLI&apos;s{" "}
+            <span className="font-mono text-[12.5px]">--json</span>, MCP, the
+            bulk export, and the{" "}
+            <a href="/records/feed.xml">record-changes Atom feed</a> all return
+            the same resolver decisions and caveats as these pages — no
+            HTML-only facts, and no weaker explanations for machines.
+          </p>
+        </Section>
+
         <Section id="serving" title="Serving">
           <p>
             <Link href="/serving">Serving</Link> is a separate resolver surface:
@@ -361,7 +391,38 @@ curl -L https://kernelindex.com/api/v1/exports/catalog.jsonl.zst`}
             from the Apache-2.0 per-round result repos, shown unmodified with
             round, submitter, system, and entry ID (MLPerf™ is a trademark of
             MLCommons). Rights holders can request removal at any time and
-            contested records are retracted before any dispute.
+            contested records are retracted before any dispute. Live per-source
+            counts, snapshot freshness, and known limitations are on the{" "}
+            <Link href="/coverage">coverage page</Link>.
+          </p>
+        </Section>
+
+        <Section id="versions" title="Versions">
+          <p>
+            Semantics change only by publishing a new version, never by editing
+            in place. Current versions: manifests are{" "}
+            <span className="font-mono text-[12.5px]">
+              kernelindex.dev/v1alpha1
+            </span>{" "}
+            (JSON Schemas in{" "}
+            <a href="https://github.com/SamMausberg/KernelIndex/tree/main/registry/schemas">
+              registry/schemas
+            </a>
+            ); ranking is{" "}
+            <span className="font-mono text-[12.5px]">ranking-v1</span>,
+            deployability{" "}
+            <span className="font-mono text-[12.5px]">deployability-v1</span>,
+            serving comparison{" "}
+            <span className="font-mono text-[12.5px]">serving-v1</span> — each
+            response and dossier names the version it was ranked under. Every
+            imported run records its parser name and version in provenance. A
+            policy revision recomputes derived ranks; published runs, their
+            digests, and record history are immutable. The methodology&apos;s
+            own history is public in the{" "}
+            <a href="https://github.com/SamMausberg/KernelIndex/commits/main/docs/ENGINEERING_DESIGN.md">
+              engineering design&apos;s git log
+            </a>{" "}
+            and its ADRs.
           </p>
         </Section>
 

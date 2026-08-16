@@ -95,7 +95,7 @@ export default async function AccountPage() {
             </dl>
             <p className="mt-3 text-[12.5px] text-faint">
               Start from the <a href="/records">records ledger</a>, or read the{" "}
-              <a href="/docs#data">API and CLI docs</a>.
+              <a href="/docs#agents">agent quickstart</a>.
             </p>
           </div>
         )}

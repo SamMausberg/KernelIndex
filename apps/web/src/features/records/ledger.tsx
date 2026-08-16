@@ -642,22 +642,32 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
       <ContextHeader
         title="Performance records"
         context={slice.context}
-        meta={VIEWS.map((view) => (
-          <FilterLink
-            key={view.key}
-            filters={slice.filters}
-            patch={{ view: view.key }}
-            navigate={navigate}
-            className={`whitespace-nowrap transition-colors hover:text-fg hover:no-underline ${
-              slice.filters.view === view.key ? "text-fg" : "text-subtle"
-            }`}
+        meta={[
+          ...VIEWS.map((view) => (
+            <FilterLink
+              key={view.key}
+              filters={slice.filters}
+              patch={{ view: view.key }}
+              navigate={navigate}
+              className={`whitespace-nowrap transition-colors hover:text-fg hover:no-underline ${
+                slice.filters.view === view.key ? "text-fg" : "text-subtle"
+              }`}
+            >
+              {view.label}{" "}
+              <span className="font-mono text-[11px] text-subtle">
+                {slice.counts[view.key]}
+              </span>
+            </FilterLink>
+          )),
+          // Record changes as Atom (Week 12): subscribe without an account.
+          <a
+            key="feed"
+            href="/records/feed.xml"
+            className="whitespace-nowrap text-subtle transition-colors hover:text-fg hover:no-underline"
           >
-            {view.label}{" "}
-            <span className="font-mono text-[11px] text-subtle">
-              {slice.counts[view.key]}
-            </span>
-          </FilterLink>
-        ))}
+            Feed
+          </a>,
+        ]}
       />
 
       <main className="shell animate-fade-in pb-20">

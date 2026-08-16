@@ -7,6 +7,7 @@ import { unstable_cache } from "next/cache.js"
 import { cache } from "react"
 import type {
   ComparePageModel,
+  CoveragePageModel,
   HomePageModel,
   ImplementationPageModel,
   OperationIndexEntry,
@@ -40,6 +41,7 @@ type CatalogReads = {
   getImplementationPage(slug: string): Promise<ImplementationPageModel | null>
   getRunPage(id: string): Promise<RunPageModel | null>
   getComparePage(runIds: string[]): Promise<ComparePageModel>
+  getCoveragePage(): Promise<CoveragePageModel>
   // Serving (§8.16): a separate resolver surface behind the same seam.
   resolveServing(input: ServingResolveInput): Promise<ServingResolveModel>
   getServingRunPage(id: string): Promise<ServingRunPageModel | null>
@@ -198,6 +200,16 @@ export const listServingRuns = cache(
       return (await reads()).listServingRuns(input)
     },
     ["serving-runs", BACKEND],
+    { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },
+  ),
+)
+
+export const getCoveragePage = cache(
+  cached(
+    async (): Promise<CoveragePageModel> => {
+      return (await reads()).getCoveragePage()
+    },
+    ["coverage", BACKEND],
     { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },
   ),
 )

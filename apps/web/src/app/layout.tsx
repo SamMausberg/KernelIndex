@@ -22,6 +22,9 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://kernelindex.com"),
   title: { default: "KernelIndex", template: "%s · KernelIndex" },
   description: "Find the fastest known GPU kernel for your exact workload.",
+  alternates: {
+    types: { "application/atom+xml": "/records/feed.xml" },
+  },
 }
 
 export default function RootLayout({

@@ -527,3 +527,20 @@ export type RunPageModel = {
   /** Canonical run manifest for the manifest section. */
   manifest: unknown
 }
+
+/** One row of the public coverage page (Week 12): live per-source counts,
+ * so the site's limits are stated as current facts, not marketing. */
+export type CoverageSource = {
+  slug: string
+  kind: "kernel" | "serving"
+  runs: number
+  /** Kernel sources: distinct operations. Serving: distinct configurations. */
+  breadth: number
+  hardware: number
+  lastFetched: string | null
+}
+
+export type CoveragePageModel = {
+  illustrative: boolean
+  sources: CoverageSource[]
+}

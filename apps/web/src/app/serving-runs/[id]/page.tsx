@@ -165,7 +165,27 @@ export default async function ServingRunPage({ params }: Props) {
           </details>
         </Section>
 
-        <div className="mt-10">
+        <div className="mt-10 flex items-center gap-2.5">
+          <span className="text-[12.5px] text-faint">
+            Cite this result (permalink, digest, access date)
+          </span>
+          <CopyButton
+            text={[
+              `${model.configuration.summary} — ${model.model.name}, ${model.workload.name}.`,
+              ...(model.measurements[0]
+                ? [
+                    `${model.measurements[0].value.toLocaleString("en-US")} ${model.measurements[0].unit} (${model.measurements[0].metric}, ${model.measurements[0].statistic}).`,
+                  ]
+                : []),
+              `${model.attribution.line}.`,
+              `KernelIndex serving run ${model.run.id}, ${model.run.digest}.`,
+              `https://kernelindex.com/serving-runs/${model.run.id}.`,
+              `Accessed ${new Date().toISOString().slice(0, 10)}.`,
+            ].join(" ")}
+            event="citation_copied"
+          />
+        </div>
+        <div className="mt-4">
           <ReportForm targetKind="serving_run" targetId={model.run.id} />
         </div>
 

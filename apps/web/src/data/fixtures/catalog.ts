@@ -6,6 +6,7 @@ import type {
   CompareField,
   ComparePageModel,
   CompareRun,
+  CoveragePageModel,
   EvidenceLevel,
   HomePageModel,
   ImplementationPageModel,
@@ -1300,3 +1301,28 @@ export async function getComparePage(
 
 // Serving fixtures (§8.16, Week 9): same seam, separate module.
 export * from "./serving"
+
+/** Coverage rows sized to the fixture catalog, visibly illustrative. */
+export async function getCoveragePage(): Promise<CoveragePageModel> {
+  return {
+    illustrative: true,
+    sources: [
+      {
+        slug: "sol-execbench",
+        kind: "kernel",
+        runs: 8,
+        breadth: 2,
+        hardware: 1,
+        lastFetched: "2026-08-14T00:00:00.000Z",
+      },
+      {
+        slug: "mlperf-inference",
+        kind: "serving",
+        runs: 4,
+        breadth: 3,
+        hardware: 2,
+        lastFetched: "2026-08-14T00:00:00.000Z",
+      },
+    ],
+  }
+}

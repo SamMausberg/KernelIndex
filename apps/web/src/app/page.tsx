@@ -40,7 +40,10 @@ export default async function Home() {
             <p className="mt-5 font-mono text-[12px] text-subtle">
               {model.stats.operations.toLocaleString("en-US")} operations ·{" "}
               {model.stats.runs.toLocaleString("en-US")} published runs ·{" "}
-              {model.stats.gpus.toLocaleString("en-US")} GPUs
+              {model.stats.gpus.toLocaleString("en-US")} GPUs ·{" "}
+              <Link href="/coverage" className="text-subtle">
+                coverage →
+              </Link>
             </p>
           </div>
         </section>
@@ -73,6 +76,9 @@ export default async function Home() {
           )}
           <Link href="/docs" className="text-[13px] text-subtle">
             Methodology
+          </Link>
+          <Link href="/coverage" className="text-[13px] text-subtle">
+            Coverage
           </Link>
           <a
             href="https://github.com/SamMausberg/KernelIndex"

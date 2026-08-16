@@ -12,6 +12,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${origin}/records` },
     ...(servingEnabled ? [{ url: `${origin}/serving` }] : []),
     { url: `${origin}/docs` },
+    { url: `${origin}/coverage` },
     ...index.map((operation) => ({
       url: `${origin}/operations/${operation.slug}`,
       lastModified: operation.lastObservedAt ?? undefined,

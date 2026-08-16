@@ -299,7 +299,23 @@ export default async function RunPage({ params }: Props) {
           </details>
         </Section>
 
-        <div className="mt-10">
+        <div className="mt-10 flex items-center gap-2.5">
+          <span className="text-[12.5px] text-faint">
+            Cite this record (permalink, digest, access date)
+          </span>
+          <CopyButton
+            text={[
+              `${model.implementation.name} — ${model.operation.name}, ${model.workload.label}.`,
+              `${formatPrimary(model.primary)} (${model.primary.statistic}).`,
+              `Reported by ${model.provenance.source.name}.`,
+              `KernelIndex run ${model.run.id}, ${model.run.digest}.`,
+              `https://kernelindex.com/runs/${model.run.id}.`,
+              `Accessed ${new Date().toISOString().slice(0, 10)}.`,
+            ].join(" ")}
+            event="citation_copied"
+          />
+        </div>
+        <div className="mt-4">
           <ReportForm targetKind="run" targetId={model.run.id} />
         </div>
 
