@@ -40,6 +40,9 @@ export function classifyRow(entry: unknown): RowClassification {
     return { kind: "skip", reason: "non_llm_benchmark" }
   if (scope.Performance_Units !== "Tokens/s")
     return { kind: "skip", reason: "non_token_throughput_units" }
+  // CPU-only submissions state no accelerator; a GPU index skips them.
+  if (scope.Accelerator === "" || scope["a#"] === "")
+    return { kind: "skip", reason: "no_accelerator" }
   const parsed = mlperfRow.safeParse(entry)
   if (!parsed.success)
     return {

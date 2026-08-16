@@ -1,8 +1,8 @@
 {
-  "file": "catalog-2026-08-16-94af2ae7.jsonl.zst",
-  "url": "https://raw.githubusercontent.com/SamMausberg/KernelIndex/main/registry/exports/catalog-2026-08-16-94af2ae7.jsonl.zst",
-  "sha256": "94af2ae72d629915c7d44c4cc30ccdf7d4ea82e81bbf0ad5ea7e019a6a8786d8",
-  "sizeBytes": 3011620,
-  "lines": 39099,
-  "generatedAt": "2026-08-16T15:10:03.699Z"
+  "file": "catalog-2026-08-16-0022af0b.jsonl.zst",
+  "url": "https://raw.githubusercontent.com/SamMausberg/KernelIndex/main/registry/exports/catalog-2026-08-16-0022af0b.jsonl.zst",
+  "sha256": "0022af0bfbed96c53e2a2a2315a3e46f0c362c11d1ea1fefd95daac368638f6b",
+  "sizeBytes": 3124880,
+  "lines": 40795,
+  "generatedAt": "2026-08-16T15:58:34.248Z"
 }

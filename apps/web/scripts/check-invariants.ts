@@ -63,6 +63,21 @@ try {
         where published_at is not null and status = 'passed' and primary_value is null`,
   )
 
+  await count(
+    "published serving runs with dangling references",
+    sql`select count(*) n from serving_runs r
+        where r.published_at is not null
+          and (not exists (select 1 from model_revisions m where m.id = r.model_revision_id)
+            or not exists (select 1 from serving_configurations c where c.id = r.configuration_id)
+            or not exists (select 1 from serving_workloads w where w.id = r.workload_id))`,
+  )
+  await count(
+    "published valid serving runs without measurements",
+    sql`select count(*) n from serving_runs r
+        where r.published_at is not null and r.status = 'valid'
+          and not exists (select 1 from serving_measurements m where m.run_id = r.id)`,
+  )
+
   // Digest recomputation sample (§20.3): stored semantic digests must equal
   // a fresh canonicalization of the stored manifest.
   const operations = (await database.execute(

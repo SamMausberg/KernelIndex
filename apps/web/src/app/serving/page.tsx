@@ -186,7 +186,18 @@ export default async function ServingPage({
         </p>
 
         {model.groups.length > 0 ? (
-          <ServingCohorts groups={model.groups} />
+          <>
+            {/* Cohorts are deliberately granular (§11.1); an unfiltered view
+                caps the page and asks for narrowing instead of rendering
+                hundreds of tables. */}
+            <ServingCohorts groups={model.groups.slice(0, 30)} />
+            {model.groups.length > 30 && (
+              <p className="mt-8 text-[12.5px] text-faint">
+                {model.groups.length - 30} more cohorts not shown — narrow by
+                model, workload, or hardware to reach them.
+              </p>
+            )}
+          </>
         ) : (
           <p className="py-10 text-[13.5px] text-faint">
             {model.totalRuns === 0
