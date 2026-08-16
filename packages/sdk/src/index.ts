@@ -57,14 +57,14 @@ export function client({
       if (data === undefined) fail(response, error)
       return data
     },
-    async show(kind: string, id: string): Promise<unknown> {
+    async show(kind: string, id: string, query = ""): Promise<unknown> {
       const path =
         kind === "operation"
           ? `/operations/${id}`
           : kind === "implementation"
             ? `/implementations/${id}`
             : `/runs/${id}`
-      const response = await fetch(`${baseUrl}${path}`, { headers })
+      const response = await fetch(`${baseUrl}${path}${query}`, { headers })
       const body = (await response.json()) as unknown
       if (!response.ok) fail(response, body)
       return body

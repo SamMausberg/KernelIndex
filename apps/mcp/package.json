@@ -1,0 +1,23 @@
+{
+  "name": "@kernelindex/mcp",
+  "private": true,
+  "type": "module",
+  "description": "Read-only MCP server over the public KernelIndex REST API (§13.10). Stdio transport; run from the checkout: node apps/mcp/src/server.ts",
+  "bin": {
+    "kernelindex-mcp": "./src/server.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@kernelindex/sdk": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "typescript": "6.0.3",
+    "@types/node": "24.13.3",
+    "vitest": "^4.1.10"
+  }
+}

@@ -473,6 +473,29 @@ export const userRoles = pgTable(
   (t) => [primaryKey({ columns: [t.userId, t.role] })],
 )
 
+/** Watched comparison cohorts (§13.11): the notification feed derives on
+ * read from record_events and submission transitions — no notifications
+ * table, no fan-out jobs. */
+export const watches = pgTable(
+  "watches",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    comparisonKey: text("comparison_key").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.comparisonKey] })],
+)
+
+/** One seen-watermark per user; everything newer counts as unseen. */
+export const watchMarks = pgTable("watch_marks", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  seenAt: timestamp("seen_at", { withTimezone: true }).notNull(),
+})
+
 /** Scoped API keys (§13.6): visible prefix, hash-only secret storage,
  * explicit scopes, expiry/revocation/last-use, and a per-day quota. */
 export const apiKeys = pgTable(

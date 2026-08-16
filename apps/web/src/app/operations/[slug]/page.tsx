@@ -12,6 +12,7 @@ import { WorkloadPicker } from "@/features/operations/workload-picker"
 import { ResultRowItem, ResultTableHead } from "@/features/search/result-row"
 import { getOperationPage } from "@/lib/catalog"
 import { formatDateUTC } from "@/lib/format"
+import { WatchButton } from "./watch-button"
 
 type Props = {
   params: Promise<{ slug: string }>
@@ -163,6 +164,7 @@ export default async function OperationPage({ params, searchParams }: Props) {
                       : []),
                   ]}
                 />
+                <WatchButton comparisonKey={model.cohort.comparisonKey} />
               </div>
             )}
           </div>

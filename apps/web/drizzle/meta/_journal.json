@@ -71,6 +71,13 @@
       "when": 1786893390639,
       "tag": "0009_api-keys",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1786893745332,
+      "tag": "0010_watches",
+      "breakpoints": true
     }
   ]
 }

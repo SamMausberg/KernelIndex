@@ -31,37 +31,52 @@ type ManifestDocument = {
   spec?: unknown
 }
 
-function load(file: string): ManifestDocument {
-  const text = readFileSync(file, "utf8")
-  const document = file.endsWith(".json") ? JSON.parse(text) : parseYaml(text)
+/** Parse manifest text (YAML or JSON) into a document object. */
+export function parseManifestText(
+  text: string,
+  format: "yaml" | "json" = "yaml",
+): ManifestDocument {
+  const document = format === "json" ? JSON.parse(text) : parseYaml(text)
   if (document === null || typeof document !== "object") {
-    throw new Error(`${file}: not a manifest document`)
+    throw new Error("not a manifest document")
   }
   return document as ManifestDocument
 }
 
-export function validateManifest(file: string): {
-  valid: boolean
-  kind: string
-  errors: string[]
-} {
-  const document = load(file)
-  const kind = typeof document.kind === "string" ? document.kind : ""
-  if (kind === "") return { valid: false, kind, errors: ["missing kind"] }
-  let schema: unknown
+function load(file: string): ManifestDocument {
+  return parseManifestText(
+    readFileSync(file, "utf8"),
+    file.endsWith(".json") ? "json" : "yaml",
+  )
+}
+
+/** The generated JSON Schema for a manifest kind, or null when unknown. */
+export function readManifestSchema(kind: string): object | null {
   try {
-    schema = JSON.parse(
+    return JSON.parse(
       readFileSync(
         path.join(SCHEMAS_DIR, `${kebab(kind)}.v1alpha1.schema.json`),
         "utf8",
       ),
     )
   } catch {
-    return { valid: false, kind, errors: [`no schema for kind '${kind}'`] }
+    return null
   }
+}
+
+export function validateManifestDocument(document: ManifestDocument): {
+  valid: boolean
+  kind: string
+  errors: string[]
+} {
+  const kind = typeof document.kind === "string" ? document.kind : ""
+  if (kind === "") return { valid: false, kind, errors: ["missing kind"] }
+  const schema = readManifestSchema(kind)
+  if (schema === null)
+    return { valid: false, kind, errors: [`no schema for kind '${kind}'`] }
   const ajv = new Ajv2020({ allErrors: true, strict: false })
   addFormats(ajv)
-  const validate = ajv.compile(schema as object)
+  const validate = ajv.compile(schema)
   const valid = validate(document)
   return {
     valid: valid === true,
@@ -73,12 +88,15 @@ export function validateManifest(file: string): {
   }
 }
 
+export function validateManifest(file: string) {
+  return validateManifestDocument(load(file))
+}
+
 /** RFC 8785 canonical digest of the identity body {apiVersion, kind, spec}. */
-export function digestManifest(file: string): {
+export function digestManifestDocument(document: ManifestDocument): {
   kind: string
   specDigest: string
 } {
-  const document = load(file)
   const canonical = canonicalize({
     apiVersion: document.apiVersion,
     kind: document.kind,
@@ -89,4 +107,8 @@ export function digestManifest(file: string): {
     kind: String(document.kind),
     specDigest: `sha256:${createHash("sha256").update(canonical).digest("hex")}`,
   }
+}
+
+export function digestManifest(file: string) {
+  return digestManifestDocument(load(file))
 }

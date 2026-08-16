@@ -275,6 +275,35 @@ ki manifest digest my-run.yaml
 # bulk export (versioned, immutable, zstd JSONL):
 curl -L https://kernelindex.com/api/v1/exports/catalog.jsonl.zst`}
           </pre>
+          <p className="mt-4">
+            <strong className="font-medium text-fg">API keys.</strong> Public
+            reads need no key. A key from{" "}
+            <Link href="/account">your account</Link> raises the daily quota and
+            carries explicit scopes; send it as{" "}
+            <span className="font-mono text-[12.5px]">
+              Authorization: Bearer ki_…
+            </span>{" "}
+            (CLI: <span className="font-mono text-[12.5px]">--api-key</span> or{" "}
+            <span className="font-mono text-[12.5px]">$KI_API_KEY</span>;{" "}
+            <span className="font-mono text-[12.5px]">GET /api/v1/me</span>{" "}
+            introspects the key). Quota exhaustion returns 429 with Retry-After;
+            keys are stored hash-only and revocable at any time.
+          </p>
+          <p className="mt-3">
+            <strong className="font-medium text-fg">MCP.</strong> Agents can
+            speak MCP instead of REST: the read-only server in{" "}
+            <span className="font-mono text-[12.5px]">apps/mcp</span> exposes
+            search_catalog, resolve_kernel, get_operation, get_implementation,
+            get_benchmark_evidence, compare_runs, validate_manifest, and
+            get_manifest_schema over stdio (
+            <span className="font-mono text-[12.5px]">
+              node apps/mcp/src/server.ts
+            </span>
+            , env <span className="font-mono text-[12.5px]">KI_API</span> /{" "}
+            <span className="font-mono text-[12.5px]">KI_API_KEY</span>). Same
+            resolver decisions, digests, and caveats as this site — never
+            scraped HTML.
+          </p>
         </Section>
 
         <Section id="sources" title="Sources and licensing">
