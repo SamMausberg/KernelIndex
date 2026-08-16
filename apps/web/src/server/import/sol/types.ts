@@ -7,6 +7,8 @@ export const SOL_SOURCE = {
   slug: "sol-execbench",
   kind: "leaderboard",
   name: "NVIDIA SOL-ExecBench",
+  /** Weekly scheduled import cadence plus slack (§19.9). */
+  policy: { freshnessDays: 10 },
 } as const
 
 export const PARSER_NAME = "sol-execbench"

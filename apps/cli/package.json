@@ -8,6 +8,7 @@
   },
   "scripts": {
     "generate": "openapi-typescript openapi.json -o src/generated/api.d.ts",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
   "dependencies": {

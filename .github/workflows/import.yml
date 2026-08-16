@@ -15,6 +15,9 @@ concurrency:
   group: import
   cancel-in-progress: false
 
+permissions:
+  contents: write # the export step commits registry snapshots
+
 jobs:
   import:
     if: vars.IMPORTS_ENABLED != 'false'
@@ -24,9 +27,9 @@ jobs:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       SOURCES: ${{ github.event.inputs.sources || 'sol,gpumode,flashinfer' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version-file: package.json
           cache: pnpm
@@ -73,22 +76,24 @@ jobs:
       - name: sync record events
         run: cd apps/web && node scripts/sync-record-events.ts
 
+      - name: source health report
+        run: cd apps/web && node scripts/report-health.ts $(ls /tmp/*.json 2>/dev/null || true)
+
       - name: refresh catalog export
         run: |
           cd apps/web && node scripts/export-catalog.ts
           cd ../..
           git config user.name kernelindex-import
           git config user.email import@kernelindex.dev
-          git add registry/exports
+          git add registry/exports registry/reports
           git diff --cached --quiet || git commit -m "chore(exports): scheduled catalog snapshot"
           git push
 
+      # Step-level env is not visible to its own `if`; gate on vars directly.
       - name: revalidate caches
-        if: env.SITE != ''
-        env:
-          SITE: ${{ vars.SITE_ORIGIN }}
+        if: vars.SITE_ORIGIN != ''
         run: |
-          curl -sf -X POST "$SITE/api/v1/revalidate" \
+          curl -sf -X POST "${{ vars.SITE_ORIGIN }}/api/v1/revalidate" \
             -H "Authorization: Bearer ${{ secrets.REVALIDATE_TOKEN }}"
 
       - name: upload reports

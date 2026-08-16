@@ -1,0 +1,25 @@
+{
+  "generatedAt": "2026-08-16T14:50:39.825Z",
+  "sources": [
+    {
+      "slug": "gpumode-kernelbot",
+      "kind": "leaderboard",
+      "state": "fresh",
+      "lastFetchedAt": "2026-08-15T20:53:53.212Z",
+      "declaredFreshnessDays": 10,
+      "snapshots": 1677,
+      "publishedRuns": 5215
+    },
+    {
+      "slug": "sol-execbench",
+      "kind": "leaderboard",
+      "state": "fresh",
+      "lastFetchedAt": "2026-08-15T02:02:50.360Z",
+      "declaredFreshnessDays": 10,
+      "snapshots": 471,
+      "publishedRuns": 705
+    }
+  ],
+  "reviews": [],
+  "needsReview": 0
+}

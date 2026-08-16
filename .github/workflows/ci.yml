@@ -40,6 +40,15 @@ jobs:
       - name: Check
         run: pnpm check
 
+      # PR-path submissions (§15.2): schema-validate every proposed bundle.
+      - name: Validate submission manifests
+        run: |
+          shopt -s nullglob
+          for f in registry/submissions/*.yaml registry/submissions/*.yml; do
+            echo "validating $f"
+            node apps/web/scripts/import-submission.ts "$f"
+          done
+
   test:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -85,9 +94,6 @@ jobs:
 
       - name: Test
         run: pnpm test
-
-      - name: CLI tests
-        run: pnpm --filter @kernelindex/cli test
 
   e2e:
     runs-on: ubuntu-24.04

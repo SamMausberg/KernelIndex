@@ -2,7 +2,7 @@
 // and the correction write path. Access is decided by the centralized
 // policy; signed-out or unprivileged visitors see a refusal, never data.
 
-import { desc, eq, inArray } from "drizzle-orm"
+import { desc, eq, inArray, sql } from "drizzle-orm"
 import type { Metadata } from "next"
 import { headers } from "next/headers"
 import { ContextHeader } from "@/components/context-header"
@@ -10,11 +10,22 @@ import { Section } from "@/components/section"
 import { authConfigured } from "@/server/auth"
 import { db } from "@/server/db/client"
 import * as schema from "@/server/db/schema"
+import { FLASHINFER_SOURCE } from "@/server/import/flashinfer/types"
+import { GPUMODE_SOURCE } from "@/server/import/gpumode/types"
+import { SOL_SOURCE } from "@/server/import/sol/types"
 import {
   canReviewSubmissions,
   sessionUser,
 } from "@/server/policy/authorization"
 import { ClaimReviewForm, RetractForm, ReviewForm } from "./admin-forms"
+
+/** Declared freshness intervals (§19.9), keyed by source slug. */
+const FRESHNESS_DAYS: Record<string, number> = Object.fromEntries(
+  [SOL_SOURCE, GPUMODE_SOURCE, FLASHINFER_SOURCE].map((source) => [
+    source.slug,
+    source.policy.freshnessDays,
+  ]),
+)
 
 export const metadata: Metadata = { title: "Review" }
 export const dynamic = "force-dynamic"
@@ -38,7 +49,7 @@ export default async function AdminPage() {
     )
   }
 
-  const [pending, claims, recentAudit] = await Promise.all([
+  const [pending, claims, recentAudit, sourceRows] = await Promise.all([
     db()
       .select()
       .from(schema.submissions)
@@ -62,7 +73,28 @@ export default async function AdminPage() {
       .from(schema.auditEvents)
       .orderBy(desc(schema.auditEvents.at))
       .limit(20),
+    db().execute(sql`
+      select s.slug, s.kind, max(ss.fetched_at) last_fetched,
+        (select count(*) from benchmark_runs r
+           where r.source_id = s.id and r.published_at is not null) runs
+      from sources s left join source_snapshots ss on ss.source_id = s.id
+      group by s.id order by s.slug`) as Promise<
+      { slug: string; kind: string; last_fetched: Date | null; runs: number }[]
+    >,
   ])
+
+  const sources = sourceRows.map((row) => {
+    const declared = FRESHNESS_DAYS[row.slug]
+    const last = row.last_fetched ? new Date(row.last_fetched) : null
+    const state =
+      last === null
+        ? "never fetched"
+        : declared !== undefined &&
+            Date.now() - last.getTime() > declared * 86_400_000
+          ? "stale"
+          : "fresh"
+    return { ...row, last, state, declared }
+  })
 
   return (
     <>
@@ -117,6 +149,37 @@ export default async function AdminPage() {
               <div className="mt-2">
                 <ClaimReviewForm id={claim.id} />
               </div>
+            </div>
+          ))}
+        </Section>
+
+        <Section id="sources" title="Sources">
+          <p className="mb-3 text-[12.5px] text-subtle">
+            Freshness against each source's declared interval (§19.9). The
+            durable review report is registry/reports/source-health.json,
+            refreshed by the weekly import workflow.
+          </p>
+          {sources.map((source) => (
+            <div
+              key={source.slug}
+              className="flex flex-wrap items-baseline gap-4 border-b border-line py-2 text-[13px]"
+            >
+              <span className="font-mono text-[12px]">{source.slug}</span>
+              <span className="text-faint">{source.kind}</span>
+              <span
+                className={
+                  source.state === "fresh" ? "text-subtle" : "text-warning"
+                }
+              >
+                {source.state}
+              </span>
+              <span className="text-faint">
+                {Number(source.runs)} published runs
+                {source.last &&
+                  ` · fetched ${source.last.toISOString().slice(0, 10)}`}
+                {source.declared !== undefined &&
+                  ` · interval ${source.declared}d`}
+              </span>
             </div>
           ))}
         </Section>

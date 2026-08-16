@@ -21,6 +21,7 @@ export const GPUMODE_SOURCE = {
     terms:
       "Redistribution and public display permitted with notice retention and attribution; use for AI training requires researcher reciprocity.",
     verified: "2026-08-15",
+    freshnessDays: 10,
   },
 } as const
 

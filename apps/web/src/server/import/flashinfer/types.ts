@@ -15,6 +15,7 @@ export const FLASHINFER_SOURCE = {
     terms:
       "Apache-2.0: redistribution and display permitted with license notice. Baseline (human/library) traces only; agent-generated traces require explicit author labeling before import.",
     verified: "2026-08-14",
+    freshnessDays: 10,
   },
 } as const
 

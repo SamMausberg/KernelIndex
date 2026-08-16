@@ -77,15 +77,7 @@ try {
     violations.push(`operation digest recomputation mismatches: ${mismatches}`)
   console.error(`operation digest sample mismatches: ${mismatches}/25`)
 
-  // Freshness (§20.4): last snapshot per source, informational.
-  const freshness = (await database.execute(
-    sql`select s.slug, max(ss.fetched_at) last_fetched
-        from sources s left join source_snapshots ss on ss.source_id = s.id
-        group by s.slug order by s.slug`,
-  )) as { slug: string; last_fetched: string | Date | null }[]
-  for (const row of freshness) {
-    console.error(`freshness ${row.slug}: ${row.last_fetched ?? "never"}`)
-  }
+  // Freshness moved to scripts/report-health.ts (§14.8 durable report).
 
   if (violations.length > 0) {
     console.error(`\nVIOLATIONS:\n${violations.join("\n")}`)
