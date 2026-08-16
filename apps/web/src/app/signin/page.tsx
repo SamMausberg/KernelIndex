@@ -7,6 +7,7 @@ import { headers } from "next/headers"
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { ContextHeader } from "@/components/context-header"
+import { safeNextPath } from "@/lib/paths"
 import { authConfigured } from "@/server/auth"
 import { sessionUser } from "@/server/policy/authorization"
 import { SignInButton } from "./sign-in-button"
@@ -21,9 +22,16 @@ const UNLOCKS = [
   ["Watch cohorts", "a changes feed when a watched record is beaten"],
 ] as const
 
-export default async function SignInPage() {
+export default async function SignInPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string | string[] }>
+}) {
+  // Contextual CTAs ("sign in to watch") carry ?next= so the flow returns
+  // to where it started instead of always landing on /account.
+  const next = safeNextPath((await searchParams).next)
   const user = authConfigured ? await sessionUser(await headers()) : null
-  if (user !== null) redirect("/account")
+  if (user !== null) redirect(next)
 
   return (
     <>
@@ -36,7 +44,7 @@ export default async function SignInPage() {
         <div className="max-w-[560px]">
           {authConfigured ? (
             <div className="plate px-6 py-6">
-              <SignInButton />
+              <SignInButton next={next} />
               <p className="mt-4 max-w-[52ch] text-[12.5px] leading-relaxed text-subtle">
                 GitHub is the only identity KernelIndex uses: benchmark
                 provenance ties to code identity, and no password is ever

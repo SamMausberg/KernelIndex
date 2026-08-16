@@ -1,6 +1,7 @@
 // Integration tests for the §10.5 constraints, run against a real migrated
 // PostgreSQL when DATABASE_URL is set (local compose database or the CI
 // service container). Every test rolls back; nothing persists.
+import { eq } from "drizzle-orm"
 import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import postgres from "postgres"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
@@ -181,6 +182,44 @@ describe.skipIf(!url)("catalog schema constraints", () => {
       }
       await tx.insert(schema.sourceLinks).values(link)
       await tx.insert(schema.sourceLinks).values(link)
+    })
+  })
+
+  it("account deletion cascades ownership and detaches evidence", async () => {
+    await inRollback(async (tx) => {
+      const user = { id: "del-test", name: "d", email: "del@test.invalid" }
+      await tx.insert(schema.users).values(user)
+      await tx.insert(schema.apiKeys).values({
+        userId: user.id,
+        name: "k",
+        prefix: "ki_test",
+        secretHash: digest("d"),
+      })
+      await tx
+        .insert(schema.watches)
+        .values({ userId: user.id, comparisonKey: digest("e") })
+      const [submission] = await tx
+        .insert(schema.submissions)
+        .values({ userId: user.id, bundle: {} })
+        .returning()
+
+      await tx.delete(schema.users).where(eq(schema.users.id, user.id))
+
+      const owned = eq(schema.apiKeys.userId, user.id)
+      expect(await tx.select().from(schema.apiKeys).where(owned)).toHaveLength(
+        0,
+      )
+      expect(
+        await tx
+          .select()
+          .from(schema.watches)
+          .where(eq(schema.watches.userId, user.id)),
+      ).toHaveLength(0)
+      const [kept] = await tx
+        .select()
+        .from(schema.submissions)
+        .where(eq(schema.submissions.id, submission?.id ?? ""))
+      expect(kept?.userId).toBeNull()
     })
   })
 

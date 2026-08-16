@@ -13,8 +13,16 @@ import * as schema from "@/server/db/schema"
 import { sessionUser } from "@/server/policy/authorization"
 import { watchFeed } from "@/server/watches"
 import { ClaimForm } from "./claim-form"
+import { DeleteAccountForm } from "./delete-form"
 import { CreateKeyForm, RevokeKeyForm } from "./key-forms"
 import { markSeenAction, unwatchAction } from "./seen-action"
+
+/** Shown once, before the account has any keys, watches, or submissions. */
+const FIRST_STEPS = [
+  ["Watch a record", "any operation page has Watch cohort under its record"],
+  ["Create an API key", "raises your /api/v1 quota; scoped and revocable"],
+  ["Point an agent here", "MCP and CLI setup lives in the docs"],
+] as const
 
 export const metadata: Metadata = { title: "Account" }
 export const dynamic = "force-dynamic"
@@ -58,15 +66,39 @@ export default async function AccountPage() {
     watchFeed(user.id),
   ])
   const unseen = feed.records.length + feed.submissions.length
+  const firstRun =
+    mine.length === 0 && keys.length === 0 && feed.watched.length === 0
   return (
     <>
       <div className="scan-line" />
       <ContextHeader
         title={user.name}
-        context={user.roles.length > 0 ? user.roles.join(" · ") : "contributor"}
+        context={[
+          user.email,
+          user.roles.length > 0 ? user.roles.join(" · ") : "contributor",
+        ].join(" · ")}
         meta={<SignOutButton />}
       />
       <main className="shell animate-fade-in pb-20">
+        {firstRun && (
+          <div className="mt-8 border border-border px-5 py-4">
+            <div className="font-mono text-[10px] tracking-[0.08em] text-faint uppercase">
+              First steps
+            </div>
+            <dl className="mt-3 space-y-2.5">
+              {FIRST_STEPS.map(([term, detail]) => (
+                <div key={term} className="flex gap-3 text-[13px]">
+                  <dt className="w-[150px] shrink-0 text-fg">{term}</dt>
+                  <dd className="text-subtle">{detail}</dd>
+                </div>
+              ))}
+            </dl>
+            <p className="mt-3 text-[12.5px] text-faint">
+              Start from the <a href="/records">records ledger</a>, or read the{" "}
+              <a href="/docs#data">API and CLI docs</a>.
+            </p>
+          </div>
+        )}
         <Section id="changes" title="Changes">
           {unseen === 0 && (
             <p className="text-[13px] text-faint">
@@ -218,6 +250,9 @@ export default async function AccountPage() {
           <div className="mt-3">
             <ClaimForm />
           </div>
+        </Section>
+        <Section id="delete" title="Delete account">
+          <DeleteAccountForm email={user.email} />
         </Section>
       </main>
     </>

@@ -1,10 +1,13 @@
 "use client"
 
+import { usePathname } from "next/navigation"
 import { useActionState } from "react"
 import { type WatchState, watchAction } from "./watch-action"
 
-/** Session-free watch toggle for a comparison cohort (§13.11). */
+/** Session-free watch toggle for a comparison cohort (§13.11). Signed-out
+ * visitors get a real sign-in link that returns to this page. */
 export function WatchButton({ comparisonKey }: { comparisonKey: string }) {
+  const pathname = usePathname()
   const [state, action, pending] = useActionState(watchAction, {
     message: "",
   } as WatchState)
@@ -18,8 +21,17 @@ export function WatchButton({ comparisonKey }: { comparisonKey: string }) {
       >
         Watch cohort
       </button>
-      {state.message && (
-        <span className="text-[12px] text-faint">{state.message}</span>
+      {state.signIn ? (
+        <a
+          href={`/signin?next=${encodeURIComponent(pathname)}`}
+          className="text-[12px]"
+        >
+          Sign in to watch records →
+        </a>
+      ) : (
+        state.message && (
+          <span className="text-[12px] text-faint">{state.message}</span>
+        )
       )}
     </form>
   )

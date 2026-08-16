@@ -85,6 +85,13 @@
       "when": 1786894165887,
       "tag": "0011_serving-tables",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1786903248084,
+      "tag": "0012_account-detach",
+      "breakpoints": true
     }
   ]
 }

@@ -550,14 +550,16 @@ export const auditEvents = pgTable(
 )
 
 /** Submission lifecycle (§15.4): the manifest bundle rides as jsonb until
-    acceptance publishes it through the one publication transaction. */
+    acceptance publishes it through the one publication transaction.
+    user_id detaches on account deletion — the evidence row outlives the
+    identity (§9.3: history is preserved, personal data is not). */
 export const submissions = pgTable(
   "submissions",
   {
     id: id(),
-    userId: text("user_id")
-      .notNull()
-      .references(() => users.id),
+    userId: text("user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
     state: text("state").notNull().default("draft"),
     bundle: jsonb("bundle").notNull(),
     validationReport: jsonb("validation_report"),
@@ -578,9 +580,9 @@ export const projectClaims = pgTable(
     projectId: uuid("project_id")
       .notNull()
       .references(() => projects.id),
-    userId: text("user_id")
-      .notNull()
-      .references(() => users.id),
+    userId: text("user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
     evidenceUrl: text("evidence_url").notNull(),
     state: text("state").notNull().default("pending"),
     reviewNote: text("review_note"),

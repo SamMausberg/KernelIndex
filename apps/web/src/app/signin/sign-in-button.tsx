@@ -3,8 +3,9 @@
 import { useState } from "react"
 import { authClient } from "@/lib/auth-client"
 
-/** POSTs to Better Auth's social endpoint and follows its redirect. */
-export function SignInButton() {
+/** POSTs to Better Auth's social endpoint and follows its redirect. `next`
+ * is a server-validated same-site path (§18 open-redirect guard). */
+export function SignInButton({ next }: { next: string }) {
   const [state, setState] = useState<"idle" | "pending" | "error">("idle")
   return (
     <div>
@@ -15,7 +16,7 @@ export function SignInButton() {
           setState("pending")
           const { error } = await authClient.signIn.social({
             provider: "github",
-            callbackURL: "/account",
+            callbackURL: next,
           })
           if (error) setState("error")
         }}

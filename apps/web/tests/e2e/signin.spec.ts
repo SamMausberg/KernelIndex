@@ -18,3 +18,16 @@ test("nav reaches the sign-in page; unconfigured auth is stated", async ({
     page.getByRole("button", { name: "Continue with GitHub" }),
   ).toHaveCount(0)
 })
+
+test("signed-out watch offers a sign-in link that returns to the page", async ({
+  page,
+}) => {
+  await page.goto("/operations/rmsnorm-h4096")
+  await page.getByRole("button", { name: "Watch cohort" }).click()
+  const link = page.getByRole("link", { name: "Sign in to watch records" })
+  await expect(link).toBeVisible()
+  await expect(link).toHaveAttribute(
+    "href",
+    "/signin?next=%2Foperations%2Frmsnorm-h4096",
+  )
+})

@@ -38,7 +38,7 @@ export default async function AdminPage() {
         <p className="text-[13.5px] text-muted">
           Review requires the site_admin role.{" "}
           {authConfigured ? (
-            <a href="/signin">Sign in with GitHub</a>
+            <a href="/signin?next=/admin">Sign in with GitHub</a>
           ) : (
             "Sign-in is not configured on this deployment."
           )}
