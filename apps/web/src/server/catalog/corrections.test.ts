@@ -59,7 +59,9 @@ describe.skipIf(!url)("corrections (database)", () => {
       boards: [
         {
           problem: fp8,
-          cohorts: new Map([["MI300", [rows[0], rival, ...rows.slice(1)].map(candidateOf)]]),
+          cohorts: new Map([
+            ["MI300", [rows[0], rival, ...rows.slice(1)].map(candidateOf)],
+          ]),
           histories: new Map(),
         },
       ],
@@ -85,9 +87,8 @@ describe.skipIf(!url)("corrections (database)", () => {
           .where(inArray(schema.benchmarkRuns.id, published.runIds))
         const shared = cohorts.find(
           (run) =>
-            cohorts.filter(
-              (other) => other.comparisonKey === run.comparisonKey,
-            ).length >= 2,
+            cohorts.filter((other) => other.comparisonKey === run.comparisonKey)
+              .length >= 2,
         )
         if (!shared) throw new Error("expected a shared cohort in the bundle")
         const runId = shared.id
