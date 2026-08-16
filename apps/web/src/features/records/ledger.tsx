@@ -44,7 +44,9 @@ function loadModel(): Promise<RecordsPageModel | null> {
 const CURRENT_GRID =
   "grid grid-cols-[minmax(280px,1.5fr)_170px_70px_minmax(150px,0.9fr)_156px_minmax(215px,1fr)_78px_28px] min-w-[1150px]"
 
-/** The lead story (§16.12): the newest broken records under the filters. */
+/** The lead story (§16.12): the newest broken records under the filters.
+ * Flat hairline cards, no gradient or catch-light; the whole card reaches
+ * the record's run, and the only hover signal is the border waking up. */
 function LatestBreaks({ latest }: { latest: LedgerEvent[] }) {
   if (latest.length === 0) return null
   return (
@@ -54,7 +56,16 @@ function LatestBreaks({ latest }: { latest: LedgerEvent[] }) {
       </div>
       <div className="mt-2 grid grid-cols-3 gap-3 max-lg:grid-cols-1">
         {latest.map(({ holder, event }) => (
-          <div key={event.runId} className="plate px-4 py-3">
+          <div
+            key={event.runId}
+            className="relative rounded-[5px] border border-border bg-raised px-4 py-3 transition-colors hover:border-edge-hover"
+          >
+            <Link
+              href={`/runs/${event.runId}`}
+              prefetch={false}
+              aria-label={`Record run for ${holder.operation.name}`}
+              className="absolute inset-0"
+            />
             <div className="flex items-baseline justify-between gap-3">
               <span className="truncate text-[13px] text-fg">
                 {holder.operation.name}
@@ -68,13 +79,9 @@ function LatestBreaks({ latest }: { latest: LedgerEvent[] }) {
                 {event.previousValue ? formatPrimary(event.previousValue) : "—"}
               </span>{" "}
               <span className="text-ghost">→</span>{" "}
-              <Link
-                href={`/runs/${event.runId}`}
-                prefetch={false}
-                className="text-[15px] text-fg hover:text-accent-bright"
-              >
+              <span className="text-[15px] text-fg">
                 {formatPrimary(event.value)}
-              </Link>
+              </span>
               {event.improvementPct !== null && (
                 <span className="ml-2 text-[12px] text-success">
                   {event.improvementPct.toFixed(1)}%
@@ -451,21 +458,59 @@ function ControlStrip({
   return (
     <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2.5 border-b border-border-strong pt-5 pb-3">
       <div className="flex flex-wrap items-center gap-2">
-        {["All hardware", ...slice.hardwareOptions].map((label) => {
-          const value = label === "All hardware" ? null : label
-          return (
-            <FilterLink
-              key={label}
-              filters={filters}
-              patch={{ hardware: value }}
-              navigate={navigate}
-              className={chip(filters.hardware === value)}
+        {/* GPU scope as one expanding control; per-GPU record counts live
+            in the options where they answer "what would I get". */}
+        <details
+          className="group relative"
+          onBlurCapture={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget))
+              event.currentTarget.removeAttribute("open")
+          }}
+        >
+          <summary
+            className={`${chip(filters.hardware !== null)} flex cursor-pointer items-center gap-2 py-[4px] [&::-webkit-details-marker]:hidden`}
+          >
+            <span className="text-faint">Hardware</span>
+            <span>{filters.hardware ?? "All"}</span>
+            <span
+              aria-hidden="true"
+              className="font-mono text-[11px] text-faint transition-transform group-open:rotate-90"
             >
-              {label}
-            </FilterLink>
-          )
-        })}
-        <span className="mx-1 h-[18px] w-px self-center bg-border" />
+              ›
+            </span>
+          </summary>
+          <div className="absolute top-[calc(100%+6px)] left-0 z-40 min-w-[250px] overflow-hidden rounded-[5px] border border-edge bg-raised py-1">
+            {[null, ...slice.hardwareOptions].map((value) => {
+              const selected = filters.hardware === value
+              return (
+                <Link
+                  key={value ?? "all"}
+                  href={recordsHref(filters, { hardware: value })}
+                  prefetch={false}
+                  onClick={(event) => {
+                    event.preventDefault()
+                    event.currentTarget
+                      .closest("details")
+                      ?.removeAttribute("open")
+                    navigate({ hardware: value })
+                  }}
+                  className={`flex items-baseline justify-between gap-6 px-3 py-[7px] text-[12.5px] hover:bg-accent-soft hover:no-underline ${
+                    selected ? "text-fg" : "text-subtle"
+                  }`}
+                >
+                  <span className="whitespace-nowrap">
+                    {value ?? "All hardware"}
+                  </span>
+                  <span className="font-mono text-[11.5px] text-faint">
+                    {value === null
+                      ? slice.recordsTotal
+                      : (slice.hardwareCounts[value] ?? 0)}
+                  </span>
+                </Link>
+              )
+            })}
+          </div>
+        </details>
         <FilterLink
           filters={filters}
           patch={{ verified: !filters.verified }}
@@ -601,13 +646,7 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
             </span>
           </FilterLink>
         ))}
-      >
-        <p className="mt-1.5 text-[13px] text-subtle">
-          A record exists only inside an exactly comparable cohort: one
-          workload, protocol, and environment at a time. There is no global
-          fastest kernel.
-        </p>
-      </ContextHeader>
+      />
 
       <main className="shell animate-fade-in pb-20">
         {slice.filters.view === "current" && slice.holders && (

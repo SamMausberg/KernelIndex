@@ -144,6 +144,8 @@ export type LedgerSlice = {
   filters: RecordsFilters
   counts: Record<RecordsView, number>
   hardwareOptions: string[]
+  /** Current-record count per hardware, shown in the GPU chooser. */
+  hardwareCounts: Record<string, number>
   recordsTotal: number
   context: string | undefined
   holders?: { rows: RecordHolder[]; total: number; pageCount: number }
@@ -167,21 +169,18 @@ export function ledgerSlice(
   const operations = new Set(
     model.records.map((holder) => holder.operation.slug),
   ).size
+  const hardwareCounts: Record<string, number> = {}
+  for (const holder of model.records)
+    hardwareCounts[holder.hardware] = (hardwareCounts[holder.hardware] ?? 0) + 1
   const context =
     model.records.length > 0
-      ? [
-          `${model.records.length} records`,
-          `${operations} operations`,
-          ...model.hardwareOptions.map(
-            (hardware) =>
-              `${model.records.filter((holder) => holder.hardware === hardware).length} on ${hardware}`,
-          ),
-        ].join(" · ")
+      ? `${model.records.length} record${model.records.length === 1 ? "" : "s"} across ${operations} operation${operations === 1 ? "" : "s"} · ${model.hardwareOptions.length} GPU${model.hardwareOptions.length === 1 ? "" : "s"}`
       : undefined
   const slice: LedgerSlice = {
     filters,
     counts,
     hardwareOptions: model.hardwareOptions,
+    hardwareCounts,
     recordsTotal: model.records.length,
     context,
   }

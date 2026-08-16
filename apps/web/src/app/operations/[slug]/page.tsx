@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { ContextHeader } from "@/components/context-header"
+import { CopyButton } from "@/components/copy-button"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
 import { KeyValueList } from "@/components/key-value-list"
 import { Metric } from "@/components/metric"
@@ -41,26 +42,6 @@ export default async function OperationPage({ params, searchParams }: Props) {
       <div className="scan-line" />
       <ContextHeader
         title={operation.name}
-        context={
-          <>
-            {operation.family}
-            {operation.aliases.length > 0 && (
-              <> · aliases {operation.aliases.join(", ")}</>
-            )}
-            {operation.models.length > 0 && (
-              <>
-                {" · models "}
-                {operation.models.slice(0, 4).join(", ")}
-                {operation.models.length > 4 &&
-                  ` +${operation.models.length - 4}`}
-              </>
-            )}
-            {" · "}
-            <span className="text-faint">
-              {operation.semanticDigest.slice(0, 23)}…
-            </span>
-          </>
-        }
         meta={
           <span>
             {coverage.verified} verified · {coverage.reproducible} reproducible
@@ -68,8 +49,43 @@ export default async function OperationPage({ params, searchParams }: Props) {
           </span>
         }
       >
+        {/* Identity as machined tags instead of a run-on mono line: the
+            family, then each alias and model, then the semantic digest. */}
+        <div className="mt-2.5 flex flex-wrap items-center gap-2">
+          <span className="key px-2 py-[3px] text-[11.5px] text-subtle">
+            {operation.family}
+          </span>
+          {operation.aliases.map((alias) => (
+            <span
+              key={alias}
+              className="key px-2 py-[3px] font-mono text-[11.5px] text-subtle"
+            >
+              <span className="mr-1.5 font-sans text-faint">alias</span>
+              {alias}
+            </span>
+          ))}
+          {operation.models.slice(0, 4).map((model_) => (
+            <span
+              key={model_}
+              className="key px-2 py-[3px] font-mono text-[11.5px] text-subtle"
+            >
+              <span className="mr-1.5 font-sans text-faint">model</span>
+              {model_}
+            </span>
+          ))}
+          {operation.models.length > 4 && (
+            <span className="text-[11.5px] text-faint">
+              +{operation.models.length - 4} models
+            </span>
+          )}
+          <span className="key px-2 py-[3px] font-mono text-[11.5px] text-subtle">
+            <span className="mr-1.5 font-sans text-faint">sha256</span>
+            {operation.semanticDigest.replace("sha256:", "").slice(0, 12)}…
+          </span>
+          <CopyButton text={operation.semanticDigest} />
+        </div>
         {operation.summary && (
-          <p className="mt-1.5 max-w-[72ch] text-[13px] text-subtle">
+          <p className="mt-3 max-w-[76ch] text-[13.5px] leading-relaxed text-muted">
             {operation.summary}
           </p>
         )}
@@ -77,42 +93,68 @@ export default async function OperationPage({ params, searchParams }: Props) {
 
       <main className="shell animate-fade-in pb-20">
         <Section id="records" title="Current records">
-          <WorkloadPicker
-            workloads={model.workloads}
-            selectedId={model.selectedWorkloadId}
-            slug={operation.slug}
-          />
-          {model.cohortOptions.length > 1 && (
-            <div className="mb-3 flex flex-wrap items-center gap-2 text-[12.5px]">
-              <span className="mr-1 text-faint">Hardware</span>
-              {model.cohortOptions.map((option) => (
-                <Link
-                  key={option.key}
-                  href={`/operations/${operation.slug}?${new URLSearchParams({
-                    ...(model.selectedWorkloadId
-                      ? { workload: model.selectedWorkloadId }
-                      : {}),
-                    cohort: option.key,
-                  }).toString()}`}
-                  className={`key px-2.5 py-[3px] font-mono text-[12px] whitespace-nowrap hover:no-underline ${
-                    option.key === model.cohort?.comparisonKey
-                      ? "key-on"
-                      : "text-subtle hover:text-fg"
-                  }`}
-                >
-                  {option.label}
-                  <span className="ml-1.5 text-[11px] text-faint">
-                    {option.runs}
-                  </span>
-                </Link>
-              ))}
+          {/* The sweep table stays compact; the cohort panel uses the rest
+              of the width instead of leaving it empty. */}
+          <div className="mb-4 grid grid-cols-[minmax(0,1fr)_minmax(300px,370px)] gap-11 max-lg:grid-cols-1">
+            <div>
+              <WorkloadPicker
+                workloads={model.workloads}
+                selectedId={model.selectedWorkloadId}
+                slug={operation.slug}
+              />
+              {model.cohortOptions.length > 1 && (
+                <div className="flex flex-wrap items-center gap-2 text-[12.5px]">
+                  <span className="mr-1 text-faint">Hardware</span>
+                  {model.cohortOptions.map((option) => (
+                    <Link
+                      key={option.key}
+                      href={`/operations/${operation.slug}?${new URLSearchParams(
+                        {
+                          ...(model.selectedWorkloadId
+                            ? { workload: model.selectedWorkloadId }
+                            : {}),
+                          cohort: option.key,
+                        },
+                      ).toString()}`}
+                      className={`key px-2.5 py-[3px] font-mono text-[12px] whitespace-nowrap hover:no-underline ${
+                        option.key === model.cohort?.comparisonKey
+                          ? "key-on"
+                          : "text-subtle hover:text-fg"
+                      }`}
+                    >
+                      {option.label}
+                      <span className="ml-1.5 text-[11px] text-faint">
+                        {option.runs}
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
-          {model.cohort && (
-            <p className="mb-1 font-mono text-[12px] text-faint">
-              {model.cohort.facts.map((fact) => fact.value).join(" · ")}
-            </p>
-          )}
+            {model.cohort && (
+              <div className="border-l border-border pl-9 max-lg:border-l-0 max-lg:pl-0">
+                <div className="mb-2.5 text-[12.5px] text-subtle">
+                  {model.cohort.profile === "source_native"
+                    ? "Source-native cohort"
+                    : "Exact cohort"}
+                </div>
+                <KeyValueList
+                  items={[
+                    ...model.cohort.facts,
+                    { key: "results", value: String(model.records.length) },
+                    ...(coverage.lastObservedAt
+                      ? [
+                          {
+                            key: "last observed",
+                            value: formatDateUTC(coverage.lastObservedAt),
+                          },
+                        ]
+                      : []),
+                  ]}
+                />
+              </div>
+            )}
+          </div>
           <div className="overflow-x-auto">
             {records.length > 0 ? (
               <>
