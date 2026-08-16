@@ -36,8 +36,15 @@ export default function RootLayout({
       {/* suppressHydrationWarning: extensions (Grammarly) mutate <body> attrs
           pre-hydration; React 19 treats that as a mismatch. Attrs only. */}
       <body suppressHydrationWarning>
+        {/* §16.17: keyboard users skip the sticky header in one Tab. */}
+        <a
+          href="#main"
+          className="sr-only z-[60] bg-canvas px-3 py-2 text-[13px] focus:not-sr-only focus:fixed focus:top-2 focus:left-2"
+        >
+          Skip to content
+        </a>
         <SiteHeader showServing={servingEnabled} />
-        {children}
+        <div id="main">{children}</div>
       </body>
     </html>
   )

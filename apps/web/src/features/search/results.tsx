@@ -639,6 +639,9 @@ export function SearchResults({
                         [chip.key]: !on,
                       })}
                       prefetch={false}
+                      // Toggles with an href fallback: aria-pressed is only
+                      // valid with the button role.
+                      role="button"
                       aria-pressed={on}
                       onClick={(event) => {
                         event.preventDefault()

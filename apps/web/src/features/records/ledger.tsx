@@ -653,7 +653,7 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
             }`}
           >
             {view.label}{" "}
-            <span className="font-mono text-[11px] text-faint">
+            <span className="font-mono text-[11px] text-subtle">
               {slice.counts[view.key]}
             </span>
           </FilterLink>

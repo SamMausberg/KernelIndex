@@ -17,6 +17,7 @@ const environmentSchema = z
       .optional(),
     /** §21.8 kill switch: "false" hides nav/pages/API/sitemap for serving. */
     SERVING_CATALOG_ENABLED: z.string().optional(),
+    AUTH_SECRET: z.string().min(32).optional(),
   })
   .refine(
     (env) =>
@@ -32,6 +33,14 @@ const environmentSchema = z
     {
       message:
         "Production must explicitly select CATALOG_BACKEND=postgres — fixture mode cannot be enabled silently in production (§22.3 gate)",
+    },
+  )
+  .refine(
+    (env) =>
+      process.env.VERCEL_ENV !== "production" || env.AUTH_SECRET !== undefined,
+    {
+      message:
+        "Production requires an explicit AUTH_SECRET (≥32 chars) — the dev literal must never sign production sessions (§18.2)",
     },
   )
 

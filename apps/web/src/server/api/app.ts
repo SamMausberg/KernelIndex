@@ -5,6 +5,7 @@
 import { readFileSync } from "node:fs"
 import path from "node:path"
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
+import { cors } from "hono/cors"
 import { HTTPException } from "hono/http-exception"
 import { revalidateTag } from "next/cache.js"
 import {
@@ -134,6 +135,18 @@ function json<S extends z.ZodType>(schema: S, description: string) {
 export const api = new OpenAPIHono<{
   Variables: { apiKey?: import("../api-keys.ts").ApiKeyIdentity }
 }>()
+
+// CORS (§18.2): deny-by-default posture — the public read API allows only
+// the methods and headers it needs, never credentials (a wildcard origin
+// cannot carry cookies by construction, so the session-authorized routes
+// stay same-origin-only).
+api.use(
+  cors({
+    origin: "*",
+    allowMethods: ["GET", "POST"],
+    allowHeaders: ["Content-Type", "Authorization"],
+  }),
+)
 
 api.openAPIRegistry.registerComponent("securitySchemes", "apiKey", {
   type: "http",
@@ -409,6 +422,7 @@ api.get("/exports/catalog.jsonl.zst", (c) => {
 // §10.7 corrections (Week 6): maintainer-only retraction and supersession
 // through the append-only write path; the session cookie authorizes.
 api.post("/corrections", async (c) => {
+  c.header("Cache-Control", "private, no-store")
   const { sessionUser, canCorrectRuns } = await import(
     "../policy/authorization.ts"
   )
