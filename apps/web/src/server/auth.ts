@@ -6,15 +6,33 @@ import { betterAuth } from "better-auth"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
 import { db } from "./db/client.ts"
 import * as schema from "./db/schema.ts"
+import { env } from "./env.ts"
 
-export const authConfigured =
-  Boolean(process.env.GITHUB_CLIENT_ID) &&
-  Boolean(process.env.GITHUB_CLIENT_SECRET)
+function configuredEnvironment() {
+  if (
+    !env.SITE_ORIGIN ||
+    !env.DATABASE_URL ||
+    !env.AUTH_SECRET ||
+    !env.GITHUB_CLIENT_ID ||
+    !env.GITHUB_CLIENT_SECRET
+  )
+    return null
+  return {
+    baseURL: env.SITE_ORIGIN,
+    secret: env.AUTH_SECRET,
+    githubClientId: env.GITHUB_CLIENT_ID,
+    githubClientSecret: env.GITHUB_CLIENT_SECRET,
+  }
+}
+
+const authEnvironment = configuredEnvironment()
+export const authConfigured = authEnvironment !== null
 
 function createAuth() {
+  if (!authEnvironment) throw new Error("Authentication is not configured")
   return betterAuth({
-    baseURL: process.env.SITE_ORIGIN ?? "http://localhost:3000",
-    secret: process.env.AUTH_SECRET ?? "kernelindex-dev-only-secret",
+    baseURL: authEnvironment.baseURL,
+    secret: authEnvironment.secret,
     database: drizzleAdapter(db(), {
       provider: "pg",
       // With usePlural the adapter resolves models by their plural names,
@@ -27,14 +45,13 @@ function createAuth() {
       },
       usePlural: true,
     }),
-    socialProviders: authConfigured
-      ? {
-          github: {
-            clientId: process.env.GITHUB_CLIENT_ID as string,
-            clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
-          },
-        }
-      : undefined,
+    account: { encryptOAuthTokens: true },
+    socialProviders: {
+      github: {
+        clientId: authEnvironment.githubClientId,
+        clientSecret: authEnvironment.githubClientSecret,
+      },
+    },
   })
 }
 

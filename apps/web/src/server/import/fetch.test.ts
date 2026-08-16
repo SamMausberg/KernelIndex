@@ -80,7 +80,7 @@ describe("restricted fetch (§14.9)", () => {
     ).rejects.toThrow(/not on the source allowlist/)
   })
 
-  it("caps redirects at three and bytes at the maximum", async () => {
+  it("caps redirects at three and streamed bytes at the maximum", async () => {
     vi.mocked(lookup).mockResolvedValue([publicAddress] as never)
     vi.stubGlobal(
       "fetch",
@@ -98,6 +98,27 @@ describe("restricted fetch (§14.9)", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async () => body("x".repeat(8 * 1024 * 1024 + 1))),
+    )
+    await expect(
+      fetchSnapshot("https://raw.githubusercontent.com/big"),
+    ).rejects.toThrow(/exceeds/)
+  })
+
+  it("rejects an oversized content-length before reading the body", async () => {
+    vi.mocked(lookup).mockResolvedValue([publicAddress] as never)
+    const response = new Response(null, {
+      headers: {
+        "content-length": String(8 * 1024 * 1024 + 1),
+      },
+    })
+    Object.defineProperty(response, "body", {
+      get(): never {
+        throw new Error("body was read")
+      },
+    })
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => response),
     )
     await expect(
       fetchSnapshot("https://raw.githubusercontent.com/big"),

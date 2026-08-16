@@ -74,6 +74,34 @@ async function assertAllowed(url: URL): Promise<void> {
   }
 }
 
+async function readBoundedBody(response: Response, url: URL) {
+  const contentLength = Number(response.headers.get("content-length"))
+  if (Number.isFinite(contentLength) && contentLength > MAX_BYTES)
+    throw new Error(`response from ${url.href} exceeds ${MAX_BYTES} bytes`)
+
+  const reader = response.body?.getReader()
+  if (!reader) return new Uint8Array()
+  const chunks: Uint8Array[] = []
+  let size = 0
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    size += value.byteLength
+    if (size > MAX_BYTES) {
+      await reader.cancel()
+      throw new Error(`response from ${url.href} exceeds ${MAX_BYTES} bytes`)
+    }
+    chunks.push(value)
+  }
+  const bytes = new Uint8Array(size)
+  let offset = 0
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset)
+    offset += chunk.byteLength
+  }
+  return bytes
+}
+
 /** Fetch one allowlisted HTTPS resource and digest it into a snapshot. */
 export async function fetchSnapshot(locator: string): Promise<FetchedSnapshot> {
   let url = new URL(locator)
@@ -96,10 +124,7 @@ export async function fetchSnapshot(locator: string): Promise<FetchedSnapshot> {
     }
     if (!response.ok)
       throw new Error(`fetch ${url.href} failed with ${response.status}`)
-    const bytes = new Uint8Array(await response.arrayBuffer())
-    if (bytes.byteLength > MAX_BYTES) {
-      throw new Error(`response from ${url.href} exceeds ${MAX_BYTES} bytes`)
-    }
+    const bytes = await readBoundedBody(response, url)
     return {
       locator,
       resolvedLocator: url.href,
