@@ -1142,6 +1142,9 @@ Initial public kinds:
 - `BenchmarkProtocol`;
 - `ExecutionEnvironment`;
 - `BenchmarkRun`;
+- `ModelRevision` (added in Week 9: §8.16 and §10.1 define the entity and
+  its table, and serving cohorts hinge on model identity — a digest-bearing
+  entity needs a canonical kind);
 - `ServingStackRevision`;
 - `ServingConfiguration`;
 - `ServingWorkload`;
@@ -4029,7 +4032,7 @@ This sequence is optimized for a solo founder using strong AI coding assistance.
 - Ranked-surface visibility now excludes superseded runs via an anti-join on `supersedes_id` (the previous filter kept the superseded original instead of the correction).
 - `record_events` (§11.10, migration 0002) is appended inside the publication transaction for touched cohorts; `db:sync-records` backfills catalogs published before the table existed. The ledger reads events; the current holder is derived only from still-eligible runs. Retraction-cause events arrive with the Week 6 correction write path.
 - `/compare` accepts up to eight runs by ID or digest, aligns cohort-identity fields (material) against context fields, names the first material mismatch, and ranks only when all selections share one cohort and are eligible. Markdown/JSON exports are copy actions rendered from the same model.
-- Corpus: 48 real SOL-ExecBench records across 12 reviewed kernels (norm, GQA/MLA attention, GEMM, RoPE, SwiGLU families; top 4 correct submissions each) plus the one labeled illustrative example pending the §22.15 gold record. Playwright covers search-to-evidence, no-result/parse-error, retracted/superseded states, and comparable/incomparable compare in CI against fixtures. Since expanded: 753 published records across 238 operations (235 SOL-ExecBench kernels at top-3 correct submissions on B200, 3 GPU MODE KernelBot boards on MI300X). The 2026-08-15 10k-corpus push (§22.16) re-imported KernelBot at depth — 29 curated boards across the AMD $100K/$1.1M, NVIDIA NVFP4, PMPP v2, linear-algebra, trimul, and Helion competitions, selecting the top ~50 authors per board × runner cohort plus each leading author's personal-best progression chain, with submission source mirrored as content-addressed artifacts (docs/source-policy.md) and rendered with per-submission diffs on implementation pages.
+- Corpus: 48 real SOL-ExecBench records across 12 reviewed kernels (norm, GQA/MLA attention, GEMM, RoPE, SwiGLU families; top 4 correct submissions each) plus the one labeled illustrative example pending the §22.15 gold record. Playwright covers search-to-evidence, no-result/parse-error, retracted/superseded states, and comparable/incomparable compare in CI against fixtures. Since expanded (2026-08-16): 7,857 published kernel runs across 449 operations and three sources (SOL-ExecBench 705, GPU MODE KernelBot 5,215, FlashInfer-Bench 1,937), plus 722 MLPerf Inference serving runs in the separate serving tables. The 2026-08-15 10k-corpus push (§22.16) re-imported KernelBot at depth — 29 curated boards across the AMD $100K/$1.1M, NVIDIA NVFP4, PMPP v2, linear-algebra, trimul, and Helion competitions, selecting the top ~50 authors per board × runner cohort plus each leading author's personal-best progression chain, with submission source mirrored as content-addressed artifacts (docs/source-policy.md) and rendered with per-submission diffs on implementation pages.
 
 **Weeks 5–7 reality notes (2026-08-15).** Shipped in one pass: `/api/v1`
 (Hono + zod-openapi over the read seam, §13.2's nine routes, RFC 9457
@@ -4098,6 +4101,8 @@ API keys, webhooks, the multi-step wizard, watch notifications
 
 **Gate:** two importers remain readable and source-specific while sharing idempotent publication. Re-importing unchanged snapshots creates no duplicate public objects.
 
+**Week 7 closure notes (2026-08-16).** The gaps left by the 2026-08-15 pass were closed: FlashInfer gained golden fixtures and pipeline tests, then published for real (1,937 runs / 190 operations into production; parser v2 accepts upstream `"Infinity"` error bounds as no-bound and reviews unknown-definition solutions as ambiguities). Source health/freshness and identity-ambiguity review became durable per §14.8's "reviewed JSON reports plus maintainer commands": each source policy declares `freshnessDays`, `scripts/report-health.ts` writes `registry/reports/source-health.json` (committed weekly by the import workflow), and `/admin` shows live per-source freshness. `import.yml` fixes: `permissions: contents: write` for the export push and the revalidate step's condition (step-level `env` is invisible to its own `if`; it now gates on `vars.SITE_ORIGIN`). `registry/submissions/` exists with CI validation of submission PRs.
+
 ### 22.9 Week 8: agent surface and durable work only where needed
 
 **Build:**
@@ -4110,6 +4115,8 @@ API keys, webhooks, the multi-step wizard, watch notifications
 - notifications for submission and record changes.
 
 **Gate:** an agent can resolve and inspect evidence without scraping HTML. Any new process or storage system has a demonstrated workload and runbook.
+
+**Week 8 implementation notes (2026-08-16).** Shipped: hand-rolled scoped API keys (Better Auth 1.6.29 ships no apiKey plugin) — `api_keys`/`api_key_usage` tables (migration 0009), `ki_`-prefixed tokens stored hash-only, scopes with `catalog:read` as the first enforceable value, per-day quotas counted in PostgreSQL, a Hono middleware that intercepts only `ki_` bearers (anonymous reads stay CDN-cached and keyless), 429 `QUOTA_EXCEEDED` with Retry-After, `GET /me` introspection, `/account` management UI, and CLI `--api-key`/`KI_API_KEY`. `packages/sdk` was extracted exactly on the §13.9 trigger (CLI + MCP sharing the generated client), including the local manifest tooling both consume; a root `openapi:generate` script and a CI drift step keep `packages/sdk/openapi.json` and `registry/schemas` regeneration-clean, with the runtime `/openapi.json` info block shared as `OPENAPI_INFO`. `apps/mcp` is a stdio `McpServer` over the SDK with exactly the eight §13.10 read-only tools (manifest validation/schemas run locally against `registry/schemas`), run from the checkout, tested over `InMemoryTransport`. Notifications shipped as the minimal in-product form: `watches`/`watch_marks` (migration 0010) with a derived-on-read Changes feed on `/account` from `record_events` and the user's own submission transitions — no notifications table, no email, no webhooks, no worker (all still demand-gated). Graphile Worker and object storage were not added: no demonstrated workload.
 
 ### 22.10 Week 9: serving vertical slice
 
@@ -4124,6 +4131,15 @@ API keys, webhooks, the multi-step wizard, watch notifications
 - no universal score and no mixing with kernel leaderboards.
 
 **Gate:** two serving results compare only when model, workload, protocol, topology, and quality policy permit it.
+
+**Week 9 implementation notes (2026-08-16).** Shipped as specified with these reality decisions:
+
+- **Source: MLPerf Inference** (docs/source-policy.md) — official `summary_results.json` from the Apache-2.0 per-round repos (`v5.1`, `v6.0`, pinned commits), filtered to closed division, datacenter suite, token-throughput LLM benchmarks (722 runs, 6 reference models, 71 stacks, 130 configurations at first import; CPU-only rows skip as `no_accelerator`). Results import unmodified — never normalized per accelerator. AIPerf remains the preferred format for future harness-level sources; MLPerf was the redistributable structured corpus available now.
+- **Summary-level honesty:** rows publish one measured metric (`output_token_throughput_tps`, statistic `reported`), trust tier Reported, profile source-native. The rules-declared Server/Interactive p99 TTFT/TPOT bounds ride `ServingWorkload.slo` as facts cited to `inference_policies/inference_rules.adoc`; the resolver distinguishes measured / declared / unknown per constraint and excludes unreported metrics with `METRIC_NOT_REPORTED`. Per-result log parsing (measured TTFT/TPOT distributions), power, and the open division are deferred.
+- **Quality policy values:** `mlperf_closed_99` / `mlperf_closed_99_9` from the benchmark accuracy target (never model identity — `-99/-99.9` share one `ModelRevision`), with `exact_model` reserved for community submissions (§29 item 13 stays open).
+- `ModelRevision` became a public kind (§9.1 note); the seven §10.1 serving tables landed as migration 0011 with the §11.1 cohort key computed inside the serving publication transaction (`serving-publication.ts`, self-contained rather than refactoring the kernel transaction). `serving_measurements` mirrors kernel `measurements` with the percentile in `statistic`.
+- Surfaces: `/serving` resolver (plain GET form; feasible cohorts first, per-cohort Pareto as a static inline SVG when two axes are shared, exclusions listed with reason codes, a 30-cohort display cap that asks for narrowing), `/serving-runs/[id]` dossier with the MLPerf™ attribution line, `POST /api/v1/resolve/serving` + `/serving-runs` (+`/{id}`) + `/serving-configurations`, and `ki resolve serving` / `ki show serving-run`. URL form is `/serving-runs/[id]`; §9.3's `/serve/{stack}/…` slugs are deferred (no user value at this corpus size). `SERVING_CATALOG_ENABLED=false` is the §21.8 kill switch (nav, pages, API, sitemap).
+- Identical workload semantics dedupe by digest across benchmarks (metadata is not identity), so `-99`/`-99.9` share workload rows; their cohorts still separate on quality policy.
 
 ### 22.11 Week 10: security, accessibility, and performance hardening
 
