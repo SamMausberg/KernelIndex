@@ -113,11 +113,11 @@ export async function reconcileFlashinfer(
     const definition = data.definitions.get(entry.solution.definition)
     const operationDigest = operationDigestByName.get(entry.solution.definition)
     if (!definition || !operationDigest) {
-      report.issues.push({
-        locator: entry.path,
-        item: entry.solution.name,
-        problem: `solution references unknown definition '${entry.solution.definition}'`,
-      })
+      // Identity question, not a parse failure (§14.4): which definition did
+      // upstream mean? Reviewed via the report, never guessed or published.
+      report.ambiguities.push(
+        `solution '${entry.solution.name}' references unknown definition '${entry.solution.definition}'; skipped pending review`,
+      )
       continue
     }
     const implementation = implementationFromFiSolution({

@@ -105,6 +105,14 @@ export const solSolution = z.looseObject({
   description: z.string().nullish(),
 })
 
+/** Upstream serializes IEEE infinity as the string "Infinity" (observed in
+ * FlashInfer-Bench gqa_paged baseline traces whose pass criterion is
+ * relative-error based). An unbounded error maps to no recorded bound —
+ * never a fabricated number. */
+const errorBound = z
+  .union([z.number(), z.literal("Infinity")])
+  .transform((value) => (value === "Infinity" ? null : value))
+
 /** Official Trace document (docs/trace.md): one benchmark run. */
 export const solTrace = z.looseObject({
   definition: z.string(),
@@ -116,8 +124,8 @@ export const solTrace = z.looseObject({
       log: z.string().nullish(),
       correctness: z
         .looseObject({
-          max_relative_error: z.number(),
-          max_absolute_error: z.number(),
+          max_relative_error: errorBound,
+          max_absolute_error: errorBound,
           has_nan: z.boolean().nullish(),
           has_inf: z.boolean().nullish(),
         })

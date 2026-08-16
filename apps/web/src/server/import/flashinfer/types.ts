@@ -19,7 +19,9 @@ export const FLASHINFER_SOURCE = {
   },
 } as const
 
-export const PARSER = { name: "flashinfer-bench", version: "1" } as const
+/** version 2: accepts upstream "Infinity" error bounds (recorded as no
+ * bound) and reviews unknown-definition solutions as ambiguities. */
+export const PARSER = { name: "flashinfer-bench", version: "2" } as const
 
 export const DATASET = "flashinfer-ai/flashinfer-trace"
 export const DATASET_API = `https://huggingface.co/api/datasets/${DATASET}`

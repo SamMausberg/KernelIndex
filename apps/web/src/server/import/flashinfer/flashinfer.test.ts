@@ -68,6 +68,16 @@ describe("flashinfer parsing", () => {
     const broken = fiSolution.safeParse({ name: "orphan" })
     expect(broken.success).toBe(false)
   })
+
+  it("records no bound for upstream 'Infinity' error values", () => {
+    const line = JSON.parse(read("dataset/trace.jsonl").split("\n")[0])
+    line.evaluation.correctness.max_absolute_error = "Infinity"
+    const outcome = parseTraces(JSON.stringify(line), "fx")
+    expect(outcome.issues).toHaveLength(0)
+    const correctness = outcome.values[0].evaluation?.correctness
+    expect(correctness?.max_absolute_error).toBeNull()
+    expect(typeof correctness?.max_relative_error).toBe("number")
+  })
 })
 
 describe("flashinfer normalization", () => {

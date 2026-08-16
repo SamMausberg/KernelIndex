@@ -689,8 +689,8 @@ export function runFromTrace(input: {
       correctness: correctness
         ? {
             comparator: "sol_execbench_eval",
-            maximumAbsoluteError: correctness.max_absolute_error,
-            maximumRelativeError: correctness.max_relative_error,
+            maximumAbsoluteError: correctness.max_absolute_error ?? undefined,
+            maximumRelativeError: correctness.max_relative_error ?? undefined,
           }
         : undefined,
       timing: performance
