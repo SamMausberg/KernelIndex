@@ -238,6 +238,12 @@ rmsnorm gpu:B200 dtype:bf16 shape:[2048,4096] framework=pytorch trust:verified`}
             side on the <Link href="/compare">compare page</Link>, which
             declares a winner only inside one cohort.
           </p>
+          <p className="mt-3">
+            Every run dossier carries a <em>Report an issue</em> action, with or
+            without an account. A maintainer reviews each report; disagreements
+            resolve by evidence and protocol, and an accepted report retracts or
+            supersedes the record while its full history stays visible.
+          </p>
         </Section>
 
         <Section id="data" title="Data and API">

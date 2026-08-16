@@ -9,6 +9,7 @@ import { CopyButton } from "@/components/copy-button"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
 import { KeyValueList } from "@/components/key-value-list"
 import { Section } from "@/components/section"
+import { ReportForm } from "@/features/reports/report-form"
 import { getServingRunPage } from "@/lib/catalog"
 import { servingEnabled } from "@/server/env"
 
@@ -161,6 +162,10 @@ export default async function ServingRunPage({ params }: Props) {
             </pre>
           </details>
         </Section>
+
+        <div className="mt-10">
+          <ReportForm targetKind="serving_run" targetId={model.run.id} />
+        </div>
 
         <div className="mt-12 flex flex-wrap items-baseline justify-between gap-5 border-t border-border pt-5 text-[12.5px]">
           <span className="text-subtle">

@@ -6,6 +6,7 @@ import { CopyButton } from "@/components/copy-button"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
 import { KeyValueList } from "@/components/key-value-list"
 import { Section } from "@/components/section"
+import { ReportForm } from "@/features/reports/report-form"
 import { getRunPage } from "@/lib/catalog"
 import {
   evidenceLabel,
@@ -295,6 +296,10 @@ export default async function RunPage({ params }: Props) {
             </pre>
           </details>
         </Section>
+
+        <div className="mt-10">
+          <ReportForm targetKind="run" targetId={model.run.id} />
+        </div>
 
         <div className="mt-12 flex flex-wrap items-baseline justify-between gap-5 border-t border-border pt-5 text-[12.5px]">
           <span className="text-subtle">

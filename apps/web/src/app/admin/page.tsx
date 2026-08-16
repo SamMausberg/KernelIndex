@@ -18,7 +18,12 @@ import {
   canReviewSubmissions,
   sessionUser,
 } from "@/server/policy/authorization"
-import { ClaimReviewForm, RetractForm, ReviewForm } from "./admin-forms"
+import {
+  ClaimReviewForm,
+  ReportReviewForm,
+  RetractForm,
+  ReviewForm,
+} from "./admin-forms"
 
 /** Declared freshness intervals (§19.9), keyed by source slug. */
 const FRESHNESS_DAYS: Record<string, number> = Object.fromEntries(
@@ -47,39 +52,50 @@ export default async function AdminPage() {
     )
   }
 
-  const [pending, claims, recentAudit, sourceRows] = await Promise.all([
-    db()
-      .select()
-      .from(schema.submissions)
-      .where(
-        inArray(schema.submissions.state, ["ready_for_review", "in_review"]),
-      )
-      .orderBy(desc(schema.submissions.createdAt)),
-    db()
-      .select({
-        claim: schema.projectClaims,
-        project: { name: schema.projects.name, slug: schema.projects.slug },
-      })
-      .from(schema.projectClaims)
-      .innerJoin(
-        schema.projects,
-        eq(schema.projectClaims.projectId, schema.projects.id),
-      )
-      .where(eq(schema.projectClaims.state, "pending")),
-    db()
-      .select()
-      .from(schema.auditEvents)
-      .orderBy(desc(schema.auditEvents.at))
-      .limit(20),
-    db().execute(sql`
+  const [pending, claims, openReports, recentAudit, sourceRows] =
+    await Promise.all([
+      db()
+        .select()
+        .from(schema.submissions)
+        .where(
+          inArray(schema.submissions.state, ["ready_for_review", "in_review"]),
+        )
+        .orderBy(desc(schema.submissions.createdAt)),
+      db()
+        .select({
+          claim: schema.projectClaims,
+          project: { name: schema.projects.name, slug: schema.projects.slug },
+        })
+        .from(schema.projectClaims)
+        .innerJoin(
+          schema.projects,
+          eq(schema.projectClaims.projectId, schema.projects.id),
+        )
+        .where(eq(schema.projectClaims.state, "pending")),
+      db()
+        .select()
+        .from(schema.reports)
+        .where(eq(schema.reports.state, "open"))
+        .orderBy(desc(schema.reports.createdAt)),
+      db()
+        .select()
+        .from(schema.auditEvents)
+        .orderBy(desc(schema.auditEvents.at))
+        .limit(20),
+      db().execute(sql`
       select s.slug, s.kind, max(ss.fetched_at) last_fetched,
         (select count(*) from benchmark_runs r
            where r.source_id = s.id and r.published_at is not null) runs
       from sources s left join source_snapshots ss on ss.source_id = s.id
       group by s.id order by s.slug`) as Promise<
-      { slug: string; kind: string; last_fetched: Date | null; runs: number }[]
-    >,
-  ])
+        {
+          slug: string
+          kind: string
+          last_fetched: Date | null
+          runs: number
+        }[]
+      >,
+    ])
 
   const sources = sourceRows.map((row) => {
     const declared = FRESHNESS_DAYS[row.slug]
@@ -99,7 +115,7 @@ export default async function AdminPage() {
       <div className="scan-line" />
       <ContextHeader
         title="Review"
-        context={`${pending.length} submissions pending · ${claims.length} claims pending`}
+        context={`${pending.length} submissions pending · ${claims.length} claims pending · ${openReports.length} reports open`}
         meta={<span>signed in as {user.name}</span>}
       />
       <main className="shell animate-fade-in pb-20">
@@ -146,6 +162,44 @@ export default async function AdminPage() {
               </div>
               <div className="mt-2">
                 <ClaimReviewForm id={claim.id} />
+              </div>
+            </div>
+          ))}
+        </Section>
+
+        <Section id="reports" title="Open reports">
+          {openReports.length === 0 && (
+            <p className="text-[13px] text-faint">Nothing open.</p>
+          )}
+          {openReports.map((report) => (
+            <div
+              key={report.id}
+              className="border-b border-line py-3 text-[13px]"
+            >
+              <div className="flex flex-wrap items-baseline gap-4">
+                <a
+                  href={`/${report.targetKind === "serving_run" ? "serving-runs" : "runs"}/${report.targetId}`}
+                  className="font-mono text-[12px]"
+                >
+                  {report.targetKind}/{report.targetId.slice(0, 13)}…
+                </a>
+                <span className="text-warning">{report.reason}</span>
+                <span className="text-faint">
+                  {report.createdAt.toISOString().slice(0, 10)} ·{" "}
+                  {report.userId ?? "anonymous"}
+                  {report.contact && ` · ${report.contact}`}
+                </span>
+                {report.evidenceUrl && (
+                  <a href={report.evidenceUrl} className="text-[12.5px]">
+                    evidence
+                  </a>
+                )}
+              </div>
+              <p className="mt-1.5 max-w-[80ch] whitespace-pre-wrap text-[12.5px] text-subtle">
+                {report.detail}
+              </p>
+              <div className="mt-2">
+                <ReportReviewForm id={report.id} />
               </div>
             </div>
           ))}

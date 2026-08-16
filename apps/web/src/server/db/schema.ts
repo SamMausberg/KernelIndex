@@ -591,6 +591,33 @@ export const projectClaims = pgTable(
   (t) => [index("project_claims_project_idx").on(t.projectId)],
 )
 
+/** Public correction/report intake (§15.6): structured, reviewed, and
+    never a direct edit of evidence — an accepted report becomes a
+    retraction or supersession through the existing correction path. */
+export const reports = pgTable(
+  "reports",
+  {
+    id: id(),
+    targetKind: text("target_kind").notNull(),
+    targetId: text("target_id").notNull(),
+    reason: text("reason").notNull(),
+    detail: text("detail").notNull(),
+    evidenceUrl: text("evidence_url"),
+    userId: text("user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    contact: text("contact"),
+    state: text("state").notNull().default("open"),
+    resolutionNote: text("resolution_note"),
+    createdAt: createdAt(),
+    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+  },
+  (t) => [
+    index("reports_state_idx").on(t.state, t.createdAt),
+    index("reports_target_idx").on(t.targetKind, t.targetId),
+  ],
+)
+
 /** Immutable fetched or supplied source observation (§14.3). */
 export const sourceSnapshots = pgTable(
   "source_snapshots",

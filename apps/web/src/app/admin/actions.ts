@@ -15,6 +15,7 @@ import {
   canReviewSubmissions,
   sessionUser,
 } from "@/server/policy/authorization"
+import { resolveReport } from "@/server/reports"
 
 export type AdminActionState = { message: string }
 
@@ -61,6 +62,25 @@ export async function reviewAction(
   } catch (error) {
     return { message: (error as Error).message }
   }
+}
+
+export async function reportReviewAction(
+  _previous: AdminActionState,
+  formData: FormData,
+): Promise<AdminActionState> {
+  const user = await sessionUser(await headers())
+  if (user === null || !canReviewSubmissions(user)) {
+    return { message: "forbidden: site_admin required" }
+  }
+  const state =
+    formData.get("decision") === "resolved" ? "resolved" : "dismissed"
+  const moved = await resolveReport(
+    String(formData.get("id") ?? ""),
+    state,
+    String(formData.get("note") ?? ""),
+    `${user.name} (${user.id})`,
+  )
+  return { message: moved ? `report ${state}` : "already closed" }
 }
 
 export async function claimReviewAction(
