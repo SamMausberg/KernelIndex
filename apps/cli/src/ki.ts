@@ -19,7 +19,7 @@ Usage:
   ki manifest digest <path>          canonical RFC 8785 spec digest
 
 Flags:
-  --api <url>    API base (default $KI_API or https://kernelindex.dev/api/v1)
+  --api <url>    API base (default $KI_API or https://kernelindex.com/api/v1)
   --json         machine JSON on stdout
   --jsonl        one JSON line per result row
   --quiet        suppress human headers
@@ -46,7 +46,7 @@ function usage(message?: string): never {
 if (values.help || positionals.length === 0) usage()
 
 const api = client(
-  values.api ?? process.env.KI_API ?? "https://kernelindex.dev/api/v1",
+  values.api ?? process.env.KI_API ?? "https://kernelindex.com/api/v1",
 )
 
 /** Machine output: exactly one JSON document (or JSONL rows), nothing else. */

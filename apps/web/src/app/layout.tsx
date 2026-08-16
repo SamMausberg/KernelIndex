@@ -19,7 +19,7 @@ const spaceGrotesk = Space_Grotesk({
 export const metadata: Metadata = {
   metadataBase: new URL("https://kernelindex.com"),
   title: { default: "KernelIndex", template: "%s · KernelIndex" },
-  description: "Find the fastest verified GPU kernel for your exact workload.",
+  description: "Find the fastest known GPU kernel for your exact workload.",
 }
 
 export default function RootLayout({

@@ -4,7 +4,7 @@ import { getOperationIndex } from "@/lib/catalog"
 import { env } from "@/server/env"
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const origin = env.SITE_ORIGIN ?? "https://kernelindex.dev"
+  const origin = env.SITE_ORIGIN ?? "https://kernelindex.com"
   const index = await getOperationIndex()
   return [
     { url: origin },
