@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { Instrument_Sans, Space_Grotesk } from "next/font/google"
 import { SiteHeader } from "@/components/site-header"
+import { authConfigured } from "@/server/auth"
 import { servingEnabled } from "@/server/env"
 import "./globals.css"
 
@@ -43,7 +44,10 @@ export default function RootLayout({
         >
           Skip to content
         </a>
-        <SiteHeader showServing={servingEnabled} />
+        <SiteHeader
+          showServing={servingEnabled}
+          authConfigured={authConfigured}
+        />
         <div id="main">{children}</div>
       </body>
     </html>

@@ -5,6 +5,7 @@ import {
   canCorrectRuns,
   canReviewSubmissions,
   canSubmit,
+  isOwner,
   isSiteAdmin,
   type SessionUser,
 } from "./authorization.ts"
@@ -22,14 +23,16 @@ describe("authorization policy", () => {
     ["roleless", user([])],
     ["unrelated role", user(["contributor"])],
     ["site_admin", user(["site_admin"])],
+    ["owner", user(["owner"])],
   ]
 
-  it("deny-by-default: only site_admin passes admin predicates", () => {
+  it("deny-by-default: only site_admin and owner pass admin predicates", () => {
     for (const [label, actor] of cases) {
-      const admin = label === "site_admin"
+      const admin = label === "site_admin" || label === "owner"
       expect(isSiteAdmin(actor), label).toBe(admin)
       expect(canCorrectRuns(actor), label).toBe(admin)
       expect(canReviewSubmissions(actor), label).toBe(admin)
+      expect(isOwner(actor), label).toBe(label === "owner")
     }
   })
 

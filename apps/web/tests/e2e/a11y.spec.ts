@@ -16,6 +16,7 @@ const CRITICAL_PAGES = [
   "/serving",
   "/serving-runs/srv-fx-0002",
   "/docs",
+  "/signin",
 ]
 
 for (const path of CRITICAL_PAGES) {

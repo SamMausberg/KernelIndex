@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useEffect, useState } from "react"
 import { CommandK } from "./command-k"
 
 const NAV = [
@@ -22,9 +23,41 @@ const NAV = [
  * broke under ISR prerender (the server saw "/index" for "/" and rendered a
  * duplicate header).
  */
-export function SiteHeader({ showServing = true }: { showServing?: boolean }) {
+/**
+ * Session state for the nav without making catalog pages dynamic: the
+ * header stays a client island and asks Better Auth's GET /get-session
+ * after mount. Signed-out (the overwhelming default) renders immediately;
+ * a signed-in visitor sees their name replace "Sign in" post-hydration.
+ */
+function useSessionName(enabled: boolean): string | null {
+  const [name, setName] = useState<string | null>(null)
+  useEffect(() => {
+    if (!enabled) return
+    const controller = new AbortController()
+    fetch("/api/auth/get-session", {
+      signal: controller.signal,
+      cache: "no-store",
+    })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((session: { user?: { name?: string } } | null) => {
+        if (session?.user?.name) setName(session.user.name)
+      })
+      .catch(() => {})
+    return () => controller.abort()
+  }, [enabled])
+  return name
+}
+
+export function SiteHeader({
+  showServing = true,
+  authConfigured = false,
+}: {
+  showServing?: boolean
+  authConfigured?: boolean
+}) {
   const pathname = usePathname() ?? ""
   const onSearch = pathname.startsWith("/search")
+  const sessionName = useSessionName(authConfigured)
   const nav = showServing ? NAV : NAV.filter((item) => item.href !== "/serving")
   return (
     <div className="sticky top-0 z-50 border-b border-border bg-canvas">
@@ -62,12 +95,21 @@ export function SiteHeader({ showServing = true }: { showServing?: boolean }) {
         )}
         <div className="flex items-center gap-3.5 text-[13.5px]">
           <span className="h-[18px] w-px bg-border max-md:hidden" />
-          <a
-            href="https://github.com/SamMausberg/KernelIndex"
-            className="text-subtle transition-colors hover:text-fg hover:no-underline"
-          >
-            GitHub
-          </a>
+          {sessionName !== null ? (
+            <Link
+              href="/account"
+              className="max-w-[160px] truncate text-subtle transition-colors hover:text-fg hover:no-underline"
+            >
+              {sessionName}
+            </Link>
+          ) : (
+            <Link
+              href="/signin"
+              className="text-subtle transition-colors hover:text-fg hover:no-underline"
+            >
+              Sign in
+            </Link>
+          )}
         </div>
       </div>
       <CommandK />

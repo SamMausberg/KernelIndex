@@ -5,6 +5,7 @@ import type { Metadata } from "next"
 import { headers } from "next/headers"
 import { ContextHeader } from "@/components/context-header"
 import { Section } from "@/components/section"
+import { SignOutButton } from "@/components/sign-out-button"
 import { listApiKeys } from "@/server/api-keys"
 import { authConfigured } from "@/server/auth"
 import { db } from "@/server/db/client"
@@ -30,9 +31,7 @@ export default async function AccountPage() {
         <main className="shell pt-8 pb-20">
           <p className="max-w-[64ch] text-[13.5px] text-muted">
             {authConfigured ? (
-              <a href="/api/auth/sign-in/social?provider=github">
-                Sign in with GitHub
-              </a>
+              <a href="/signin">Sign in with GitHub</a>
             ) : (
               <>
                 Sign-in is not configured on this deployment. Evidence can still
@@ -65,11 +64,7 @@ export default async function AccountPage() {
       <ContextHeader
         title={user.name}
         context={user.roles.length > 0 ? user.roles.join(" · ") : "contributor"}
-        meta={
-          <a href="/api/auth/sign-out" className="text-subtle">
-            Sign out
-          </a>
-        }
+        meta={<SignOutButton />}
       />
       <main className="shell animate-fade-in pb-20">
         <Section id="changes" title="Changes">

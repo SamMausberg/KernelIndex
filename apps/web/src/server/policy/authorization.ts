@@ -9,6 +9,7 @@ import * as schema from "../db/schema.ts"
 export type SessionUser = {
   id: string
   name: string
+  email: string
   roles: string[]
 }
 
@@ -26,12 +27,19 @@ export async function sessionUser(
   return {
     id: session.user.id,
     name: session.user.name,
+    email: session.user.email,
     roles: roles.map((row) => row.role),
   }
 }
 
+/** The founder role: everything site_admin can do, plus role governance.
+ * Granted once by `scripts/grant-role.ts <email> owner` against the
+ * production database — never through the web or OAuth. */
+export const isOwner = (user: SessionUser | null): boolean =>
+  user !== null && user.roles.includes("owner")
+
 export const isSiteAdmin = (user: SessionUser | null): boolean =>
-  user !== null && user.roles.includes("site_admin")
+  isOwner(user) || (user !== null && user.roles.includes("site_admin"))
 
 /** §10.7 corrections: retraction and supersession are maintainer actions. */
 export const canCorrectRuns = isSiteAdmin

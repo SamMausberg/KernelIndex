@@ -19,9 +19,7 @@ export default async function SubmitPage() {
           user ? (
             <span>signed in as {user.name}</span>
           ) : authConfigured ? (
-            <a href="/api/auth/sign-in/social?provider=github">
-              Sign in with GitHub
-            </a>
+            <a href="/signin">Sign in with GitHub</a>
           ) : (
             <span>sign-in not configured on this deployment</span>
           )

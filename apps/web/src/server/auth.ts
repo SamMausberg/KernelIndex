@@ -17,11 +17,13 @@ function createAuth() {
     secret: process.env.AUTH_SECRET ?? "kernelindex-dev-only-secret",
     database: drizzleAdapter(db(), {
       provider: "pg",
+      // With usePlural the adapter resolves models by their plural names,
+      // so the schema keys must be plural too.
       schema: {
-        user: schema.users,
-        session: schema.sessions,
-        account: schema.accounts,
-        verification: schema.verifications,
+        users: schema.users,
+        sessions: schema.sessions,
+        accounts: schema.accounts,
+        verifications: schema.verifications,
       },
       usePlural: true,
     }),
