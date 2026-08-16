@@ -14,7 +14,11 @@ const SECURITY_HEADERS = [
     key: "Content-Security-Policy",
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline'",
+      // React dev mode needs eval() for its debugging features; production
+      // React never calls it, so the allowance is dev-only.
+      `script-src 'self' 'unsafe-inline'${
+        process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""
+      }`,
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data:",
       "font-src 'self'",
