@@ -88,7 +88,9 @@ export function WorkloadPicker({
     }
     return 0
   })
-  const template = `repeat(${columns.length}, 92px) minmax(110px, max-content)`
+  // Columns flex so the table fills its panel instead of huddling left;
+  // 92px floors keep the numerals aligned when space is tight.
+  const template = `repeat(${columns.length}, minmax(92px, 1fr)) minmax(110px, 1fr)`
 
   return (
     <div className="mb-3 text-[12.5px]">
@@ -103,7 +105,7 @@ export function WorkloadPicker({
           {rows.length} cases
         </span>
       </div>
-      <div className="mt-2 inline-block max-w-full rounded-[5px] border border-border">
+      <div className="mt-2 w-full rounded-[5px] border border-border">
         <div className="max-h-[300px] overflow-auto">
           <div
             className="sticky top-0 grid border-b border-border-strong bg-surface"
