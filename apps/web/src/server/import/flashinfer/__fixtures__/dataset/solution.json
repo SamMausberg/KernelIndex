@@ -1,0 +1,26 @@
+{
+  "name": "flashinfer_wrapper_74a870",
+  "definition": "fused_add_rmsnorm_h2048",
+  "author": "baseline",
+  "spec": {
+    "language": "python",
+    "target_hardware": [
+      "NVIDIA GeForce RTX 4090",
+      "NVIDIA A100",
+      "NVIDIA H20",
+      "NVIDIA H100",
+      "NVIDIA H200",
+      "NVIDIA B200"
+    ],
+    "entry_point": "main.py::run",
+    "dependencies": ["flashinfer"],
+    "destination_passing_style": false
+  },
+  "sources": [
+    {
+      "path": "main.py",
+      "content": "import torch\nimport flashinfer\n\n\ndef run(hidden_states, residual, weight):\n    batch_size, hidden_size = hidden_states.shape\n    \n    assert hidden_size == 2048\n    \n    EPS = 1e-6\n    \n    # FlashInfer's fused_add_rmsnorm modifies hidden_states in-place\n    flashinfer.norm.fused_add_rmsnorm(hidden_states, residual, weight, EPS)\n    \n    # Return the modified hidden_states as output\n    return hidden_states\n"
+    }
+  ],
+  "description": "Solution using FlashInfer's optimized fused_add_rmsnorm kernel for efficient GPU-based fused addition and RMS normalization with hidden_size=2048."
+}

@@ -1,0 +1,14 @@
+{
+  "sha": "da915083d4c7c5e61aa3005e3d17ae488e0fc71c",
+  "siblings": [
+    {
+      "rfilename": "definitions/rmsnorm/fused_add_rmsnorm_h2048.json"
+    },
+    {
+      "rfilename": "solutions/baseline/rmsnorm/fused_add_rmsnorm_h2048/flashinfer_wrapper_74a870.json"
+    },
+    {
+      "rfilename": "traces/baseline/rmsnorm/fused_add_rmsnorm_h2048.jsonl"
+    }
+  ]
+}
