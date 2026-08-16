@@ -25,7 +25,10 @@ type Props = { params: Promise<{ slug: string }> }
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
   const model = await getImplementationPage(slug)
-  return { title: model ? model.implementation.name : "Implementation" }
+  // Metadata resolves before headers flush: failing here makes the status
+  // a real 404 instead of a soft-404 streamed into a 200.
+  if (!model) notFound()
+  return { title: model.implementation.name }
 }
 
 export default async function ImplementationPage({ params }: Props) {

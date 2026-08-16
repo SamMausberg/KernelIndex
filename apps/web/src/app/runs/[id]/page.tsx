@@ -24,9 +24,9 @@ type Props = { params: Promise<{ id: string }> }
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params
   const model = await getRunPage(id)
-  return {
-    title: model ? `Run ${model.run.id.slice(0, 8)}` : "Benchmark run",
-  }
+  // Fail in metadata so unknown IDs return a real 404, not a soft-404.
+  if (!model) notFound()
+  return { title: `Run ${model.run.id.slice(0, 8)}` }
 }
 
 export default async function RunPage({ params }: Props) {

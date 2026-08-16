@@ -50,6 +50,16 @@ Manual checklist (owner, once per significant UI change):
 - [ ] Reduced-motion honors the OS setting
 - [ ] Touch targets on the mobile layout
 
+## Soft-404s on dossier pages
+
+Unknown slugs on `/implementations|operations|runs|serving-runs` return
+HTTP 200 with the not-found body: Next streams the shell (root
+`loading.tsx`) before the page can throw `notFound()`, and metadata
+streams too. Accepted: the rendered page carries
+`<meta name="robots" content="noindex">`, the sitemap lists only real
+URLs, and machine clients use `/api/v1`, which returns true 404 problems.
+`generateMetadata` still fails fast for non-streaming render paths.
+
 ## Performance
 
 `check:bundles` (CI, after build): brotli first-load JS per catalog route
