@@ -4,9 +4,9 @@
 // full units, and untruncated digests. Exit codes: 0 ok, 1 error, 2 usage.
 import { readFileSync } from "node:fs"
 import { parseArgs } from "node:util"
+import { client, type ResolveEnvelope } from "@kernelindex/sdk"
+import { digestManifest, validateManifest } from "@kernelindex/sdk/manifest"
 import { parse as parseYaml } from "yaml"
-import { client, type ResolveEnvelope } from "./client.ts"
-import { digestManifest, validateManifest } from "./manifest.ts"
 
 const HELP = `ki — KernelIndex command line
 
@@ -19,16 +19,18 @@ Usage:
   ki manifest digest <path>          canonical RFC 8785 spec digest
 
 Flags:
-  --api <url>    API base (default $KI_API or https://kernelindex.com/api/v1)
-  --json         machine JSON on stdout
-  --jsonl        one JSON line per result row
-  --quiet        suppress human headers
+  --api <url>      API base (default $KI_API or https://kernelindex.com/api/v1)
+  --api-key <key>  API key (default $KI_API_KEY); sent as a bearer token
+  --json           machine JSON on stdout
+  --jsonl          one JSON line per result row
+  --quiet          suppress human headers
 `
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,
   options: {
     api: { type: "string" },
+    "api-key": { type: "string" },
     manifest: { type: "string" },
     json: { type: "boolean", default: false },
     jsonl: { type: "boolean", default: false },
@@ -45,9 +47,10 @@ function usage(message?: string): never {
 
 if (values.help || positionals.length === 0) usage()
 
-const api = client(
-  values.api ?? process.env.KI_API ?? "https://kernelindex.com/api/v1",
-)
+const api = client({
+  baseUrl: values.api ?? process.env.KI_API ?? "https://kernelindex.com/api/v1",
+  apiKey: values["api-key"] ?? process.env.KI_API_KEY,
+})
 
 /** Machine output: exactly one JSON document (or JSONL rows), nothing else. */
 function emit(document: unknown, rows?: unknown[]) {

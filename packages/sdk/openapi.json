@@ -2,7 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "KernelIndex API",
-    "version": "v1"
+    "version": "v1",
+    "description": "Public read API over the KernelIndex catalog. Responses carry stable IDs, content digests, canonical units, and the ranking policy version; the web pages, CLI, and MCP render these same semantic results."
   },
   "components": {
     "schemas": {},

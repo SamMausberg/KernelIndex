@@ -13,6 +13,7 @@
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
     "lint": "biome check .",
+    "openapi:generate": "pnpm --filter @kernelindex/web openapi:generate && pnpm --filter @kernelindex/sdk generate",
     "format": "biome check --write .",
     "check": "pnpm lint && pnpm typecheck && pnpm build"
   },

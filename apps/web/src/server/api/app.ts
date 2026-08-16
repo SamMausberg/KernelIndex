@@ -375,7 +375,9 @@ api.post("/revalidate", (c) => {
   return c.json({ revalidated: true, at: new Date().toISOString() })
 })
 
-api.doc("/openapi.json", {
+/** One info block for the runtime doc route and the generated snapshot, so
+ * the committed openapi.json can never drift from what the API serves. */
+export const OPENAPI_INFO = {
   openapi: "3.1.0",
   info: {
     title: "KernelIndex API",
@@ -383,7 +385,9 @@ api.doc("/openapi.json", {
     description:
       "Public read API over the KernelIndex catalog. Responses carry stable IDs, content digests, canonical units, and the ranking policy version; the web pages, CLI, and MCP render these same semantic results.",
   },
-})
+} as const
+
+api.doc("/openapi.json", OPENAPI_INFO)
 
 api.notFound(() => fail(404, "NOT_FOUND", "no such route"))
 api.onError((error, c) => {

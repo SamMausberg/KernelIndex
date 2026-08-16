@@ -40,6 +40,13 @@ jobs:
       - name: Check
         run: pnpm check
 
+      # Generated contracts must match the runtime schemas (§21.7).
+      - name: Generated contracts are current
+        run: |
+          pnpm --filter @kernelindex/web schemas:generate
+          pnpm openapi:generate
+          git diff --exit-code -- registry/schemas packages/sdk/openapi.json packages/sdk/src/generated
+
       # PR-path submissions (§15.2): schema-validate every proposed bundle.
       - name: Validate submission manifests
         run: |

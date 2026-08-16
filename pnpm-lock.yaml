@@ -14,18 +14,9 @@ importers:
 
   apps/cli:
     dependencies:
-      ajv:
-        specifier: ^8.17.1
-        version: 8.20.0
-      ajv-formats:
-        specifier: ^3.0.1
-        version: 3.0.1(ajv@8.20.0)
-      canonicalize:
-        specifier: ^2.1.0
-        version: 2.1.0
-      openapi-fetch:
-        specifier: ^0.15.1
-        version: 0.15.2
+      '@kernelindex/sdk':
+        specifier: workspace:*
+        version: link:../../packages/sdk
       yaml:
         specifier: ^2.8.2
         version: 2.9.0
@@ -33,15 +24,9 @@ importers:
       '@types/node':
         specifier: 24.13.3
         version: 24.13.3
-      openapi-typescript:
-        specifier: ^7.10.1
-        version: 7.13.0(typescript@6.0.3)
       typescript:
         specifier: 6.0.3
         version: 6.0.3
-      vitest:
-        specifier: ^4.1.10
-        version: 4.1.10(@types/node@24.13.3)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.12)(yaml@2.9.0))
 
   apps/web:
     dependencies:
@@ -123,6 +108,37 @@ importers:
         version: 6.0.3
       vitest:
         specifier: 4.1.10
+        version: 4.1.10(@types/node@24.13.3)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.12)(yaml@2.9.0))
+
+  packages/sdk:
+    dependencies:
+      ajv:
+        specifier: ^8.17.1
+        version: 8.20.0
+      ajv-formats:
+        specifier: ^3.0.1
+        version: 3.0.1(ajv@8.20.0)
+      canonicalize:
+        specifier: ^2.1.0
+        version: 2.1.0
+      openapi-fetch:
+        specifier: ^0.15.1
+        version: 0.15.2
+      yaml:
+        specifier: ^2.8.2
+        version: 2.9.0
+    devDependencies:
+      '@types/node':
+        specifier: 24.13.3
+        version: 24.13.3
+      openapi-typescript:
+        specifier: ^7.10.1
+        version: 7.13.0(typescript@6.0.3)
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^4.1.10
         version: 4.1.10(@types/node@24.13.3)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.12)(yaml@2.9.0))
 
 packages:

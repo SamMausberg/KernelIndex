@@ -1,5 +1,7 @@
 // Generated-contract API client (§13.9): openapi-fetch over the types
-// emitted from apps/web's runtime schemas (`pnpm openapi:generate`).
+// emitted from apps/web's runtime schemas (`pnpm openapi:generate`). The
+// wrapper owns the base URL, the API-key header, and typed errors from
+// RFC 9457 problem responses; generated files are overwritten, never edited.
 import createClient from "openapi-fetch"
 import type { paths } from "./generated/api.d.ts"
 
@@ -8,16 +10,38 @@ export type ResolveEnvelope =
 export type CompareModel =
   paths["/compare"]["post"]["responses"]["200"]["content"]["application/json"]
 
-function fail(response: Response, error: unknown): never {
-  const detail =
-    error !== null && typeof error === "object" && "detail" in error
-      ? String((error as { detail: unknown }).detail)
-      : response.statusText
-  throw new Error(`${response.status} ${detail}`)
+/** An API problem (RFC 9457): status, machine code, and human detail. */
+export class ApiError extends Error {
+  status: number
+  code: string | null
+  constructor(status: number, code: string | null, detail: string) {
+    super(`${status} ${detail}`)
+    this.status = status
+    this.code = code
+  }
 }
 
-export function client(baseUrl: string) {
-  const api = createClient<paths>({ baseUrl })
+function fail(response: Response, error: unknown): never {
+  const problem =
+    error !== null && typeof error === "object"
+      ? (error as { code?: unknown; detail?: unknown })
+      : {}
+  throw new ApiError(
+    response.status,
+    typeof problem.code === "string" ? problem.code : null,
+    typeof problem.detail === "string" ? problem.detail : response.statusText,
+  )
+}
+
+export function client({
+  baseUrl,
+  apiKey,
+}: {
+  baseUrl: string
+  apiKey?: string
+}) {
+  const headers = apiKey ? { Authorization: `Bearer ${apiKey}` } : undefined
+  const api = createClient<paths>({ baseUrl, headers })
   return {
     async search(q: string): Promise<ResolveEnvelope> {
       const { data, error, response } = await api.GET("/search", {
@@ -36,11 +60,11 @@ export function client(baseUrl: string) {
     async show(kind: string, id: string): Promise<unknown> {
       const path =
         kind === "operation"
-          ? (`/operations/${id}` as const)
+          ? `/operations/${id}`
           : kind === "implementation"
-            ? (`/implementations/${id}` as const)
-            : (`/runs/${id}` as const)
-      const response = await fetch(`${baseUrl}${path}`)
+            ? `/implementations/${id}`
+            : `/runs/${id}`
+      const response = await fetch(`${baseUrl}${path}`, { headers })
       const body = (await response.json()) as unknown
       if (!response.ok) fail(response, body)
       return body
