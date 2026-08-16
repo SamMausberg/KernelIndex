@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation"
 import { useId, useMemo, useState } from "react"
 import type { OperationIndexEntry } from "@/lib/catalog-models"
 import { parseQuery } from "@/lib/search-query"
-import { matchSuggestions } from "@/lib/suggest"
+import { suggestFor } from "@/lib/suggest"
 
 // The corpus index loads once per session from the CDN-cached /suggest
 // route instead of riding every page's payload (§16.5). Module-level so all
@@ -52,12 +52,10 @@ export function SuggestInput({
     setValue(defaultValue)
   }
 
-  const matches = useMemo(() => {
-    const intent = parseQuery(value)
-    // An op:<slug> facet is already a resolved selection.
-    if (intent.facets.some((facet) => facet.field === "op")) return []
-    return matchSuggestions(intent.text, index)
-  }, [value, index])
+  const matches = useMemo(
+    () => suggestFor(parseQuery(value), index),
+    [value, index],
+  )
   const visible = open && matches.length > 0
 
   const select = (entry: OperationIndexEntry) => {

@@ -141,6 +141,29 @@
   ::selection {
     @apply bg-accent-soft;
   }
+  /* Machined scrollbars everywhere (page included): a floating thin bar on
+     a transparent track, matching the hairline system. Static styling. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-edge) transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-border-strong);
+    background-clip: padding-box;
+    border: 3px solid transparent;
+    border-radius: 5px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-edge-hover);
+  }
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
@@ -187,13 +210,6 @@
     font-size: 12.5px;
     line-height: 1.6;
     background: transparent !important;
-  }
-
-  /* Bounded scroll areas keep a visible thin scrollbar — a clipped box must
-     never pretend to be the whole content. */
-  .scroll-pane {
-    scrollbar-width: thin;
-    scrollbar-color: var(--color-edge) transparent;
   }
 
   /* Small machined control — keys, chips, copy. Pressing it sinks it. */

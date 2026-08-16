@@ -41,7 +41,7 @@ describe("parseQuery", () => {
     expect(intent.text).toEqual(["rmsnorm"])
     expect(intent.gpu).toBeNull()
     expect(intent.issues).toHaveLength(1)
-    expect(intent.issues[0].message).toContain("did you mean 'gpu:'")
+    expect(intent.issues[0].message).toContain("Did you mean 'gpu:'")
   })
 
   it("reports invalid facet values as field-level errors", () => {

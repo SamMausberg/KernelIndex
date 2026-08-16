@@ -68,7 +68,7 @@ export default async function AccountPage() {
         <Section id="submissions" title="Your submissions">
           {mine.length === 0 && (
             <p className="text-[13px] text-faint">
-              None yet — <a href="/submit">submit evidence</a>.
+              None yet. <a href="/submit">Submit evidence</a>.
             </p>
           )}
           {mine.map((submission) => (

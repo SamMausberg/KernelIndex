@@ -7,7 +7,7 @@
 // the URL kept shareable. Markup is identical to the server-rendered form.
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { startTransition, useEffect, useState } from "react"
+import { startTransition, useState } from "react"
 import { ContextHeader } from "@/components/context-header"
 import { Metric } from "@/components/metric"
 import { TrustCell } from "@/components/trust"
@@ -95,6 +95,10 @@ function HolderRow({ holder }: { holder: RecordHolder }) {
   const record = holder.current
   const isNew = Date.now() - new Date(holder.since).getTime() < 14 * DAY_MS
   const margin = holder.history[0].improvementPct
+  // The full timeline lives in the Record history view; rendering it for
+  // every collapsed row made the page's payload (§16.12 payload budget).
+  const timeline = holder.history.slice(0, 6)
+  const earlier = holder.history.length - timeline.length
   return (
     <details className="group border-b border-line">
       <summary
@@ -156,7 +160,7 @@ function HolderRow({ holder }: { holder: RecordHolder }) {
         <div className="mt-3 text-[11.5px] tracking-[0.03em] text-faint uppercase">
           Record history
         </div>
-        {holder.history.map((event, index) => (
+        {timeline.map((event, index) => (
           <div
             key={event.runId}
             className="mt-2 grid grid-cols-[92px_minmax(150px,240px)_minmax(0,1fr)] items-baseline gap-x-5 text-[12.5px] max-md:grid-cols-1 max-md:gap-y-0.5"
@@ -184,6 +188,18 @@ function HolderRow({ holder }: { holder: RecordHolder }) {
             </span>
           </div>
         ))}
+        {earlier > 0 && (
+          <p className="mt-2 text-[12px] text-faint">
+            {earlier} earlier event{earlier === 1 ? "" : "s"} in{" "}
+            <Link
+              href={`/records?view=history&f=${encodeURIComponent(holder.operation.name)}`}
+              prefetch={false}
+            >
+              Record history
+            </Link>
+            .
+          </p>
+        )}
         <div className="mt-3.5 flex flex-wrap gap-x-4 gap-y-1 text-[12.5px]">
           {record.sourceAvailable && (
             <Link
@@ -534,14 +550,17 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
     setFilters(initial.filters)
   }
 
-  useEffect(() => {
+  // The full model loads on first interaction intent, not on mount: most
+  // visits only read the server-rendered slice and skip the download.
+  const prime = () => {
     loadModel().then((loaded) => {
       if (loaded) setModel(loaded)
     })
-  }, [])
+  }
 
   const navigate: Navigate = (patch) => {
     if (model === null) {
+      prime()
       router.push(recordsHref(filters, patch))
       return
     }
@@ -562,7 +581,7 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
     slice.filters.source
 
   return (
-    <>
+    <div onPointerEnter={prime} onFocusCapture={prime}>
       <ContextHeader
         title="Performance records"
         context={slice.context}
@@ -719,6 +738,6 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
           </span>
         </div>
       </main>
-    </>
+    </div>
   )
 }

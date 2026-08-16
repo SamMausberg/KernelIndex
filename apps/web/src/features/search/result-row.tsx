@@ -84,7 +84,7 @@ function whyLine(row: ResultRow, tied: boolean): string {
   const parts: string[] = []
   if (row.mismatches.length > 0)
     parts.push(
-      `Differs from the request — ${row.mismatches
+      `Differs from the request. ${row.mismatches
         .map(
           (mismatch) =>
             `${humanizeField(mismatch.field)}: requested ${mismatch.requested}, observed ${mismatch.observed}`,

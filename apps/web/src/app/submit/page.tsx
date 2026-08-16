@@ -30,8 +30,8 @@ export default async function SubmitPage() {
         <p className="mt-1.5 max-w-[72ch] text-[13px] text-subtle">
           A submission carries canonical manifests: projects, operations,
           workloads, implementations (with projectSlug), and runs with their
-          protocol and environment. The PR path — a reviewed file under
-          registry/submissions — runs the identical validation and publication
+          protocol and environment. The PR path, a reviewed file under
+          registry/submissions, runs the identical validation and publication
           transaction.
         </p>
       </ContextHeader>

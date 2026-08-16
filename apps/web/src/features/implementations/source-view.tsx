@@ -20,7 +20,7 @@ export async function SourceCodeView({ code }: { code: SourceCode }) {
       </div>
       <div className="plate">
         <div
-          className="source-view scroll-pane max-h-[600px] overflow-auto"
+          className="source-view max-h-[600px] overflow-auto"
           // biome-ignore lint/security/noDangerouslySetInnerHtml: shiki output from our own server-side highlighter
           dangerouslySetInnerHTML={{ __html: html }}
         />
@@ -56,7 +56,7 @@ export function SourceDiffView({ diff }: { diff: SourceCode["diff"] }) {
         .
       </p>
       <div className="plate">
-        <pre className="scroll-pane max-h-[480px] overflow-auto px-4 py-3 pr-6 font-mono text-[12.5px] leading-relaxed">
+        <pre className="max-h-[480px] overflow-auto px-4 py-3 pr-6 font-mono text-[12.5px] leading-relaxed">
           {diff.lines.map((line, index) => (
             <div
               // biome-ignore lint/suspicious/noArrayIndexKey: static server-rendered diff lines

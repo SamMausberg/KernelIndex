@@ -104,7 +104,7 @@ export function WorkloadPicker({
         </span>
       </div>
       <div className="mt-2 inline-block max-w-full rounded-[5px] border border-border">
-        <div className="scroll-pane max-h-[300px] overflow-auto">
+        <div className="max-h-[300px] overflow-auto">
           <div
             className="sticky top-0 grid border-b border-border-strong bg-surface"
             style={{ gridTemplateColumns: template }}

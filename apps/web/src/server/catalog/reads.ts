@@ -968,7 +968,7 @@ export async function searchCatalog(
       noResult: {
         guidance: facetsOnly
           ? "The recognized facets need an operation to narrow. Add an operation name, family, or alias."
-          : "No matching operation found. Search by operation name, family, or alias — recognized shape, dtype, and hardware facets then narrow the results.",
+          : "No matching operation found. Search by operation name, family, or alias; recognized shape, dtype, and hardware facets then narrow the results.",
         suggestions: [...runsByFamily.entries()]
           .sort((a, b) => b[1] - a[1])
           .slice(0, 8)

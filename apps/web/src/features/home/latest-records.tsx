@@ -32,10 +32,24 @@ export function LatestRecords({ rows }: { rows: ResultRow[] }) {
         return (
           <div
             key={row.runId ?? row.implementation.slug}
-            className={`${GRID} h-[52px] items-center border-b border-line transition-colors hover:bg-raised`}
+            className={`${GRID} relative h-[52px] items-center border-b border-line transition-colors hover:bg-raised`}
           >
+            {/* The whole row reaches the record's run dossier; the cell
+                links sit above it (no nested anchors). */}
+            {row.runId && (
+              <Link
+                href={`/runs/${row.runId}`}
+                aria-label={`Record run for ${row.operation.name}`}
+                className="absolute inset-0"
+              />
+            )}
             <div className="truncate px-4 text-[13px]">
-              <span className="text-fg">{row.operation.name}</span>
+              <Link
+                href={`/operations/${row.operation.slug}`}
+                className="relative z-10 text-fg hover:text-accent-bright"
+              >
+                {row.operation.name}
+              </Link>
               <span className="ml-2 font-mono text-[11.5px] text-faint">
                 {row.workloadSummary}
               </span>
@@ -43,7 +57,7 @@ export function LatestRecords({ rows }: { rows: ResultRow[] }) {
             <div className="truncate px-4">
               <Link
                 href={`/implementations/${row.implementation.slug}`}
-                className="text-[13px]"
+                className="relative z-10 text-[13px]"
               >
                 {row.implementation.name}
               </Link>

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import type { OperationIndexEntry } from "./catalog-models"
-import { matchSuggestions } from "./suggest.ts"
+import { parseQuery } from "./search-query.ts"
+import { matchSuggestions, suggestFor } from "./suggest.ts"
 
 const entry = (
   name: string,
@@ -56,5 +57,29 @@ describe("matchSuggestions", () => {
   it("returns nothing for empty or unmatched terms", () => {
     expect(matchSuggestions([], INDEX)).toEqual([])
     expect(matchSuggestions(["conv3x3"], INDEX)).toEqual([])
+  })
+})
+
+describe("suggestFor", () => {
+  const names = (query: string) =>
+    suggestFor(parseQuery(query), INDEX).map((m) => m.name)
+
+  it("keeps suggesting when a typed term becomes a recognized facet", () => {
+    // "fp8" parses as a dtype facet, but it is also name material.
+    expect(names("fp8")).toEqual(["AMD FP8 blockwise GEMM"])
+  })
+
+  it("narrows by a bare facet token beside free text", () => {
+    expect(names("fp8 gemm")).toEqual(["AMD FP8 blockwise GEMM"])
+  })
+
+  it("falls back to free text when facet tokens match no name", () => {
+    const suggested = names("gemm b200 bf16")
+    expect(suggested[0]).toBe("GEMM n4096 k4096")
+    expect(suggested).toContain("AMD FP8 blockwise GEMM")
+  })
+
+  it("suggests nothing once an operation is selected", () => {
+    expect(names("op:gpumode-amd-fp8-mm")).toEqual([])
   })
 })

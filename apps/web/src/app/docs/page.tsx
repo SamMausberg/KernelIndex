@@ -67,14 +67,14 @@ export default function DocsPage() {
             benchmark protocol, raw evidence, and an explicit trust level. Names
             are aliases, not identity: results are compared only when their
             workload, protocol, and environment digests actually match. Imported
-            identifiers are displayed in humanized form — the canonical slugs
-            and digests they alias are preserved unchanged on every detail view.
+            identifiers are displayed in humanized form; the canonical slugs and
+            digests they alias are preserved unchanged on every detail view.
           </p>
         </Section>
 
         <Section id="query-syntax" title="Query syntax">
           <p>
-            Type anything. An operation name is enough — the search field
+            Type anything. An operation name is enough: the search field
             suggests matching operations as you type, and picking one submits an
             exact <span className="font-mono text-[12.5px]">op:</span> query.
             When several operations plausibly match and none dominates, the
@@ -116,8 +116,8 @@ rmsnorm gpu:B200 dtype:bf16 shape:[2048,4096] framework=pytorch trust:verified`}
             Search groups evidence into Exact, Compatible, Supported, and
             Reported views that are never interleaved. Inside a view,{" "}
             <em>Recommended</em>&#32;surfaces the strongest available trust tier
-            first — verified, then reproducible, then license + source, then
-            source available, then no source — with the cohort&apos;s ranking-v1
+            first (verified, then reproducible, then license + source, then
+            source available, then no source) with the cohort&apos;s ranking-v1
             latency order untouched inside each tier, so rank numbers keep their
             cohort meaning. Labeled dividers appear only when tiers actually
             differ, and the availability chips (has source, license known,
@@ -126,8 +126,8 @@ rmsnorm gpu:B200 dtype:bf16 shape:[2048,4096] framework=pytorch trust:verified`}
             row&apos;s cohort rank. The records ledger defaults to newest record
             first, with <em>Largest improvement</em>&#32;(margin over the
             previous record), <em>Most lead changes</em>&#32;(how many times the
-            cohort&apos;s record has changed hands — a competition measure, not
-            a dispute measure), and operation A–Z. Browse orders the corpus by
+            cohort&apos;s record has changed hands; a competition measure, not a
+            dispute measure), and operation A–Z. Browse orders the corpus by
             indexed run count, recent activity, or name. No sort ever ranks
             incomparable workloads against each other by latency.
           </p>
@@ -206,7 +206,7 @@ rmsnorm gpu:B200 dtype:bf16 shape:[2048,4096] framework=pytorch trust:verified`}
             Everything visible here is backed by canonical manifests with RFC
             8785 content digests. The public REST API at{" "}
             <span className="font-mono text-[12.5px]">/api/v1</span> returns the
-            same resolver decisions as these pages — never scraped HTML —
+            same resolver decisions as these pages, never scraped HTML,
             documented at{" "}
             <a href="/api/v1/openapi.json" className="font-mono text-[12.5px]">
               /api/v1/openapi.json
@@ -214,10 +214,10 @@ rmsnorm gpu:B200 dtype:bf16 shape:[2048,4096] framework=pytorch trust:verified`}
             . One human and one agent example per capability:
           </p>
           <pre className="plate mt-4 overflow-x-auto px-4 py-3 font-mono text-[12.5px] leading-relaxed text-muted">
-            {`# search — a person in a browser, or:
+            {`# search: a person in a browser, or:
 curl "https://kernelindex.dev/api/v1/search?q=rmsnorm%20B200%20bf16"
 
-# structured resolution — an agent with an exact workload:
+# structured resolution: an agent with an exact workload:
 curl -X POST https://kernelindex.dev/api/v1/resolve/kernel \\
   -H 'Content-Type: application/json' \\
   -d '{"operation":{"name":"rmsnorm","axes":{"tokens":2048}},
@@ -230,7 +230,7 @@ curl "https://kernelindex.dev/api/v1/implementations/<slug>?include=source"
 # records ledger, cursor-paginated:
 curl "https://kernelindex.dev/api/v1/records?limit=50"
 
-# the ki CLI (apps/cli) — stable --json for machines:
+# the ki CLI (apps/cli): stable --json for machines:
 ki search "gemm b200 nvfp4" --json | jq '.groups.exact[0]'
 ki manifest digest my-run.yaml
 
@@ -245,7 +245,7 @@ curl -L https://kernelindex.dev/api/v1/exports/catalog.jsonl.zst`}
             <a href="https://huggingface.co/datasets/GPUMODE/kernelbot-data">
               GPU Mode and the KernelBot dataset
             </a>{" "}
-            (June 9 Researcher Reciprocity License v1.0 — redistribution and
+            (June 9 Researcher Reciprocity License v1.0: redistribution and
             display with attribution; AI-training use restricted) and the NVIDIA
             SOL-ExecBench public leaderboard API. Mirrored submission source is
             shown under the KernelBot dataset license; each submission&apos;s

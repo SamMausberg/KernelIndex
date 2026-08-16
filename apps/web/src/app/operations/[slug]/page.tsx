@@ -30,6 +30,10 @@ export default async function OperationPage({ params, searchParams }: Props) {
   if (!model) notFound()
   const { operation, semantics, coverage } = model
   const best = model.records[0]?.primary ?? null
+  // The page answers "what holds this cohort"; the deep tail lives in
+  // search, which paginates. Rendering every row made 900KB pages.
+  const records = model.records.slice(0, 60)
+  const overflow = model.records.length - records.length
 
   return (
     <>
@@ -110,10 +114,10 @@ export default async function OperationPage({ params, searchParams }: Props) {
             </p>
           )}
           <div className="overflow-x-auto">
-            {model.records.length > 0 ? (
+            {records.length > 0 ? (
               <>
                 <ResultTableHead relativeLabel="vs #1" />
-                {model.records.map((row) => (
+                {records.map((row) => (
                   <ResultRowItem
                     key={row.runId ?? row.implementation.slug}
                     row={row}
@@ -128,6 +132,16 @@ export default async function OperationPage({ params, searchParams }: Props) {
               </p>
             )}
           </div>
+          {overflow > 0 && (
+            <p className="mt-3 text-[12.5px] text-faint">
+              {overflow} more row{overflow === 1 ? "" : "s"} in this cohort.{" "}
+              <Link
+                href={`/search?q=${encodeURIComponent(`op:${operation.slug}`)}`}
+              >
+                Open all in search →
+              </Link>
+            </p>
+          )}
         </Section>
 
         <Section id="implementations" title="Implementations">

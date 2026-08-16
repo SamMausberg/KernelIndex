@@ -205,12 +205,12 @@ export function parseQuery(query: string): SearchIntent {
       const hint = nearestKey(rawKey.toLowerCase())
       issue(
         token,
-        `unknown filter '${rawKey}'${hint ? ` — did you mean '${hint}:'?` : ""}`,
+        `unknown filter '${rawKey}'${hint ? `. Did you mean '${hint}:'?` : ""}`,
       )
       return
     }
     if (/^(>=|<=|>|<)/.test(value)) {
-      issue(token, `range filters are not supported yet — use an exact value`)
+      issue(token, `range filters are not supported yet; use an exact value`)
       return
     }
     switch (key) {
@@ -281,7 +281,7 @@ export function parseQuery(query: string): SearchIntent {
         if (!TRUST_LEVELS.has(lower as EvidenceLevel))
           return issue(
             token,
-            `unknown trust level '${value}' — one of verified, replicated, reproducible, reported`,
+            `unknown trust level '${value}': one of verified, replicated, reproducible, reported`,
           )
         intent.minimumTrust = lower as EvidenceLevel
         facet(token, "trust", `trust ≥ ${lower}`)

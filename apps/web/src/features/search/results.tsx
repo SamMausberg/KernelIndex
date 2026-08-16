@@ -509,7 +509,7 @@ export function SearchResults({
               </h1>
               <span className="text-[12.5px] text-faint">
                 Pick one to compare its implementations
-                {model.facets.length > 0 ? " — your filters carry over" : ""}
+                {model.facets.length > 0 ? "; your filters carry over" : ""}
               </span>
             </div>
             <OperationList
@@ -653,7 +653,7 @@ export function SearchResults({
                 "Ranked by the primary latency statistic inside one comparable cohort; statistically tied ranks share a number."}
               {view === "compatible" &&
                 model.compatibleOverflow > 0 &&
-                ` ${model.compatibleOverflow} more compatible rows not shown — narrow the workload.`}
+                ` ${model.compatibleOverflow} more compatible rows not shown; narrow the workload.`}
             </p>
 
             <div className="mt-1 animate-row-in overflow-x-auto [animation-delay:.12s]">
