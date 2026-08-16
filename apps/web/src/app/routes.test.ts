@@ -1,6 +1,7 @@
-// The two JSON route handlers serve seam models with CDN cache headers;
-// they must keep working under the fixtures backend (e2e runs against it).
+// The JSON route handlers serve seam models with CDN cache headers; they
+// must keep working under the fixtures backend (e2e runs against it).
 import { describe, expect, it } from "vitest"
+import { POST as beacon } from "./e/route.ts"
 import { GET as recordsData } from "./records/data/route.ts"
 import { GET as suggest } from "./suggest/route.ts"
 
@@ -20,5 +21,18 @@ describe("JSON routes", () => {
     const model = await response.json()
     expect(Array.isArray(model.records)).toBe(true)
     expect(Array.isArray(model.hardwareOptions)).toBe(true)
+  })
+
+  it("/e answers 204 to every beacon, hostile ones included", async () => {
+    const post = (body: string) =>
+      beacon(new Request("http://test/e", { method: "POST", body }))
+    for (const body of [
+      JSON.stringify({ event: "evidence_opened", kind: "run" }),
+      JSON.stringify({ event: "drop table", kind: "run" }),
+      "not json",
+      "x".repeat(10_000),
+    ]) {
+      expect((await post(body)).status).toBe(204)
+    }
   })
 })

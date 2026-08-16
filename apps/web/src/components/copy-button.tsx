@@ -1,9 +1,11 @@
 "use client"
 
 import { useRef, useState } from "react"
+import { beacon } from "./beacon"
 
-/** Copies `text` and confirms inline for 1.4 s (§16.2: functional motion). */
-export function CopyButton({ text }: { text: string }) {
+/** Copies `text` and confirms inline for 1.4 s (§16.2: functional motion).
+ * `event` optionally counts the copy as a §20.5 product event. */
+export function CopyButton({ text, event }: { text: string; event?: string }) {
   const [copied, setCopied] = useState(false)
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
 
@@ -12,6 +14,7 @@ export function CopyButton({ text }: { text: string }) {
       type="button"
       onClick={() => {
         navigator.clipboard?.writeText(text).catch(() => {})
+        if (event) beacon(event)
         setCopied(true)
         clearTimeout(timer.current)
         timer.current = setTimeout(() => setCopied(false), 1400)

@@ -10,6 +10,7 @@ import { Section } from "@/components/section"
 import { authConfigured } from "@/server/auth"
 import { db } from "@/server/db/client"
 import * as schema from "@/server/db/schema"
+import { eventSummary } from "@/server/events"
 import { FLASHINFER_SOURCE } from "@/server/import/flashinfer/types"
 import { GPUMODE_SOURCE } from "@/server/import/gpumode/types"
 import { MLPERF_SOURCE } from "@/server/import/mlperf/types"
@@ -52,7 +53,7 @@ export default async function AdminPage() {
     )
   }
 
-  const [pending, claims, openReports, recentAudit, sourceRows] =
+  const [pending, claims, openReports, recentAudit, sourceRows, metrics] =
     await Promise.all([
       db()
         .select()
@@ -95,6 +96,7 @@ export default async function AdminPage() {
           runs: number
         }[]
       >,
+      eventSummary(30),
     ])
 
   const sources = sourceRows.map((row) => {
@@ -234,6 +236,58 @@ export default async function AdminPage() {
               </span>
             </div>
           ))}
+        </Section>
+
+        <Section id="metrics" title="Product metrics · 30 days">
+          <p className="mb-3 text-[12.5px] text-subtle">
+            First-party §20.5 events: no cookies, no identity, coarse facets
+            only; rows prune after 90 days. The north star (§20.4) is the share
+            of parseable searches answered with at least one exact,
+            evidence-backed row.
+          </p>
+          {(() => {
+            const parsed = metrics.searches.total - metrics.searches.parseErrors
+            const rate = (part: number) =>
+              parsed === 0 ? "n/a" : `${Math.round((part / parsed) * 100)}%`
+            return (
+              <div className="flex flex-wrap gap-x-8 gap-y-2 text-[13px]">
+                <span>
+                  exact useful resolution{" "}
+                  <span className="font-mono text-fg">
+                    {rate(metrics.searches.exact)}
+                  </span>
+                </span>
+                <span>
+                  zero-result{" "}
+                  <span className="font-mono text-fg">
+                    {rate(metrics.searches.zero)}
+                  </span>
+                </span>
+                <span>
+                  searches{" "}
+                  <span className="font-mono text-fg">
+                    {metrics.searches.total}
+                  </span>{" "}
+                  <span className="text-faint">
+                    ({metrics.searches.parseErrors} parse errors)
+                  </span>
+                </span>
+              </div>
+            )
+          })()}
+          <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1.5">
+            {metrics.counts.length === 0 && (
+              <span className="text-[13px] text-faint">No events yet.</span>
+            )}
+            {metrics.counts.map((row) => (
+              <span
+                key={row.event}
+                className="font-mono text-[12px] text-subtle"
+              >
+                {row.event} <span className="text-fg">{row.total}</span>
+              </span>
+            ))}
+          </div>
         </Section>
 
         <Section id="corrections" title="Retract a run">

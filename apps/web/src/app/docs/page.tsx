@@ -36,6 +36,7 @@ const SECTIONS = [
   ["data", "Data and API"],
   ["serving", "Serving"],
   ["sources", "Sources and licensing"],
+  ["privacy", "Privacy"],
 ] as const
 
 export default function DocsPage() {
@@ -361,6 +362,21 @@ curl -L https://kernelindex.com/api/v1/exports/catalog.jsonl.zst`}
             round, submitter, system, and entry ID (MLPerf™ is a trademark of
             MLCommons). Rights holders can request removal at any time and
             contested records are retracted before any dispute.
+          </p>
+        </Section>
+
+        <Section id="privacy" title="Privacy">
+          <p>
+            KernelIndex measures answer quality with a handful of first-party
+            product events (a search happened, whether it parsed, whether an
+            exact answer existed, an evidence page opened, an install command
+            was copied) — no cookies, no analytics identifiers, no IP addresses,
+            and never the raw query text. Event rows are pruned after 90 days.
+            Accounts store only the GitHub-provided name, e-mail, and avatar,
+            and can be deleted at any time from{" "}
+            <Link href="/account">/account</Link>; published evidence and the
+            audit trail are append-only and survive with the account reference
+            detached.
           </p>
         </Section>
       </main>

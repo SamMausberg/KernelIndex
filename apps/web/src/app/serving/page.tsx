@@ -4,6 +4,7 @@
 // frontier. There is no universal serving winner (§2.2 invariant 9).
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
+import { after } from "next/server"
 import { ContextHeader } from "@/components/context-header"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
 import { Select } from "@/components/select"
@@ -12,6 +13,7 @@ import { resolveServing } from "@/lib/catalog"
 import { countNoun } from "@/lib/format"
 import type { ServingResolveInput } from "@/lib/serving-models"
 import { servingEnabled } from "@/server/env"
+import { recordEvent } from "@/server/events"
 
 export const metadata: Metadata = { title: "Serving" }
 export const revalidate = 300
@@ -133,6 +135,14 @@ export default async function ServingPage({
   const params = await searchParams
   const model = await resolveServing(inputOf(params))
   const feasible = model.groups.reduce((n, group) => n + group.rows.length, 0)
+  // §20.5: only actual resolver requests count, not the default view.
+  if (Object.keys(params).length > 0)
+    after(() =>
+      recordEvent("serving_resolved", {
+        feasible: feasible > 0,
+        cohorts: model.groups.length,
+      }),
+    )
   const excluded = model.groups.reduce(
     (n, group) => n + group.excluded.length,
     0,

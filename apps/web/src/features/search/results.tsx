@@ -274,7 +274,7 @@ function Recommendation({
             <code className="min-w-0 flex-1 truncate font-mono text-[12.5px] text-muted">
               {top.install.command}
             </code>
-            <CopyButton text={top.install.command} />
+            <CopyButton text={top.install.command} event="install_copied" />
           </div>
         ) : (
           <p className="mt-4 text-[12.5px] text-faint">

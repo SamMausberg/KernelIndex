@@ -4,6 +4,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import { EvidenceOpened } from "@/components/beacon"
 import { ContextHeader } from "@/components/context-header"
 import { CopyButton } from "@/components/copy-button"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
@@ -35,6 +36,7 @@ export default async function ServingRunPage({ params }: Props) {
     <>
       {model.illustrative && <IllustrativeNotice />}
       <div className="scan-line" />
+      <EvidenceOpened kind="serving_run" />
       <ContextHeader
         title={
           <span className="text-[19px]">{model.configuration.summary}</span>

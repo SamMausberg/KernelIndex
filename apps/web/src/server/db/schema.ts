@@ -618,6 +618,21 @@ export const reports = pgTable(
   ],
 )
 
+/** Minimal first-party product events (§20.5): event name plus coarse
+    facets. Deliberately no user id, no IP, no session key, and no raw
+    query text — the answer-quality metrics in §20.4 need nothing more.
+    Rows older than the documented retention window are pruned weekly. */
+export const productEvents = pgTable(
+  "product_events",
+  {
+    id: id(),
+    event: text("event").notNull(),
+    facets: jsonb("facets"),
+    at: createdAt(),
+  },
+  (t) => [index("product_events_event_idx").on(t.event, t.at)],
+)
+
 /** Immutable fetched or supplied source observation (§14.3). */
 export const sourceSnapshots = pgTable(
   "source_snapshots",

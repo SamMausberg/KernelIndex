@@ -99,6 +99,13 @@
       "when": 1786903500705,
       "tag": "0013_reports",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1786903742834,
+      "tag": "0014_product-events",
+      "breakpoints": true
     }
   ]
 }

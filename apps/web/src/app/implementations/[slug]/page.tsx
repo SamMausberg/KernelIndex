@@ -128,7 +128,10 @@ export default async function ImplementationPage({ params }: Props) {
                   <code className="min-w-0 flex-1 truncate font-mono text-[12.5px] text-muted">
                     {model.usage.install.command}
                   </code>
-                  <CopyButton text={model.usage.install.command} />
+                  <CopyButton
+                    text={model.usage.install.command}
+                    event="install_copied"
+                  />
                 </div>
               ) : (
                 <p className="text-[13px] text-faint">

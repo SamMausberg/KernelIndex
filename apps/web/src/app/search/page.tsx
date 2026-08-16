@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { after } from "next/server"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
 import {
   type ResultMode,
@@ -7,6 +8,7 @@ import {
 } from "@/features/search/results"
 import type { BrowseSort } from "@/features/search/start-state"
 import { searchCatalog } from "@/lib/catalog"
+import { recordEvent } from "@/server/events"
 
 export const metadata: Metadata = { title: "Search" }
 
@@ -36,6 +38,16 @@ export default async function SearchPage({
   const params = await searchParams
   const query = params.q ?? ""
   const model = await searchCatalog({ query })
+  // §20.5 answer-quality counters, after the response; empty = browse.
+  if (query.trim() !== "")
+    after(() =>
+      recordEvent("search_submitted", {
+        parseError: model.queryIssues.length > 0,
+        zeroResult: model.noResult !== null,
+        exactReturned: model.groups.exact.length > 0,
+        resolvedOperation: model.operation !== null,
+      }),
+    )
   const page = Number.parseInt(params.page ?? "1", 10)
   return (
     <>
