@@ -13,6 +13,10 @@ import {
   getOperationPage,
   getRecordsPage,
   getRunPage,
+  getServingRunPage,
+  listServingConfigurations,
+  listServingRuns,
+  resolveServing,
   searchCatalog,
 } from "../../lib/catalog.ts"
 import type { ResultRow, SearchPageModel } from "../../lib/catalog-models.ts"
@@ -25,6 +29,10 @@ import {
   recordsResponse,
   resolveKernelRequest,
   resolveResponse,
+  resolveServingRequest,
+  servingConfigurationSummary,
+  servingResolveResponse,
+  servingRunsResponse,
 } from "./schemas.ts"
 
 const CACHE_SHORT = "public, s-maxage=60, stale-while-revalidate=300"
@@ -459,6 +467,81 @@ export const OPENAPI_INFO = {
       "Public read API over the KernelIndex catalog. Responses carry stable IDs, content digests, canonical units, and the ranking policy version; the web pages, CLI, and MCP render these same semantic results.",
   },
 } as const
+
+// Serving routes (§13.2 Week 9): explicit objective or Pareto frontier,
+// never a universal score, never mixed with kernel cohorts. The §21.8
+// kill switch turns the whole surface into 404s.
+const servingGate = async () => {
+  const { servingEnabled } = await import("../env.ts")
+  if (!servingEnabled) fail(404, "SERVING_DISABLED", "serving catalog is off")
+}
+
+api.openapi(
+  createRoute({
+    method: "post",
+    path: "/resolve/serving",
+    request: {
+      body: {
+        content: { "application/json": { schema: resolveServingRequest } },
+      },
+    },
+    responses: json(
+      servingResolveResponse,
+      "Feasible serving configurations grouped by cohort, ranked only under an explicit objective; the Pareto frontier otherwise",
+    ),
+  }),
+  async (c) => {
+    await servingGate()
+    const model = await resolveServing(c.req.valid("json"))
+    c.header("Cache-Control", CACHE_SHORT)
+    return c.json(model)
+  },
+)
+
+api.openapi(
+  createRoute({
+    method: "get",
+    path: "/serving-runs",
+    request: {
+      query: z.object({
+        cursor: z.string().max(200).optional(),
+        limit: z.coerce.number().int().min(1).max(200).default(50),
+      }),
+    },
+    responses: json(servingRunsResponse, "Serving runs, cursor-paginated"),
+  }),
+  async (c) => {
+    await servingGate()
+    const { cursor, limit } = c.req.valid("query")
+    c.header("Cache-Control", CACHE_MEDIUM)
+    return c.json(await listServingRuns({ cursor, limit }))
+  },
+)
+
+api.openapi(
+  createRoute({
+    method: "get",
+    path: "/serving-configurations",
+    responses: json(
+      z.array(servingConfigurationSummary),
+      "Serving configurations with eligible run counts",
+    ),
+  }),
+  async (c) => {
+    await servingGate()
+    c.header("Cache-Control", CACHE_MEDIUM)
+    return c.json(await listServingConfigurations())
+  },
+)
+
+// Dossier: open object like the other dossier routes; the model is the page.
+api.get("/serving-runs/:id", async (c) => {
+  await servingGate()
+  const model = await getServingRunPage(c.req.param("id"))
+  if (!model) fail(404, "SERVING_RUN_NOT_FOUND", "no such serving run")
+  c.header("Cache-Control", CACHE_MEDIUM)
+  return c.json(model)
+})
 
 api.doc("/openapi.json", OPENAPI_INFO)
 

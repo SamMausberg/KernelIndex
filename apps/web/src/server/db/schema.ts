@@ -616,3 +616,205 @@ export const sourceSnapshots = pgTable(
     digestCheck("source_snapshots_digest_format", t.contentDigest),
   ],
 )
+
+// ---------------------------------------------------------------------------
+// Serving catalog (§8.16, §10.1 — Week 9). Dedicated typed tables: serving
+// reuses projects/sources/source_links/source_snapshots/artifacts but never
+// kernel benchmark_runs, its comparison key, or any universal score (§2.2).
+
+/** Model identity for serving cohorts (§8.16). Immutable, digest-keyed. */
+export const modelRevisions = pgTable(
+  "model_revisions",
+  {
+    id: id(),
+    slug: text("slug").notNull(),
+    modelDigest: text("model_digest").notNull(),
+    name: text("name").notNull(),
+    parameterCount: bigint("parameter_count", { mode: "number" }),
+    contextLength: integer("context_length"),
+    tokenizer: text("tokenizer"),
+    license: text("license"),
+    schemaVersion: text("schema_version").notNull(),
+    manifest: jsonb("manifest").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    uniqueIndex("model_revisions_digest_unique").on(t.modelDigest),
+    index("model_revisions_slug_idx").on(t.slug),
+    digestCheck("model_revisions_digest_format", t.modelDigest),
+  ],
+)
+
+export const servingStackRevisions = pgTable(
+  "serving_stack_revisions",
+  {
+    id: id(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id),
+    slug: text("slug").notNull(),
+    stackDigest: text("stack_digest").notNull(),
+    name: text("name").notNull(),
+    version: text("version"),
+    schemaVersion: text("schema_version").notNull(),
+    manifest: jsonb("manifest").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    uniqueIndex("serving_stack_revisions_digest_unique").on(t.stackDigest),
+    index("serving_stack_revisions_project_idx").on(t.projectId),
+    digestCheck("serving_stack_revisions_digest_format", t.stackDigest),
+  ],
+)
+
+export const servingConfigurations = pgTable(
+  "serving_configurations",
+  {
+    id: id(),
+    stackRevisionId: uuid("stack_revision_id")
+      .notNull()
+      .references(() => servingStackRevisions.id),
+    configurationDigest: text("configuration_digest").notNull(),
+    dtype: text("dtype"),
+    quantization: text("quantization"),
+    tensorParallel: integer("tensor_parallel"),
+    /** Human line for result rows: the launch identity a source states. */
+    summary: text("summary").notNull(),
+    schemaVersion: text("schema_version").notNull(),
+    manifest: jsonb("manifest").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    uniqueIndex("serving_configurations_digest_unique").on(
+      t.configurationDigest,
+    ),
+    index("serving_configurations_stack_idx").on(t.stackRevisionId),
+    digestCheck("serving_configurations_digest_format", t.configurationDigest),
+  ],
+)
+
+export const servingWorkloads = pgTable(
+  "serving_workloads",
+  {
+    id: id(),
+    workloadDigest: text("workload_digest").notNull(),
+    slug: text("slug").notNull(),
+    name: text("name").notNull(),
+    streaming: boolean("streaming").notNull(),
+    loadGeneration: text("load_generation").notNull(),
+    schemaVersion: text("schema_version").notNull(),
+    manifest: jsonb("manifest").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    uniqueIndex("serving_workloads_digest_unique").on(t.workloadDigest),
+    index("serving_workloads_slug_idx").on(t.slug),
+    digestCheck("serving_workloads_digest_format", t.workloadDigest),
+  ],
+)
+
+/** One serving benchmark execution (§10.1). The §11.1 cohort projections
+ * are typed columns; measurements are multi-objective rows, never a single
+ * primary value — there is no universal serving score. */
+export const servingRuns = pgTable(
+  "serving_runs",
+  {
+    id: id(),
+    runDigest: text("run_digest").notNull(),
+    modelRevisionId: uuid("model_revision_id")
+      .notNull()
+      .references(() => modelRevisions.id),
+    configurationId: uuid("configuration_id")
+      .notNull()
+      .references(() => servingConfigurations.id),
+    workloadId: uuid("workload_id")
+      .notNull()
+      .references(() => servingWorkloads.id),
+    sourceId: uuid("source_id")
+      .notNull()
+      .references(() => sources.id),
+    status: text("status").notNull(),
+    observedAt: timestamp("observed_at", { withTimezone: true }).notNull(),
+    publishedAt: timestamp("published_at", { withTimezone: true }),
+    /* §11.1 serving cohort key: digest over model+tokenizer, workload,
+       protocol, topology, quality policy, and metric set. */
+    cohortKey: text("cohort_key").notNull(),
+    protocolKey: text("protocol_key").notNull(),
+    qualityPolicy: text("quality_policy").notNull(),
+    metricSetKey: text("metric_set_key").notNull(),
+    scenario: text("scenario").notNull(),
+    acceleratorVendor: text("accelerator_vendor"),
+    acceleratorModel: text("accelerator_model").notNull(),
+    acceleratorCount: integer("accelerator_count").notNull(),
+    nodeCount: integer("node_count").notNull().default(1),
+    totalAccelerators: integer("total_accelerators").notNull(),
+    reported: boolean("reported").notNull().default(true),
+    schemaVersion: text("schema_version").notNull(),
+    manifest: jsonb("manifest").notNull(),
+    supersedesId: uuid("supersedes_id").references(
+      (): AnyPgColumn => servingRuns.id,
+    ),
+    retractedAt: timestamp("retracted_at", { withTimezone: true }),
+    retractionReason: jsonb("retraction_reason"),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    uniqueIndex("serving_runs_digest_unique").on(t.runDigest),
+    index("serving_runs_model_idx").on(t.modelRevisionId),
+    index("serving_runs_configuration_idx").on(t.configurationId),
+    index("serving_runs_workload_idx").on(t.workloadId),
+    // Resolver scans: eligible runs by cohort, and by hardware budget.
+    index("serving_runs_cohort_idx")
+      .on(t.cohortKey)
+      .where(
+        sql`${t.publishedAt} is not null and ${t.status} = 'valid' and ${t.retractedAt} is null`,
+      ),
+    index("serving_runs_hardware_idx")
+      .on(t.acceleratorModel, t.totalAccelerators)
+      .where(
+        sql`${t.publishedAt} is not null and ${t.status} = 'valid' and ${t.retractedAt} is null`,
+      ),
+    digestCheck("serving_runs_digest_format", t.runDigest),
+    digestCheck("serving_runs_cohort_format", t.cohortKey),
+  ],
+)
+
+export const servingMeasurements = pgTable(
+  "serving_measurements",
+  {
+    id: id(),
+    runId: uuid("run_id")
+      .notNull()
+      .references(() => servingRuns.id),
+    metric: text("metric").notNull(),
+    statistic: text("statistic").notNull(),
+    unit: text("unit").notNull(),
+    value: numeric("value", { mode: "number" }).notNull(),
+    sampleCount: integer("sample_count"),
+  },
+  (t) => [
+    uniqueIndex("serving_measurements_run_metric_statistic_unique").on(
+      t.runId,
+      t.metric,
+      t.statistic,
+    ),
+    check(
+      "serving_measurements_value_valid",
+      sql`${t.value} <> 'NaN'::numeric`,
+    ),
+  ],
+)
+
+export const servingRunArtifacts = pgTable(
+  "serving_run_artifacts",
+  {
+    runId: uuid("run_id")
+      .notNull()
+      .references(() => servingRuns.id),
+    artifactId: uuid("artifact_id")
+      .notNull()
+      .references(() => artifacts.id),
+    role: text("role").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.runId, t.artifactId, t.role] })],
+)

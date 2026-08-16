@@ -16,8 +16,16 @@ import type {
   SearchInput,
   SearchPageModel,
 } from "./catalog-models"
+import type {
+  ServingConfigurationSummary,
+  ServingResolveInput,
+  ServingResolveModel,
+  ServingRunPageModel,
+  ServingRunSummary,
+} from "./serving-models"
 
 export type * from "./catalog-models"
+export type * from "./serving-models"
 
 type CatalogReads = {
   getHomePage(): Promise<HomePageModel>
@@ -32,6 +40,14 @@ type CatalogReads = {
   getImplementationPage(slug: string): Promise<ImplementationPageModel | null>
   getRunPage(id: string): Promise<RunPageModel | null>
   getComparePage(runIds: string[]): Promise<ComparePageModel>
+  // Serving (§8.16): a separate resolver surface behind the same seam.
+  resolveServing(input: ServingResolveInput): Promise<ServingResolveModel>
+  getServingRunPage(id: string): Promise<ServingRunPageModel | null>
+  listServingRuns(input: {
+    cursor?: string
+    limit?: number
+  }): Promise<{ runs: ServingRunSummary[]; nextCursor: string | null }>
+  listServingConfigurations(): Promise<ServingConfigurationSummary[]>
 }
 
 // Server-only: both backends are loaded lazily so fixture mode never touches
@@ -152,6 +168,46 @@ export const getComparePage = cache(
       return (await reads()).getComparePage(runIds)
     },
     ["compare", BACKEND],
+    { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },
+  ),
+)
+
+export const resolveServing = cache(
+  cached(
+    async (input: ServingResolveInput): Promise<ServingResolveModel> => {
+      return (await reads()).resolveServing(input)
+    },
+    ["resolve-serving", BACKEND],
+    { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },
+  ),
+)
+
+export const getServingRunPage = cache(
+  cached(
+    async (id: string): Promise<ServingRunPageModel | null> => {
+      return (await reads()).getServingRunPage(id)
+    },
+    ["serving-run", BACKEND],
+    { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },
+  ),
+)
+
+export const listServingRuns = cache(
+  cached(
+    async (input: { cursor?: string; limit?: number }) => {
+      return (await reads()).listServingRuns(input)
+    },
+    ["serving-runs", BACKEND],
+    { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },
+  ),
+)
+
+export const listServingConfigurations = cache(
+  cached(
+    async (): Promise<ServingConfigurationSummary[]> => {
+      return (await reads()).listServingConfigurations()
+    },
+    ["serving-configurations", BACKEND],
     { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },
   ),
 )

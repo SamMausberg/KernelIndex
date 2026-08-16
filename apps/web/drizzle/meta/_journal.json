@@ -78,6 +78,13 @@
       "when": 1786893745332,
       "tag": "0010_watches",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1786894165887,
+      "tag": "0011_serving-tables",
+      "breakpoints": true
     }
   ]
 }

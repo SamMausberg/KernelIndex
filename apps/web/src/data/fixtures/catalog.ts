@@ -1297,3 +1297,6 @@ export async function getComparePage(
     policyVersion: RANKING_POLICY_VERSION,
   }
 }
+
+// Serving fixtures (§8.16, Week 9): same seam, separate module.
+export * from "./serving"

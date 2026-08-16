@@ -2173,3 +2173,7 @@ export async function getComparePage(
     policyVersion: RANKING_POLICY_VERSION,
   }
 }
+
+// Serving reads (§8.16, Week 9) live in their own module; re-exported so
+// the seam's dynamic import of this file satisfies one interface.
+export * from "./serving-reads.ts"

@@ -67,12 +67,16 @@
                 "maxLength": 2000
               }
             },
-            "required": ["url"],
+            "required": [
+              "url"
+            ],
             "additionalProperties": false
           }
         }
       },
-      "required": ["name"],
+      "required": [
+        "name"
+      ],
       "additionalProperties": false
     },
     "spec": {
@@ -163,15 +167,23 @@
                         "pattern": "^sha256:[0-9a-f]{64}$"
                       }
                     },
-                    "required": ["uri", "digest"],
+                    "required": [
+                      "uri",
+                      "digest"
+                    ],
                     "additionalProperties": false
                   }
                 },
-                "required": ["generator"],
+                "required": [
+                  "generator"
+                ],
                 "additionalProperties": false
               }
             },
-            "required": ["shape", "dtype"],
+            "required": [
+              "shape",
+              "dtype"
+            ],
             "additionalProperties": false
           }
         },
@@ -192,7 +204,10 @@
                 "type": "number"
               }
             },
-            "required": ["dtype", "value"],
+            "required": [
+              "dtype",
+              "value"
+            ],
             "additionalProperties": false
           }
         },
@@ -218,21 +233,41 @@
             },
             "nanPolicy": {
               "type": "string",
-              "enum": ["reject", "exact_match", "ignore"]
+              "enum": [
+                "reject",
+                "exact_match",
+                "ignore"
+              ]
             },
             "infinityPolicy": {
               "type": "string",
-              "enum": ["reject", "exact_match", "ignore"]
+              "enum": [
+                "reject",
+                "exact_match",
+                "ignore"
+              ]
             }
           },
-          "required": ["comparator"],
+          "required": [
+            "comparator"
+          ],
           "additionalProperties": false
         }
       },
-      "required": ["operationSpecDigest", "axes", "tensors", "correctness"],
+      "required": [
+        "operationSpecDigest",
+        "axes",
+        "tensors",
+        "correctness"
+      ],
       "additionalProperties": false
     }
   },
-  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "required": [
+    "apiVersion",
+    "kind",
+    "metadata",
+    "spec"
+  ],
   "additionalProperties": false
 }

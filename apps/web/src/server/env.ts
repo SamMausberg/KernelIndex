@@ -15,6 +15,8 @@ const environmentSchema = z
       .string()
       .regex(/^[0-9a-f]{40}$/)
       .optional(),
+    /** §21.8 kill switch: "false" hides nav/pages/API/sitemap for serving. */
+    SERVING_CATALOG_ENABLED: z.string().optional(),
   })
   .refine(
     (env) =>
@@ -38,3 +40,6 @@ export const env = environmentSchema.parse(process.env)
 /** Non-sensitive release identity for the diagnostics footer (§27.11). */
 export const releaseSha =
   env.RELEASE_SHA ?? process.env.VERCEL_GIT_COMMIT_SHA ?? null
+
+/** Serving surfaces default on; the flag is a kill switch, not a rollout. */
+export const servingEnabled = env.SERVING_CATALOG_ENABLED !== "false"

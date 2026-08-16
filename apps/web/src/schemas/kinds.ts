@@ -20,6 +20,14 @@ import {
   utcInstant,
 } from "./common.ts"
 
+import {
+  modelRevisionBody,
+  servingConfigurationBody,
+  servingRunBody,
+  servingStackRevisionBody,
+  servingWorkloadBody,
+} from "./serving-kinds.ts"
+
 export const API_VERSION = "kernelindex.dev/v1alpha1"
 
 const metadata = z.strictObject({
@@ -443,6 +451,25 @@ export const executionEnvironmentManifest = manifest(
 )
 export const benchmarkRunManifest = manifest("BenchmarkRun", benchmarkRunBody)
 
+// Serving kinds (§8.16, Week 9): separate resolver surface, shared envelope.
+export const modelRevisionManifest = manifest(
+  "ModelRevision",
+  modelRevisionBody,
+)
+export const servingStackRevisionManifest = manifest(
+  "ServingStackRevision",
+  servingStackRevisionBody,
+)
+export const servingConfigurationManifest = manifest(
+  "ServingConfiguration",
+  servingConfigurationBody,
+)
+export const servingWorkloadManifest = manifest(
+  "ServingWorkload",
+  servingWorkloadBody,
+)
+export const servingRunManifest = manifest("ServingRun", servingRunBody)
+
 export const anyManifest = z.discriminatedUnion("kind", [
   operationSpecManifest,
   workloadCaseManifest,
@@ -452,6 +479,11 @@ export const anyManifest = z.discriminatedUnion("kind", [
   benchmarkProtocolManifest,
   executionEnvironmentManifest,
   benchmarkRunManifest,
+  modelRevisionManifest,
+  servingStackRevisionManifest,
+  servingConfigurationManifest,
+  servingWorkloadManifest,
+  servingRunManifest,
 ])
 
 export type OperationSpecManifest = z.output<typeof operationSpecManifest>
@@ -468,6 +500,15 @@ export type ExecutionEnvironmentManifest = z.output<
   typeof executionEnvironmentManifest
 >
 export type BenchmarkRunManifest = z.output<typeof benchmarkRunManifest>
+export type ModelRevisionManifest = z.output<typeof modelRevisionManifest>
+export type ServingStackRevisionManifest = z.output<
+  typeof servingStackRevisionManifest
+>
+export type ServingConfigurationManifest = z.output<
+  typeof servingConfigurationManifest
+>
+export type ServingWorkloadManifest = z.output<typeof servingWorkloadManifest>
+export type ServingRunManifest = z.output<typeof servingRunManifest>
 export type AnyManifest = z.output<typeof anyManifest>
 export type ManifestKind = AnyManifest["kind"]
 
@@ -481,4 +522,9 @@ export const manifestSchemas = {
   BenchmarkProtocol: benchmarkProtocolManifest,
   ExecutionEnvironment: executionEnvironmentManifest,
   BenchmarkRun: benchmarkRunManifest,
+  ModelRevision: modelRevisionManifest,
+  ServingStackRevision: servingStackRevisionManifest,
+  ServingConfiguration: servingConfigurationManifest,
+  ServingWorkload: servingWorkloadManifest,
+  ServingRun: servingRunManifest,
 } as const

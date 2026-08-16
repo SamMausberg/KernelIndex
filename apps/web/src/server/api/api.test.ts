@@ -128,4 +128,51 @@ describe("api /v1", () => {
     const body = await response.json()
     expect(body.code).toBe("FORBIDDEN")
   })
+
+  it("resolves serving to cohorts with feasibility and a frontier, no score", async () => {
+    const response = await post("/resolve/serving", {
+      objective: {
+        direction: "maximize",
+        metric: "output_token_throughput_tps",
+        statistic: "reported",
+      },
+    })
+    expect(response.status).toBe(200)
+    const model = await response.json()
+    expect(model.policyVersion).toBe("serving-v1")
+    // Cohorts never merge: interactive and offline stay separate groups.
+    expect(model.groups.length).toBe(2)
+    const [first] = model.groups
+    expect(first.rows[0].rank).toBe(1)
+    expect(
+      first.rows.some((row: { onFrontier: boolean }) => row.onFrontier),
+    ).toBe(true)
+    // No universal score field exists anywhere in a row.
+    expect("score" in first.rows[0]).toBe(false)
+  })
+
+  it("excludes candidates whose constrained metric is unreported", async () => {
+    const response = await post("/resolve/serving", {
+      workload: "interactive-chat-trace",
+      constraints: [{ metric: "ttft_ms", operator: "<=", value: 400 }],
+    })
+    const model = await response.json()
+    const interactive = model.groups[0]
+    expect(
+      interactive.excluded.some((entry: { reasons: string[] }) =>
+        entry.reasons.includes("METRIC_NOT_REPORTED:ttft_ms"),
+      ),
+    ).toBe(true)
+    // The 410ms-TTFT candidate fails the measured constraint.
+    expect(
+      interactive.excluded.some((entry: { reasons: string[] }) =>
+        entry.reasons.includes("CONSTRAINT_UNSATISFIED:ttft_ms"),
+      ),
+    ).toBe(true)
+  })
+
+  it("404s an unknown serving run as a problem", async () => {
+    const response = await get("/serving-runs/srv-fx-nope")
+    expect(response.status).toBe(404)
+  })
 })

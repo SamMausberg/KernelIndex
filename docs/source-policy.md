@@ -87,8 +87,9 @@ legalnotices@ the project contact removes the contested records immediately
   ambiguities, never auto-merge on names (§14.4). Every run is fetched at
   one pinned dataset revision. LFS-tracked trace files whose downloads
   redirect off the fetch allowlist are skipped with a review issue.
-- **Parser owner / review.** `import/flashinfer` (parser v1), reviewed
-  2026-08-15.
+- **Parser owner / review.** `import/flashinfer` (parser v2: accepts
+  upstream "Infinity" error bounds as no-bound; unknown-definition solutions
+  review as ambiguities), reviewed 2026-08-16.
 
 ## Liger-Kernel (planned)
 
@@ -110,12 +111,35 @@ legalnotices@ the project contact removes the contested records immediately
   structured published results; README prose only. Reconsider as
   implementation-registry metadata, not records.
 
-## Serving-domain candidates (Phase 3, §8.16)
+## MLPerf Inference (active — `mlperf-inference`)
 
-- **MLPerf Inference** result repos (`summary_results.json`) — Apache-2.0
-  (v5.1+, verified); presentation must follow the MLPerf Results Messaging
-  Guidelines (comparable results only, trademark rules, label any derived
-  normalization such as per-accelerator division as unofficial).
+- **Data.** Per-round GitHub result repos
+  `mlcommons/inference_results_v5.1` and `_v6.0`, each **Apache-2.0**
+  (LICENSE.md verified per repo 2026-08-16). The importer reads only the
+  root `summary_results.json` at a pinned commit per round (immutable
+  official results), filtered to **closed division, datacenter suite,
+  token-throughput LLM benchmarks** — official published results as-is,
+  never per-accelerator division or any derived normalization.
+- **Store vs link.** Store: the summary snapshot (digested) and normalized
+  manifests (model/stack/configuration/workload/run facts stated by the
+  rows and the published inference rules). Link: each entry's official
+  `Details`/`Code` URLs and per-result logs — not mirrored in v1.
+- **Declared SLOs.** Server/Interactive TTFT/TPOT bounds are transcribed
+  from `mlcommons/inference_policies` `inference_rules.adoc` with that URL
+  as sourceRef on every workload manifest — cited facts of the benchmark
+  definition, never measurements.
+- **Attribution and messaging.** Every derived page names "MLPerf™
+  Inference <round>", the division/suite, submitter, system, and entry ID,
+  with a link to the official results. MLPerf™ is a trademark of MLCommons,
+  used to identify official published results only; results are shown
+  unmodified per the MLPerf Results Messaging Guidelines and never mixed
+  into kernel leaderboards or reduced to a universal score (§2.2, §22.10).
+- **Load.** Two raw-file fetches per import (one summary per round), pinned
+  revisions, weekly at most.
+- **Parser owner / review.** `import/mlperf` (parser v1), reviewed
+  2026-08-16.
+
+## Serving-domain candidates (Phase 3, §8.16)
 - **InferenceX (SemiAnalysis)** — Apache-2.0 repos, weekly DB dumps as
   GitHub releases; confirm the dumps' license explicitly before import.
 - **vLLM / SGLang HUD data** — right metrics, no sanctioned bulk access and

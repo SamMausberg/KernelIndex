@@ -67,12 +67,16 @@
                 "maxLength": 2000
               }
             },
-            "required": ["url"],
+            "required": [
+              "url"
+            ],
             "additionalProperties": false
           }
         }
       },
-      "required": ["name"],
+      "required": [
+        "name"
+      ],
       "additionalProperties": false
     },
     "spec": {
@@ -108,7 +112,9 @@
               "pattern": "^sha256:[0-9a-f]{64}$"
             }
           },
-          "required": ["specDigest"],
+          "required": [
+            "specDigest"
+          ],
           "additionalProperties": false
         },
         "callable": {
@@ -131,7 +137,9 @@
               "pattern": "^[a-z][a-z0-9_]*$"
             }
           },
-          "required": ["language"],
+          "required": [
+            "language"
+          ],
           "additionalProperties": false
         },
         "support": {
@@ -173,7 +181,10 @@
               }
             }
           },
-          "required": ["hardwareArchitectures", "dtypes"],
+          "required": [
+            "hardwareArchitectures",
+            "dtypes"
+          ],
           "additionalProperties": false
         },
         "source": {
@@ -193,7 +204,9 @@
               "maximum": 9007199254740991
             }
           },
-          "required": ["contentDigest"],
+          "required": [
+            "contentDigest"
+          ],
           "additionalProperties": false
         },
         "buildVariants": {
@@ -211,7 +224,13 @@
                 "properties": {
                   "kind": {
                     "type": "string",
-                    "enum": ["git", "pip", "package", "container", "source"]
+                    "enum": [
+                      "git",
+                      "pip",
+                      "package",
+                      "container",
+                      "source"
+                    ]
                   },
                   "repository": {
                     "type": "string",
@@ -234,7 +253,9 @@
                     "maxLength": 1000
                   }
                 },
-                "required": ["kind"],
+                "required": [
+                  "kind"
+                ],
                 "additionalProperties": false
               },
               "requirements": {
@@ -249,7 +270,10 @@
                 }
               }
             },
-            "required": ["name", "install"],
+            "required": [
+              "name",
+              "install"
+            ],
             "additionalProperties": false
           }
         },
@@ -276,7 +300,9 @@
                   "pattern": "^sha256:[0-9a-f]{64}$"
                 }
               },
-              "required": ["path"],
+              "required": [
+                "path"
+              ],
               "additionalProperties": false
             }
           },
@@ -293,6 +319,11 @@
       "additionalProperties": false
     }
   },
-  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "required": [
+    "apiVersion",
+    "kind",
+    "metadata",
+    "spec"
+  ],
   "additionalProperties": false
 }

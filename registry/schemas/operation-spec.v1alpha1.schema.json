@@ -67,12 +67,16 @@
                 "maxLength": 2000
               }
             },
-            "required": ["url"],
+            "required": [
+              "url"
+            ],
             "additionalProperties": false
           }
         }
       },
-      "required": ["name"],
+      "required": [
+        "name"
+      ],
       "additionalProperties": false
     },
     "spec": {
@@ -94,7 +98,11 @@
             "properties": {
               "role": {
                 "type": "string",
-                "enum": ["variable", "constant", "derived"]
+                "enum": [
+                  "variable",
+                  "constant",
+                  "derived"
+                ]
               },
               "type": {
                 "type": "string",
@@ -121,7 +129,10 @@
                 "pattern": "^[a-z0-9_+\\-*%/() ]+$"
               }
             },
-            "required": ["role", "type"],
+            "required": [
+              "role",
+              "type"
+            ],
             "additionalProperties": false
           }
         },
@@ -161,10 +172,18 @@
                   },
                   "layout": {
                     "type": "string",
-                    "enum": ["row_major", "col_major", "contiguous", "strided"]
+                    "enum": [
+                      "row_major",
+                      "col_major",
+                      "contiguous",
+                      "strided"
+                    ]
                   }
                 },
-                "required": ["shape", "dtype"],
+                "required": [
+                  "shape",
+                  "dtype"
+                ],
                 "additionalProperties": false
               },
               "scalar": {
@@ -175,11 +194,15 @@
                     "pattern": "^[a-z][a-z0-9_]*$"
                   }
                 },
-                "required": ["dtype"],
+                "required": [
+                  "dtype"
+                ],
                 "additionalProperties": false
               }
             },
-            "required": ["name"],
+            "required": [
+              "name"
+            ],
             "additionalProperties": false
           }
         },
@@ -219,10 +242,18 @@
                   },
                   "layout": {
                     "type": "string",
-                    "enum": ["row_major", "col_major", "contiguous", "strided"]
+                    "enum": [
+                      "row_major",
+                      "col_major",
+                      "contiguous",
+                      "strided"
+                    ]
                   }
                 },
-                "required": ["shape", "dtype"],
+                "required": [
+                  "shape",
+                  "dtype"
+                ],
                 "additionalProperties": false
               },
               "scalar": {
@@ -233,11 +264,15 @@
                     "pattern": "^[a-z][a-z0-9_]*$"
                   }
                 },
-                "required": ["dtype"],
+                "required": [
+                  "dtype"
+                ],
                 "additionalProperties": false
               }
             },
-            "required": ["name"],
+            "required": [
+              "name"
+            ],
             "additionalProperties": false
           }
         },
@@ -250,14 +285,25 @@
             },
             "mutation": {
               "type": "string",
-              "enum": ["none", "in_place", "destination"]
+              "enum": [
+                "none",
+                "in_place",
+                "destination"
+              ]
             },
             "determinism": {
               "type": "string",
-              "enum": ["deterministic", "nondeterministic", "unspecified"]
+              "enum": [
+                "deterministic",
+                "nondeterministic",
+                "unspecified"
+              ]
             }
           },
-          "required": ["mutation", "determinism"],
+          "required": [
+            "mutation",
+            "determinism"
+          ],
           "additionalProperties": false
         },
         "reference": {
@@ -279,18 +325,34 @@
                   "pattern": "^sha256:[0-9a-f]{64}$"
                 }
               },
-              "required": ["uri", "digest"],
+              "required": [
+                "uri",
+                "digest"
+              ],
               "additionalProperties": false
             }
           },
-          "required": ["language"],
+          "required": [
+            "language"
+          ],
           "additionalProperties": false
         }
       },
-      "required": ["family", "axes", "inputs", "outputs", "semantics"],
+      "required": [
+        "family",
+        "axes",
+        "inputs",
+        "outputs",
+        "semantics"
+      ],
       "additionalProperties": false
     }
   },
-  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "required": [
+    "apiVersion",
+    "kind",
+    "metadata",
+    "spec"
+  ],
   "additionalProperties": false
 }
