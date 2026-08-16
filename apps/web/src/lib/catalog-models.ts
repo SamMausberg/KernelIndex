@@ -138,6 +138,18 @@ export type SearchInput = { query: string }
  * fetched once per session; the browse start state still receives it inside
  * the search model.
  */
+/** Per-query evidence summary on a chooser row (§16.6): how many eligible
+ * runs match the request's environment/dtype facets, the best of them, and
+ * how many carry source — so choosing an operation never means clicking in
+ * to find nothing. */
+export type ChooserMatch = {
+  matching: number
+  withSource: number
+  best: { value: number; unit: string } | null
+  /** "B200 · bf16" — exactly the facts the counts were filtered by. */
+  facetLabel: string
+}
+
 export type OperationIndexEntry = {
   name: string
   slug: string
@@ -147,12 +159,16 @@ export type OperationIndexEntry = {
   runs: number
   /** Newest published run's observation date; null when unmeasured. */
   lastObservedAt: string | null
+  /** Present only on multi-match chooser rows for a faceted query. */
+  match?: ChooserMatch | null
 }
 
 /** §16.5: homepage read — the most recent published records, newest first. */
 export type HomePageModel = {
   illustrative: boolean
   latest: ResultRow[]
+  /** Live corpus counts under the eligibility filter — never hardcoded. */
+  stats: { operations: number; runs: number; gpus: number }
 }
 
 /** One record transition inside a comparison cohort's history. */
@@ -387,7 +403,7 @@ export type ImplementationPageModel = {
   }
   project: { name: string; slug: string; repositoryUrl: string | null }
   usage: {
-    /** Null renders as an explicit "no verified install recipe". */
+    /** Null renders as an explicit "no install recipe recorded". */
     install: { kind: string; command: string } | null
     invocationExample: string | null
     requirements: { name: string; constraint: string }[]
@@ -457,6 +473,9 @@ export type RunPageModel = {
     stale: boolean
   }
   primary: PrimaryMetric
+  /** Raw source-published metrics (SOL score, speedup, fast-case counts):
+   * the source's own numbers, preserved verbatim — never KernelIndex's. */
+  sourceNativeMetrics: Record<string, number> | null
   cohort: {
     comparisonKey: string
     profile: ComparisonProfile

@@ -51,7 +51,7 @@ test("reported evidence stays separated from the exact cohort", async ({
   page,
 }) => {
   await page.goto("/search?q=rmsnorm")
-  await page.getByRole("link", { name: /^Reported/ }).click()
+  await page.getByRole("link", { name: /^Other cohorts/ }).click()
   await expect(
     page.getByText("Preserved as published under the source protocol", {
       exact: false,

@@ -98,6 +98,26 @@ export default async function ImplementationPage({ params }: Props) {
 
       <main className="shell animate-fade-in pb-20">
         <Section id="use" title="Use it">
+          {/* The deployability verdict first (§16.7): can this be used, in
+              one neutral line, before any evidence or provenance. */}
+          <p className="mb-4 text-[13.5px] text-fg">
+            {model.usage.install
+              ? `Installable · ${model.usage.install.kind}`
+              : model.source.available
+                ? "Source available · no install recipe recorded"
+                : "Benchmark submission only · no public source"}
+            <span className="text-subtle">
+              {" · "}
+              {model.license.concluded ??
+                model.license.declared ??
+                "license unknown"}
+            </span>
+            {model.source.available && (
+              <Link href="#code" className="ml-4 text-[12.5px]">
+                View source →
+              </Link>
+            )}
+          </p>
           <div className="grid grid-cols-[minmax(0,1.5fr)_minmax(280px,1fr)] gap-11 max-lg:grid-cols-1">
             <div>
               {model.usage.install ? (
@@ -108,8 +128,8 @@ export default async function ImplementationPage({ params }: Props) {
                   <CopyButton text={model.usage.install.command} />
                 </div>
               ) : (
-                <p className="text-[13px] text-warning">
-                  No verified install recipe for this revision.
+                <p className="text-[13px] text-faint">
+                  No install recipe recorded for this revision.
                 </p>
               )}
               {model.usage.invocationExample && (
@@ -189,7 +209,7 @@ export default async function ImplementationPage({ params }: Props) {
                   <div className="py-2">Operation / workload</div>
                   <div className="py-2">Hardware</div>
                   <div className="py-2 pr-3.5 text-right">Latency</div>
-                  <div className="py-2">Tested</div>
+                  <div className="py-2">Observed</div>
                   <div />
                 </div>
                 {model.bestResults.map((row) => (

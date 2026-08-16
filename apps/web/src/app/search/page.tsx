@@ -52,7 +52,8 @@ export default async function SearchPage({
               ? (params.sort as ResultSort)
               : undefined,
           verified: params.verified === "1",
-          source: params.source === "1" || params.deployable === "1",
+          // Source-backed results are the default; source=0 widens to all.
+          source: params.source !== "0",
           license: params.license === "1" || params.deployable === "1",
           installable: params.installable === "1" || params.deployable === "1",
           page: Number.isNaN(page) ? 1 : page,

@@ -91,6 +91,38 @@ export function humanizeField(field: string): string {
   )
 }
 
+/**
+ * Source-published metrics as one dossier line: "SOL 0.6161 · 1.66× reference
+ * · 16/16 cases faster". Latency keys are skipped (the primary measurement
+ * already states them); unrecognized keys render as "key value" so nothing a
+ * source publishes silently disappears.
+ */
+export function formatSourceNativeMetrics(
+  metrics: Record<string, number>,
+): string | null {
+  const parts: string[] = []
+  const used = new Set(["latency_ms", "reference_latency_ms"])
+  if (typeof metrics.sol_score === "number") {
+    parts.push(`SOL ${metrics.sol_score.toFixed(4)}`)
+    used.add("sol_score")
+  }
+  const speedup = metrics.avg_speedup ?? metrics.speedup_factor
+  if (typeof speedup === "number") {
+    parts.push(`${speedup.toFixed(2)}× reference`)
+    used.add("avg_speedup").add("speedup_factor")
+  }
+  if (
+    typeof metrics.fast_1_count === "number" &&
+    typeof metrics.fast_1_total === "number"
+  ) {
+    parts.push(`${metrics.fast_1_count}/${metrics.fast_1_total} cases faster`)
+    used.add("fast_1_count").add("fast_1_total")
+  }
+  for (const [key, value] of Object.entries(metrics))
+    if (!used.has(key)) parts.push(`${key.replaceAll("_", " ")} ${value}`)
+  return parts.length > 0 ? parts.join(" · ") : null
+}
+
 /** "2026-08-11" from an ISO timestamp; "—" when never tested. */
 export function formatDateUTC(iso: string | null): string {
   return iso ? iso.slice(0, 10) : "—"

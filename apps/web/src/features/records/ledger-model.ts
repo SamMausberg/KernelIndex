@@ -32,7 +32,8 @@ export function recordsHref(
   if (next.view !== "current") params.set("view", next.view)
   if (next.hardware) params.set("hw", next.hardware)
   if (next.verified) params.set("verified", "1")
-  if (next.source) params.set("source", "1")
+  // Source-backed is the default state; only widening needs a param.
+  if (!next.source) params.set("source", "0")
   if (next.filter) params.set("f", next.filter)
   if (next.sort !== "date") params.set("sort", next.sort)
   if (next.page > 1) params.set("page", String(next.page))

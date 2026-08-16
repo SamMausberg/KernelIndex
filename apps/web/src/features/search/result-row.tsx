@@ -1,12 +1,12 @@
 import Link from "next/link"
 import { Meter } from "@/components/meter"
 import { Metric } from "@/components/metric"
-import { TierChips, TrustCell } from "@/components/trust"
+import { AvailabilityCell, EvidenceCell, TierChips } from "@/components/trust"
 import type { PrimaryMetric, ResultRow } from "@/lib/catalog"
 import { formatDateShort, formatRelative, humanizeField } from "@/lib/format"
 
 export const RESULT_GRID =
-  "grid grid-cols-[44px_minmax(200px,1.6fr)_150px_112px_minmax(205px,1fr)_70px_28px] min-w-[840px]"
+  "grid grid-cols-[44px_minmax(200px,1.6fr)_150px_112px_92px_minmax(150px,1fr)_70px_28px] min-w-[875px]"
 
 /** "Apache-2.0 · pip" — license state plus how the build is obtained. */
 export function availabilityText(row: ResultRow) {
@@ -33,8 +33,9 @@ export function ResultTableHead({ relativeLabel }: { relativeLabel?: string }) {
       <div className="py-2">Implementation</div>
       <div className="py-2 pr-3.5 text-right">Latency</div>
       <div className="py-2">{relativeLabel}</div>
-      <div className="py-2">Trust</div>
-      <div className="py-2">Tested</div>
+      <div className="py-2">Evidence</div>
+      <div className="py-2">Availability</div>
+      <div className="py-2">Observed</div>
       <div />
     </div>
   )
@@ -161,7 +162,8 @@ export function ResultRowItem({
           />
         </div>
         <RelativeCell row={row} best={best} relative={relative} />
-        <TrustCell row={row} />
+        <EvidenceCell row={row} />
+        <AvailabilityCell row={row} />
         <div
           className={`font-mono text-[11.5px] ${
             row.stale ? "text-warning" : "text-faint"

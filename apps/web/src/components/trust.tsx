@@ -8,24 +8,39 @@ export type TrustRow = {
   license: { declared: string | null; concluded: string | null }
 }
 
+const EVIDENCE_LABELS: Record<string, string> = {
+  reported: "Reported",
+  reproducible: "Reproducible",
+  verified: "Verified",
+  replicated: "Replicated",
+}
+
 /**
- * One-cell trust summary for row grids (search, records, home): evidence
- * only when it says something ("Verified"/"Reproducible"), the license
- * state quietly, and "source" as a cobalt cue that code is viewable
- * on-site. License unknown is a fact, not a warning — never amber.
+ * Evidence tier, always stated (§8.14) so "Reported" is a visible fact, not
+ * an absence. The green dot marks only tiers KernelIndex itself stands
+ * behind (verified/replicated).
  */
-export function TrustCell({ row }: { row: TrustRow }) {
+export function EvidenceCell({ row }: { row: TrustRow }) {
   const strong = row.evidence === "verified" || row.evidence === "replicated"
+  return (
+    <div className="truncate pr-3 text-[12.5px] text-subtle">
+      {strong && <span className="mr-1.5 text-[9px] text-success">●</span>}
+      <span className={strong ? "text-fg" : undefined}>
+        {row.evidence ? (EVIDENCE_LABELS[row.evidence] ?? row.evidence) : "—"}
+      </span>
+    </div>
+  )
+}
+
+/**
+ * License and source availability — orthogonal to evidence, and facts, not
+ * warnings (§16.16): license unknown is faint, "source" is the cobalt cue
+ * that code is viewable on-site. Never amber.
+ */
+export function AvailabilityCell({ row }: { row: TrustRow }) {
   const license = row.license.concluded ?? row.license.declared
   return (
     <div className="truncate pr-3 text-[12.5px] text-subtle">
-      {strong && (
-        <span className="text-fg">
-          <span className="mr-1.5 text-[9px] text-success">●</span>
-          Verified ·{" "}
-        </span>
-      )}
-      {row.evidence === "reproducible" && "Reproducible · "}
       {license ?? <span className="text-faint">license unknown</span>}
       {" · "}
       {row.sourceAvailable ? (

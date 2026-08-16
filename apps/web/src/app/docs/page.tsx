@@ -25,6 +25,7 @@ const EVIDENCE_LEVELS = [
 ] as const
 
 const SECTIONS = [
+  ["start", "Start here"],
   ["what", "What KernelIndex is"],
   ["query-syntax", "Query syntax"],
   ["views", "Views and sorting"],
@@ -33,6 +34,7 @@ const SECTIONS = [
   ["evidence", "Evidence levels"],
   ["records", "How records are decided"],
   ["data", "Data and API"],
+  ["sources", "Sources and licensing"],
 ] as const
 
 export default function DocsPage() {
@@ -60,6 +62,40 @@ export default function DocsPage() {
         ))}
       </nav>
       <main className="shell-narrow animate-fade-in pb-24 text-[14px] leading-relaxed text-muted">
+        <Section id="start" title="Start here">
+          <ol className="list-decimal space-y-2.5 pl-5">
+            <li>
+              Search in the browser:{" "}
+              <Link href="/search?q=rmsnorm%20B200%20bf16">
+                <span className="font-mono text-[12.5px]">
+                  rmsnorm B200 bf16
+                </span>
+              </Link>{" "}
+              resolves the workload to a ranked, comparable cohort.
+            </li>
+            <li>
+              The same answer over REST:
+              <pre className="plate mt-2 overflow-x-auto px-4 py-2.5 font-mono text-[12px]">
+                {`curl "https://kernelindex.com/api/v1/search?q=rmsnorm%20B200%20bf16"`}
+              </pre>
+            </li>
+            <li>
+              Or through the CLI:{" "}
+              <span className="font-mono text-[12.5px]">
+                ki search &quot;rmsnorm B200 bf16&quot; --json
+              </span>{" "}
+              (install and commands under <a href="#data">Data and API</a>).
+            </li>
+            <li>
+              Reading the answer: results rank only inside one comparison cohort
+              (<a href="#comparability">why comparable?</a>), every row states
+              its evidence level (<a href="#evidence">levels</a>), and
+              license/source availability is a separate fact — Reported evidence
+              means preserved as published, not rerun by KernelIndex.
+            </li>
+          </ol>
+        </Section>
+
         <Section id="what" title="What KernelIndex is">
           <p>
             KernelIndex resolves an exact GPU workload to the fastest currently
@@ -114,7 +150,9 @@ rmsnorm gpu:B200 dtype:bf16 shape:[2048,4096] framework=pytorch trust:verified`}
         <Section id="views" title="Views and sorting">
           <p>
             Search groups evidence into Exact, Compatible, Supported, and
-            Reported views that are never interleaved. Inside a view,{" "}
+            Other-cohorts views that are never interleaved (the last preserves
+            source-protocol cohorts as published; &ldquo;Reported&rdquo; always
+            names an evidence level, not a view). Inside a view,{" "}
             <em>Recommended</em>&#32;surfaces the strongest available trust tier
             first (verified, then reproducible, then license + source, then
             source available, then no source) with the cohort&apos;s ranking-v1
@@ -215,27 +253,27 @@ rmsnorm gpu:B200 dtype:bf16 shape:[2048,4096] framework=pytorch trust:verified`}
           </p>
           <pre className="plate mt-4 overflow-x-auto px-4 py-3 font-mono text-[12.5px] leading-relaxed text-muted">
             {`# search: a person in a browser, or:
-curl "https://kernelindex.dev/api/v1/search?q=rmsnorm%20B200%20bf16"
+curl "https://kernelindex.com/api/v1/search?q=rmsnorm%20B200%20bf16"
 
 # structured resolution: an agent with an exact workload:
-curl -X POST https://kernelindex.dev/api/v1/resolve/kernel \\
+curl -X POST https://kernelindex.com/api/v1/resolve/kernel \\
   -H 'Content-Type: application/json' \\
   -d '{"operation":{"name":"rmsnorm","axes":{"tokens":2048}},
        "environment":{"hardwareProduct":"B200","dtype":"bf16"}}'
 
 # evidence dossiers (same models as the pages):
-curl https://kernelindex.dev/api/v1/runs/<id-or-digest>
-curl "https://kernelindex.dev/api/v1/implementations/<slug>?include=source"
+curl https://kernelindex.com/api/v1/runs/<id-or-digest>
+curl "https://kernelindex.com/api/v1/implementations/<slug>?include=source"
 
 # records ledger, cursor-paginated:
-curl "https://kernelindex.dev/api/v1/records?limit=50"
+curl "https://kernelindex.com/api/v1/records?limit=50"
 
 # the ki CLI (apps/cli): stable --json for machines:
 ki search "gemm b200 nvfp4" --json | jq '.groups.exact[0]'
 ki manifest digest my-run.yaml
 
 # bulk export (versioned, immutable, zstd JSONL):
-curl -L https://kernelindex.dev/api/v1/exports/catalog.jsonl.zst`}
+curl -L https://kernelindex.com/api/v1/exports/catalog.jsonl.zst`}
           </pre>
         </Section>
 

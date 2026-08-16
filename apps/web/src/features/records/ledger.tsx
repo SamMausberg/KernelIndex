@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation"
 import { startTransition, useState } from "react"
 import { ContextHeader } from "@/components/context-header"
 import { Metric } from "@/components/metric"
-import { TrustCell } from "@/components/trust"
+import { AvailabilityCell, EvidenceCell } from "@/components/trust"
 import type { RecordHolder, RecordsPageModel } from "@/lib/catalog"
 import { formatDateShort, formatDateUTC, formatPrimary } from "@/lib/format"
 import {
@@ -42,7 +42,7 @@ function loadModel(): Promise<RecordsPageModel | null> {
 }
 
 const CURRENT_GRID =
-  "grid grid-cols-[minmax(280px,1.5fr)_170px_70px_minmax(150px,0.9fr)_156px_minmax(215px,1fr)_78px_28px] min-w-[1150px]"
+  "grid grid-cols-[minmax(280px,1.5fr)_170px_150px_minmax(150px,0.9fr)_156px_92px_minmax(150px,1fr)_78px_28px] min-w-[1240px]"
 
 /** The lead story (§16.12): the newest broken records under the filters.
  * Flat hairline cards, no gradient or catch-light; the whole card reaches
@@ -124,9 +124,17 @@ function HolderRow({ holder }: { holder: RecordHolder }) {
             valueClassName="font-mono text-[14px] text-fg"
           />
         </div>
-        <div className="pr-3 font-mono text-[12px]">
+        <div className="truncate pr-3 font-mono text-[12px] whitespace-nowrap">
           {margin !== null ? (
-            <span className="text-subtle">{margin.toFixed(1)}%</span>
+            <span className="text-subtle">
+              {margin.toFixed(1)}%
+              {holder.history[0]?.previousValue && (
+                <span className="text-faint">
+                  {" "}
+                  · was {formatPrimary(holder.history[0].previousValue)}
+                </span>
+              )}
+            </span>
           ) : (
             <span className="text-faint">first</span>
           )}
@@ -148,7 +156,8 @@ function HolderRow({ holder }: { holder: RecordHolder }) {
         <div className="pr-3 font-mono text-[12px] whitespace-nowrap text-muted">
           {holder.hardware}
         </div>
-        <TrustCell row={record} />
+        <EvidenceCell row={record} />
+        <AvailabilityCell row={record} />
         <div className="font-mono text-[11.5px] whitespace-nowrap text-faint">
           {formatDateShort(holder.since)}
           {isNew && <span className="text-accent"> · new</span>}
@@ -240,7 +249,7 @@ function HolderRow({ holder }: { holder: RecordHolder }) {
 }
 
 const BROKEN_GRID =
-  "grid grid-cols-[minmax(230px,1.4fr)_200px_minmax(160px,0.9fr)_96px_156px_minmax(205px,1fr)_78px] min-w-[1130px]"
+  "grid grid-cols-[minmax(230px,1.4fr)_200px_minmax(160px,0.9fr)_96px_156px_92px_minmax(150px,1fr)_78px] min-w-[1170px]"
 
 function BrokenRows({ transitions }: { transitions: LedgerEvent[] }) {
   if (transitions.length === 0) {
@@ -296,7 +305,10 @@ function BrokenRows({ transitions }: { transitions: LedgerEvent[] }) {
             {holder.hardware}
           </div>
           <div className="py-3.5">
-            <TrustCell row={holder.current} />
+            <EvidenceCell row={holder.current} />
+          </div>
+          <div className="py-3.5">
+            <AvailabilityCell row={holder.current} />
           </div>
           <div className="py-3.5 font-mono text-[11.5px] text-faint">
             {formatDateShort(event.at)}
@@ -547,7 +559,7 @@ function ControlStrip({
           {filters.verified && (
             <input type="hidden" name="verified" value="1" />
           )}
-          {filters.source && <input type="hidden" name="source" value="1" />}
+          {!filters.source && <input type="hidden" name="source" value="0" />}
           {filters.sort !== "date" && (
             <input type="hidden" name="sort" value={filters.sort} />
           )}
@@ -704,7 +716,8 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
                 <div className="py-2">Margin</div>
                 <div className="py-2">Implementation</div>
                 <div className="py-2">Hardware</div>
-                <div className="py-2">Trust</div>
+                <div className="py-2">Evidence</div>
+                <div className="py-2">Availability</div>
                 <div className="py-2">Set</div>
                 <div />
               </div>

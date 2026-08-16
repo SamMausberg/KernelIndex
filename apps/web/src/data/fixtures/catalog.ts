@@ -23,7 +23,18 @@ import type {
   SearchInput,
   SearchPageModel,
 } from "@/lib/catalog-models"
-import { describeIntent, parseQuery, removeToken } from "@/lib/search-query"
+import {
+  describeIntent,
+  parseQuery,
+  removeToken,
+  type SearchIntent,
+} from "@/lib/search-query"
+import {
+  type ChooserRun,
+  chooserFacets,
+  chooserMatch,
+  rankChooserMatches,
+} from "@/server/catalog/chooser"
 import { RANKING_POLICY_VERSION, rankCohort } from "@/server/policy/ranking"
 
 const ILLUSTRATIVE = true
@@ -105,6 +116,8 @@ type FxRun = {
   supersededById?: string
   caveats?: string[]
   ineligibleReasons?: string[]
+  /** Raw source-published metrics surfaced on the run dossier. */
+  sourceNative?: Record<string, number>
 }
 
 // One fictional cohort exercising every difficult evidence state. IonFlux is
@@ -132,6 +145,12 @@ const RUNS: FxRun[] = [
     license: UNKNOWN_LICENSE,
     lastTestedAt: FRESH,
     caveats: ["No public source", "License unknown"],
+    sourceNative: {
+      sol_score: 0.6161,
+      avg_speedup: 1.6638,
+      fast_1_count: 16,
+      fast_1_total: 16,
+    },
   },
   {
     id: "run-fx-0002",
@@ -424,10 +443,15 @@ const SUPPORTED_UNMEASURED: ResultRow = {
 const RANKED = RUNS.filter((r) => r.workloadId === "wl-2048" && r.rank !== null)
 
 export async function getHomePage(): Promise<HomePageModel> {
-  const latest = [...RANKED]
+  // Homepage lists default to source-backed records (2026-08-16 decision).
+  const latest = RANKED.filter((r) => r.sourceAvailable)
     .sort((a, b) => b.lastTestedAt.localeCompare(a.lastTestedAt))
     .map(rowFromRun)
-  return { illustrative: ILLUSTRATIVE, latest }
+  return {
+    illustrative: ILLUSTRATIVE,
+    latest,
+    stats: { operations: 2, runs: 8, gpus: 1 },
+  }
 }
 
 /** Metric helper for handcrafted record histories. */
@@ -521,6 +545,33 @@ const FIXTURE_SOURCE_REF = {
   observedAt: FRESH,
 }
 
+/** Chooser annotation via the same pure helpers as the postgres backend:
+ * every measured fixture run sits on the rmsnorm operation (B200, bf16). */
+async function annotatedMatches(
+  intent: SearchIntent,
+): Promise<OperationIndexEntry[]> {
+  const entries = await getOperationIndex()
+  const facets = chooserFacets(intent)
+  if (facets === null) return entries
+  const runs: ChooserRun[] = RUNS.filter(
+    (r) => r.status === "passed" && !r.retracted && !r.supersededById,
+  ).map((r) => ({
+    hardwareModel: B200.model,
+    hardwareArchitecture: B200.architecture,
+    cudaMajor: 13,
+    workloadDtypes: ["bf16"],
+    sourceAvailable: r.sourceAvailable,
+    primaryValue: r.latencyNs,
+    primaryUnit: "ns",
+  }))
+  return rankChooserMatches(
+    entries.map((entry) => ({
+      ...entry,
+      match: chooserMatch(entry.slug === "rmsnorm-h4096" ? runs : [], facets),
+    })),
+  )
+}
+
 /** The corpus index behind suggestions and browse (two fixture operations). */
 export async function getOperationIndex(): Promise<OperationIndexEntry[]> {
   return [
@@ -584,7 +635,7 @@ export async function searchCatalog(
       ...shared,
       operation: null,
       browse: empty ? await getOperationIndex() : null,
-      matches: ambiguous ? await getOperationIndex() : null,
+      matches: ambiguous ? await annotatedMatches(intent) : null,
       cohort: null,
       groups: {
         exact: [],
@@ -1085,6 +1136,7 @@ function runPage(r: FxRun): RunPageModel {
       parserVersion: null,
       snapshotDigest: null,
     },
+    sourceNativeMetrics: r.sourceNative ?? null,
     manifest: {
       apiVersion: "kernelindex.dev/v1alpha1",
       kind: "BenchmarkRun",

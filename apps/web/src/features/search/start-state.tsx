@@ -1,7 +1,18 @@
 import Link from "next/link"
 import { Meter } from "@/components/meter"
 import type { OperationIndexEntry } from "@/lib/catalog"
-import { formatDateShort } from "@/lib/format"
+import { formatDateShort, formatPrimary } from "@/lib/format"
+
+/** "38.6 µs" from a chooser best value. */
+const formatLatency = (best: { value: number; unit: string }) =>
+  formatPrimary({
+    metric: "latency",
+    unit: best.unit,
+    statistic: "best",
+    value: best.value,
+    sampleCount: null,
+    uncertainty: null,
+  })
 
 export type BrowseSort = "indexed" | "active" | "az"
 export type BrowseFilters = {
@@ -71,10 +82,31 @@ export function OperationList({
         <Link
           key={entry.slug}
           href={hrefFor(entry)}
-          className="grid h-[44px] min-w-[720px] grid-cols-[minmax(280px,1fr)_150px_190px_74px] items-center border-t border-line transition-colors hover:bg-raised hover:no-underline"
+          className={`grid ${entry.match ? "h-[58px]" : "h-[44px]"} min-w-[720px] grid-cols-[minmax(280px,1fr)_150px_190px_74px] items-center border-t border-line transition-colors hover:bg-raised hover:no-underline`}
         >
-          <span className="truncate pr-4 text-[13.5px] text-fg">
-            {entry.name}
+          <span className="min-w-0 pr-4">
+            <span className="block truncate text-[13.5px] text-fg">
+              {entry.name}
+            </span>
+            {entry.match && (
+              <span
+                className={`mt-0.5 block truncate font-mono text-[11.5px] ${
+                  entry.match.matching > 0 ? "text-subtle" : "text-faint"
+                }`}
+              >
+                {entry.match.matching > 0
+                  ? [
+                      `${entry.match.matching} on ${entry.match.facetLabel}`,
+                      entry.match.best &&
+                        `best ${formatLatency(entry.match.best)}`,
+                      entry.match.withSource > 0 &&
+                        `${entry.match.withSource} with source`,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")
+                  : `none on ${entry.match.facetLabel}`}
+              </span>
+            )}
           </span>
           <span className="truncate pr-3 text-[12px] text-subtle">
             {entry.family}

@@ -12,7 +12,7 @@ import {
   formatPrimaryParts,
   formatSpread,
 } from "@/lib/format"
-import { meetsTrust } from "@/lib/search-query"
+import { meetsTrust, removeToken } from "@/lib/search-query"
 import { TRUST_TIERS, trustTier } from "@/lib/trust-tier"
 import { deployability, licenseMatches } from "@/server/policy/deployability"
 import { ResultRowItem, ResultTableHead } from "./result-row"
@@ -76,7 +76,9 @@ const MODES: { key: ResultMode; label: string; note: string | null }[] = [
   },
   {
     key: "reported",
-    label: "Reported",
+    // "Other cohorts", not "Reported": the view groups source-protocol
+    // cohorts, while Reported names an evidence level — one word, one meaning.
+    label: "Other cohorts",
     note: "Preserved as published under the source protocol; never ranked against the exact cohort.",
   },
 ]
@@ -119,7 +121,8 @@ function searchHref(
   if (next.view && next.view !== "exact") params.set("view", next.view)
   if (next.sort && next.sort !== "recommended") params.set("sort", next.sort)
   if (next.verified) params.set("verified", "1")
-  if (next.source) params.set("source", "1")
+  // Source-backed is the default state; only widening needs a param.
+  if (!next.source) params.set("source", "0")
   if (next.license) params.set("license", "1")
   if (next.installable) params.set("installable", "1")
   if (next.page > 1) params.set("page", String(next.page))
@@ -180,12 +183,16 @@ function Recommendation({
   top,
   fastest,
   model,
+  hiddenFaster = null,
 }: {
   top: ResultRow
   /** The cohort's pure-latency leader; differs from `top` when a stronger
    * tier surfaced first (§12: the faster number is stated, never hidden). */
   fastest: ResultRow | null
   model: SearchPageModel
+  /** Cohort leader hidden by the default source filter: the faster number
+   * is still stated (§12), just marked as source-less. */
+  hiddenFaster?: ResultRow | null
 }) {
   const deployableAlternative = isDeployable(top)
     ? null
@@ -271,7 +278,7 @@ function Recommendation({
           </div>
         ) : (
           <p className="mt-4 text-[12.5px] text-faint">
-            No verified install recipe for this revision.
+            No install recipe recorded for this revision.
           </p>
         )}
         <div className="mt-3.5 flex flex-wrap gap-x-5 gap-y-1 text-[13px]">
@@ -312,6 +319,20 @@ function Recommendation({
             <span className="font-mono text-fg">
               {formatPrimary(deployableAlternative.primary)}
             </span>
+          </p>
+        )}
+        {hiddenFaster?.primary && (
+          <p className="mt-2 text-[13px] text-subtle">
+            Fastest known without source:{" "}
+            <span className="font-mono text-fg">
+              {formatPrimary(hiddenFaster.primary)}
+            </span>
+            {hiddenFaster.runId && (
+              <>
+                {" "}
+                <Link href={`/runs/${hiddenFaster.runId}`}>View →</Link>
+              </>
+            )}
           </p>
         )}
         {fasterElsewhere?.primary && (
@@ -411,6 +432,16 @@ export function SearchResults({
   const exactKept = model.groups.exact.filter(keep)
   const fastest = exactKept[0] ?? null
   const top = sortRows(exactKept, "recommended")[0]
+  // The default source filter never hides the faster number silently: the
+  // cohort's true leader is restated as "fastest known without source".
+  const cohortLeader = model.groups.exact[0] ?? null
+  const hiddenBySourceFilter =
+    state.source &&
+    cohortLeader &&
+    !cohortLeader.sourceAvailable &&
+    cohortLeader.runId !== (fastest?.runId ?? null)
+      ? cohortLeader
+      : null
   const best = fastest?.primary ?? null
   const anyTie = rows.some((row) => row.tiedWithPrevious)
   const modeNote = MODES.find((mode) => mode.key === view)?.note
@@ -460,6 +491,19 @@ export function SearchResults({
                   {issue.message}
                 </span>
               ))}
+              {model.facets.length >= 2 && (
+                <Link
+                  href={`/search?q=${encodeURIComponent(
+                    model.facets.reduce(
+                      (q, facet) => removeToken(q, facet.token),
+                      model.query,
+                    ),
+                  )}`}
+                  className="text-[11.5px] text-faint transition-colors hover:text-fg"
+                >
+                  Clear filters
+                </Link>
+              )}
             </div>
           )}
           {model.operation !== null && (
@@ -544,7 +588,12 @@ export function SearchResults({
         ) : (
           <>
             {top && (
-              <Recommendation top={top} fastest={fastest} model={model} />
+              <Recommendation
+                top={top}
+                fastest={fastest}
+                model={model}
+                hiddenFaster={hiddenBySourceFilter}
+              />
             )}
 
             <div className="mt-7 flex flex-wrap items-baseline gap-x-6 gap-y-2 border-b border-border-strong animate-row-in [animation-delay:.08s]">
@@ -719,6 +768,24 @@ export function SearchResults({
                       </Link>
                     </>
                   )}
+                  {state.source &&
+                    groupsByMode[view].some((row) => !row.sourceAvailable) && (
+                      <>
+                        {" "}
+                        <Link
+                          href={searchHref(model.query, state, {
+                            source: false,
+                          })}
+                          prefetch={false}
+                          onClick={(event) => {
+                            event.preventDefault()
+                            apply({ source: false })
+                          }}
+                        >
+                          Include results without source →
+                        </Link>
+                      </>
+                    )}
                 </p>
               )}
             </div>

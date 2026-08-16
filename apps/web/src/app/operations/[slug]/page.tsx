@@ -7,7 +7,7 @@ import { IllustrativeNotice } from "@/components/illustrative-notice"
 import { KeyValueList } from "@/components/key-value-list"
 import { Metric } from "@/components/metric"
 import { Section } from "@/components/section"
-import { TrustCell } from "@/components/trust"
+import { AvailabilityCell, EvidenceCell } from "@/components/trust"
 import { WorkloadPicker } from "@/features/operations/workload-picker"
 import { ResultRowItem, ResultTableHead } from "@/features/search/result-row"
 import { getOperationPage } from "@/lib/catalog"
@@ -49,41 +49,52 @@ export default async function OperationPage({ params, searchParams }: Props) {
           </span>
         }
       >
-        {/* Identity as machined tags instead of a run-on mono line: the
-            family, then each alias and model, then the semantic digest. */}
-        <div className="mt-2.5 flex flex-wrap items-center gap-2">
-          <span className="key px-2 py-[3px] text-[11.5px] text-subtle">
-            {operation.family}
-          </span>
-          {operation.aliases.map((alias) => (
-            <span
-              key={alias}
-              className="key px-2 py-[3px] font-mono text-[11.5px] text-subtle"
-            >
-              <span className="mr-1.5 font-sans text-faint">alias</span>
-              {alias}
+        {/* Identity as machined tags behind a disclosure (§16.7 progressive
+            disclosure): the family stays visible; aliases, model provenance,
+            and the semantic digest are one click away, never the lead. */}
+        <details className="group mt-2.5">
+          <summary className="flex cursor-pointer list-none flex-wrap items-center gap-2 [&::-webkit-details-marker]:hidden">
+            <span className="key px-2 py-[3px] text-[11.5px] text-subtle">
+              {operation.family}
             </span>
-          ))}
-          {operation.models.slice(0, 4).map((model_) => (
-            <span
-              key={model_}
-              className="key px-2 py-[3px] font-mono text-[11.5px] text-subtle"
-            >
-              <span className="mr-1.5 font-sans text-faint">model</span>
-              {model_}
+            <span className="text-[11.5px] text-faint transition-colors group-open:hidden hover:text-fg">
+              identity ›
             </span>
-          ))}
-          {operation.models.length > 4 && (
-            <span className="text-[11.5px] text-faint">
-              +{operation.models.length - 4} models
+            <span className="hidden text-[11.5px] text-faint transition-colors hover:text-fg group-open:inline">
+              identity ⌄
             </span>
-          )}
-          <span className="key px-2 py-[3px] font-mono text-[11.5px] text-subtle">
-            <span className="mr-1.5 font-sans text-faint">sha256</span>
-            {operation.semanticDigest.replace("sha256:", "").slice(0, 12)}…
-          </span>
-          <CopyButton text={operation.semanticDigest} />
-        </div>
+          </summary>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            {operation.aliases.map((alias) => (
+              <span
+                key={alias}
+                className="key px-2 py-[3px] font-mono text-[11.5px] text-subtle"
+              >
+                <span className="mr-1.5 font-sans text-faint">alias</span>
+                {alias}
+              </span>
+            ))}
+            {operation.models.slice(0, 4).map((model_) => (
+              <span
+                key={model_}
+                className="key px-2 py-[3px] font-mono text-[11.5px] text-subtle"
+              >
+                <span className="mr-1.5 font-sans text-faint">model</span>
+                {model_}
+              </span>
+            ))}
+            {operation.models.length > 4 && (
+              <span className="text-[11.5px] text-faint">
+                +{operation.models.length - 4} models
+              </span>
+            )}
+            <span className="key px-2 py-[3px] font-mono text-[11.5px] text-subtle">
+              <span className="mr-1.5 font-sans text-faint">sha256</span>
+              {operation.semanticDigest.replace("sha256:", "").slice(0, 12)}…
+            </span>
+            <CopyButton text={operation.semanticDigest} />
+          </div>
+        </details>
         {operation.summary && (
           <p className="mt-3 max-w-[76ch] text-[13.5px] leading-relaxed text-muted">
             {operation.summary}
@@ -188,11 +199,12 @@ export default async function OperationPage({ params, searchParams }: Props) {
 
         <Section id="implementations" title="Implementations">
           <div className="overflow-x-auto">
-            <div className="grid min-w-[900px] grid-cols-[minmax(240px,1.6fr)_150px_150px_minmax(200px,1fr)] border-b border-border-strong text-[11.5px] text-faint">
+            <div className="grid min-w-[940px] grid-cols-[minmax(240px,1.6fr)_150px_150px_92px_minmax(150px,1fr)] border-b border-border-strong text-[11.5px] text-faint">
               <div className="py-2">Implementation</div>
               <div className="py-2">Runtime</div>
               <div className="py-2 pr-3.5 text-right">Best latency</div>
-              <div className="py-2">Trust</div>
+              <div className="py-2">Evidence</div>
+              <div className="py-2">Availability</div>
             </div>
             {/* Slugs can repeat when an implementation appears once per
                 revision or evidence source; the list is server-rendered and
@@ -201,7 +213,7 @@ export default async function OperationPage({ params, searchParams }: Props) {
               <div
                 // biome-ignore lint/suspicious/noArrayIndexKey: static read-only rows
                 key={`${impl.slug}-${index}`}
-                className="grid min-w-[900px] grid-cols-[minmax(240px,1.6fr)_150px_150px_minmax(200px,1fr)] items-center border-b border-line transition-colors hover:bg-raised"
+                className="grid min-w-[940px] grid-cols-[minmax(240px,1.6fr)_150px_150px_92px_minmax(150px,1fr)] items-center border-b border-line transition-colors hover:bg-raised"
               >
                 <div className="min-w-0 truncate py-3 pr-3">
                   <Link
@@ -228,7 +240,10 @@ export default async function OperationPage({ params, searchParams }: Props) {
                   />
                 </div>
                 <div className="py-3">
-                  <TrustCell row={impl} />
+                  <EvidenceCell row={impl} />
+                </div>
+                <div className="py-3">
+                  <AvailabilityCell row={impl} />
                 </div>
               </div>
             ))}

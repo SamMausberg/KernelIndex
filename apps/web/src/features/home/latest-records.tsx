@@ -1,11 +1,11 @@
 import Link from "next/link"
 import { Metric } from "@/components/metric"
-import { TrustCell } from "@/components/trust"
+import { AvailabilityCell, EvidenceCell } from "@/components/trust"
 import type { ResultRow } from "@/lib/catalog"
 import { formatDateUTC } from "@/lib/format"
 
 const GRID =
-  "grid grid-cols-[1.2fr_1.3fr_110px_150px_235px_110px] min-w-[980px]"
+  "grid grid-cols-[1.2fr_1.3fr_110px_150px_100px_165px_110px] min-w-[1010px]"
 
 /** Homepage table of the most recent published records (§16.5). */
 export function LatestRecords({ rows }: { rows: ResultRow[] }) {
@@ -25,7 +25,8 @@ export function LatestRecords({ rows }: { rows: ResultRow[] }) {
         <div className="px-4 py-2.5">Implementation</div>
         <div className="px-4 py-2.5 text-right">Latency</div>
         <div className="px-4 py-2.5">Hardware</div>
-        <div className="px-4 py-2.5">Trust</div>
+        <div className="px-4 py-2.5">Evidence</div>
+        <div className="px-4 py-2.5">Availability</div>
         <div className="px-4 py-2.5 text-right">Set</div>
       </div>
       {rows.map((row) => {
@@ -72,7 +73,10 @@ export function LatestRecords({ rows }: { rows: ResultRow[] }) {
               {row.hardware.model}
             </div>
             <div className="px-4">
-              <TrustCell row={row} />
+              <EvidenceCell row={row} />
+            </div>
+            <div className="px-4">
+              <AvailabilityCell row={row} />
             </div>
             <div className="px-4 text-right font-mono text-[12px] text-faint">
               {formatDateUTC(row.lastTestedAt)}

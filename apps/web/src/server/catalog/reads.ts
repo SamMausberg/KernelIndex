@@ -56,6 +56,12 @@ import {
   rankCohort,
 } from "../policy/ranking.ts"
 import {
+  type ChooserRun,
+  chooserFacets,
+  chooserMatch,
+  rankChooserMatches,
+} from "./chooser.ts"
+import {
   caseHasShape,
   intentMismatches,
   type MatchTarget,
@@ -729,14 +735,31 @@ export async function getHomePage(): Promise<HomePageModel> {
       schema.sources,
       eq(schema.benchmarkRuns.sourceId, schema.sources.id),
     )
-    .where(eligibleRunFilter())
+    // Homepage lists default to source-backed records (2026-08-16 decision);
+    // the ledger's source toggle reaches the rest.
+    .where(
+      and(eligibleRunFilter(), eq(schema.benchmarkRuns.sourceAvailable, true)),
+    )
     .orderBy(desc(schema.benchmarkRuns.observedAt))
     .limit(8)
+  const [stats] = await db()
+    .select({
+      operations: sql<number>`count(distinct ${schema.workloads.operationId})::int`,
+      runs: sql<number>`count(*)::int`,
+      gpus: sql<number>`count(distinct ${schema.benchmarkRuns.hardwareModel})::int`,
+    })
+    .from(schema.benchmarkRuns)
+    .innerJoin(
+      schema.workloads,
+      eq(schema.benchmarkRuns.workloadId, schema.workloads.id),
+    )
+    .where(eligibleRunFilter())
   return {
     illustrative: pageIllustrative(rows),
     latest: rows.map((j) =>
       resultRow(j, { name: j.operation.name, slug: j.operation.slug }),
     ),
+    stats,
   }
 }
 
@@ -977,15 +1000,58 @@ export async function searchCatalog(
     }
   }
   // Several plausible operations and no dominant hit: the user chooses.
+  // With environment/dtype facets in the query, each candidate row states
+  // its evidence under them (§16.6) and evidence-bearing candidates lead.
   if (!dominates(hits)) {
     const bySlug = new Map(
       (await getOperationIndex()).map((entry) => [entry.slug, entry]),
     )
-    return {
-      ...base,
-      matches: hits.flatMap((hit) => bySlug.get(hit.operation.slug) ?? []),
-      noResult: null,
+    let matches = hits.flatMap((hit) => bySlug.get(hit.operation.slug) ?? [])
+    const facets = chooserFacets(intent)
+    if (facets !== null && matches.length > 0) {
+      const idBySlug = new Map(
+        hits.map((hit) => [hit.operation.slug, hit.operation.id]),
+      )
+      const runRows = await db()
+        .select({
+          operationId: schema.workloads.operationId,
+          hardwareModel: schema.benchmarkRuns.hardwareModel,
+          hardwareArchitecture: schema.benchmarkRuns.hardwareArchitecture,
+          cudaMajor: schema.benchmarkRuns.cudaMajor,
+          workloadDtypes: schema.workloads.dtypes,
+          sourceAvailable: schema.benchmarkRuns.sourceAvailable,
+          primaryValue: schema.benchmarkRuns.primaryValue,
+          primaryUnit: schema.benchmarkRuns.primaryUnit,
+        })
+        .from(schema.benchmarkRuns)
+        .innerJoin(
+          schema.workloads,
+          eq(schema.benchmarkRuns.workloadId, schema.workloads.id),
+        )
+        .where(
+          and(
+            inArray(schema.workloads.operationId, [...idBySlug.values()]),
+            eligibleRunFilter(),
+          ),
+        )
+      const byOperation = new Map<string, ChooserRun[]>()
+      for (const { operationId, ...run } of runRows) {
+        byOperation.set(operationId, [
+          ...(byOperation.get(operationId) ?? []),
+          run,
+        ])
+      }
+      matches = rankChooserMatches(
+        matches.map((entry) => ({
+          ...entry,
+          match: chooserMatch(
+            byOperation.get(idBySlug.get(entry.slug) ?? "") ?? [],
+            facets,
+          ),
+        })),
+      )
     }
+    return { ...base, matches, noResult: null }
   }
   const operation = hits[0].operation
   const nearMisses = hits.slice(1, 6).map((hit) => hit.operation)
@@ -1843,8 +1909,24 @@ export async function getRunPage(id: string): Promise<RunPageModel | null> {
       parserVersion: null,
       snapshotDigest: null,
     },
+    sourceNativeMetrics: numericSourceMetrics(
+      stored.run.spec.sourceNative?.metrics,
+    ),
     manifest: run.manifest,
   }
+}
+
+/** Only the numeric source metrics reach the dossier header. */
+function numericSourceMetrics(
+  metrics: Record<string, unknown> | undefined,
+): Record<string, number> | null {
+  if (!metrics) return null
+  const numeric = Object.fromEntries(
+    Object.entries(metrics).filter(
+      (entry): entry is [string, number] => typeof entry[1] === "number",
+    ),
+  )
+  return Object.keys(numeric).length > 0 ? numeric : null
 }
 
 const MAX_COMPARE = 8

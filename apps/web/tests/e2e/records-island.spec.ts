@@ -21,7 +21,9 @@ test("ledger interactions update rows and URL without navigation", async ({
 
   await page.getByRole("link", { name: "Recently broken" }).click()
   await expect(page).toHaveURL(/view=broken/)
-  await expect(page.getByText("broken in the last 30 days")).toBeVisible()
+  await expect(
+    page.getByText("broken in the last 30 days").first(),
+  ).toBeVisible()
 })
 
 test("a deep-linked ledger view renders server-side", async ({ page }) => {

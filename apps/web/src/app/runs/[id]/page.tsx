@@ -12,6 +12,7 @@ import {
   formatDateUTC,
   formatPrimary,
   formatPrimaryParts,
+  formatSourceNativeMetrics,
   formatSpread,
 } from "@/lib/format"
 
@@ -39,7 +40,7 @@ export default async function RunPage({ params }: Props) {
     model.lifecycle.disputed && `Disputed: ${model.lifecycle.disputed.reason}`,
     model.lifecycle.supersededById &&
       "Superseded by a corrected run; preserved for the audit trail.",
-    model.lifecycle.stale && "Not retested recently.",
+    model.lifecycle.stale && "Not re-observed recently.",
   ].filter((note): note is string => Boolean(note))
 
   return (
@@ -75,7 +76,7 @@ export default async function RunPage({ params }: Props) {
               )}
               {model.run.status.replaceAll("_", " ")}
             </span>
-            <span>{evidenceLabel(model.evidence)}</span>
+            <span>{evidenceLabel(model.evidence)} evidence</span>
           </>
         }
       />
@@ -136,12 +137,11 @@ export default async function RunPage({ params }: Props) {
                 </>
               )}
             </p>
-            <div className="mt-4 flex items-center gap-2.5">
-              <span className="font-mono text-[12px] text-faint">
-                {model.run.digest.slice(0, 30)}…
-              </span>
-              <CopyButton text={model.run.digest} />
-            </div>
+            {model.sourceNativeMetrics && (
+              <p className="mt-3 font-mono text-[12.5px] text-subtle">
+                {formatSourceNativeMetrics(model.sourceNativeMetrics)}
+              </p>
+            )}
           </div>
           <div className="border-l border-border pl-9 max-lg:border-l-0 max-lg:pl-0">
             <div className="mb-2.5 text-[12.5px] text-subtle">Identity</div>
@@ -167,6 +167,12 @@ export default async function RunPage({ params }: Props) {
                   : []),
               ]}
             />
+            <div className="mt-3 flex items-center gap-2.5">
+              <span className="font-mono text-[12px] text-faint">
+                {model.run.digest.slice(0, 30)}…
+              </span>
+              <CopyButton text={model.run.digest} />
+            </div>
           </div>
         </section>
 
@@ -208,7 +214,9 @@ export default async function RunPage({ params }: Props) {
               />
             ) : (
               <p className="text-[13px] text-faint">
-                No correctness policy recorded for this run.
+                {passed
+                  ? "Marked passed by the source; the correctness policy was not published."
+                  : "No correctness policy recorded for this run."}
               </p>
             )}
           </Section>
