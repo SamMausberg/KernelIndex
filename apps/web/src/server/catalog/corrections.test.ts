@@ -3,7 +3,7 @@
 // eligibility — all inside a rolled-back transaction against the dev DB.
 import { readFileSync } from "node:fs"
 import path from "node:path"
-import { and, eq } from "drizzle-orm"
+import { and, eq, inArray } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 import { db } from "../db/client.ts"
 import * as schema from "../db/schema.ts"
@@ -44,11 +44,22 @@ describe.skipIf(!url)("corrections (database)", () => {
       readFileSync(path.join(fixtures, "api/fp8-mm-top.json"), "utf8"),
       "fx",
     ).values
+    // The transition only exists when another eligible run remains in the
+    // retracted run's cohort, so the test must publish that rival itself
+    // (each fixture row lands in its own workload cohort on a fresh
+    // database). A clone with a distinct submission and user shares row
+    // zero's workload and therefore its cohort.
+    const rival: GmSubmissionRow = {
+      ...rows[0],
+      submission_id: (rows[0].submission_id as number) + 1_000_000,
+      user_id: 999_999_999,
+      run_score: (rows[0].run_score as number) * 1.01,
+    }
     const data: GmImportData = {
       boards: [
         {
           problem: fp8,
-          cohorts: new Map([["MI300", rows.map(candidateOf)]]),
+          cohorts: new Map([["MI300", [rows[0], rival, ...rows.slice(1)].map(candidateOf)]]),
           histories: new Map(),
         },
       ],
@@ -59,16 +70,28 @@ describe.skipIf(!url)("corrections (database)", () => {
     await db()
       .transaction(async (tx) => {
         const { bundle } = await reconcileKernelbot(tx, data, {
-          topPerBoard: 5,
+          topPerBoard: 6,
           authors: 0,
           maxPerAuthor: 0,
         })
         const published = await publishBundle(tx, bundle, { publish: true })
-        const runId = published.runIds[0]
-        const [before] = await tx
-          .select({ comparisonKey: schema.benchmarkRuns.comparisonKey })
+        // Retract a run from a cohort with at least two published test runs.
+        const cohorts = await tx
+          .select({
+            id: schema.benchmarkRuns.id,
+            comparisonKey: schema.benchmarkRuns.comparisonKey,
+          })
           .from(schema.benchmarkRuns)
-          .where(eq(schema.benchmarkRuns.id, runId))
+          .where(inArray(schema.benchmarkRuns.id, published.runIds))
+        const shared = cohorts.find(
+          (run) =>
+            cohorts.filter(
+              (other) => other.comparisonKey === run.comparisonKey,
+            ).length >= 2,
+        )
+        if (!shared) throw new Error("expected a shared cohort in the bundle")
+        const runId = shared.id
+        const before = { comparisonKey: shared.comparisonKey }
 
         const result = await retractRun(tx, {
           runId,
@@ -115,10 +138,10 @@ describe.skipIf(!url)("corrections (database)", () => {
             and(
               eq(schema.recordEvents.comparisonKey, before.comparisonKey),
               eq(schema.recordEvents.cause, "retraction"),
+              eq(schema.recordEvents.previousRunId, runId),
             ),
           )
         expect(events.length).toBeGreaterThanOrEqual(1)
-        expect(events[0].previousRunId).toBe(runId)
         throw new Rollback("rollback")
       })
       .catch((error) => {
