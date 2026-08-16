@@ -7,7 +7,16 @@ import * as schema from "../db/schema.ts"
 import { specDigest } from "../identity/digest.ts"
 
 export type ProposedObject = {
-  entity: "operation" | "workload" | "implementation" | "run" | "project"
+  entity:
+    | "operation"
+    | "workload"
+    | "implementation"
+    | "run"
+    | "project"
+    // Serving entities (§10.1 Week 9) share the same report shape.
+    | "model"
+    | "stack"
+    | "configuration"
   name: string
   digest: string
   action: "insert" | "exists"

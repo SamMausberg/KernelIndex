@@ -67,16 +67,12 @@
                 "maxLength": 2000
               }
             },
-            "required": [
-              "url"
-            ],
+            "required": ["url"],
             "additionalProperties": false
           }
         }
       },
-      "required": [
-        "name"
-      ],
+      "required": ["name"],
       "additionalProperties": false
     },
     "spec": {
@@ -94,9 +90,7 @@
               "pattern": "^sha256:[0-9a-f]{64}$"
             }
           },
-          "required": [
-            "name"
-          ],
+          "required": ["name"],
           "additionalProperties": false
         },
         "tokens": {
@@ -123,9 +117,7 @@
                   "pattern": "^sha256:[0-9a-f]{64}$"
                 }
               },
-              "required": [
-                "distribution"
-              ],
+              "required": ["distribution"],
               "additionalProperties": false
             },
             "output": {
@@ -149,9 +141,7 @@
                   "pattern": "^sha256:[0-9a-f]{64}$"
                 }
               },
-              "required": [
-                "distribution"
-              ],
+              "required": ["distribution"],
               "additionalProperties": false
             }
           },
@@ -162,11 +152,7 @@
         },
         "loadGeneration": {
           "type": "string",
-          "enum": [
-            "open_loop",
-            "closed_loop",
-            "offline"
-          ]
+          "enum": ["open_loop", "closed_loop", "offline"]
         },
         "arrival": {
           "type": "string",
@@ -192,10 +178,7 @@
               },
               "operator": {
                 "type": "string",
-                "enum": [
-                  "<=",
-                  "<"
-                ]
+                "enum": ["<=", "<"]
               },
               "value": {
                 "type": "number",
@@ -206,13 +189,7 @@
                 "pattern": "^[a-z][a-z0-9_]*$"
               }
             },
-            "required": [
-              "metric",
-              "statistic",
-              "operator",
-              "value",
-              "unit"
-            ],
+            "required": ["metric", "statistic", "operator", "value", "unit"],
             "additionalProperties": false
           }
         },
@@ -239,18 +216,10 @@
           "maximum": 9007199254740991
         }
       },
-      "required": [
-        "streaming",
-        "loadGeneration"
-      ],
+      "required": ["streaming", "loadGeneration"],
       "additionalProperties": false
     }
   },
-  "required": [
-    "apiVersion",
-    "kind",
-    "metadata",
-    "spec"
-  ],
+  "required": ["apiVersion", "kind", "metadata", "spec"],
   "additionalProperties": false
 }

@@ -9,6 +9,8 @@ export type ResolveEnvelope =
   paths["/search"]["get"]["responses"]["200"]["content"]["application/json"]
 export type CompareModel =
   paths["/compare"]["post"]["responses"]["200"]["content"]["application/json"]
+export type ServingResolveModel =
+  paths["/resolve/serving"]["post"]["responses"]["200"]["content"]["application/json"]
 
 /** An API problem (RFC 9457): status, machine code, and human detail. */
 export class ApiError extends Error {
@@ -75,6 +77,21 @@ export function client({
       })
       if (data === undefined) fail(response, error)
       return data
+    },
+    async resolveServing(body: unknown): Promise<ServingResolveModel> {
+      const { data, error, response } = await api.POST("/resolve/serving", {
+        body: body as never,
+      })
+      if (data === undefined) fail(response, error)
+      return data
+    },
+    async showServingRun(id: string): Promise<unknown> {
+      const response = await fetch(`${baseUrl}/serving-runs/${id}`, {
+        headers,
+      })
+      const payload = (await response.json()) as unknown
+      if (!response.ok) fail(response, payload)
+      return payload
     },
   }
 }

@@ -67,16 +67,12 @@
                 "maxLength": 2000
               }
             },
-            "required": [
-              "url"
-            ],
+            "required": ["url"],
             "additionalProperties": false
           }
         }
       },
-      "required": [
-        "name"
-      ],
+      "required": ["name"],
       "additionalProperties": false
     },
     "spec": {
@@ -177,9 +173,7 @@
               "maxLength": 200
             }
           },
-          "required": [
-            "method"
-          ],
+          "required": ["method"],
           "additionalProperties": false
         },
         "options": {
@@ -194,17 +188,10 @@
           }
         }
       },
-      "required": [
-        "stackDigest"
-      ],
+      "required": ["stackDigest"],
       "additionalProperties": false
     }
   },
-  "required": [
-    "apiVersion",
-    "kind",
-    "metadata",
-    "spec"
-  ],
+  "required": ["apiVersion", "kind", "metadata", "spec"],
   "additionalProperties": false
 }

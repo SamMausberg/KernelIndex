@@ -13,7 +13,8 @@ const HELP = `ki — KernelIndex command line
 Usage:
   ki search <query…>                 resolver decision for a text query
   ki resolve kernel --manifest <p>   resolver decision for a structured request
-  ki show <operation|implementation|run> <id-or-slug>
+  ki resolve serving --manifest <p>  serving resolution: objective or Pareto
+  ki show <operation|implementation|run|serving-run> <id-or-slug>
   ki compare run <id> <id> [...]     aligned comparison (2–8 runs)
   ki manifest validate <path>        validate a manifest against its schema
   ki manifest digest <path>          canonical RFC 8785 spec digest
@@ -134,6 +135,61 @@ function printEnvelope(envelope: ResolveEnvelope) {
   }
 }
 
+/** Serving output (§13.8): per-cohort tables, frontier marked, no score. */
+function printServing(model: {
+  policyVersion: string
+  groups: {
+    description: string
+    rows: {
+      rank: number | null
+      onFrontier: boolean
+      configuration: string
+      stack: string
+      hardware: { total: number }
+      qualityPolicy: string
+      measurements: { metric: string; statistic: string; value: number }[]
+    }[]
+    excluded: { configuration: string; reasons: string[] }[]
+  }[]
+}) {
+  if (!values.quiet) console.log(`serving resolution · ${model.policyVersion}`)
+  for (const group of model.groups) {
+    console.log(`\n${group.description}`)
+    const value = (
+      row: (typeof group.rows)[number],
+      metric: string,
+      statistic: string,
+    ) =>
+      row.measurements
+        .find((m) => m.metric === metric && m.statistic === statistic)
+        ?.value.toLocaleString("en-US") ?? "—"
+    table([
+      [
+        "#",
+        "configuration",
+        "stack",
+        "tokens/s",
+        "ttft p99",
+        "gpus",
+        "quality",
+      ],
+      ...group.rows.map((row) => [
+        row.rank !== null ? String(row.rank) : row.onFrontier ? "◆" : "",
+        row.configuration,
+        row.stack,
+        value(row, "output_token_throughput_tps", "reported"),
+        value(row, "ttft_ms", "p99"),
+        String(row.hardware.total),
+        row.qualityPolicy,
+      ]),
+    ])
+    for (const entry of group.excluded)
+      console.log(
+        `excluded: ${entry.configuration} · ${entry.reasons.join(", ")}`,
+      )
+  }
+}
+
 async function main(): Promise<number> {
   const [command, ...rest] = positionals
 
@@ -146,9 +202,15 @@ async function main(): Promise<number> {
   }
 
   if (command === "resolve") {
-    if (rest[0] !== "kernel" || !values.manifest)
-      usage("usage: ki resolve kernel --manifest <path>")
+    if (!values.manifest || !["kernel", "serving"].includes(rest[0]))
+      usage("usage: ki resolve <kernel|serving> --manifest <path>")
     const request = readManifestFile(values.manifest)
+    if (rest[0] === "serving") {
+      const model = await api.resolveServing(request)
+      if (emit(model)) return 0
+      printServing(model)
+      return 0
+    }
     const envelope = await api.resolveKernel(request)
     if (emit(envelope, envelope.groups.exact)) return 0
     printEnvelope(envelope)
@@ -157,9 +219,15 @@ async function main(): Promise<number> {
 
   if (command === "show") {
     const [kind, id] = rest
-    if (!id || !["operation", "implementation", "run"].includes(kind))
-      usage("usage: ki show <operation|implementation|run> <id>")
-    const dossier = await api.show(kind, id)
+    if (
+      !id ||
+      !["operation", "implementation", "run", "serving-run"].includes(kind)
+    )
+      usage("usage: ki show <operation|implementation|run|serving-run> <id>")
+    const dossier =
+      kind === "serving-run"
+        ? await api.showServingRun(id)
+        : await api.show(kind, id)
     console.log(JSON.stringify(dossier, null, 2))
     return 0
   }

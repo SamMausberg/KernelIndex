@@ -7,6 +7,7 @@ import { CommandK } from "./command-k"
 const NAV = [
   { label: "Search", href: "/search" },
   { label: "Records", href: "/records" },
+  { label: "Serving", href: "/serving" },
   { label: "Docs", href: "/docs" },
   { label: "Contribute", href: "/submit" },
 ]
@@ -21,9 +22,10 @@ const NAV = [
  * broke under ISR prerender (the server saw "/index" for "/" and rendered a
  * duplicate header).
  */
-export function SiteHeader() {
+export function SiteHeader({ showServing = true }: { showServing?: boolean }) {
   const pathname = usePathname() ?? ""
   const onSearch = pathname.startsWith("/search")
+  const nav = showServing ? NAV : NAV.filter((item) => item.href !== "/serving")
   return (
     <div className="sticky top-0 z-50 border-b border-border bg-canvas">
       <div className="shell flex h-14 items-center gap-7 max-md:gap-4 max-md:px-4">
@@ -34,7 +36,7 @@ export function SiteHeader() {
           KernelIndex
         </Link>
         <nav className="flex gap-[22px] text-[13.5px] max-md:gap-3">
-          {NAV.map((item) => (
+          {nav.map((item) => (
             <Link
               key={item.href}
               href={item.href}

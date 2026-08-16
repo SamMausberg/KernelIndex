@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { Instrument_Sans, Space_Grotesk } from "next/font/google"
 import { SiteHeader } from "@/components/site-header"
+import { servingEnabled } from "@/server/env"
 import "./globals.css"
 
 // Self-hosted via next/font (§16.2); exposed as variables so the token
@@ -35,7 +36,7 @@ export default function RootLayout({
       {/* suppressHydrationWarning: extensions (Grammarly) mutate <body> attrs
           pre-hydration; React 19 treats that as a mismatch. Attrs only. */}
       <body suppressHydrationWarning>
-        <SiteHeader />
+        <SiteHeader showServing={servingEnabled} />
         {children}
       </body>
     </html>

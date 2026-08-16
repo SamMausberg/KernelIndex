@@ -67,16 +67,12 @@
                 "maxLength": 2000
               }
             },
-            "required": [
-              "url"
-            ],
+            "required": ["url"],
             "additionalProperties": false
           }
         }
       },
-      "required": [
-        "name"
-      ],
+      "required": ["name"],
       "additionalProperties": false
     },
     "spec": {
@@ -120,11 +116,7 @@
               "maxLength": 200
             }
           },
-          "required": [
-            "acceleratorModel",
-            "acceleratorsPerNode",
-            "nodeCount"
-          ],
+          "required": ["acceleratorModel", "acceleratorsPerNode", "nodeCount"],
           "additionalProperties": false
         },
         "harness": {
@@ -139,10 +131,7 @@
               "maxLength": 100
             }
           },
-          "required": [
-            "name",
-            "version"
-          ],
+          "required": ["name", "version"],
           "additionalProperties": false
         },
         "placement": {
@@ -155,11 +144,7 @@
         },
         "status": {
           "type": "string",
-          "enum": [
-            "valid",
-            "invalid",
-            "incomplete_evidence"
-          ]
+          "enum": ["valid", "invalid", "incomplete_evidence"]
         },
         "measurements": {
           "minItems": 1,
@@ -189,12 +174,7 @@
                 "maximum": 9007199254740991
               }
             },
-            "required": [
-              "metric",
-              "unit",
-              "statistic",
-              "value"
-            ],
+            "required": ["metric", "unit", "statistic", "value"],
             "additionalProperties": false
           }
         },
@@ -283,11 +263,6 @@
       "additionalProperties": false
     }
   },
-  "required": [
-    "apiVersion",
-    "kind",
-    "metadata",
-    "spec"
-  ],
+  "required": ["apiVersion", "kind", "metadata", "spec"],
   "additionalProperties": false
 }

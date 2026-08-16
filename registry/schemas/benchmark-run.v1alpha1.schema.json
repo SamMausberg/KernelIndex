@@ -67,16 +67,12 @@
                 "maxLength": 2000
               }
             },
-            "required": [
-              "url"
-            ],
+            "required": ["url"],
             "additionalProperties": false
           }
         }
       },
-      "required": [
-        "name"
-      ],
+      "required": ["name"],
       "additionalProperties": false
     },
     "spec": {
@@ -137,9 +133,7 @@
               "maximum": 1
             }
           },
-          "required": [
-            "comparator"
-          ],
+          "required": ["comparator"],
           "additionalProperties": false
         },
         "timing": {
@@ -294,17 +288,11 @@
                   "pattern": "^sha256:[0-9a-f]{64}$"
                 }
               },
-              "required": [
-                "uri",
-                "digest"
-              ],
+              "required": ["uri", "digest"],
               "additionalProperties": false
             }
           },
-          "required": [
-            "primaryStatistic",
-            "latencyNs"
-          ],
+          "required": ["primaryStatistic", "latencyNs"],
           "additionalProperties": false
         },
         "measurements": {
@@ -333,12 +321,7 @@
                 "maximum": 9007199254740991
               }
             },
-            "required": [
-              "metric",
-              "unit",
-              "statistic",
-              "value"
-            ],
+            "required": ["metric", "unit", "statistic", "value"],
             "additionalProperties": false
           }
         },
@@ -369,9 +352,7 @@
               }
             }
           },
-          "required": [
-            "source"
-          ],
+          "required": ["source"],
           "additionalProperties": false
         },
         "evidence": {
@@ -389,10 +370,7 @@
                   "pattern": "^sha256:[0-9a-f]{64}$"
                 }
               },
-              "required": [
-                "uri",
-                "digest"
-              ],
+              "required": ["uri", "digest"],
               "additionalProperties": false
             },
             "rawSamples": {
@@ -407,10 +385,7 @@
                   "pattern": "^sha256:[0-9a-f]{64}$"
                 }
               },
-              "required": [
-                "uri",
-                "digest"
-              ],
+              "required": ["uri", "digest"],
               "additionalProperties": false
             },
             "harness": {
@@ -425,10 +400,7 @@
                   "pattern": "^[0-9a-f]{40}$"
                 }
               },
-              "required": [
-                "repository",
-                "commit"
-              ],
+              "required": ["repository", "commit"],
               "additionalProperties": false
             }
           },
@@ -451,11 +423,6 @@
       "additionalProperties": false
     }
   },
-  "required": [
-    "apiVersion",
-    "kind",
-    "metadata",
-    "spec"
-  ],
+  "required": ["apiVersion", "kind", "metadata", "spec"],
   "additionalProperties": false
 }

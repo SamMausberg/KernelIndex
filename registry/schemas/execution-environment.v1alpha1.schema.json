@@ -67,16 +67,12 @@
                 "maxLength": 2000
               }
             },
-            "required": [
-              "url"
-            ],
+            "required": ["url"],
             "additionalProperties": false
           }
         }
       },
-      "required": [
-        "name"
-      ],
+      "required": ["name"],
       "additionalProperties": false
     },
     "spec": {
@@ -116,11 +112,7 @@
               "maxLength": 200
             }
           },
-          "required": [
-            "vendor",
-            "product",
-            "architecture"
-          ],
+          "required": ["vendor", "product", "architecture"],
           "additionalProperties": false
         },
         "software": {
@@ -158,10 +150,7 @@
                   "maxLength": 100
                 }
               },
-              "required": [
-                "name",
-                "version"
-              ],
+              "required": ["name", "version"],
               "additionalProperties": false
             },
             "libraries": {
@@ -213,18 +202,10 @@
           "pattern": "^sha256:[0-9a-f]{64}$"
         }
       },
-      "required": [
-        "hardware",
-        "software"
-      ],
+      "required": ["hardware", "software"],
       "additionalProperties": false
     }
   },
-  "required": [
-    "apiVersion",
-    "kind",
-    "metadata",
-    "spec"
-  ],
+  "required": ["apiVersion", "kind", "metadata", "spec"],
   "additionalProperties": false
 }

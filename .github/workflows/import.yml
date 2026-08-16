@@ -8,8 +8,8 @@ on:
   workflow_dispatch:
     inputs:
       sources:
-        description: "comma list: sol,gpumode,flashinfer (default all)"
-        default: "sol,gpumode,flashinfer"
+        description: "comma list: sol,gpumode,flashinfer,mlperf (default all)"
+        default: "sol,gpumode,flashinfer,mlperf"
 
 concurrency:
   group: import
@@ -25,7 +25,7 @@ jobs:
     timeout-minutes: 300
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      SOURCES: ${{ github.event.inputs.sources || 'sol,gpumode,flashinfer' }}
+      SOURCES: ${{ github.event.inputs.sources || 'sol,gpumode,flashinfer,mlperf' }}
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v4
@@ -69,6 +69,16 @@ jobs:
             const r = require("/tmp/fi.json");
             if (r.issues.length > 0) { console.error("gate failed"); process.exit(1) }'
           node scripts/import-flashinfer.ts --publish
+
+      - name: import mlperf
+        if: contains(env.SOURCES, 'mlperf') && always() && !cancelled()
+        run: |
+          cd apps/web
+          node scripts/import-mlperf.ts --dry-run --output /tmp/mlperf.json
+          node -e '
+            const r = require("/tmp/mlperf.json");
+            if (r.issues.length > 0) { console.error("gate failed"); process.exit(1) }'
+          node scripts/import-mlperf.ts --publish
 
       - name: data-quality invariants
         run: cd apps/web && node scripts/check-invariants.ts

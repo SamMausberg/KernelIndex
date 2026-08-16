@@ -472,6 +472,15 @@ export interface paths {
                     aliases: string[]
                     runs: number
                     lastObservedAt: string | null
+                    match?: {
+                      matching: number
+                      withSource: number
+                      best: {
+                        value: number
+                        unit: string
+                      } | null
+                      facetLabel: string
+                    } | null
                   }[]
                 | null
               sources: {
@@ -1008,6 +1017,15 @@ export interface paths {
                     aliases: string[]
                     runs: number
                     lastObservedAt: string | null
+                    match?: {
+                      matching: number
+                      withSource: number
+                      best: {
+                        value: number
+                        unit: string
+                      } | null
+                      facetLabel: string
+                    } | null
                   }[]
                 | null
               sources: {
@@ -1469,6 +1487,296 @@ export interface paths {
         }
       }
     }
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/resolve/serving": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: {
+      parameters: {
+        query?: never
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody?: {
+        content: {
+          "application/json": {
+            model?: string
+            workload?: string
+            hardware?: {
+              model?: string
+              countMaximum?: number
+            }
+            objective?: {
+              /** @enum {string} */
+              direction: "maximize" | "minimize"
+              metric: string
+              statistic?: string
+            }
+            constraints?: {
+              metric: string
+              statistic?: string
+              /** @enum {string} */
+              operator: "<=" | "<"
+              value: number
+            }[]
+          }
+        }
+      }
+      responses: {
+        /** @description Feasible serving configurations grouped by cohort, ranked only under an explicit objective; the Pareto frontier otherwise */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              illustrative: boolean
+              input: {
+                model?: string
+                workload?: string
+                hardware?: {
+                  model?: string
+                  countMaximum?: number
+                }
+                objective?: {
+                  /** @enum {string} */
+                  direction: "maximize" | "minimize"
+                  metric: string
+                  statistic?: string
+                }
+                constraints?: {
+                  metric: string
+                  statistic?: string
+                  /** @enum {string} */
+                  operator: "<=" | "<"
+                  value: number
+                }[]
+              }
+              facets: {
+                models: {
+                  slug: string
+                  name: string
+                  runs: number
+                }[]
+                workloads: {
+                  slug: string
+                  name: string
+                  runs: number
+                }[]
+                hardware: string[]
+                metrics: string[]
+              }
+              groups: {
+                cohortKey: string
+                description: string
+                rows: {
+                  runId: string
+                  rank: number | null
+                  onFrontier: boolean
+                  model: {
+                    name: string
+                    slug: string
+                  }
+                  stack: string
+                  configuration: string
+                  dtype: string | null
+                  qualityPolicy: string
+                  scenario: string
+                  hardware: {
+                    model: string
+                    perNode: number
+                    nodes: number
+                    total: number
+                  }
+                  harness: string
+                  measurements: {
+                    metric: string
+                    statistic: string
+                    value: number
+                    unit: string
+                  }[]
+                  constraints: {
+                    constraint: string
+                    /** @enum {string} */
+                    state: "measured" | "declared" | "unknown"
+                    satisfied: boolean | null
+                    detail: string
+                  }[]
+                  caveats: string[]
+                  observedAt: string
+                  source: {
+                    name: string
+                    externalId: string | null
+                    url: string | null
+                  }
+                }[]
+                excluded: {
+                  runId: string
+                  configuration: string
+                  reasons: string[]
+                }[]
+                sharedAxes: string[]
+              }[]
+              totalRuns: number
+              policyVersion: string
+              generatedAt: string
+            }
+          }
+        }
+        /** @description Not found */
+        404: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              type: string
+              title: string
+              status: number
+              code: string
+              detail?: string
+              requestId: string
+            }
+          }
+        }
+      }
+    }
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/serving-runs": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: {
+      parameters: {
+        query?: {
+          cursor?: string
+          limit?: number
+        }
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Serving runs, cursor-paginated */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              runs: {
+                id: string
+                model: string
+                stack: string
+                configuration: string
+                scenario: string
+                hardware: string
+                totalAccelerators: number
+                observedAt: string
+              }[]
+              nextCursor: string | null
+            }
+          }
+        }
+        /** @description Not found */
+        404: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              type: string
+              title: string
+              status: number
+              code: string
+              detail?: string
+              requestId: string
+            }
+          }
+        }
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/serving-configurations": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: {
+      parameters: {
+        query?: never
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Serving configurations with eligible run counts */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              id: string
+              digest: string
+              stack: string
+              summary: string
+              dtype: string | null
+              runs: number
+            }[]
+          }
+        }
+        /** @description Not found */
+        404: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              type: string
+              title: string
+              status: number
+              code: string
+              detail?: string
+              requestId: string
+            }
+          }
+        }
+      }
+    }
+    put?: never
+    post?: never
     delete?: never
     options?: never
     head?: never

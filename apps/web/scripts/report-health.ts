@@ -12,13 +12,13 @@ import { drizzle } from "drizzle-orm/postgres-js"
 import postgres from "postgres"
 import { FLASHINFER_SOURCE } from "../src/server/import/flashinfer/types.ts"
 import { GPUMODE_SOURCE } from "../src/server/import/gpumode/types.ts"
+import { MLPERF_SOURCE } from "../src/server/import/mlperf/types.ts"
 import { SOL_SOURCE } from "../src/server/import/sol/types.ts"
 
 const DECLARED: Record<string, number> = Object.fromEntries(
-  [SOL_SOURCE, GPUMODE_SOURCE, FLASHINFER_SOURCE].map((source) => [
-    source.slug,
-    source.policy.freshnessDays,
-  ]),
+  [SOL_SOURCE, GPUMODE_SOURCE, FLASHINFER_SOURCE, MLPERF_SOURCE].map(
+    (source) => [source.slug, source.policy.freshnessDays],
+  ),
 )
 
 const url = process.env.DATABASE_URL

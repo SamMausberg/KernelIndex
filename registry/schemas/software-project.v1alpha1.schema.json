@@ -67,16 +67,12 @@
                 "maxLength": 2000
               }
             },
-            "required": [
-              "url"
-            ],
+            "required": ["url"],
             "additionalProperties": false
           }
         }
       },
-      "required": [
-        "name"
-      ],
+      "required": ["name"],
       "additionalProperties": false
     },
     "spec": {
@@ -99,22 +95,14 @@
           "properties": {
             "kind": {
               "type": "string",
-              "enum": [
-                "github",
-                "huggingface",
-                "gitlab",
-                "other"
-              ]
+              "enum": ["github", "huggingface", "gitlab", "other"]
             },
             "id": {
               "type": "string",
               "maxLength": 200
             }
           },
-          "required": [
-            "kind",
-            "id"
-          ],
+          "required": ["kind", "id"],
           "additionalProperties": false
         },
         "packages": {
@@ -131,25 +119,15 @@
                 "maxLength": 200
               }
             },
-            "required": [
-              "ecosystem",
-              "name"
-            ],
+            "required": ["ecosystem", "name"],
             "additionalProperties": false
           }
         }
       },
-      "required": [
-        "name"
-      ],
+      "required": ["name"],
       "additionalProperties": false
     }
   },
-  "required": [
-    "apiVersion",
-    "kind",
-    "metadata",
-    "spec"
-  ],
+  "required": ["apiVersion", "kind", "metadata", "spec"],
   "additionalProperties": false
 }

@@ -67,16 +67,12 @@
                 "maxLength": 2000
               }
             },
-            "required": [
-              "url"
-            ],
+            "required": ["url"],
             "additionalProperties": false
           }
         }
       },
-      "required": [
-        "name"
-      ],
+      "required": ["name"],
       "additionalProperties": false
     },
     "spec": {
@@ -91,11 +87,7 @@
           "properties": {
             "host": {
               "type": "string",
-              "enum": [
-                "huggingface",
-                "github",
-                "other"
-              ]
+              "enum": ["huggingface", "github", "other"]
             },
             "id": {
               "type": "string",
@@ -106,10 +98,7 @@
               "maxLength": 100
             }
           },
-          "required": [
-            "host",
-            "id"
-          ],
+          "required": ["host", "id"],
           "additionalProperties": false
         },
         "tokenizer": {
@@ -153,17 +142,10 @@
           "maxLength": 200
         }
       },
-      "required": [
-        "model"
-      ],
+      "required": ["model"],
       "additionalProperties": false
     }
   },
-  "required": [
-    "apiVersion",
-    "kind",
-    "metadata",
-    "spec"
-  ],
+  "required": ["apiVersion", "kind", "metadata", "spec"],
   "additionalProperties": false
 }

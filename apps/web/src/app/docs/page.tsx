@@ -34,6 +34,7 @@ const SECTIONS = [
   ["evidence", "Evidence levels"],
   ["records", "How records are decided"],
   ["data", "Data and API"],
+  ["serving", "Serving"],
   ["sources", "Sources and licensing"],
 ] as const
 
@@ -306,6 +307,38 @@ curl -L https://kernelindex.com/api/v1/exports/catalog.jsonl.zst`}
           </p>
         </Section>
 
+        <Section id="serving" title="Serving">
+          <p>
+            <Link href="/serving">Serving</Link> is a separate resolver surface:
+            end-to-end LLM serving has different objects (model, stack, launch
+            configuration, workload, topology) and different objectives than
+            single kernels, so serving results never share a run table,
+            comparison key, or leaderboard with kernel records — and there is{" "}
+            <em>no universal serving score</em>. Two serving results compare
+            only when model, workload, protocol, hardware topology, and quality
+            policy all match; each such cohort is shown as its own group.
+          </p>
+          <p className="mt-3">
+            The resolver ranks a cohort only under an explicit objective (e.g.
+            maximize tokens/s subject to{" "}
+            <span className="font-mono text-[12.5px]">p99 ttft_ms ≤ 450</span>
+            ); without one it shows the Pareto frontier. A constraint on a
+            metric a result did not report excludes that result with the reason
+            stated — nothing is assumed. Declared harness-enforced SLO bounds
+            (e.g. MLPerf Server/Interactive TTFT/TPOT limits) can satisfy a
+            constraint as cited facts of the benchmark definition; they are
+            labeled as such and are never measurements. The API mirrors this at{" "}
+            <span className="font-mono text-[12.5px]">
+              POST /api/v1/resolve/serving
+            </span>{" "}
+            and the CLI as{" "}
+            <span className="font-mono text-[12.5px]">
+              ki resolve serving --manifest req.yaml
+            </span>
+            .
+          </p>
+        </Section>
+
         <Section id="sources" title="Sources and licensing">
           <p>
             Records are imported from{" "}
@@ -316,9 +349,12 @@ curl -L https://kernelindex.com/api/v1/exports/catalog.jsonl.zst`}
             display with attribution; AI-training use restricted) and the NVIDIA
             SOL-ExecBench public leaderboard API. Mirrored submission source is
             shown under the KernelBot dataset license; each submission&apos;s
-            own license remains unknown and is never inferred. Rights holders
-            can request removal at any time and contested records are retracted
-            before any dispute.
+            own license remains unknown and is never inferred. Serving results
+            are official MLPerf™ Inference closed-division datacenter results
+            from the Apache-2.0 per-round result repos, shown unmodified with
+            round, submitter, system, and entry ID (MLPerf™ is a trademark of
+            MLCommons). Rights holders can request removal at any time and
+            contested records are retracted before any dispute.
           </p>
         </Section>
       </main>

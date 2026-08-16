@@ -67,16 +67,12 @@
                 "maxLength": 2000
               }
             },
-            "required": [
-              "url"
-            ],
+            "required": ["url"],
             "additionalProperties": false
           }
         }
       },
-      "required": [
-        "name"
-      ],
+      "required": ["name"],
       "additionalProperties": false
     },
     "spec": {
@@ -102,9 +98,7 @@
               "pattern": "^[0-9a-f]{40}$"
             }
           },
-          "required": [
-            "name"
-          ],
+          "required": ["name"],
           "additionalProperties": false
         },
         "measurement": {
@@ -165,10 +159,7 @@
               "pattern": "^[a-z][a-z0-9_]*$"
             }
           },
-          "required": [
-            "timer",
-            "primaryStatistic"
-          ],
+          "required": ["timer", "primaryStatistic"],
           "additionalProperties": false
         },
         "correctness": {
@@ -183,10 +174,7 @@
               "pattern": "^[a-z][a-z0-9_]*$"
             }
           },
-          "required": [
-            "reference",
-            "comparator"
-          ],
+          "required": ["reference", "comparator"],
           "additionalProperties": false
         },
         "devicePolicy": {
@@ -217,24 +205,14 @@
               "maxLength": 1000
             }
           },
-          "required": [
-            "family"
-          ],
+          "required": ["family"],
           "additionalProperties": false
         }
       },
-      "required": [
-        "harness",
-        "measurement"
-      ],
+      "required": ["harness", "measurement"],
       "additionalProperties": false
     }
   },
-  "required": [
-    "apiVersion",
-    "kind",
-    "metadata",
-    "spec"
-  ],
+  "required": ["apiVersion", "kind", "metadata", "spec"],
   "additionalProperties": false
 }

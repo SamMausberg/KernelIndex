@@ -67,16 +67,12 @@
                 "maxLength": 2000
               }
             },
-            "required": [
-              "url"
-            ],
+            "required": ["url"],
             "additionalProperties": false
           }
         }
       },
-      "required": [
-        "name"
-      ],
+      "required": ["name"],
       "additionalProperties": false
     },
     "spec": {
@@ -109,10 +105,7 @@
                 }
               }
             },
-            "required": [
-              "externalId",
-              "axes"
-            ],
+            "required": ["externalId", "axes"],
             "additionalProperties": false
           }
         },
@@ -128,9 +121,7 @@
               "maxLength": 500
             }
           },
-          "required": [
-            "comparator"
-          ],
+          "required": ["comparator"],
           "additionalProperties": false
         },
         "aggregation": {
@@ -145,10 +136,7 @@
               "pattern": "^[a-z][a-z0-9_]*$"
             }
           },
-          "required": [
-            "metric",
-            "statistic"
-          ],
+          "required": ["metric", "statistic"],
           "additionalProperties": false
         }
       },
@@ -161,11 +149,6 @@
       "additionalProperties": false
     }
   },
-  "required": [
-    "apiVersion",
-    "kind",
-    "metadata",
-    "spec"
-  ],
+  "required": ["apiVersion", "kind", "metadata", "spec"],
   "additionalProperties": false
 }

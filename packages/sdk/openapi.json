@@ -1483,6 +1483,38 @@
                           },
                           "lastObservedAt": {
                             "type": ["string", "null"]
+                          },
+                          "match": {
+                            "type": ["object", "null"],
+                            "properties": {
+                              "matching": {
+                                "type": "number"
+                              },
+                              "withSource": {
+                                "type": "number"
+                              },
+                              "best": {
+                                "type": ["object", "null"],
+                                "properties": {
+                                  "value": {
+                                    "type": "number"
+                                  },
+                                  "unit": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": ["value", "unit"]
+                              },
+                              "facetLabel": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "matching",
+                              "withSource",
+                              "best",
+                              "facetLabel"
+                            ]
                           }
                         },
                         "required": [
@@ -3111,6 +3143,38 @@
                           },
                           "lastObservedAt": {
                             "type": ["string", "null"]
+                          },
+                          "match": {
+                            "type": ["object", "null"],
+                            "properties": {
+                              "matching": {
+                                "type": "number"
+                              },
+                              "withSource": {
+                                "type": "number"
+                              },
+                              "best": {
+                                "type": ["object", "null"],
+                                "properties": {
+                                  "value": {
+                                    "type": "number"
+                                  },
+                                  "unit": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": ["value", "unit"]
+                              },
+                              "facetLabel": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "matching",
+                              "withSource",
+                              "best",
+                              "facetLabel"
+                            ]
                           }
                         },
                         "required": [
@@ -4011,6 +4075,688 @@
                     "missingIds",
                     "policyVersion"
                   ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "number"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["type", "title", "status", "code", "requestId"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/resolve/serving": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "model": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "workload": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "hardware": {
+                    "type": "object",
+                    "properties": {
+                      "model": {
+                        "type": "string",
+                        "maxLength": 200
+                      },
+                      "countMaximum": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0
+                      }
+                    }
+                  },
+                  "objective": {
+                    "type": "object",
+                    "properties": {
+                      "direction": {
+                        "type": "string",
+                        "enum": ["maximize", "minimize"]
+                      },
+                      "metric": {
+                        "type": "string",
+                        "maxLength": 60
+                      },
+                      "statistic": {
+                        "type": "string",
+                        "maxLength": 30
+                      }
+                    },
+                    "required": ["direction", "metric"]
+                  },
+                  "constraints": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "metric": {
+                          "type": "string",
+                          "maxLength": 60
+                        },
+                        "statistic": {
+                          "type": "string",
+                          "maxLength": 30
+                        },
+                        "operator": {
+                          "type": "string",
+                          "enum": ["<=", "<"]
+                        },
+                        "value": {
+                          "type": "number",
+                          "exclusiveMinimum": 0
+                        }
+                      },
+                      "required": ["metric", "operator", "value"]
+                    },
+                    "maxItems": 8
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Feasible serving configurations grouped by cohort, ranked only under an explicit objective; the Pareto frontier otherwise",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "illustrative": {
+                      "type": "boolean"
+                    },
+                    "input": {
+                      "type": "object",
+                      "properties": {
+                        "model": {
+                          "type": "string",
+                          "maxLength": 200
+                        },
+                        "workload": {
+                          "type": "string",
+                          "maxLength": 200
+                        },
+                        "hardware": {
+                          "type": "object",
+                          "properties": {
+                            "model": {
+                              "type": "string",
+                              "maxLength": 200
+                            },
+                            "countMaximum": {
+                              "type": "integer",
+                              "exclusiveMinimum": 0
+                            }
+                          }
+                        },
+                        "objective": {
+                          "type": "object",
+                          "properties": {
+                            "direction": {
+                              "type": "string",
+                              "enum": ["maximize", "minimize"]
+                            },
+                            "metric": {
+                              "type": "string",
+                              "maxLength": 60
+                            },
+                            "statistic": {
+                              "type": "string",
+                              "maxLength": 30
+                            }
+                          },
+                          "required": ["direction", "metric"]
+                        },
+                        "constraints": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "metric": {
+                                "type": "string",
+                                "maxLength": 60
+                              },
+                              "statistic": {
+                                "type": "string",
+                                "maxLength": 30
+                              },
+                              "operator": {
+                                "type": "string",
+                                "enum": ["<=", "<"]
+                              },
+                              "value": {
+                                "type": "number",
+                                "exclusiveMinimum": 0
+                              }
+                            },
+                            "required": ["metric", "operator", "value"]
+                          },
+                          "maxItems": 8
+                        }
+                      }
+                    },
+                    "facets": {
+                      "type": "object",
+                      "properties": {
+                        "models": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "slug": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "runs": {
+                                "type": "number"
+                              }
+                            },
+                            "required": ["slug", "name", "runs"]
+                          }
+                        },
+                        "workloads": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "slug": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "runs": {
+                                "type": "number"
+                              }
+                            },
+                            "required": ["slug", "name", "runs"]
+                          }
+                        },
+                        "hardware": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "metrics": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": ["models", "workloads", "hardware", "metrics"]
+                    },
+                    "groups": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "cohortKey": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "type": "string"
+                          },
+                          "rows": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "runId": {
+                                  "type": "string"
+                                },
+                                "rank": {
+                                  "type": ["number", "null"]
+                                },
+                                "onFrontier": {
+                                  "type": "boolean"
+                                },
+                                "model": {
+                                  "type": "object",
+                                  "properties": {
+                                    "name": {
+                                      "type": "string"
+                                    },
+                                    "slug": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": ["name", "slug"]
+                                },
+                                "stack": {
+                                  "type": "string"
+                                },
+                                "configuration": {
+                                  "type": "string"
+                                },
+                                "dtype": {
+                                  "type": ["string", "null"]
+                                },
+                                "qualityPolicy": {
+                                  "type": "string"
+                                },
+                                "scenario": {
+                                  "type": "string"
+                                },
+                                "hardware": {
+                                  "type": "object",
+                                  "properties": {
+                                    "model": {
+                                      "type": "string"
+                                    },
+                                    "perNode": {
+                                      "type": "number"
+                                    },
+                                    "nodes": {
+                                      "type": "number"
+                                    },
+                                    "total": {
+                                      "type": "number"
+                                    }
+                                  },
+                                  "required": [
+                                    "model",
+                                    "perNode",
+                                    "nodes",
+                                    "total"
+                                  ]
+                                },
+                                "harness": {
+                                  "type": "string"
+                                },
+                                "measurements": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "metric": {
+                                        "type": "string"
+                                      },
+                                      "statistic": {
+                                        "type": "string"
+                                      },
+                                      "value": {
+                                        "type": "number"
+                                      },
+                                      "unit": {
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": [
+                                      "metric",
+                                      "statistic",
+                                      "value",
+                                      "unit"
+                                    ]
+                                  }
+                                },
+                                "constraints": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "constraint": {
+                                        "type": "string"
+                                      },
+                                      "state": {
+                                        "type": "string",
+                                        "enum": [
+                                          "measured",
+                                          "declared",
+                                          "unknown"
+                                        ]
+                                      },
+                                      "satisfied": {
+                                        "type": ["boolean", "null"]
+                                      },
+                                      "detail": {
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": [
+                                      "constraint",
+                                      "state",
+                                      "satisfied",
+                                      "detail"
+                                    ]
+                                  }
+                                },
+                                "caveats": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string"
+                                  }
+                                },
+                                "observedAt": {
+                                  "type": "string"
+                                },
+                                "source": {
+                                  "type": "object",
+                                  "properties": {
+                                    "name": {
+                                      "type": "string"
+                                    },
+                                    "externalId": {
+                                      "type": ["string", "null"]
+                                    },
+                                    "url": {
+                                      "type": ["string", "null"]
+                                    }
+                                  },
+                                  "required": ["name", "externalId", "url"]
+                                }
+                              },
+                              "required": [
+                                "runId",
+                                "rank",
+                                "onFrontier",
+                                "model",
+                                "stack",
+                                "configuration",
+                                "dtype",
+                                "qualityPolicy",
+                                "scenario",
+                                "hardware",
+                                "harness",
+                                "measurements",
+                                "constraints",
+                                "caveats",
+                                "observedAt",
+                                "source"
+                              ]
+                            }
+                          },
+                          "excluded": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "runId": {
+                                  "type": "string"
+                                },
+                                "configuration": {
+                                  "type": "string"
+                                },
+                                "reasons": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string"
+                                  }
+                                }
+                              },
+                              "required": ["runId", "configuration", "reasons"]
+                            }
+                          },
+                          "sharedAxes": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "required": [
+                          "cohortKey",
+                          "description",
+                          "rows",
+                          "excluded",
+                          "sharedAxes"
+                        ]
+                      }
+                    },
+                    "totalRuns": {
+                      "type": "number"
+                    },
+                    "policyVersion": {
+                      "type": "string"
+                    },
+                    "generatedAt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "illustrative",
+                    "input",
+                    "facets",
+                    "groups",
+                    "totalRuns",
+                    "policyVersion",
+                    "generatedAt"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "number"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["type", "title", "status", "code", "requestId"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/serving-runs": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "required": false,
+            "name": "cursor",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Serving runs, cursor-paginated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "runs": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "model": {
+                            "type": "string"
+                          },
+                          "stack": {
+                            "type": "string"
+                          },
+                          "configuration": {
+                            "type": "string"
+                          },
+                          "scenario": {
+                            "type": "string"
+                          },
+                          "hardware": {
+                            "type": "string"
+                          },
+                          "totalAccelerators": {
+                            "type": "number"
+                          },
+                          "observedAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "model",
+                          "stack",
+                          "configuration",
+                          "scenario",
+                          "hardware",
+                          "totalAccelerators",
+                          "observedAt"
+                        ]
+                      }
+                    },
+                    "nextCursor": {
+                      "type": ["string", "null"]
+                    }
+                  },
+                  "required": ["runs", "nextCursor"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "number"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["type", "title", "status", "code", "requestId"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/serving-configurations": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Serving configurations with eligible run counts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "digest": {
+                        "type": "string"
+                      },
+                      "stack": {
+                        "type": "string"
+                      },
+                      "summary": {
+                        "type": "string"
+                      },
+                      "dtype": {
+                        "type": ["string", "null"]
+                      },
+                      "runs": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "digest",
+                      "stack",
+                      "summary",
+                      "dtype",
+                      "runs"
+                    ]
+                  }
                 }
               }
             }

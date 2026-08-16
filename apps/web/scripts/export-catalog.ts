@@ -51,6 +51,31 @@ try {
       ({ content, ...rest }) => rest,
     ),
   )
+  // Serving catalog (§10.1 Week 9): dedicated tables, same export.
+  emit("model_revisions", await database.select().from(schema.modelRevisions))
+  emit(
+    "serving_stack_revisions",
+    await database.select().from(schema.servingStackRevisions),
+  )
+  emit(
+    "serving_configurations",
+    await database.select().from(schema.servingConfigurations),
+  )
+  emit(
+    "serving_workloads",
+    await database.select().from(schema.servingWorkloads),
+  )
+  emit(
+    "serving_runs",
+    await database
+      .select()
+      .from(schema.servingRuns)
+      .where(isNotNull(schema.servingRuns.publishedAt)),
+  )
+  emit(
+    "serving_measurements",
+    await database.select().from(schema.servingMeasurements),
+  )
 
   const body = Buffer.from(`${lines.join("\n")}\n`)
   const compressed = await compress(body, 19)
