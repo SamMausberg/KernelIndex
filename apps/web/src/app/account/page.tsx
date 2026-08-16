@@ -5,11 +5,13 @@ import type { Metadata } from "next"
 import { headers } from "next/headers"
 import { ContextHeader } from "@/components/context-header"
 import { Section } from "@/components/section"
+import { listApiKeys } from "@/server/api-keys"
 import { authConfigured } from "@/server/auth"
 import { db } from "@/server/db/client"
 import * as schema from "@/server/db/schema"
 import { sessionUser } from "@/server/policy/authorization"
 import { ClaimForm } from "./claim-form"
+import { CreateKeyForm, RevokeKeyForm } from "./key-forms"
 
 export const metadata: Metadata = { title: "Account" }
 export const dynamic = "force-dynamic"
@@ -41,7 +43,7 @@ export default async function AccountPage() {
       </>
     )
   }
-  const [mine, claims] = await Promise.all([
+  const [mine, claims, keys] = await Promise.all([
     db()
       .select()
       .from(schema.submissions)
@@ -51,6 +53,7 @@ export default async function AccountPage() {
       .select()
       .from(schema.projectClaims)
       .where(eq(schema.projectClaims.userId, user.id)),
+    listApiKeys(user.id),
   ])
   return (
     <>
@@ -81,6 +84,44 @@ export default async function AccountPage() {
               {submission.reviewNote && ` · ${submission.reviewNote}`}
             </p>
           ))}
+        </Section>
+        <Section id="api-keys" title="API keys">
+          <p className="mb-3 max-w-[70ch] text-[12.5px] text-subtle">
+            Keys authenticate /api/v1 as a bearer token (
+            <span className="font-mono text-[12px]">
+              Authorization: Bearer ki_…
+            </span>
+            ). Public reads need no key; a key raises your quota and carries
+            explicit scopes. The secret is shown once at creation and stored
+            only as a hash.
+          </p>
+          {keys.map((key) => (
+            <div
+              key={key.id}
+              className="flex flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-line py-2 text-[12.5px]"
+            >
+              <span className="font-mono text-[12px]">{key.prefix}…</span>
+              <span className={key.revokedAt ? "text-faint" : undefined}>
+                {key.name}
+              </span>
+              <span className="font-mono text-[11.5px] text-faint">
+                {key.scopes.join(" ")}
+              </span>
+              <span className="text-faint">
+                {key.usedToday}/{key.quotaPerDay} today
+                {key.lastUsedAt &&
+                  ` · last used ${key.lastUsedAt.toISOString().slice(0, 10)}`}
+              </span>
+              {key.revokedAt ? (
+                <span className="text-faint">revoked</span>
+              ) : (
+                <RevokeKeyForm id={key.id} />
+              )}
+            </div>
+          ))}
+          <div className="mt-3">
+            <CreateKeyForm />
+          </div>
         </Section>
         <Section id="claims" title="Project claims">
           {claims.map((claim) => (

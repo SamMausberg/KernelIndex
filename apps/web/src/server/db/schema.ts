@@ -8,6 +8,7 @@ import {
   bigint,
   boolean,
   check,
+  date,
   index,
   integer,
   jsonb,
@@ -470,6 +471,43 @@ export const userRoles = pgTable(
     grantedAt: createdAt(),
   },
   (t) => [primaryKey({ columns: [t.userId, t.role] })],
+)
+
+/** Scoped API keys (§13.6): visible prefix, hash-only secret storage,
+ * explicit scopes, expiry/revocation/last-use, and a per-day quota. */
+export const apiKeys = pgTable(
+  "api_keys",
+  {
+    id: id(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    /* First characters of the token ("ki_ab12…"), shown in listings; the
+       secret itself is never stored. */
+    prefix: text("prefix").notNull(),
+    secretHash: text("secret_hash").notNull().unique(),
+    scopes: text("scopes").array().notNull().default(["catalog:read"]),
+    quotaPerDay: integer("quota_per_day").notNull().default(5000),
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [index("api_keys_user_idx").on(t.userId)],
+)
+
+/** Per-key daily request counters (§13.7): quota state in PostgreSQL. */
+export const apiKeyUsage = pgTable(
+  "api_key_usage",
+  {
+    apiKeyId: uuid("api_key_id")
+      .notNull()
+      .references(() => apiKeys.id, { onDelete: "cascade" }),
+    day: date("day").notNull(),
+    count: integer("count").notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.apiKeyId, t.day] })],
 )
 
 /** Mutation audit trail (§11.10): every authenticated or maintainer write. */

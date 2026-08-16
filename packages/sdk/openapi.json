@@ -6,6 +6,13 @@
     "description": "Public read API over the KernelIndex catalog. Responses carry stable IDs, content digests, canonical units, and the ranking policy version; the web pages, CLI, and MCP render these same semantic results."
   },
   "components": {
+    "securitySchemes": {
+      "apiKey": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Optional ki_-prefixed API key from /account. Public reads work without one; a key raises the quota and unlocks scoped writes."
+      }
+    },
     "schemas": {},
     "parameters": {}
   },

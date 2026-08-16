@@ -32,9 +32,10 @@ const CACHE_MEDIUM = "public, s-maxage=300, stale-while-revalidate=86400"
 
 /** RFC 9457 Problem Details thrown as an HTTPException (§13.5). */
 function fail(
-  status: 400 | 401 | 403 | 404 | 422,
+  status: 400 | 401 | 403 | 404 | 422 | 429,
   code: string,
   detail: string,
+  headers?: Record<string, string>,
 ): never {
   const body = {
     type: `https://kernelindex.dev/errors/${code.toLowerCase()}`,
@@ -47,7 +48,7 @@ function fail(
   throw new HTTPException(status, {
     res: new Response(JSON.stringify(body), {
       status,
-      headers: { "Content-Type": "application/problem+json" },
+      headers: { "Content-Type": "application/problem+json", ...headers },
     }),
   })
 }
@@ -122,7 +123,79 @@ function json<S extends z.ZodType>(schema: S, description: string) {
   }
 }
 
-export const api = new OpenAPIHono()
+export const api = new OpenAPIHono<{
+  Variables: { apiKey?: import("../api-keys.ts").ApiKeyIdentity }
+}>()
+
+api.openAPIRegistry.registerComponent("securitySchemes", "apiKey", {
+  type: "http",
+  scheme: "bearer",
+  description:
+    "Optional ki_-prefixed API key from /account. Public reads work without one; a key raises the quota and unlocks scoped writes.",
+})
+
+/**
+ * API-key middleware (§13.6–13.7): only ki_-prefixed bearer tokens are
+ * intercepted, so anonymous reads stay CDN-cached and the env-token
+ * /revalidate check is untouched. A presented key must be live, in quota,
+ * and scoped for the route; catalog reads require `catalog:read`.
+ */
+api.use(async (c, next) => {
+  const header = c.req.header("authorization")
+  const token = header?.startsWith("Bearer ki_") ? header.slice(7) : null
+  if (token !== null) {
+    if (!process.env.DATABASE_URL)
+      fail(
+        401,
+        "KEYS_UNSUPPORTED",
+        "API keys need a database-backed deployment",
+      )
+    const { verifyApiKey } = await import("../api-keys.ts")
+    const result = await verifyApiKey(token)
+    if (!result.ok) {
+      if (result.reason === "quota") {
+        const now = new Date()
+        const midnight = Date.UTC(
+          now.getUTCFullYear(),
+          now.getUTCMonth(),
+          now.getUTCDate() + 1,
+        )
+        fail(429, "QUOTA_EXCEEDED", "daily request quota exhausted", {
+          "Retry-After": String(Math.ceil((midnight - now.getTime()) / 1000)),
+        })
+      }
+      fail(401, "INVALID_API_KEY", `API key ${result.reason}`)
+    }
+    const path = new URL(c.req.url).pathname
+    if (
+      !path.endsWith("/me") &&
+      !path.endsWith("/corrections") &&
+      !path.endsWith("/revalidate") &&
+      !result.identity.scopes.includes("catalog:read")
+    )
+      fail(403, "MISSING_SCOPE", "this route requires the catalog:read scope")
+    c.set("apiKey", result.identity)
+  }
+  await next()
+})
+
+// Key introspection (§13.6): the one key-mandatory route; private, never
+// cached. `ki auth status` consumes it.
+api.get("/me", async (c) => {
+  const identity = c.get("apiKey")
+  if (!identity) fail(401, "API_KEY_REQUIRED", "send an API key bearer token")
+  const { listApiKeys } = await import("../api-keys.ts")
+  const keys = await listApiKeys(identity.userId)
+  const key = keys.find((row) => row.id === identity.keyId)
+  c.header("Cache-Control", "private, no-store")
+  return c.json({
+    keyId: identity.keyId,
+    scopes: identity.scopes,
+    name: key?.name ?? null,
+    usedToday: key?.usedToday ?? null,
+    quotaPerDay: key?.quotaPerDay ?? null,
+  })
+})
 
 api.openapi(
   createRoute({
