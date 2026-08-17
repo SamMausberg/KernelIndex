@@ -71,13 +71,28 @@ export function SweepChart({ sweep }: { sweep: OperationSweep }) {
       )
     : niceTicks(yHi)
 
-  // Direct labels at line ends, nudged apart so they never collide.
+  // Dense sweeps (FlashInfer definitions carry dozens of cases) keep at
+  // most seven x tick labels, always including both ends.
+  const tickXs =
+    xs.length <= 7
+      ? xs
+      : Array.from(
+          { length: 7 },
+          (_, i) => xs[Math.round((i * (xs.length - 1)) / 6)],
+        )
+
+  // Direct labels at the right edge, nudged apart so they never collide —
+  // only for series that actually reach the final workload; a trace ending
+  // mid-chart is named by the legend instead of a floating label.
+  const lastX = xs[xs.length - 1]
   const labels = sweep.series
     .map((series, index) => ({
       name: series.implementation.name,
       index,
-      y: yPos(series.points[series.points.length - 1].value),
+      last: series.points[series.points.length - 1],
     }))
+    .filter((entry) => entry.last.x === lastX)
+    .map((entry) => ({ ...entry, y: yPos(entry.last.value) }))
     .sort((a, b) => a.y - b.y)
   for (let i = 1; i < labels.length; i++)
     labels[i].y = Math.max(labels[i].y, labels[i - 1].y + 13)
@@ -111,7 +126,7 @@ export function SweepChart({ sweep }: { sweep: OperationSweep }) {
             </text>
           </g>
         ))}
-        {xs.map((x) => (
+        {tickXs.map((x) => (
           <text
             key={x}
             x={xPos(x)}
