@@ -2,7 +2,7 @@
 // stays the familiar inline chip row; a large case sweep becomes an aligned
 // numeric table — constant axes stated once, varying axes as sorted columns,
 // suites listed beneath — bounded by its own scroll region.
-import Link from "next/link"
+import { Link } from "@/components/quiet-link"
 import type { WorkloadOption } from "@/lib/catalog"
 
 const INLINE_LIMIT = 8

@@ -1,7 +1,7 @@
 // Mirrored kernel source display (§16.9): server-rendered shiki HTML and a
 // precomputed line diff — no client JS, no repaint work. The attribution
 // line under the code is a display condition of the upstream license.
-import Link from "next/link"
+import { Link } from "@/components/quiet-link"
 import type { ImplementationPageModel } from "@/lib/catalog"
 import { highlightSource } from "@/server/highlight"
 

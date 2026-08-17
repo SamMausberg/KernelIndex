@@ -2,9 +2,9 @@
 // coverage — runs, operations, records — with each model's dossier a row
 // away. Counts follow the same eligibility filter as every ranked surface.
 import type { Metadata } from "next"
-import Link from "next/link"
 import { ContextHeader } from "@/components/context-header"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
+import { Link } from "@/components/quiet-link"
 import { getHardwareIndex } from "@/lib/catalog"
 import { formatDateShort } from "@/lib/format"
 

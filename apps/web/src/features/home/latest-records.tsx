@@ -1,5 +1,5 @@
-import Link from "next/link"
 import { Metric } from "@/components/metric"
+import { Link } from "@/components/quiet-link"
 import { AvailabilityCell, EvidenceCell } from "@/components/trust"
 import type { ResultRow } from "@/lib/catalog"
 import { formatDateUTC } from "@/lib/format"

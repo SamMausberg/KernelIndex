@@ -68,15 +68,19 @@ export function SiteHeader({
       <div className="shell flex h-14 items-center gap-7 max-md:gap-4 max-md:px-4">
         <Link
           href="/"
+          prefetch={false}
           className="font-mono text-[14.5px] font-semibold tracking-[-0.02em] text-fg hover:no-underline"
         >
           KernelIndex
         </Link>
         <nav className="flex gap-[22px] text-[13.5px] max-md:gap-3">
+          {/* No viewport prefetch: half these targets render dynamically
+              per request, and the header is on every page. */}
           {nav.map((item) => (
             <Link
               key={item.href}
               href={item.href}
+              prefetch={false}
               className={`transition-colors hover:text-fg hover:no-underline ${
                 pathname.startsWith(item.href) ? "text-fg" : "text-subtle"
               }${item.desktopOnly ? " max-md:hidden" : ""}`}
@@ -89,6 +93,7 @@ export function SiteHeader({
         {!onSearch && (
           <Link
             href="/search"
+            prefetch={false}
             className="well flex h-[34px] w-[220px] items-center gap-2 px-2.5 text-[13px] text-faint transition-colors hover:text-subtle hover:no-underline max-md:hidden"
           >
             Search
@@ -102,6 +107,7 @@ export function SiteHeader({
           {sessionName !== null ? (
             <Link
               href="/account"
+              prefetch={false}
               className="max-w-[160px] truncate text-subtle transition-colors hover:text-fg hover:no-underline"
             >
               {sessionName}
@@ -109,6 +115,7 @@ export function SiteHeader({
           ) : (
             <Link
               href="/signin"
+              prefetch={false}
               className="text-subtle transition-colors hover:text-fg hover:no-underline"
             >
               Sign in

@@ -2,7 +2,7 @@
 // cohort with the identity line above them, then the per-cohort Pareto
 // view. Every row states TTFT/TPOT/throughput/error rate as a value or
 // "not reported" — and there is no score column by construction.
-import Link from "next/link"
+import { Link } from "@/components/quiet-link"
 import type { ServingCohortGroup, ServingResultRow } from "@/lib/serving-models"
 import { ParetoScatter } from "./pareto"
 

@@ -1,9 +1,9 @@
 "use client"
 
-import Link from "next/link"
 import { Fragment, startTransition, useState } from "react"
 import { CopyButton } from "@/components/copy-button"
 import { KeyValueList } from "@/components/key-value-list"
+import { Link } from "@/components/quiet-link"
 import type { ResultRow, SearchPageModel } from "@/lib/catalog"
 import {
   evidenceLabel,

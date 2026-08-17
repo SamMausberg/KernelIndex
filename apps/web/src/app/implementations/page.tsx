@@ -3,9 +3,9 @@
 // or Y" starts from facts. Standing is never a cross-cohort ranking; the
 // order is corpus presence (run count), stated as such.
 import type { Metadata } from "next"
-import Link from "next/link"
 import { ContextHeader } from "@/components/context-header"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
+import { Link } from "@/components/quiet-link"
 import { getProjectIndex } from "@/lib/catalog"
 import { evidenceLabel, formatDateShort } from "@/lib/format"
 

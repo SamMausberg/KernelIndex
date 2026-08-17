@@ -3,11 +3,11 @@
 // sources behind the evidence. Records come from the same ledger model the
 // records page renders.
 import type { Metadata } from "next"
-import Link from "next/link"
 import { notFound } from "next/navigation"
 import { ContextHeader } from "@/components/context-header"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
 import { Metric } from "@/components/metric"
+import { Link } from "@/components/quiet-link"
 import { Section } from "@/components/section"
 import { EvidenceCell } from "@/components/trust"
 import { getHardwarePage } from "@/lib/catalog"

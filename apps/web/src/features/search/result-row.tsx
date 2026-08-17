@@ -1,6 +1,6 @@
-import Link from "next/link"
 import { Meter } from "@/components/meter"
 import { Metric } from "@/components/metric"
+import { Link } from "@/components/quiet-link"
 import { AvailabilityCell, EvidenceCell, TierChips } from "@/components/trust"
 import type { PrimaryMetric, ResultRow } from "@/lib/catalog"
 import { formatDateShort, formatRelative, humanizeField } from "@/lib/format"

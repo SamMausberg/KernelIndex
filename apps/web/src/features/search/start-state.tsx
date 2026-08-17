@@ -1,5 +1,5 @@
-import Link from "next/link"
 import { Meter } from "@/components/meter"
+import { Link } from "@/components/quiet-link"
 import type { OperationIndexEntry } from "@/lib/catalog"
 import { formatDateShort, formatPrimary } from "@/lib/format"
 

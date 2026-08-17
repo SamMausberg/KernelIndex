@@ -3,7 +3,7 @@
 // library, no animation; hover emphasis and point values are CSS-only.
 // Identity is never color-alone: series are direct-labeled at their line
 // ends and listed in the legend; the cohort table below is the table view.
-import Link from "next/link"
+import { Link } from "@/components/quiet-link"
 import type { OperationSweep } from "@/lib/catalog"
 import { formatLatency } from "@/lib/format"
 

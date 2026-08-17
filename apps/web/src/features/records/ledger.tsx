@@ -1,14 +1,14 @@
 "use client"
 
+import { startTransition, useEffect, useState } from "react"
+import { ContextHeader } from "@/components/context-header"
+import { Metric } from "@/components/metric"
 // The records ledger island (§16.12): the server renders any deep-linked URL
 // from its precomputed slice (SEO and no-JS unchanged), then the full model
 // arrives once from the CDN-cached /records/data route and every filter,
 // sort, view, and page interaction becomes an instant client transition with
 // the URL kept shareable. Markup is identical to the server-rendered form.
-import Link from "next/link"
-import { startTransition, useEffect, useState } from "react"
-import { ContextHeader } from "@/components/context-header"
-import { Metric } from "@/components/metric"
+import { Link } from "@/components/quiet-link"
 import { AvailabilityCell, EvidenceCell } from "@/components/trust"
 import type { RecordHolder, RecordsPageModel } from "@/lib/catalog"
 import { formatDateShort, formatDateUTC, formatPrimary } from "@/lib/format"

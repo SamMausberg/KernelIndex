@@ -1,5 +1,5 @@
-import Link from "next/link"
 import { CopyButton } from "@/components/copy-button"
+import { Link } from "@/components/quiet-link"
 import type { ComparePageModel, CompareRun } from "@/lib/catalog"
 import { compareJson, compareMarkdown } from "@/lib/compare-export"
 import {
