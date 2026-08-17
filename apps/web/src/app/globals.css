@@ -2,10 +2,10 @@
 
 /*
  * KernelIndex visual system (§16.2): instrument-grade black ledger.
- * The material is cold ink graded from the hero film — never neutral gray —
- * and light is used as machining, not decoration: catch-lights on raised
- * plates, recessed input wells, graticule rules. Components reference roles,
- * never raw hex, so the palette stays swappable.
+ * The material is cold ink, matte throughout: flat fills, 1px hairlines
+ * carrying all depth, cobalt only as text and borders. No gradients, no
+ * catch-lights, no glow. Components reference roles, never raw hex, so the
+ * palette stays swappable.
  */
 @theme {
   /* Surfaces: near-true black; depth lives in the cobalt accents and the
@@ -104,14 +104,6 @@
   }
   body {
     @apply bg-canvas font-sans text-fg antialiased;
-    /* Faint cool bloom, top right — the one light source every catch-light
-       in the interface agrees with. Static; scrolls with the page. */
-    background-image: radial-gradient(
-      96rem 44rem at 82% -12%,
-      rgb(143 176 239 / 0.05),
-      transparent 60%
-    );
-    background-repeat: no-repeat;
     line-height: 1.5;
     font-variant-numeric: tabular-nums;
   }
@@ -203,16 +195,11 @@
     @apply mx-auto w-full max-w-[880px] px-7;
   }
 
-  /* Machined raised surface: hairline border, vertical grade, catch-light. */
+  /* Raised surface: flat fill, hairline border. Depth is the border. */
   .plate {
     border: 1px solid var(--color-border);
     border-radius: 5px;
-    background: linear-gradient(
-      180deg,
-      var(--color-raised),
-      var(--color-surface)
-    );
-    box-shadow: inset 0 1px 0 rgb(201 220 255 / 0.05);
+    background: var(--color-surface);
   }
 
   /* Shiki output inside a plate: theme background yields to the plate; the
@@ -224,14 +211,11 @@
     background: transparent !important;
   }
 
-  /* Small machined control — keys, chips, copy. Pressing it sinks it. */
+  /* Small flat control — keys, chips, copy. State lives in the border. */
   .key {
     border: 1px solid var(--color-border-strong);
     border-radius: 4px;
-    background: linear-gradient(180deg, #111527, #080a12);
-    box-shadow:
-      inset 0 1px 0 rgb(201 220 255 / 0.07),
-      0 1px 2px rgb(0 0 0 / 0.35);
+    background: var(--color-raised);
     transition:
       border-color 0.15s,
       color 0.15s;
@@ -242,20 +226,16 @@
   }
   button.key:active,
   a.key:active {
-    background: linear-gradient(180deg, #080a12, #0e1220);
-    box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.5);
+    background: var(--color-surface);
   }
   /* Primary action key: the one main action per page (Resolve, Submit for
-     review, Continue with GitHub). Cobalt-lit like an engaged key, but
-     raised and pressable — same geometry as .key, accent tokens only. */
+     review, Continue with GitHub). Flat cobalt-tinted fill; the accent
+     stays in the border and text, never a glow. */
   .key-primary {
     border: 1px solid var(--color-accent-dim);
     border-radius: 4px;
-    color: var(--color-accent-bright);
-    background: linear-gradient(180deg, #101c36, #0c1322);
-    box-shadow:
-      inset 0 1px 0 rgb(201 220 255 / 0.1),
-      0 1px 2px rgb(0 0 0 / 0.35);
+    color: var(--color-accent);
+    background: var(--color-accent-soft);
     transition:
       border-color 0.15s,
       color 0.15s;
@@ -263,42 +243,42 @@
   button.key-primary:hover:not(:disabled),
   a.key-primary:hover {
     border-color: var(--color-accent);
+    color: var(--color-accent-bright);
   }
   button.key-primary:active:not(:disabled),
   a.key-primary:active {
-    background: linear-gradient(180deg, #0c1322, #0e1729);
-    box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.5);
+    background: var(--color-surface);
   }
 
-  /* Engaged key: sunken, cobalt-lit. Filter chips and pickers use this. */
+  /* Engaged key: cobalt-tinted flat fill. Filter chips and pickers. */
   .key-on {
     border-color: var(--color-accent-dim);
-    color: var(--color-accent-bright);
-    background: linear-gradient(180deg, #0c1322, #0e1729);
-    box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.45);
+    color: var(--color-accent);
+    background: var(--color-accent-soft);
   }
 
-  /* Recessed input well: instruments read, they don't glow — until focused. */
+  /* Input well: darker than its surroundings, nothing else. Focus is a
+     border change; the global focus-visible outline covers keyboards. */
   .well {
     border: 1px solid var(--color-border-strong);
     border-radius: 5px;
-    background: linear-gradient(180deg, #02030a, #060811);
-    box-shadow:
-      inset 0 1.5px 4px rgb(0 0 0 / 0.4),
-      inset 0 -1px 0 rgb(201 220 255 / 0.03);
-    transition:
-      border-color 0.16s,
-      box-shadow 0.16s;
+    background: #04050c;
+    transition: border-color 0.16s;
   }
   .well:focus-within {
     border-color: var(--color-accent-dim);
-    box-shadow:
-      inset 0 1.5px 4px rgb(0 0 0 / 0.4),
-      0 0 0 3px rgb(143 176 239 / 0.07);
   }
   /* The well is the focus ring; never double-box the inner input. */
   .well input:focus-visible {
     outline: none;
+  }
+
+  /* Long result/ledger rows: offscreen rows skip layout and paint, which
+     keeps scrolling cheap however long the table gets. The intrinsic size
+     approximates a collapsed row so the scrollbar stays stable. */
+  .row-cv {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 47px;
   }
 
   /* Sweep chart hover: emphasize one trace, reveal its point values.

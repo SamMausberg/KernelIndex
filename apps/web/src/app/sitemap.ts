@@ -19,6 +19,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${origin}/docs` },
     { url: `${origin}/docs/api` },
     { url: `${origin}/coverage` },
+    { url: `${origin}/legal` },
     ...hardware.gpus.map((gpu) => ({
       url: `${origin}/gpus/${gpu.slug}`,
       lastModified: gpu.lastObservedAt ?? undefined,

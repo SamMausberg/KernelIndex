@@ -28,7 +28,7 @@ export default async function Home() {
             <HeroSearch />
             <div className="mt-3 flex max-w-[620px] items-baseline justify-between gap-6">
               <p className="text-[12.5px] text-faint">
-                Ranked only inside comparable workloads and environments.
+                Ranked only against runs that measured the same thing.
               </p>
               <Link
                 href="/docs#query-syntax"
@@ -60,8 +60,8 @@ export default async function Home() {
           </div>
           <LatestRecords rows={model.latest} />
           <p className="mt-3 text-[12px] text-faint">
-            Imported results are Reported evidence: preserved exactly as the
-            source published them, not independently rerun.{" "}
+            Results are shown exactly as their source published them — not rerun
+            here.{" "}
             <Link href="/docs#evidence" className="text-faint">
               Evidence levels →
             </Link>
@@ -79,6 +79,9 @@ export default async function Home() {
           </Link>
           <Link href="/coverage" className="text-[13px] text-subtle">
             Coverage
+          </Link>
+          <Link href="/legal" className="text-[13px] text-subtle">
+            Legal
           </Link>
           <a
             href="https://github.com/SamMausberg/KernelIndex"

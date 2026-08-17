@@ -6,8 +6,7 @@
 // sort, view, and page interaction becomes an instant client transition with
 // the URL kept shareable. Markup is identical to the server-rendered form.
 import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { startTransition, useState } from "react"
+import { startTransition, useEffect, useState } from "react"
 import { ContextHeader } from "@/components/context-header"
 import { Metric } from "@/components/metric"
 import { AvailabilityCell, EvidenceCell } from "@/components/trust"
@@ -15,6 +14,7 @@ import type { RecordHolder, RecordsPageModel } from "@/lib/catalog"
 import { formatDateShort, formatDateUTC, formatPrimary } from "@/lib/format"
 import {
   DAY_MS,
+  filtersFromParams,
   type LedgerEvent,
   type LedgerSlice,
   ledgerSlice,
@@ -108,7 +108,7 @@ function HolderRow({ holder }: { holder: RecordHolder }) {
   const timeline = holder.history.slice(0, 6)
   const earlier = holder.history.length - timeline.length
   return (
-    <details className="group border-b border-line">
+    <details className="group row-cv border-b border-line">
       <summary
         className={`${CURRENT_GRID} h-[47px] cursor-pointer list-none items-center transition-colors hover:bg-raised [&::-webkit-details-marker]:hidden`}
       >
@@ -264,7 +264,7 @@ function BrokenRows({ transitions }: { transitions: LedgerEvent[] }) {
   if (transitions.length === 0) {
     return (
       <p className="py-8 text-[13px] text-faint">
-        No records were broken in the last 30 days under the active filters.
+        No records broken in the last 30 days with these filters.
       </p>
     )
   }
@@ -601,20 +601,12 @@ function ControlStrip({
 }
 
 export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
-  const router = useRouter()
+  // The page is ISR: the server always renders the default slice and the
+  // island owns the URL. Deep-linked filters apply right after hydration
+  // (window.location, not useSearchParams — that would drop the table out
+  // of the static HTML). Interactions never navigate.
   const [model, setModel] = useState<RecordsPageModel | null>(null)
   const [filters, setFilters] = useState(initial.filters)
-
-  // A real navigation (new searchParams) resets the island to the server's
-  // slice; interactions after the model loads never navigate.
-  const initialKey = recordsHref(initial.filters, {
-    page: initial.filters.page,
-  })
-  const [lastKey, setLastKey] = useState(initialKey)
-  if (initialKey !== lastKey) {
-    setLastKey(initialKey)
-    setFilters(initial.filters)
-  }
 
   // The full model loads on first interaction intent, not on mount: most
   // visits only read the server-rendered slice and skip the download.
@@ -624,13 +616,16 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
     })
   }
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only URL read; loadModel is module-memoized
+  useEffect(() => {
+    if (window.location.search === "") return
+    setFilters(filtersFromParams(new URLSearchParams(window.location.search)))
+    prime()
+  }, [])
+
   const navigate: Navigate = (patch) => {
-    if (model === null) {
-      prime()
-      router.push(recordsHref(filters, patch))
-      return
-    }
     const next = { ...filters, page: patch.page ?? 1, ...patch }
+    if (model === null) prime()
     startTransition(() => setFilters(next))
     window.history.replaceState(
       null,
@@ -639,7 +634,15 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
     )
   }
 
-  const slice = model !== null ? ledgerSlice(model, filters) : initial
+  // An unknown hardware filter falls back to "all" once the model can
+  // validate it, matching what the server used to do.
+  const effective =
+    model !== null &&
+    filters.hardware !== null &&
+    !model.hardwareOptions.includes(filters.hardware)
+      ? { ...filters, hardware: null }
+      : filters
+  const slice = model !== null ? ledgerSlice(model, effective) : initial
   const narrowed =
     slice.filters.filter !== "" ||
     slice.filters.hardware !== null ||
@@ -765,14 +768,20 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
               navigate={navigate}
               status={
                 <span>
-                  {slice.broken.length} broken in the last 30 days · sorted by
+                  {slice.broken.total} broken in the last 30 days · sorted by
                   improvement
                 </span>
               }
             />
             <div className="overflow-x-auto">
-              <BrokenRows transitions={slice.broken} />
+              <BrokenRows transitions={slice.broken.rows} />
             </div>
+            <Pager
+              page={slice.filters.page}
+              pageCount={slice.broken.pageCount}
+              filters={slice.filters}
+              navigate={navigate}
+            />
           </>
         )}
 
@@ -800,12 +809,11 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
 
         <div className="mt-11 flex flex-wrap items-baseline justify-between gap-5 border-t border-border pt-5">
           <p className="text-[12.5px] text-subtle">
-            Ties are preserved when the latency difference is not statistically
-            defensible.{" "}
+            Runs too close to call share a rank.{" "}
             <Link href="/docs#records">How records are decided →</Link>
           </p>
           <span className="font-mono text-[12px] text-faint">
-            derived from append-only runs · nothing is ever rewritten
+            history only grows · <Link href="/legal">data licenses</Link>
           </span>
         </div>
       </main>

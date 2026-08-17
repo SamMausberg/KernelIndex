@@ -125,8 +125,8 @@ export function ParetoScatter({
         </text>
       </svg>
       <figcaption className="mt-1 text-[11.5px] text-faint">
-        Accent points sit on the Pareto frontier (no candidate is faster and
-        lower-latency at once); muted points are dominated.
+        Blue points are the best trade-offs — nothing beats them on both axes.
+        Gray points are beaten by one of the blue ones.
       </figcaption>
     </figure>
   )

@@ -95,7 +95,7 @@ function resolveEnvelope(model: SearchPageModel) {
     bestVerified: model.groups.exact.find(isVerified) ?? null,
     bestDeployable: model.groups.exact.find(isDeployable) ?? null,
     groups: model.groups,
-    compatibleOverflow: model.compatibleOverflow,
+    overflow: model.overflow,
     matches: model.matches,
     sources: model.sources,
     generatedAt: new Date().toISOString(),

@@ -192,8 +192,8 @@ export function CompareView({ model }: { model: ComparePageModel }) {
       <div className="mt-8 flex flex-wrap items-baseline justify-between gap-5 border-t border-border pt-5">
         <p className="max-w-[70ch] text-[12.5px] text-subtle">
           {model.comparable
-            ? "Ranks compare only these selected runs. Overlapping confidence intervals share a rank; display order inside a tie is not a performance claim."
-            : "A valid winner requires identical operation, workload, protocol, environment, correctness policy, and metric. Change the selection or open each run dossier for its own cohort rank."}{" "}
+            ? "Ranks compare only these runs. Too close to call shares a rank."
+            : "No winner: these runs didn't measure the same thing. The rows above show what differs."}{" "}
           <Link href="/docs#comparability">Why comparable?</Link>
         </p>
         <div className="flex items-center gap-4 text-[12.5px]">
@@ -206,7 +206,7 @@ export function CompareView({ model }: { model: ComparePageModel }) {
         </div>
       </div>
       {model.runs.map((run) => (
-        <p key={run.runId} className="mt-2 font-mono text-[11px] text-ghost">
+        <p key={run.runId} className="mt-2 font-mono text-[11px] text-faint">
           {run.implementation.name} · {run.digest.slice(0, 20)}… · observed{" "}
           {formatDateUTC(run.observedAt)}
         </p>

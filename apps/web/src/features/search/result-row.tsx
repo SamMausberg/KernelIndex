@@ -94,8 +94,8 @@ function whyLine(row: ResultRow, tied: boolean): string {
     )
   else if (row.match === "exact" && row.rank !== null)
     parts.push(
-      `Same workload, protocol, environment, and correctness policy as the request${
-        tied ? "; statistically tied ranks share a number" : ""
+      `Measured exactly what you asked${
+        tied ? "; tied ranks share a number" : ""
       }.`,
     )
   for (const caveat of row.caveats)
@@ -128,7 +128,7 @@ export function ResultRowItem({
   const tied = row.tiedWithPrevious || tiedWithNext
   const rank = row.rank === null ? "—" : `${row.rank}${tied ? "=" : ""}`
   return (
-    <details className="group border-b border-line">
+    <details className="group row-cv border-b border-line">
       <summary
         className={`${RESULT_GRID} h-[47px] cursor-pointer list-none items-center transition-colors hover:bg-raised focus-visible:bg-raised [&::-webkit-details-marker]:hidden`}
       >

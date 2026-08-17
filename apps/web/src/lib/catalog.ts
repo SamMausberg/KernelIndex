@@ -22,6 +22,7 @@ import type {
 } from "./catalog-models"
 import type {
   ServingConfigurationSummary,
+  ServingFacetsModel,
   ServingResolveInput,
   ServingResolveModel,
   ServingRunPageModel,
@@ -49,6 +50,7 @@ type CatalogReads = {
   getHardwarePage(slug: string): Promise<HardwarePageModel | null>
   getProjectIndex(): Promise<ProjectIndexModel>
   // Serving (§8.16): a separate resolver surface behind the same seam.
+  getServingFacets(): Promise<ServingFacetsModel>
   resolveServing(input: ServingResolveInput): Promise<ServingResolveModel>
   getServingRunPage(id: string): Promise<ServingRunPageModel | null>
   listServingRuns(input: {
@@ -176,6 +178,16 @@ export const getComparePage = cache(
       return (await reads()).getComparePage(runIds)
     },
     ["compare", BACKEND],
+    { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },
+  ),
+)
+
+export const getServingFacets = cache(
+  cached(
+    async (): Promise<ServingFacetsModel> => {
+      return (await reads()).getServingFacets()
+    },
+    ["serving-facets", BACKEND],
     { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },
   ),
 )

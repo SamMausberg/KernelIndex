@@ -10,9 +10,9 @@ test("nav reaches the sign-in page; unconfigured auth is stated", async ({
   await page.getByRole("link", { name: "Sign in" }).click()
   await expect(page).toHaveURL(/\/signin$/)
   await expect(
-    page.getByText("Sign-in is not configured on this deployment"),
+    page.getByText("Sign-in is not set up on this deployment"),
   ).toBeVisible()
-  await expect(page.getByText("What an account unlocks")).toBeVisible()
+  await expect(page.getByText("Submit evidence")).toBeVisible()
   // No GitHub button renders without credentials.
   await expect(
     page.getByRole("button", { name: "Continue with GitHub" }),

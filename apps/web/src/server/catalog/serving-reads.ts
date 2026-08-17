@@ -19,6 +19,7 @@ import type {
   ServingCohortGroup,
   ServingConfigurationSummary,
   ServingConstraintView,
+  ServingFacetsModel,
   ServingResolveInput,
   ServingResolveModel,
   ServingResultRow,
@@ -176,6 +177,58 @@ function candidateOf(
   }
 }
 
+/** Corpus-wide facet lists and total, independent of any filter — the
+ * resolver form renders from this while results stream. */
+export async function getServingFacets(): Promise<ServingFacetsModel> {
+  const database = db()
+  const [models, workloads, hardware, [total]] = await Promise.all([
+    database
+      .select({
+        slug: schema.modelRevisions.slug,
+        name: schema.modelRevisions.name,
+        runs: sql<number>`count(*)::int`,
+      })
+      .from(schema.servingRuns)
+      .innerJoin(
+        schema.modelRevisions,
+        eq(schema.servingRuns.modelRevisionId, schema.modelRevisions.id),
+      )
+      .where(eligibleServingRuns())
+      .groupBy(schema.modelRevisions.slug, schema.modelRevisions.name)
+      .orderBy(desc(sql`count(*)`)),
+    database
+      .select({
+        slug: schema.servingWorkloads.slug,
+        name: schema.servingWorkloads.name,
+        runs: sql<number>`count(*)::int`,
+      })
+      .from(schema.servingRuns)
+      .innerJoin(
+        schema.servingWorkloads,
+        eq(schema.servingRuns.workloadId, schema.servingWorkloads.id),
+      )
+      .where(eligibleServingRuns())
+      .groupBy(schema.servingWorkloads.slug, schema.servingWorkloads.name)
+      .orderBy(desc(sql`count(*)`)),
+    database
+      .selectDistinct({ model: schema.servingRuns.acceleratorModel })
+      .from(schema.servingRuns)
+      .where(eligibleServingRuns())
+      .orderBy(schema.servingRuns.acceleratorModel),
+    database
+      .select({ n: sql<number>`count(*)::int` })
+      .from(schema.servingRuns)
+      .where(eligibleServingRuns()),
+  ])
+  return {
+    illustrative: false,
+    models,
+    workloads,
+    hardware: hardware.map((row) => row.model),
+    totalRuns: total?.n ?? 0,
+  }
+}
+
 export async function resolveServing(
   input: ServingResolveInput,
 ): Promise<ServingResolveModel> {
@@ -193,50 +246,13 @@ export async function resolveServing(
       lte(schema.servingRuns.totalAccelerators, input.hardware.countMaximum),
     )
 
-  const [rows, facetModels, facetWorkloads, facetHardware, [total]] =
-    await Promise.all([
-      joinedRuns(database)
-        .where(and(...filters))
-        .orderBy(desc(schema.servingRuns.observedAt))
-        .limit(400),
-      database
-        .select({
-          slug: schema.modelRevisions.slug,
-          name: schema.modelRevisions.name,
-          runs: sql<number>`count(*)::int`,
-        })
-        .from(schema.servingRuns)
-        .innerJoin(
-          schema.modelRevisions,
-          eq(schema.servingRuns.modelRevisionId, schema.modelRevisions.id),
-        )
-        .where(eligibleServingRuns())
-        .groupBy(schema.modelRevisions.slug, schema.modelRevisions.name)
-        .orderBy(desc(sql`count(*)`)),
-      database
-        .select({
-          slug: schema.servingWorkloads.slug,
-          name: schema.servingWorkloads.name,
-          runs: sql<number>`count(*)::int`,
-        })
-        .from(schema.servingRuns)
-        .innerJoin(
-          schema.servingWorkloads,
-          eq(schema.servingRuns.workloadId, schema.servingWorkloads.id),
-        )
-        .where(eligibleServingRuns())
-        .groupBy(schema.servingWorkloads.slug, schema.servingWorkloads.name)
-        .orderBy(desc(sql`count(*)`)),
-      database
-        .selectDistinct({ model: schema.servingRuns.acceleratorModel })
-        .from(schema.servingRuns)
-        .where(eligibleServingRuns())
-        .orderBy(schema.servingRuns.acceleratorModel),
-      database
-        .select({ n: sql<number>`count(*)::int` })
-        .from(schema.servingRuns)
-        .where(eligibleServingRuns()),
-    ])
+  const [rows, facets] = await Promise.all([
+    joinedRuns(database)
+      .where(and(...filters))
+      .orderBy(desc(schema.servingRuns.observedAt))
+      .limit(400),
+    getServingFacets(),
+  ])
 
   const measurementRows =
     rows.length > 0
@@ -282,13 +298,13 @@ export async function resolveServing(
     illustrative: false,
     input,
     facets: {
-      models: facetModels,
-      workloads: facetWorkloads,
-      hardware: facetHardware.map((row) => row.model),
+      models: facets.models,
+      workloads: facets.workloads,
+      hardware: facets.hardware,
       metrics: ["output_token_throughput_tps", "ttft_ms", "tpot_ms"],
     },
     groups,
-    totalRuns: total?.n ?? 0,
+    totalRuns: facets.totalRuns,
     policyVersion: SERVING_POLICY_VERSION,
     generatedAt: new Date().toISOString(),
   }

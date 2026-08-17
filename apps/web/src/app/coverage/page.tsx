@@ -49,11 +49,11 @@ const FACTS: Record<
 }
 
 const LIMITATIONS = [
-  "Every result is Reported-tier evidence: preserved exactly as the source published it, never independently rerun by KernelIndex. No verification runner exists yet, so no record carries a Verified or Replicated badge.",
-  "SOL-ExecBench leaderboard rows are suite-scoped aggregates (suite mean latency), not per-case traces; they never answer an exact-case request as exact.",
-  "FlashInfer-Bench imports are the library baseline solutions at a pinned dataset revision; LLM-generated traces are excluded.",
-  "MLPerf serving rows publish one measured metric — output token throughput — as reported. TTFT/TPOT bounds ride along as rules-declared facts, not measurements.",
-  "Hardware coverage follows the sources (NVIDIA B200 and H100, AMD MI300 families), not a survey; absence of an implementation here is not evidence it is slow.",
+  "Nothing here has been rerun by KernelIndex. Every number is shown exactly as its source published it, so no record is Verified yet.",
+  "SOL-ExecBench leaderboard rows are suite averages, not per-case traces. They never answer an exact-case request.",
+  "FlashInfer-Bench imports are the library baselines at a pinned revision; LLM-generated traces are excluded.",
+  "MLPerf serving rows measure one thing: token throughput. The TTFT/TPOT bounds shown are the benchmark's rules, not measurements.",
+  "Hardware coverage follows the sources, not a survey. A GPU or kernel missing here says nothing about its speed.",
 ]
 
 const GRID =
@@ -144,11 +144,9 @@ export default async function CoveragePage() {
       <main className="shell animate-fade-in pb-24">
         <Section id="kernel" title="Kernel evidence">
           <p className="mb-4 max-w-[76ch] text-[13.5px] text-muted">
-            {kernelRuns.toLocaleString("en-US")} published kernel runs, every
-            one linked to its exact workload, protocol, environment, source
-            snapshot, and license state. Counts update as the weekly imports
-            land; freshness is judged against each source&apos;s declared
-            interval.
+            {kernelRuns.toLocaleString("en-US")} published kernel runs, each
+            linked to its workload, protocol, environment, source snapshot, and
+            license. Counts update with the weekly imports.
           </p>
           <SourceRows rows={kernel} breadthLabel="Ops" />
         </Section>
@@ -156,9 +154,8 @@ export default async function CoveragePage() {
         {servingEnabled && serving.length > 0 && (
           <Section id="serving" title="Serving evidence">
             <p className="mb-4 max-w-[76ch] text-[13.5px] text-muted">
-              Serving results live in separate tables with their own cohort
-              semantics — a serving number and a kernel number are never ranked
-              together. The breadth column counts distinct launch
+              Serving results are kept apart from kernel results — the two are
+              never ranked together. Configs counts distinct launch
               configurations.
             </p>
             <SourceRows rows={serving} breadthLabel="Configs" />
@@ -175,11 +172,9 @@ export default async function CoveragePage() {
 
         <Section id="status" title="Data quality">
           <p className="max-w-[76ch] text-[13.5px] text-muted">
-            A weekly workflow re-imports every source behind a machine gate
-            (unexpected issues stop the source without writing), then runs the
-            data-quality invariant checker: dangling references, supersession
-            cycles, digest recomputation, orphan record events, snapshot
-            freshness. The durable report is committed to{" "}
+            A weekly job re-imports every source; anything unexpected stops that
+            source before it writes. An invariant checker then audits the whole
+            catalog. The report lives at{" "}
             <a href="https://github.com/SamMausberg/KernelIndex/blob/main/registry/reports/source-health.json">
               registry/reports/source-health.json
             </a>
@@ -187,9 +182,9 @@ export default async function CoveragePage() {
             <a href="https://github.com/SamMausberg/KernelIndex/tree/main/registry/exports">
               registry/exports
             </a>
-            . Something wrong? Every run dossier has a report action, and{" "}
-            <Link href="/docs#records">corrections</Link> retract or supersede
-            without rewriting history.
+            . Something wrong? Every run page has a report action. Corrections{" "}
+            <Link href="/docs#records">retract or supersede</Link>, never
+            rewrite.
           </p>
         </Section>
       </main>

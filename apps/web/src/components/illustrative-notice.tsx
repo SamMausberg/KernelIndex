@@ -6,8 +6,8 @@ export function IllustrativeNotice() {
   return (
     <div className="border-b border-border bg-surface">
       <p className="shell py-2 text-[12.5px] text-warning">
-        Illustrative fixture data. Every number on this page is fictional and is
-        not benchmark evidence.
+        Example data. Every number on this page is fictional — not benchmark
+        evidence.
       </p>
     </div>
   )

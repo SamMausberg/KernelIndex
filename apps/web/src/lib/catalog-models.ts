@@ -249,8 +249,14 @@ export type SearchPageModel = {
     supportedUnmeasured: ResultRow[]
     reported: ResultRow[]
   }
-  /** Compatible rows dropped by the server-side cap (payload guard). */
-  compatibleOverflow: number
+  /** Rows cut per group by the server-side payload cap — reported, never
+   * silently dropped. */
+  overflow: {
+    exact: number
+    compatible: number
+    supportedUnmeasured: number
+    reported: number
+  }
   related: RelatedItem[]
   /** Source coverage and freshness for the resolved operation (§22.4). */
   sources: SourceRef[]

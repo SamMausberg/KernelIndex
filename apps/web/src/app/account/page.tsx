@@ -202,13 +202,12 @@ export default async function AccountPage() {
         </Section>
         <Section id="api-keys" title="API keys">
           <p className="mb-3 max-w-[70ch] text-[12.5px] text-subtle">
-            Keys authenticate /api/v1 as a bearer token (
+            Send a key as{" "}
             <span className="font-mono text-[12px]">
               Authorization: Bearer ki_…
             </span>
-            ). Public reads need no key; a key raises your quota and carries
-            explicit scopes. The secret is shown once at creation and stored
-            only as a hash.
+            . Reads need no key — a key raises your quota. The secret shows once
+            and is stored as a hash.
           </p>
           {keys.map((key) => (
             <div

@@ -2,21 +2,28 @@
 // The form states model, hardware budget, workload, objective, and SLO
 // bounds; results show feasible configurations per cohort and the Pareto
 // frontier. There is no universal serving winner (§2.2 invariant 9).
+//
+// The form renders from the cached facets read and paints immediately; the
+// resolve result streams in behind Suspense. Render-time caps keep the
+// HTML bounded however large the corpus gets.
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { after } from "next/server"
+import { Suspense } from "react"
 import { ContextHeader } from "@/components/context-header"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
 import { Select } from "@/components/select"
 import { ServingCohorts } from "@/features/serving/results"
-import { resolveServing } from "@/lib/catalog"
+import { getServingFacets, resolveServing } from "@/lib/catalog"
 import { countNoun } from "@/lib/format"
 import type { ServingResolveInput } from "@/lib/serving-models"
 import { servingEnabled } from "@/server/env"
 import { recordEvent } from "@/server/events"
 
 export const metadata: Metadata = { title: "Serving" }
-export const revalidate = 300
+
+const GROUP_CAP = 30
+const FACET_CAP = 80
 
 type Params = {
   model?: string
@@ -126,17 +133,18 @@ function UnitInput({
   )
 }
 
-export default async function ServingPage({
-  searchParams,
+/** The slow half: resolve, count, and render — streamed behind Suspense. */
+async function ServingResults({
+  params,
+  requested,
 }: {
-  searchParams: Promise<Params>
+  params: Params
+  requested: boolean
 }) {
-  if (!servingEnabled) notFound()
-  const params = await searchParams
   const model = await resolveServing(inputOf(params))
   const feasible = model.groups.reduce((n, group) => n + group.rows.length, 0)
   // §20.5: only actual resolver requests count, not the default view.
-  if (Object.keys(params).length > 0)
+  if (requested)
     after(() =>
       recordEvent("serving_resolved", {
         feasible: feasible > 0,
@@ -150,11 +158,58 @@ export default async function ServingPage({
 
   return (
     <>
-      {model.illustrative && <IllustrativeNotice />}
+      <div className="flex flex-wrap items-baseline justify-between gap-x-8 gap-y-1.5 py-4">
+        <p className="font-mono text-[12.5px] text-muted">
+          {countNoun(model.groups.length, "cohort")} · {feasible} feasible ·{" "}
+          {excluded} excluded
+        </p>
+        <p className="max-w-[68ch] text-[12px] text-faint">
+          Only runs with the same model, workload, protocol, hardware, and
+          quality bar are ranked together. A run missing a metric you bounded is
+          left out, not guessed.
+        </p>
+      </div>
+
+      {model.groups.length > 0 ? (
+        <>
+          {/* Cohorts are deliberately granular (§11.1); an unfiltered view
+              caps the page and asks for narrowing instead of rendering
+              hundreds of tables. */}
+          <ServingCohorts groups={model.groups.slice(0, GROUP_CAP)} />
+          {model.groups.length > GROUP_CAP && (
+            <p className="mt-8 text-[12.5px] text-faint">
+              {model.groups.length - GROUP_CAP} more cohorts. Narrow by model,
+              workload, or hardware to see them.
+            </p>
+          )}
+        </>
+      ) : (
+        <p className="py-10 text-[13.5px] text-faint">
+          {model.totalRuns === 0
+            ? "No serving results yet."
+            : "Nothing matches. Loosen the filters or bounds."}
+        </p>
+      )}
+    </>
+  )
+}
+
+export default async function ServingPage({
+  searchParams,
+}: {
+  searchParams: Promise<Params>
+}) {
+  if (!servingEnabled) notFound()
+  const params = await searchParams
+  const facets = await getServingFacets()
+
+  return (
+    <>
+      {facets.illustrative && <IllustrativeNotice />}
       <div className="scan-line" />
       <ContextHeader
         title="Serving"
-        context={`${model.totalRuns} serving results · ${model.policyVersion} · ranked only under an explicit objective, Pareto frontier otherwise`}
+        context={`${facets.totalRuns} results · ranked only when you pick an objective`}
       />
       <main className="shell animate-fade-in pb-20">
         <form
@@ -170,7 +225,7 @@ export default async function ServingPage({
                 className="min-w-[220px]"
                 options={[
                   { value: "", label: "any" },
-                  ...model.facets.models.map((entry) => ({
+                  ...facets.models.slice(0, FACET_CAP).map((entry) => ({
                     value: entry.slug,
                     label: entry.name,
                     detail: `${entry.runs} runs`,
@@ -186,7 +241,7 @@ export default async function ServingPage({
                 className="min-w-[220px]"
                 options={[
                   { value: "", label: "any" },
-                  ...model.facets.workloads.map((entry) => ({
+                  ...facets.workloads.slice(0, FACET_CAP).map((entry) => ({
                     value: entry.slug,
                     label: entry.name,
                     detail: `${entry.runs} runs`,
@@ -202,7 +257,7 @@ export default async function ServingPage({
                 className="min-w-[170px]"
                 options={[
                   { value: "", label: "any" },
-                  ...model.facets.hardware.map((entry) => ({
+                  ...facets.hardware.slice(0, FACET_CAP).map((entry) => ({
                     value: entry,
                     label: entry,
                   })),
@@ -231,7 +286,7 @@ export default async function ServingPage({
                 options={[
                   { value: "throughput", label: "maximize tokens/s" },
                   { value: "ttft", label: "minimize TTFT p99" },
-                  { value: "none", label: "none · Pareto frontier" },
+                  { value: "none", label: "none · show trade-offs" },
                 ]}
               />
             </Field>
@@ -263,38 +318,18 @@ export default async function ServingPage({
           </button>
         </form>
 
-        <div className="flex flex-wrap items-baseline justify-between gap-x-8 gap-y-1.5 py-4">
-          <p className="font-mono text-[12.5px] text-muted">
-            {countNoun(model.groups.length, "cohort")} · {feasible} feasible ·{" "}
-            {excluded} excluded
-          </p>
-          <p className="max-w-[68ch] text-[12px] text-faint">
-            Comparable only within a cohort: same model, workload, protocol,
-            hardware topology, and quality policy. A constraint on an unreported
-            metric excludes the run rather than assuming it.
-          </p>
-        </div>
-
-        {model.groups.length > 0 ? (
-          <>
-            {/* Cohorts are deliberately granular (§11.1); an unfiltered view
-                caps the page and asks for narrowing instead of rendering
-                hundreds of tables. */}
-            <ServingCohorts groups={model.groups.slice(0, 30)} />
-            {model.groups.length > 30 && (
-              <p className="mt-8 text-[12.5px] text-faint">
-                {model.groups.length - 30} more cohorts not shown. Narrow by
-                model, workload, or hardware to reach them.
-              </p>
-            )}
-          </>
-        ) : (
-          <p className="py-10 text-[13.5px] text-faint">
-            {model.totalRuns === 0
-              ? "No serving results are published yet."
-              : "Nothing matches these filters. Widen the model, hardware, or constraint bounds."}
-          </p>
-        )}
+        <Suspense
+          fallback={
+            <p className="py-4 font-mono text-[12.5px] text-faint">
+              resolving…
+            </p>
+          }
+        >
+          <ServingResults
+            params={params}
+            requested={Object.keys(params).length > 0}
+          />
+        </Suspense>
       </main>
     </>
   )

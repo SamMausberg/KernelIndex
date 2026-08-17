@@ -12,9 +12,8 @@ export function DeleteAccountForm({ email }: { email: string }) {
   return (
     <form action={action} className="max-w-[560px]">
       <p className="text-[12.5px] leading-relaxed text-subtle">
-        Deletion is immediate: your identity, sessions, API keys, and watches
-        are removed. Accepted evidence, submissions, and the audit trail are
-        append-only and remain — with your account reference detached. Type{" "}
+        Deletion is immediate: identity, sessions, keys, and watches are
+        removed. Published evidence stays, with your account detached. Type{" "}
         <span className="font-mono text-[12px] text-fg">{email}</span> to
         confirm.
       </p>

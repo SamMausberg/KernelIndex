@@ -70,6 +70,16 @@ export type ServingCohortGroup = {
   sharedAxes: string[]
 }
 
+/** Filter-independent facet lists + totals: the resolver form renders from
+ * this long-lived read while the resolve result streams in. */
+export type ServingFacetsModel = {
+  illustrative: boolean
+  models: { slug: string; name: string; runs: number }[]
+  workloads: { slug: string; name: string; runs: number }[]
+  hardware: string[]
+  totalRuns: number
+}
+
 export type ServingResolveModel = {
   illustrative: boolean
   input: ServingResolveInput

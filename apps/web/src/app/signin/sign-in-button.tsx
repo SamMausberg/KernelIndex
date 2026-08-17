@@ -34,16 +34,15 @@ export function SignInButton({
           })
           if (error) setState("error")
         }}
-        className={`${primary ? "key-primary" : "key text-subtle hover:text-fg"} flex h-[40px] w-full max-w-[360px] cursor-pointer items-center justify-center text-[13.5px] disabled:cursor-default disabled:text-subtle`}
+        className={`${primary ? "key-primary" : "key text-subtle hover:text-fg"} flex h-[40px] w-full cursor-pointer items-center justify-center text-[13.5px] disabled:cursor-default disabled:text-subtle`}
       >
         {state === "pending"
           ? `Redirecting to ${label}…`
           : `Continue with ${label}`}
       </button>
       {state === "error" && (
-        <p className="mt-2.5 text-[12.5px] text-warning">
-          {label} sign-in failed. Try again, or check that third-party cookies
-          are allowed for {host}.
+        <p className="mt-2.5 text-center text-[12.5px] text-warning">
+          {label} sign-in failed. Try again, or allow cookies for {host}.
         </p>
       )}
     </div>

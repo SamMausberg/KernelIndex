@@ -18,8 +18,8 @@ export default function ErrorBoundary({
         This page failed to render.
       </h1>
       <p className="mt-3 max-w-[52ch] text-[14px] text-muted">
-        The catalog is unaffected. Published evidence is immutable. Retry the
-        request, or return to search.
+        Nothing was lost — published evidence can't change. Try again, or go
+        back to search.
         {error.digest && (
           <span className="mt-2 block font-mono text-[12px] text-faint">
             reference {error.digest}

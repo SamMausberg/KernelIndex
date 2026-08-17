@@ -1534,8 +1534,28 @@
                         "reported"
                       ]
                     },
-                    "compatibleOverflow": {
-                      "type": "number"
+                    "overflow": {
+                      "type": "object",
+                      "properties": {
+                        "exact": {
+                          "type": "number"
+                        },
+                        "compatible": {
+                          "type": "number"
+                        },
+                        "supportedUnmeasured": {
+                          "type": "number"
+                        },
+                        "reported": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "exact",
+                        "compatible",
+                        "supportedUnmeasured",
+                        "reported"
+                      ]
                     },
                     "matches": {
                       "type": ["array", "null"],
@@ -1654,7 +1674,7 @@
                     "bestVerified",
                     "bestDeployable",
                     "groups",
-                    "compatibleOverflow",
+                    "overflow",
                     "matches",
                     "sources",
                     "generatedAt"
@@ -3194,8 +3214,28 @@
                         "reported"
                       ]
                     },
-                    "compatibleOverflow": {
-                      "type": "number"
+                    "overflow": {
+                      "type": "object",
+                      "properties": {
+                        "exact": {
+                          "type": "number"
+                        },
+                        "compatible": {
+                          "type": "number"
+                        },
+                        "supportedUnmeasured": {
+                          "type": "number"
+                        },
+                        "reported": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "exact",
+                        "compatible",
+                        "supportedUnmeasured",
+                        "reported"
+                      ]
                     },
                     "matches": {
                       "type": ["array", "null"],
@@ -3314,7 +3354,7 @@
                     "bestVerified",
                     "bestDeployable",
                     "groups",
-                    "compatibleOverflow",
+                    "overflow",
                     "matches",
                     "sources",
                     "generatedAt"

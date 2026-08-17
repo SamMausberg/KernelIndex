@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "GPUs" }
 export const revalidate = 300
 
 const GRID =
-  "grid grid-cols-[minmax(220px,1.6fr)_110px_repeat(3,96px)_110px] items-baseline gap-x-4 min-w-[760px]"
+  "grid grid-cols-[minmax(240px,1.6fr)_130px_repeat(3,110px)_130px] gap-x-6 min-w-[900px]"
 
 export default async function GpusPage() {
   const model = await getHardwareIndex()
@@ -27,7 +27,7 @@ export default async function GpusPage() {
       <main className="shell animate-fade-in pb-20">
         <div className="overflow-x-auto">
           <div
-            className={`${GRID} border-b border-border-strong pb-2 text-[11.5px] text-faint`}
+            className={`${GRID} items-baseline border-b border-border-strong pb-2 text-[11.5px] text-faint`}
           >
             <div>GPU</div>
             <div>Architecture</div>
@@ -39,7 +39,7 @@ export default async function GpusPage() {
           {model.gpus.map((gpu) => (
             <div
               key={gpu.slug}
-              className={`${GRID} border-b border-line py-3 transition-colors hover:bg-raised`}
+              className={`${GRID} h-[47px] items-center border-b border-line transition-colors hover:bg-raised`}
             >
               <div className="min-w-0 truncate">
                 <Link

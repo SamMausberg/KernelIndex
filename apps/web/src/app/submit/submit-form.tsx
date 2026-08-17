@@ -62,8 +62,8 @@ export function SubmitForm({
           {!signedIn && (
             <span className="text-[12.5px] text-faint">
               {signInAvailable
-                ? "Sign in with GitHub to submit."
-                : "Sign-in is not configured here. Use the registry PR path."}
+                ? "Sign in to submit."
+                : "Sign-in is not set up here. Use the PR path instead."}
             </span>
           )}
         </div>
@@ -114,7 +114,7 @@ export function SubmitForm({
           ))}
           <p className="mt-3 text-[12.5px] text-faint">
             {state.report.valid
-              ? "Structurally valid. Review evaluates comparability, identity, and policy; validity never promises a rank."
+              ? "Valid. A reviewer still checks comparability and identity — valid never promises a rank."
               : "Fix the issues above and validate again."}
           </p>
         </div>

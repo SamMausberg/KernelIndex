@@ -26,12 +26,12 @@ test("homepage search reaches an exact ranked answer with evidence", async ({
   // Expanding a row explains its rank inside the cohort in one line.
   await page
     .locator("details")
-    .filter({ hasText: "Same workload, protocol, environment" })
+    .filter({ hasText: "Measured exactly what you asked" })
     .first()
     .locator("summary")
     .click()
   await expect(
-    page.getByText("Same workload, protocol, environment").first(),
+    page.getByText("Measured exactly what you asked").first(),
   ).toBeVisible()
 
   // Row → run dossier: the permanent evidence citation.
@@ -53,7 +53,7 @@ test("reported evidence stays separated from the exact cohort", async ({
   await page.goto("/search?q=rmsnorm")
   await page.getByRole("link", { name: /^Other cohorts/ }).click()
   await expect(
-    page.getByText("Preserved as published under the source protocol", {
+    page.getByText("Measured under a different protocol", {
       exact: false,
     }),
   ).toBeVisible()

@@ -12,9 +12,8 @@ export default function NotFound() {
           There's nothing at this address.
         </h1>
         <p className="mt-3 max-w-[52ch] text-[14px] text-muted">
-          The identifier may have been retired, superseded, or never existed.
-          Published evidence is never deleted. If a run once lived here, its
-          successor links back to it.
+          This ID may have been superseded, or never existed. Evidence is never
+          deleted — if a run lived here, its successor links back to it.
         </p>
         <div className="mt-6 flex gap-5 text-[13.5px]">
           <Link href="/search">Search the index</Link>

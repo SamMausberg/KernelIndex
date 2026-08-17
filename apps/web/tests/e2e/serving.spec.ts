@@ -7,7 +7,7 @@ test("resolver shows separated cohorts, ranks, and the Pareto frontier", async (
   page,
 }) => {
   await page.goto("/serving")
-  await expect(page.getByText("Illustrative fixture data")).toBeVisible()
+  await expect(page.getByText("Example data.", { exact: false })).toBeVisible()
   // Interactive and Offline are distinct cohort groups, never interleaved.
   await expect(
     page.getByRole("heading", { name: /interactive-chat-trace/ }),

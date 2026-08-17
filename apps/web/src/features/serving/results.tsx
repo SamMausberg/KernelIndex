@@ -9,6 +9,11 @@ import { ParetoScatter } from "./pareto"
 const GRID =
   "grid grid-cols-[34px_minmax(220px,1.4fr)_minmax(160px,1fr)_110px_86px_86px_64px_130px_28px] min-w-[1050px]"
 
+// Render caps (§16 payload budget): the page answers "what leads this
+// cohort"; the deep tail lives in /serving-runs and the API.
+const ROW_CAP = 12
+const EXCLUDED_CAP = 12
+
 function metric(
   row: ServingResultRow,
   name: string,
@@ -30,7 +35,7 @@ function cell(value: string | null) {
 
 function ResultRow({ row }: { row: ServingResultRow }) {
   return (
-    <details className="group border-b border-line">
+    <details className="group row-cv border-b border-line">
       <summary
         className={`${GRID} h-[47px] cursor-pointer list-none items-center transition-colors hover:bg-raised [&::-webkit-details-marker]:hidden`}
       >
@@ -110,7 +115,7 @@ export function ServingCohorts({ groups }: { groups: ServingCohortGroup[] }) {
             {group.description}
           </h2>
           <p className="mt-0.5 text-[12px] text-faint">
-            Comparable only inside this cohort · {group.rows.length} feasible
+            Ranked only inside this cohort · {group.rows.length} feasible
             {group.excluded.length > 0 &&
               ` · ${group.excluded.length} excluded`}
           </p>
@@ -128,24 +133,33 @@ export function ServingCohorts({ groups }: { groups: ServingCohortGroup[] }) {
               <div className="py-2">Quality</div>
               <div />
             </div>
-            {group.rows.map((row) => (
+            {group.rows.slice(0, ROW_CAP).map((row) => (
               <ResultRow key={row.runId} row={row} />
             ))}
             {group.rows.length === 0 && (
               <p className="py-6 text-[13px] text-faint">
-                No configuration satisfies the constraints in this cohort.
+                Nothing in this cohort meets the bounds.
               </p>
             )}
           </div>
-          <ParetoScatter rows={group.rows} sharedAxes={group.sharedAxes} />
+          {group.rows.length > ROW_CAP && (
+            <p className="mt-2 text-[12px] text-faint">
+              {group.rows.length - ROW_CAP} more rows in this cohort — narrow
+              the filters to see them.
+            </p>
+          )}
+          <ParetoScatter
+            rows={group.rows.slice(0, ROW_CAP)}
+            sharedAxes={group.sharedAxes}
+          />
           {group.excluded.length > 0 && (
             <details className="mt-3">
               <summary className="cursor-pointer list-none text-[12.5px] text-subtle [&::-webkit-details-marker]:hidden">
-                {group.excluded.length} excluded: constraint unsatisfied or
-                metric not reported ›
+                {group.excluded.length} excluded — bound not met, or the metric
+                wasn't reported ›
               </summary>
               <div className="mt-2 space-y-1">
-                {group.excluded.map((entry) => (
+                {group.excluded.slice(0, EXCLUDED_CAP).map((entry) => (
                   <p
                     key={entry.runId}
                     className="font-mono text-[11.5px] text-faint"
@@ -153,6 +167,11 @@ export function ServingCohorts({ groups }: { groups: ServingCohortGroup[] }) {
                     {entry.configuration} · {entry.reasons.join(", ")}
                   </p>
                 ))}
+                {group.excluded.length > EXCLUDED_CAP && (
+                  <p className="text-[11.5px] text-faint">
+                    +{group.excluded.length - EXCLUDED_CAP} more
+                  </p>
+                )}
               </div>
             </details>
           )}

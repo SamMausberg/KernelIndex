@@ -677,7 +677,7 @@ export async function searchCatalog(
       requireSource: intent.requireSource,
       requireInstallable: intent.requireInstallable,
     },
-    compatibleOverflow: 0,
+    overflow: { exact: 0, compatible: 0, supportedUnmeasured: 0, reported: 0 },
   }
 
   const matched = /rms[\s_-]?norm/i.test(query)

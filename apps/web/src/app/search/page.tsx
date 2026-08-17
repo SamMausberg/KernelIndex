@@ -1,5 +1,8 @@
+// Search (§16.6): the shell paints immediately; the resolver result
+// streams in behind Suspense, since an uncached query can take a second.
 import type { Metadata } from "next"
 import { after } from "next/server"
+import { Suspense } from "react"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
 import {
   type ResultMode,
@@ -30,12 +33,7 @@ const MODES = new Set(["exact", "compatible", "supported", "reported"])
 const RESULT_SORTS = new Set(["recommended", "newest"])
 const BROWSE_SORTS = new Set(["indexed", "active", "az"])
 
-export default async function SearchPage({
-  searchParams,
-}: {
-  searchParams: Promise<Params>
-}) {
-  const params = await searchParams
+async function Results({ params }: { params: Params }) {
   const query = params.q ?? ""
   const model = await searchCatalog({ query })
   // §20.5 answer-quality counters, after the response; empty = browse.
@@ -53,7 +51,19 @@ export default async function SearchPage({
     <>
       {model.illustrative && <IllustrativeNotice />}
       <SearchResults
-        model={model}
+        // Aliases exist for the suggest index, which the island fetches
+        // from /suggest — inlining them here doubled the browse payload.
+        model={
+          model.browse
+            ? {
+                ...model,
+                browse: model.browse.map((entry) => ({
+                  ...entry,
+                  aliases: [],
+                })),
+              }
+            : model
+        }
         filters={{
           view:
             params.view && MODES.has(params.view)
@@ -80,5 +90,24 @@ export default async function SearchPage({
         }}
       />
     </>
+  )
+}
+
+export default async function SearchPage({
+  searchParams,
+}: {
+  searchParams: Promise<Params>
+}) {
+  const params = await searchParams
+  return (
+    <Suspense
+      fallback={
+        <main className="shell pt-6">
+          <p className="py-4 font-mono text-[12.5px] text-faint">resolving…</p>
+        </main>
+      }
+    >
+      <Results params={params} />
+    </Suspense>
   )
 }

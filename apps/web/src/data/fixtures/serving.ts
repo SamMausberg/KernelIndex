@@ -6,6 +6,7 @@ import type {
   ServingCohortGroup,
   ServingConfigurationSummary,
   ServingConstraintView,
+  ServingFacetsModel,
   ServingResolveInput,
   ServingResolveModel,
   ServingResultRow,
@@ -257,6 +258,12 @@ function group(
     excluded,
     sharedAxes,
   }
+}
+
+export async function getServingFacets(): Promise<ServingFacetsModel> {
+  const model = await resolveServing({})
+  const { metrics: _metrics, ...facets } = model.facets
+  return { illustrative: true, ...facets, totalRuns: model.totalRuns }
 }
 
 export async function resolveServing(

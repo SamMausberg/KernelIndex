@@ -122,8 +122,9 @@ function printEnvelope(envelope: ResolveEnvelope) {
     ["#", "implementation", "project", "latency", "evidence", "hardware"],
     ...rows,
   ])
-  if (envelope.compatibleOverflow > 0 && !values.quiet) {
-    console.log(`${envelope.compatibleOverflow} compatible rows not shown`)
+  const cut = Object.values(envelope.overflow).reduce((a, b) => a + b, 0)
+  if (cut > 0 && !values.quiet) {
+    console.log(`${cut} rows past the payload cap not shown`)
   }
 }
 

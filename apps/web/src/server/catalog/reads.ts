@@ -161,15 +161,16 @@ type JoinedRun = {
   source: Pick<typeof schema.sources.$inferSelect, "slug" | "kind" | "name">
 }
 
-/** Operation-scoped rows additionally carry the workload manifest for match. */
+/** Operation-scoped rows carry extra workload scalars for matching; the
+ * workload manifests are loaded once per operation, never per run. */
 type OperationJoinedRun = JoinedRun & {
-  workload: Pick<
-    WorkloadRow,
-    "id" | "dtypes" | "shapeSummary" | "layoutKeys" | "manifest"
-  >
+  workload: Pick<WorkloadRow, "id" | "dtypes" | "shapeSummary" | "layoutKeys">
 }
 
-/** Published eligible runs for one operation, fastest first. */
+/** Published eligible runs for one operation, fastest first. Bounded: the
+ * ranked table, sweep, and compatible groups never show more than this,
+ * and the tail is reachable through the API's cursor surfaces. */
+const OPERATION_RUNS_LIMIT = 600
 async function joinedRunsForOperation(
   operationId: string,
 ): Promise<OperationJoinedRun[]> {
@@ -183,7 +184,6 @@ async function joinedRunsForOperation(
         dtypes: schema.workloads.dtypes,
         shapeSummary: schema.workloads.shapeSummary,
         layoutKeys: schema.workloads.layoutKeys,
-        manifest: schema.workloads.manifest,
       },
       source: sourceColumns,
     })
@@ -208,6 +208,7 @@ async function joinedRunsForOperation(
       and(eq(schema.workloads.operationId, operationId), eligibleRunFilter()),
     )
     .orderBy(schema.benchmarkRuns.primaryValue)
+    .limit(OPERATION_RUNS_LIMIT)
 }
 
 function rowCaveats(joined: JoinedRun): string[] {
@@ -337,6 +338,8 @@ function groupRuns(
   joined: OperationJoinedRun[],
   operation: { name: string; slug: string },
   operationManifest: OperationSpecManifest,
+  /** Workload manifests keyed by workload id — loaded once per operation. */
+  manifestById: Map<string, AnyWorkloadManifest>,
   selectedWorkloadId: string,
   intent: SearchIntent,
   preferredCohortKey?: string,
@@ -374,9 +377,7 @@ function groupRuns(
     rankedCohorts[0]?.[1] ??
     []
   const cohortKey = primaryCohort[0]?.run.comparisonKey ?? null
-  const selectedManifest = selected[0]?.workload.manifest as
-    | AnyWorkloadManifest
-    | undefined
+  const selectedManifest = manifestById.get(selectedWorkloadId)
 
   const opDtypes = operationDtypes(operationManifest)
   const target = (j: OperationJoinedRun): MatchTarget => ({
@@ -385,7 +386,7 @@ function groupRuns(
     cudaMajor: j.run.cudaMajor,
     framework: j.implementation.framework,
     language: j.implementation.language,
-    workload: j.workload.manifest as AnyWorkloadManifest,
+    workload: manifestById.get(j.workload.id) as AnyWorkloadManifest,
     workloadDtypes: j.workload.dtypes.length > 0 ? j.workload.dtypes : opDtypes,
     workloadLayouts: j.workload.layoutKeys,
   })
@@ -441,10 +442,11 @@ function groupRuns(
   for (const j of joined) {
     if (j.workload.id === selectedWorkloadId) continue
     const merged = intentMismatches(intent, target(j))
-    if (selectedManifest) {
+    const workloadManifest = manifestById.get(j.workload.id)
+    if (selectedManifest && workloadManifest) {
       for (const mismatch of workloadMismatches(
         selectedManifest,
-        j.workload.manifest as AnyWorkloadManifest,
+        workloadManifest,
       )) {
         if (!merged.some((entry) => entry.field === mismatch.field))
           merged.push(mismatch)
@@ -460,8 +462,8 @@ function groupRuns(
         comparisonKey: cohortKey,
         profile,
         description: sourceNative
-          ? `Source-native cohort: identical workload, protocol, and environment under the upstream harness. Ranked by the source's primary metric under ${RANKING_POLICY_VERSION}; unequal values keep the source order.`
-          : `Identical workload, protocol, environment, and correctness policy. Ranked by primary metric under ${RANKING_POLICY_VERSION}; overlapping confidence intervals share a rank.`,
+          ? `Measured by the source's own harness. Ranked by its metric under ${RANKING_POLICY_VERSION}.`
+          : `Same workload, protocol, and environment throughout. Ranked by latency under ${RANKING_POLICY_VERSION}; runs too close to call share a rank.`,
         facts: [],
       }
     : null
@@ -952,6 +954,14 @@ const EMPTY_GROUPS = {
   supportedUnmeasured: [],
   reported: [],
 }
+const NO_OVERFLOW = {
+  exact: 0,
+  compatible: 0,
+  supportedUnmeasured: 0,
+  reported: 0,
+}
+/** Per-group payload cap (§16): four pages of the 50-row view. */
+const GROUP_CAP = 200
 
 export async function searchCatalog(
   input: SearchInput,
@@ -979,7 +989,7 @@ export async function searchCatalog(
     matches: null,
     cohort: null,
     groups: EMPTY_GROUPS,
-    compatibleOverflow: 0,
+    overflow: NO_OVERFLOW,
     related: [],
     sources: [],
   }
@@ -1001,8 +1011,8 @@ export async function searchCatalog(
       ...base,
       noResult: {
         guidance: facetsOnly
-          ? "The recognized facets need an operation to narrow. Add an operation name, family, or alias."
-          : "No matching operation found. Search by operation name, family, or alias; recognized shape, dtype, and hardware facets then narrow the results.",
+          ? "Filters alone can't find an operation. Add its name."
+          : "No operation by that name. Try one of these families:",
         suggestions: [...runsByFamily.entries()]
           .sort((a, b) => b[1] - a[1])
           .slice(0, 8)
@@ -1082,16 +1092,24 @@ export async function searchCatalog(
     implementationRows(operation.id),
   ])
   const selectedWorkloadId = selectWorkloadId(intent, workloadRows, joined)
+  const manifestById = new Map(
+    workloadRows.map((row) => [row.id, row.manifest as AnyWorkloadManifest]),
+  )
   const groups = selectedWorkloadId
     ? groupRuns(
         joined,
         { name: operation.name, slug: operation.slug },
         operation.manifest as OperationSpecManifest,
+        manifestById,
         selectedWorkloadId,
         intent,
       )
     : { ...EMPTY_GROUPS, cohort: null, headRunId: null }
-  await fillCohortFacts(groups)
+  // Independent round trips: cohort facts and source refs together.
+  const [, sources] = await Promise.all([
+    fillCohortFacts(groups),
+    sourceRefs(joined),
+  ])
   const relatedItems = [...related, ...nearMisses]
     .filter(
       (op, index, all) =>
@@ -1106,13 +1124,17 @@ export async function searchCatalog(
       summary: `Operation in the ${op.family} family`,
     }))
 
-  // Payload guard at corpus scale: the compatible group can hold every other
-  // workload's runs for a large operation; the view reports what was cut.
-  const COMPATIBLE_CAP = 400
-  const compatibleOverflow = Math.max(
-    0,
-    groups.compatible.length - COMPATIBLE_CAP,
-  )
+  // Payload guard at corpus scale (§16): every group is capped and the view
+  // reports exactly what was cut — nothing is dropped silently.
+  const supported = supportedUnmeasuredRows(operation, joined, implRows)
+  const cut = <T>(rows: T[]) => ({
+    rows: rows.slice(0, GROUP_CAP),
+    overflow: Math.max(0, rows.length - GROUP_CAP),
+  })
+  const exact = cut(groups.exact)
+  const compatible = cut(groups.compatible)
+  const supportedCut = cut(supported)
+  const reported = cut(groups.reported)
   return {
     ...base,
     illustrative: pageIllustrative(joined),
@@ -1122,15 +1144,20 @@ export async function searchCatalog(
     ),
     operation: opRef(operation),
     cohort: groups.cohort,
-    compatibleOverflow,
+    overflow: {
+      exact: exact.overflow,
+      compatible: compatible.overflow,
+      supportedUnmeasured: supportedCut.overflow,
+      reported: reported.overflow,
+    },
     groups: {
-      exact: groups.exact,
-      compatible: groups.compatible.slice(0, COMPATIBLE_CAP),
-      supportedUnmeasured: supportedUnmeasuredRows(operation, joined, implRows),
-      reported: groups.reported,
+      exact: exact.rows,
+      compatible: compatible.rows,
+      supportedUnmeasured: supportedCut.rows,
+      reported: reported.rows,
     },
     related: relatedItems,
-    sources: await sourceRefs(joined),
+    sources,
     noResult: null,
   }
 }
@@ -1243,11 +1270,15 @@ export async function getOperationPage(
       joined,
       workloadRows.map((w) => w.id),
     )
+  const manifestById = new Map(
+    workloadRows.map((row) => [row.id, row.manifest as AnyWorkloadManifest]),
+  )
   const groups = selectedWorkloadId
     ? groupRuns(
         joined,
         { name: operation.name, slug: operation.slug },
         manifest,
+        manifestById,
         selectedWorkloadId,
         parseQuery(""),
         cohort,
@@ -1260,7 +1291,11 @@ export async function getOperationPage(
         cohortOptions: [],
         headRunId: null,
       }
-  await fillCohortFacts(groups)
+  // Independent round trips: cohort facts and source refs together.
+  const [, operationSources] = await Promise.all([
+    fillCohortFacts(groups),
+    sourceRefs(joined),
+  ])
 
   const implementations = implementationSummaries(implRows, joined, operation)
   const evidence = joined.map((j) => runEvidence(j.run))
@@ -1384,7 +1419,7 @@ export async function getOperationPage(
             ).toISOString()
           : null,
     },
-    sources: await sourceRefs(joined),
+    sources: operationSources,
   }
 }
 

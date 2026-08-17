@@ -67,19 +67,19 @@ const MODES: { key: ResultMode; label: string; note: string | null }[] = [
   {
     key: "compatible",
     label: "Compatible",
-    note: "Nearby measured evidence. Each row lists what differs from the request.",
+    note: "Close matches. Each row lists what differs.",
   },
   {
     key: "supported",
     label: "Supported",
-    note: "Declared or nearby-tested support with no run on this exact workload.",
+    note: "Claims support; no run on this exact workload yet.",
   },
   {
     key: "reported",
     // "Other cohorts", not "Reported": the view groups source-protocol
     // cohorts, while Reported names an evidence level — one word, one meaning.
     label: "Other cohorts",
-    note: "Preserved as published under the source protocol; never ranked against the exact cohort.",
+    note: "Measured under a different protocol. Shown as published, never ranked against exact rows.",
   },
 ]
 
@@ -702,10 +702,16 @@ export function SearchResults({
 
             <p className="mt-2.5 text-[12.5px] text-faint">
               {modeNote ??
-                "Ranked by the primary latency statistic inside one comparable cohort; statistically tied ranks share a number."}
-              {view === "compatible" &&
-                model.compatibleOverflow > 0 &&
-                ` ${model.compatibleOverflow} more compatible rows not shown; narrow the workload.`}
+                "Ranked by latency within one cohort. Tied ranks share a number."}
+              {(() => {
+                const cut =
+                  model.overflow[
+                    view === "supported" ? "supportedUnmeasured" : view
+                  ]
+                return cut > 0
+                  ? ` ${cut} more rows past the cap — narrow the workload to see them.`
+                  : null
+              })()}
             </p>
 
             <div className="mt-1 animate-row-in overflow-x-auto [animation-delay:.12s]">
@@ -837,8 +843,7 @@ export function SearchResults({
 
             {anyTie && (
               <p className="mt-3.5 text-[12.5px] text-faint">
-                Ranks shown as N= are statistically tied: the latency difference
-                interval contains zero.{" "}
+                N= means tied — too close to call.{" "}
                 <Link href="/docs#ranking">How ranking works →</Link>
               </p>
             )}
@@ -873,8 +878,8 @@ export function SearchResults({
         <div className="mt-12 flex flex-wrap items-baseline justify-between gap-5 border-t border-border pt-5">
           <p className="text-[12.5px] text-subtle">
             {model.operation
-              ? "Missing an implementation for this workload? Evidence submissions open with the contribution beta."
-              : "Results are ranked only inside comparable workloads and environments."}
+              ? "Missing a kernel here? Evidence submissions open with the contribution beta."
+              : "Ranked only against runs that measured the same thing."}
           </p>
           {model.cohort && (
             <div className="flex items-center gap-2.5">

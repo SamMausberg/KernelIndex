@@ -5,6 +5,12 @@
 import AxeBuilder from "@axe-core/playwright"
 import { expect, test } from "@playwright/test"
 
+// Deterministic colors: entrance animations briefly render text at partial
+// opacity, and axe sampling mid-fade produced flaky contrast failures once
+// the solid matte background let it evaluate contrast at all. Reduced
+// motion collapses the animations (globals.css honors it).
+test.use({ contextOptions: { reducedMotion: "reduce" } })
+
 const CRITICAL_PAGES = [
   "/",
   "/search?q=rmsnorm%20B200%20bf16",

@@ -88,9 +88,8 @@ export function ReportForm({
           )}
         </div>
         <p className="text-[12px] leading-relaxed text-faint">
-          Reports are reviewed by a maintainer. Disagreements resolve by
-          evidence and protocol; an accepted report retracts or supersedes the
-          record while its history stays visible.
+          A maintainer reviews every report. If accepted, the record is
+          retracted or superseded — its history stays visible.
         </p>
       </form>
     </details>

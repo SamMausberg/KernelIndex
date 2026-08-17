@@ -1,6 +1,6 @@
-// Records ledger island: filter/sort/view interactions are client
-// transitions that keep the URL shareable, backed by the /records/data
-// fetch, with the server rendering any deep link identically.
+// Records ledger island: the page is ISR (default slice from cache);
+// filters, sorts, views, and deep links are client transitions backed by
+// the /records/data fetch, with the URL kept shareable.
 import { expect, test } from "@playwright/test"
 
 test("ledger interactions update rows and URL without navigation", async ({
@@ -26,7 +26,7 @@ test("ledger interactions update rows and URL without navigation", async ({
   ).toBeVisible()
 })
 
-test("a deep-linked ledger view renders server-side", async ({ page }) => {
+test("a deep-linked ledger view applies after hydration", async ({ page }) => {
   await page.goto("/records?view=history")
   await expect(page.getByText("record event", { exact: false })).toBeVisible()
 })

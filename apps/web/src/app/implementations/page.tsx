@@ -13,7 +13,7 @@ export const metadata: Metadata = { title: "Projects" }
 export const revalidate = 300
 
 const GRID =
-  "grid grid-cols-[minmax(220px,1.6fr)_88px_88px_88px_120px_minmax(140px,1fr)_minmax(150px,1.1fr)_110px] items-baseline gap-x-4 min-w-[1080px]"
+  "grid grid-cols-[minmax(230px,1.5fr)_80px_80px_90px_130px_minmax(150px,1fr)_minmax(180px,1.2fr)_110px] gap-x-6 min-w-[1160px]"
 
 export default async function ProjectsPage() {
   const model = await getProjectIndex()
@@ -28,7 +28,7 @@ export default async function ProjectsPage() {
       <main className="shell animate-fade-in pb-20">
         <div className="overflow-x-auto">
           <div
-            className={`${GRID} border-b border-border-strong pb-2 text-[11.5px] text-faint`}
+            className={`${GRID} items-baseline border-b border-border-strong pb-2 text-[11.5px] text-faint`}
           >
             <div>Project</div>
             <div className="text-right">Kernels</div>
@@ -42,7 +42,7 @@ export default async function ProjectsPage() {
           {model.projects.map((project) => (
             <div
               key={project.slug}
-              className={`${GRID} border-b border-line py-3 transition-colors hover:bg-raised`}
+              className={`${GRID} h-[47px] items-center border-b border-line transition-colors hover:bg-raised`}
             >
               <div className="min-w-0 truncate">
                 {project.repositoryUrl ? (

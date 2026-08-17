@@ -520,7 +520,12 @@ export interface paths {
                   caveats: string[]
                 }[]
               }
-              compatibleOverflow: number
+              overflow: {
+                exact: number
+                compatible: number
+                supportedUnmeasured: number
+                reported: number
+              }
               matches:
                 | {
                     name: string
@@ -1065,7 +1070,12 @@ export interface paths {
                   caveats: string[]
                 }[]
               }
-              compatibleOverflow: number
+              overflow: {
+                exact: number
+                compatible: number
+                supportedUnmeasured: number
+                reported: number
+              }
               matches:
                 | {
                     name: string

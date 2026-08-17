@@ -58,16 +58,15 @@ export default function ApiReferencePage() {
       />
       <main className="shell-narrow animate-fade-in pb-24 text-[14px] leading-relaxed text-muted">
         <p className="mt-2">
-          Public read API over the catalog. Anonymous reads are CDN-cached; an
-          optional <span className="font-mono text-[12.5px]">ki_</span> API key
-          from <Link href="/account">/account</Link> raises the quota. The
-          machine contract is{" "}
+          Read API over the catalog. No key needed; a{" "}
+          <span className="font-mono text-[12.5px]">ki_</span> key from{" "}
+          <Link href="/account">/account</Link> raises the quota. Contract:{" "}
           <a href="/api/v1/openapi.json" className="font-mono text-[12.5px]">
             /api/v1/openapi.json
-          </a>
-          ; the TypeScript SDK, <span className="font-mono">ki</span> CLI, and
-          MCP server are generated from it —{" "}
-          <Link href="/docs#agents">Agents</Link> has the one-paste setup.
+          </a>{" "}
+          — the SDK, <span className="font-mono">ki</span> CLI, and MCP server
+          are generated from it. <Link href="/docs#agents">Agents</Link> has the
+          one-paste setup.
         </p>
         <div className="mt-8 space-y-7">
           {routes.map(({ path, method, operation }) => {
@@ -114,10 +113,10 @@ export default function ApiReferencePage() {
           })}
         </div>
         <p className="mt-10 border-t border-line pt-5 text-[12.5px] text-faint">
-          Errors are RFC 9457 problem+json with a stable{" "}
+          Errors are problem+json with a stable{" "}
           <span className="font-mono">code</span>. Responses carry stable IDs,
-          sha256 digests, canonical units, and the ranking policy version — the
-          same semantic results the web pages render.
+          digests, and the ranking policy version — the same answers the web
+          pages show.
         </p>
       </main>
     </>

@@ -223,7 +223,12 @@ export const resolveResponse = z.object({
     supportedUnmeasured: z.array(resultRow),
     reported: z.array(resultRow),
   }),
-  compatibleOverflow: z.number(),
+  overflow: z.object({
+    exact: z.number(),
+    compatible: z.number(),
+    supportedUnmeasured: z.number(),
+    reported: z.number(),
+  }),
   matches: z.array(operationIndexEntry).nullable(),
   sources: z.array(sourceRef),
   generatedAt: z.string(),

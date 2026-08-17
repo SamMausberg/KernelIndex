@@ -1,13 +1,11 @@
 // Sign-in (§13.6): OAuth through Better Auth — GitHub primary (project
-// claims verify repository ownership), Google optionally beside it —
-// KernelIndex never sees or stores a password, and roles are KernelIndex
-// rows granted server-side, never derived from OAuth. Public reads need no
-// account; an account unlocks the contribution surfaces.
+// claims verify repository ownership), Google optionally beside it. Roles
+// are KernelIndex rows granted server-side, never derived from OAuth.
+// Public reads never need an account.
 import type { Metadata } from "next"
 import { headers } from "next/headers"
 import Link from "next/link"
 import { redirect } from "next/navigation"
-import { ContextHeader } from "@/components/context-header"
 import { safeNextPath } from "@/lib/paths"
 import { authConfigured, googleEnabled } from "@/server/auth"
 import { sessionUser } from "@/server/policy/authorization"
@@ -17,10 +15,10 @@ export const metadata: Metadata = { title: "Sign in" }
 export const dynamic = "force-dynamic"
 
 const UNLOCKS = [
-  ["Submit evidence", "benchmark manifests through the guided web flow"],
-  ["Claim projects", "maintain metadata and attribution for your kernels"],
-  ["API keys", "scoped bearer tokens with a raised daily quota"],
-  ["Watch cohorts", "a changes feed when a watched record is beaten"],
+  ["Submit evidence", "send benchmark manifests for review"],
+  ["Claim projects", "maintain your kernels' pages"],
+  ["API keys", "higher API quota, scoped tokens"],
+  ["Watch cohorts", "get told when a record falls"],
 ] as const
 
 export default async function SignInPage({
@@ -37,61 +35,58 @@ export default async function SignInPage({
   return (
     <>
       <div className="scan-line" />
-      <ContextHeader
-        title="Sign in"
-        context="public reads never need an account"
-      />
-      <main className="shell-narrow animate-fade-in pt-10 pb-24">
-        <div className="max-w-[560px]">
-          {authConfigured ? (
-            <div className="plate px-6 py-6">
-              <SignInButton provider="github" next={next} primary />
+      <main className="animate-fade-in mx-auto w-full max-w-[400px] px-6 pt-[10vh] pb-24">
+        <h1 className="text-center text-[22px] font-medium tracking-[-0.015em]">
+          Sign in
+        </h1>
+        <p className="mt-1.5 text-center text-[13px] text-subtle">
+          Reading never needs an account.
+        </p>
+
+        {authConfigured ? (
+          <div className="plate mt-8 px-6 py-6">
+            <SignInButton provider="github" next={next} primary />
+            {googleEnabled && (
+              <div className="mt-2.5">
+                <SignInButton provider="google" next={next} />
+              </div>
+            )}
+            <p className="mt-4 text-center text-[12.5px] leading-relaxed text-subtle">
+              No passwords. Sign out anytime.
               {googleEnabled && (
-                <div className="mt-3">
-                  <SignInButton provider="google" next={next} />
-                </div>
+                <>
+                  <br />
+                  Claiming a project needs GitHub.
+                </>
               )}
-              <p className="mt-4 max-w-[52ch] text-[12.5px] leading-relaxed text-subtle">
-                No password is ever created or stored here; sessions are
-                HTTP-only cookies, and you can sign out at any time from your
-                account.
-                {googleEnabled &&
-                  " Claiming a project requires GitHub — claims verify repository ownership."}
-              </p>
-            </div>
-          ) : (
-            <div className="plate px-6 py-6">
-              <p className="max-w-[52ch] text-[13.5px] leading-relaxed text-muted">
-                Sign-in is not configured on this deployment (no GitHub OAuth
-                credentials). Evidence can still be contributed through the{" "}
-                <a href="https://github.com/SamMausberg/KernelIndex/tree/main/registry/submissions">
-                  registry PR path
-                </a>
-                , which runs the identical validation and review.
-              </p>
-            </div>
-          )}
-
-          <div className="mt-10 border-t border-border pt-6">
-            <div className="font-mono text-[10px] tracking-[0.08em] text-faint uppercase">
-              What an account unlocks
-            </div>
-            <dl className="mt-3 space-y-2.5">
-              {UNLOCKS.map(([term, detail]) => (
-                <div key={term} className="flex gap-3 text-[13px]">
-                  <dt className="w-[130px] shrink-0 text-fg">{term}</dt>
-                  <dd className="text-subtle">{detail}</dd>
-                </div>
-              ))}
-            </dl>
+            </p>
           </div>
+        ) : (
+          <div className="plate mt-8 px-6 py-6">
+            <p className="text-center text-[13px] leading-relaxed text-muted">
+              Sign-in is not set up on this deployment. You can still contribute
+              evidence with a{" "}
+              <a href="https://github.com/SamMausberg/KernelIndex/tree/main/registry/submissions">
+                pull request
+              </a>
+              ; it goes through the same review.
+            </p>
+          </div>
+        )}
 
-          <p className="mt-8 text-[12.5px] text-faint">
-            Prefer the command line? The{" "}
-            <Link href="/docs#data">API and CLI</Link> read the catalog without
-            any account.
-          </p>
-        </div>
+        <dl className="mt-10 space-y-2.5 border-t border-border pt-6">
+          {UNLOCKS.map(([term, detail]) => (
+            <div key={term} className="flex gap-3 text-[13px]">
+              <dt className="w-[128px] shrink-0 text-fg">{term}</dt>
+              <dd className="text-subtle">{detail}</dd>
+            </div>
+          ))}
+        </dl>
+
+        <p className="mt-8 text-center text-[12.5px] text-faint">
+          The <Link href="/docs#data">API and CLI</Link> work without an
+          account.
+        </p>
       </main>
     </>
   )

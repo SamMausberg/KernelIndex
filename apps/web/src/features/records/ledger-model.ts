@@ -21,6 +21,74 @@ export const DAY_MS = 24 * 60 * 60 * 1000
 // 50 keeps the first paint light (each server-rendered row costs ~5KB of
 // HTML+flight); once the model loads, paging is an instant client slice.
 export const PAGE_SIZE = 50
+/** History entries shipped per holder in the SSR slice; the full history
+ * arrives with the deferred /records/data model. */
+export const HISTORY_PREVIEW = 6
+
+export const DEFAULT_FILTERS: RecordsFilters = {
+  view: "current",
+  hardware: null,
+  verified: false,
+  source: true,
+  filter: "",
+  sort: "date",
+  page: 1,
+}
+
+const VIEWS = new Set<RecordsView>(["current", "broken", "history"])
+const SORTS = new Set<RecordsSort>([
+  "date",
+  "improvement",
+  "leads",
+  "operation",
+])
+
+/** URL → filters; the page is ISR, so the island owns this parse. */
+export function filtersFromParams(params: {
+  get(name: string): string | null
+}): RecordsFilters {
+  const view = params.get("view") as RecordsView | null
+  const sort = params.get("sort") as RecordsSort | null
+  const page = Number.parseInt(params.get("page") ?? "1", 10)
+  return {
+    view: view !== null && VIEWS.has(view) ? view : "current",
+    hardware: params.get("hw") || null,
+    verified: params.get("verified") === "1",
+    source: params.get("source") !== "0",
+    filter: (params.get("f") ?? "").trim(),
+    sort: sort !== null && SORTS.has(sort) ? sort : "date",
+    page: Number.isNaN(page) ? 1 : page,
+  }
+}
+
+/** Trim per-holder histories in an SSR slice to the preview depth; the
+ * island swaps in the full model before any interaction needs more. */
+export function slimSlice(slice: LedgerSlice): LedgerSlice {
+  const slim = (holder: RecordHolder): RecordHolder => ({
+    ...holder,
+    history: holder.history.slice(0, HISTORY_PREVIEW),
+  })
+  const slimEvent = (entry: LedgerEvent): LedgerEvent => ({
+    ...entry,
+    holder: slim(entry.holder),
+  })
+  return {
+    ...slice,
+    holders: slice.holders && {
+      ...slice.holders,
+      rows: slice.holders.rows.map(slim),
+    },
+    latest: slice.latest?.map(slimEvent),
+    broken: slice.broken && {
+      ...slice.broken,
+      rows: slice.broken.rows.map(slimEvent),
+    },
+    events: slice.events && {
+      ...slice.events,
+      rows: slice.events.rows.map(slimEvent),
+    },
+  }
+}
 
 export function recordsHref(
   filters: RecordsFilters,
@@ -152,7 +220,7 @@ export type LedgerSlice = {
   holders?: { rows: RecordHolder[]; total: number; pageCount: number }
   /** Lead story for the current view: newest breaks under the filters. */
   latest?: LedgerEvent[]
-  broken?: LedgerEvent[]
+  broken?: { rows: LedgerEvent[]; total: number; pageCount: number }
   events?: { rows: LedgerEvent[]; total: number; pageCount: number }
 }
 
@@ -202,8 +270,16 @@ export function ledgerSlice(
       .slice(0, 3)
   } else {
     const filtered = events.filter(({ holder }) => kept(holder))
-    if (filters.view === "broken") slice.broken = recentlyBroken(filtered)
-    else {
+    if (filters.view === "broken") {
+      const broken = recentlyBroken(filtered)
+      const page = pageSlice(broken, filters.page)
+      slice.filters = { ...filters, page: page.page }
+      slice.broken = {
+        rows: page.rows,
+        total: broken.length,
+        pageCount: page.pageCount,
+      }
+    } else {
       const page = pageSlice(filtered, filters.page)
       slice.filters = { ...filters, page: page.page }
       slice.events = {
