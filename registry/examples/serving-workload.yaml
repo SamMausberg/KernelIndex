@@ -1,0 +1,32 @@
+# Illustrative example manifest. Fictional; not real benchmark evidence.
+apiVersion: kernelindex.dev/v1alpha1
+kind: ServingWorkload
+metadata:
+  name: example-chat-open-loop
+  title: Example chat serving workload (fictional)
+spec:
+  dataset:
+    name: example-chat-traces
+  tokens:
+    prompt:
+      distribution: lognormal
+      mean: 512
+      maximum: 4096
+    output:
+      distribution: lognormal
+      mean: 256
+      maximum: 2048
+  streaming: true
+  loadGeneration: open_loop
+  arrival: poisson
+  requestRatePerSecond: 8
+  slo:
+    - metric: ttft_ms
+      statistic: p99
+      operator: "<="
+      value: 2000
+      unit: ms
+  sampling:
+    temperature: 0
+    seeded: true
+  durationSeconds: 600

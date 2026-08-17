@@ -1,5 +1,9 @@
 #!/usr/bin/env node
-import { client } from "@kernelindex/sdk"
+import {
+  client,
+  type ResolveKernelRequest,
+  type ResolveServingRequest,
+} from "@kernelindex/sdk"
 import {
   digestManifestDocument,
   parseManifestText,
@@ -52,7 +56,8 @@ export function buildServer(): McpServer {
           .describe("ResolveKernelRequest per /openapi.json"),
       },
     },
-    async ({ request }) => json(await api.resolveKernel(request)),
+    async ({ request }) =>
+      json(await api.resolveKernel(request as ResolveKernelRequest)),
   )
 
   server.registerTool(
@@ -76,13 +81,7 @@ export function buildServer(): McpServer {
       },
     },
     async ({ idOrSlug, includeSource }) =>
-      json(
-        await api.show(
-          "implementation",
-          idOrSlug,
-          includeSource ? "?include=source" : "",
-        ),
-      ),
+      json(await api.getImplementation(idOrSlug, { includeSource })),
   )
 
   server.registerTool(
@@ -103,6 +102,44 @@ export function buildServer(): McpServer {
       inputSchema: { runs: z.array(z.string()).min(2).max(8) },
     },
     async ({ runs }) => json(await api.compare(runs)),
+  )
+
+  server.registerTool(
+    "list_records",
+    {
+      description:
+        "Current record holders across comparison cohorts, newest first, cursor-paginated; each carries its full record history.",
+      inputSchema: {
+        cursor: z.string().max(500).optional(),
+        limit: z.number().int().min(1).max(200).optional(),
+      },
+    },
+    async ({ cursor, limit }) => json(await api.records({ cursor, limit })),
+  )
+
+  server.registerTool(
+    "resolve_serving",
+    {
+      description:
+        "Feasible serving configurations for a model/workload/hardware request, grouped by cohort; ranked only under an explicit objective, the Pareto frontier otherwise.",
+      inputSchema: {
+        request: z
+          .record(z.string(), z.unknown())
+          .describe("ResolveServingRequest per /openapi.json"),
+      },
+    },
+    async ({ request }) =>
+      json(await api.resolveServing(request as ResolveServingRequest)),
+  )
+
+  server.registerTool(
+    "get_serving_run",
+    {
+      description:
+        "Serving run evidence dossier by ID: configuration, topology, measurements, caveats, and attribution.",
+      inputSchema: { id: z.string().max(200) },
+    },
+    async ({ id }) => json(await api.getServingRun(id)),
   )
 
   server.registerTool(

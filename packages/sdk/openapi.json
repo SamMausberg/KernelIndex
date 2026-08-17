@@ -17,6 +17,85 @@
     "parameters": {}
   },
   "paths": {
+    "/me": {
+      "get": {
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The presented API key's identity, scopes, and quota",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "keyId": {
+                      "type": "string"
+                    },
+                    "scopes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "name": {
+                      "type": ["string", "null"]
+                    },
+                    "usedToday": {
+                      "type": ["number", "null"]
+                    },
+                    "quotaPerDay": {
+                      "type": ["number", "null"]
+                    }
+                  },
+                  "required": [
+                    "keyId",
+                    "scopes",
+                    "name",
+                    "usedToday",
+                    "quotaPerDay"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No API key presented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "number"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["type", "title", "status", "code", "requestId"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/search": {
       "get": {
         "parameters": [
@@ -3314,7 +3393,668 @@
             "description": "Operation dossier (the web page's model)",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "illustrative": {
+                      "type": "boolean"
+                    },
+                    "operation": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "slug": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "family": {
+                          "type": "string"
+                        },
+                        "aliases": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "models": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "semanticDigest": {
+                          "type": "string"
+                        },
+                        "summary": {
+                          "type": "string"
+                        },
+                        "supersededById": {
+                          "type": ["string", "null"]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "slug",
+                        "name",
+                        "family",
+                        "aliases",
+                        "models",
+                        "semanticDigest",
+                        "summary",
+                        "supersededById"
+                      ]
+                    },
+                    "semantics": {
+                      "type": "object",
+                      "properties": {
+                        "inputs": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "dtype": {
+                                "type": "string"
+                              },
+                              "shape": {
+                                "type": "string"
+                              },
+                              "layout": {
+                                "type": ["string", "null"]
+                              }
+                            },
+                            "required": ["name", "dtype", "shape", "layout"]
+                          }
+                        },
+                        "outputs": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "dtype": {
+                                "type": "string"
+                              },
+                              "shape": {
+                                "type": "string"
+                              },
+                              "layout": {
+                                "type": ["string", "null"]
+                              }
+                            },
+                            "required": ["name", "dtype", "shape", "layout"]
+                          }
+                        },
+                        "axes": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "role": {
+                                "type": "string",
+                                "enum": ["variable", "constant", "derived"]
+                              },
+                              "value": {
+                                "type": ["number", "null"]
+                              },
+                              "constraint": {
+                                "type": ["string", "null"]
+                              }
+                            },
+                            "required": ["name", "role", "value", "constraint"]
+                          }
+                        },
+                        "expression": {
+                          "type": ["string", "null"]
+                        },
+                        "determinism": {
+                          "type": "string"
+                        },
+                        "constraints": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": [
+                        "inputs",
+                        "outputs",
+                        "axes",
+                        "expression",
+                        "determinism",
+                        "constraints"
+                      ]
+                    },
+                    "workloads": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "digest": {
+                            "type": "string"
+                          },
+                          "label": {
+                            "type": "string"
+                          },
+                          "axes": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "anyOf": [
+                                {
+                                  "type": "number"
+                                },
+                                {
+                                  "type": "string"
+                                }
+                              ]
+                            }
+                          },
+                          "dtypes": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "toleranceSummary": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "digest",
+                          "label",
+                          "axes",
+                          "dtypes",
+                          "toleranceSummary"
+                        ]
+                      }
+                    },
+                    "selectedWorkloadId": {
+                      "type": ["string", "null"]
+                    },
+                    "cohortOptions": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "key": {
+                            "type": "string"
+                          },
+                          "label": {
+                            "type": "string"
+                          },
+                          "runs": {
+                            "type": "number"
+                          }
+                        },
+                        "required": ["key", "label", "runs"]
+                      }
+                    },
+                    "cohort": {
+                      "type": ["object", "null"],
+                      "properties": {
+                        "comparisonKey": {
+                          "type": "string"
+                        },
+                        "profile": {
+                          "type": "string",
+                          "enum": [
+                            "source_native",
+                            "strict_exact",
+                            "controlled_equivalent",
+                            "compatible_workload",
+                            "reported"
+                          ]
+                        },
+                        "description": {
+                          "type": "string"
+                        },
+                        "facts": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "key": {
+                                "type": "string"
+                              },
+                              "value": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["key", "value"]
+                          }
+                        }
+                      },
+                      "required": [
+                        "comparisonKey",
+                        "profile",
+                        "description",
+                        "facts"
+                      ]
+                    },
+                    "records": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "runId": {
+                            "type": ["string", "null"]
+                          },
+                          "implementation": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "slug": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["name", "slug"]
+                          },
+                          "install": {
+                            "type": ["object", "null"],
+                            "properties": {
+                              "kind": {
+                                "type": "string"
+                              },
+                              "command": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["kind", "command"]
+                          },
+                          "project": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "slug": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["name", "slug"]
+                          },
+                          "revision": {
+                            "type": ["string", "null"]
+                          },
+                          "operation": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "slug": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["name", "slug"]
+                          },
+                          "workloadSummary": {
+                            "type": "string"
+                          },
+                          "hardware": {
+                            "type": "object",
+                            "properties": {
+                              "model": {
+                                "type": "string"
+                              },
+                              "architecture": {
+                                "type": ["string", "null"]
+                              }
+                            },
+                            "required": ["model", "architecture"]
+                          },
+                          "framework": {
+                            "type": ["string", "null"]
+                          },
+                          "language": {
+                            "type": ["string", "null"]
+                          },
+                          "primary": {
+                            "type": ["object", "null"],
+                            "properties": {
+                              "metric": {
+                                "type": "string"
+                              },
+                              "unit": {
+                                "type": "string"
+                              },
+                              "statistic": {
+                                "type": "string"
+                              },
+                              "value": {
+                                "type": "number"
+                              },
+                              "sampleCount": {
+                                "type": ["number", "null"]
+                              },
+                              "uncertainty": {
+                                "type": ["object", "null"],
+                                "properties": {
+                                  "low": {
+                                    "type": "number"
+                                  },
+                                  "high": {
+                                    "type": "number"
+                                  }
+                                },
+                                "required": ["low", "high"]
+                              }
+                            },
+                            "required": [
+                              "metric",
+                              "unit",
+                              "statistic",
+                              "value",
+                              "sampleCount",
+                              "uncertainty"
+                            ]
+                          },
+                          "evidence": {
+                            "type": ["string", "null"],
+                            "enum": [
+                              "verified",
+                              "replicated",
+                              "reproducible",
+                              "reported",
+                              null
+                            ]
+                          },
+                          "match": {
+                            "type": "string",
+                            "enum": [
+                              "exact",
+                              "compatible",
+                              "supported_unobserved",
+                              "related"
+                            ]
+                          },
+                          "mismatches": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "field": {
+                                  "type": "string"
+                                },
+                                "requested": {
+                                  "type": "string"
+                                },
+                                "observed": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": ["field", "requested", "observed"]
+                            }
+                          },
+                          "rank": {
+                            "type": ["number", "null"]
+                          },
+                          "tiedWithPrevious": {
+                            "type": "boolean"
+                          },
+                          "sourceAvailable": {
+                            "type": "boolean"
+                          },
+                          "installable": {
+                            "type": "boolean"
+                          },
+                          "license": {
+                            "type": "object",
+                            "properties": {
+                              "declared": {
+                                "type": ["string", "null"]
+                              },
+                              "concluded": {
+                                "type": ["string", "null"]
+                              }
+                            },
+                            "required": ["declared", "concluded"]
+                          },
+                          "lastTestedAt": {
+                            "type": ["string", "null"]
+                          },
+                          "stale": {
+                            "type": "boolean"
+                          },
+                          "disputed": {
+                            "type": "boolean"
+                          },
+                          "caveats": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "required": [
+                          "runId",
+                          "implementation",
+                          "install",
+                          "project",
+                          "revision",
+                          "operation",
+                          "workloadSummary",
+                          "hardware",
+                          "framework",
+                          "language",
+                          "primary",
+                          "evidence",
+                          "match",
+                          "mismatches",
+                          "rank",
+                          "tiedWithPrevious",
+                          "sourceAvailable",
+                          "installable",
+                          "license",
+                          "lastTestedAt",
+                          "stale",
+                          "disputed",
+                          "caveats"
+                        ]
+                      }
+                    },
+                    "implementations": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "slug": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "project": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "slug": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["name", "slug"]
+                          },
+                          "language": {
+                            "type": ["string", "null"]
+                          },
+                          "framework": {
+                            "type": ["string", "null"]
+                          },
+                          "evidence": {
+                            "type": ["string", "null"],
+                            "enum": [
+                              "verified",
+                              "replicated",
+                              "reproducible",
+                              "reported",
+                              null
+                            ]
+                          },
+                          "bestPrimary": {
+                            "type": ["object", "null"],
+                            "properties": {
+                              "metric": {
+                                "type": "string"
+                              },
+                              "unit": {
+                                "type": "string"
+                              },
+                              "statistic": {
+                                "type": "string"
+                              },
+                              "value": {
+                                "type": "number"
+                              },
+                              "sampleCount": {
+                                "type": ["number", "null"]
+                              },
+                              "uncertainty": {
+                                "type": ["object", "null"],
+                                "properties": {
+                                  "low": {
+                                    "type": "number"
+                                  },
+                                  "high": {
+                                    "type": "number"
+                                  }
+                                },
+                                "required": ["low", "high"]
+                              }
+                            },
+                            "required": [
+                              "metric",
+                              "unit",
+                              "statistic",
+                              "value",
+                              "sampleCount",
+                              "uncertainty"
+                            ]
+                          },
+                          "sourceAvailable": {
+                            "type": "boolean"
+                          },
+                          "installable": {
+                            "type": "boolean"
+                          },
+                          "license": {
+                            "type": "object",
+                            "properties": {
+                              "declared": {
+                                "type": ["string", "null"]
+                              },
+                              "concluded": {
+                                "type": ["string", "null"]
+                              }
+                            },
+                            "required": ["declared", "concluded"]
+                          }
+                        },
+                        "required": [
+                          "slug",
+                          "name",
+                          "project",
+                          "language",
+                          "framework",
+                          "evidence",
+                          "bestPrimary",
+                          "sourceAvailable",
+                          "installable",
+                          "license"
+                        ]
+                      }
+                    },
+                    "coverage": {
+                      "type": "object",
+                      "properties": {
+                        "verified": {
+                          "type": "number"
+                        },
+                        "reproducible": {
+                          "type": "number"
+                        },
+                        "reported": {
+                          "type": "number"
+                        },
+                        "lastObservedAt": {
+                          "type": ["string", "null"]
+                        }
+                      },
+                      "required": [
+                        "verified",
+                        "reproducible",
+                        "reported",
+                        "lastObservedAt"
+                      ]
+                    },
+                    "sources": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          },
+                          "kind": {
+                            "type": "string"
+                          },
+                          "url": {
+                            "type": ["string", "null"]
+                          },
+                          "license": {
+                            "type": ["string", "null"]
+                          },
+                          "externalId": {
+                            "type": ["string", "null"]
+                          },
+                          "observedAt": {
+                            "type": ["string", "null"]
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "kind",
+                          "url",
+                          "license",
+                          "externalId",
+                          "observedAt"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "illustrative",
+                    "operation",
+                    "semantics",
+                    "workloads",
+                    "selectedWorkloadId",
+                    "cohortOptions",
+                    "cohort",
+                    "records",
+                    "implementations",
+                    "coverage",
+                    "sources"
+                  ]
+                }
               }
             }
           },
@@ -3379,7 +4119,572 @@
             "description": "Implementation dossier",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "illustrative": {
+                      "type": "boolean"
+                    },
+                    "implementation": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "slug": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "digest": {
+                          "type": "string"
+                        },
+                        "revision": {
+                          "type": ["string", "null"]
+                        },
+                        "supersededById": {
+                          "type": ["string", "null"]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "slug",
+                        "name",
+                        "digest",
+                        "revision",
+                        "supersededById"
+                      ]
+                    },
+                    "project": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "slug": {
+                          "type": "string"
+                        },
+                        "repositoryUrl": {
+                          "type": ["string", "null"]
+                        }
+                      },
+                      "required": ["name", "slug", "repositoryUrl"]
+                    },
+                    "usage": {
+                      "type": "object",
+                      "properties": {
+                        "install": {
+                          "type": ["object", "null"],
+                          "properties": {
+                            "kind": {
+                              "type": "string"
+                            },
+                            "command": {
+                              "type": "string"
+                            }
+                          },
+                          "required": ["kind", "command"]
+                        },
+                        "invocationExample": {
+                          "type": ["string", "null"]
+                        },
+                        "requirements": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "constraint": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["name", "constraint"]
+                          }
+                        }
+                      },
+                      "required": [
+                        "install",
+                        "invocationExample",
+                        "requirements"
+                      ]
+                    },
+                    "interface": {
+                      "type": "object",
+                      "properties": {
+                        "language": {
+                          "type": "string"
+                        },
+                        "framework": {
+                          "type": ["string", "null"]
+                        },
+                        "symbol": {
+                          "type": ["string", "null"]
+                        },
+                        "sourcePath": {
+                          "type": ["string", "null"]
+                        }
+                      },
+                      "required": [
+                        "language",
+                        "framework",
+                        "symbol",
+                        "sourcePath"
+                      ]
+                    },
+                    "support": {
+                      "type": "object",
+                      "properties": {
+                        "hardware": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "architectures": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "dtypes": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "layouts": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "axes": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": [
+                        "hardware",
+                        "architectures",
+                        "dtypes",
+                        "layouts",
+                        "axes"
+                      ]
+                    },
+                    "source": {
+                      "type": "object",
+                      "properties": {
+                        "available": {
+                          "type": "boolean"
+                        },
+                        "url": {
+                          "type": ["string", "null"]
+                        },
+                        "commit": {
+                          "type": ["string", "null"]
+                        },
+                        "treeDigest": {
+                          "type": ["string", "null"]
+                        }
+                      },
+                      "required": ["available", "url", "commit", "treeDigest"]
+                    },
+                    "license": {
+                      "type": "object",
+                      "properties": {
+                        "declared": {
+                          "type": ["string", "null"]
+                        },
+                        "concluded": {
+                          "type": ["string", "null"]
+                        },
+                        "evidencePath": {
+                          "type": ["string", "null"]
+                        }
+                      },
+                      "required": ["declared", "concluded", "evidencePath"]
+                    },
+                    "trust": {
+                      "type": "object",
+                      "properties": {
+                        "evidence": {
+                          "type": ["string", "null"],
+                          "enum": [
+                            "verified",
+                            "replicated",
+                            "reproducible",
+                            "reported",
+                            null
+                          ]
+                        },
+                        "summary": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["evidence", "summary"]
+                    },
+                    "bestResults": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "runId": {
+                            "type": ["string", "null"]
+                          },
+                          "implementation": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "slug": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["name", "slug"]
+                          },
+                          "install": {
+                            "type": ["object", "null"],
+                            "properties": {
+                              "kind": {
+                                "type": "string"
+                              },
+                              "command": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["kind", "command"]
+                          },
+                          "project": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "slug": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["name", "slug"]
+                          },
+                          "revision": {
+                            "type": ["string", "null"]
+                          },
+                          "operation": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "slug": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["name", "slug"]
+                          },
+                          "workloadSummary": {
+                            "type": "string"
+                          },
+                          "hardware": {
+                            "type": "object",
+                            "properties": {
+                              "model": {
+                                "type": "string"
+                              },
+                              "architecture": {
+                                "type": ["string", "null"]
+                              }
+                            },
+                            "required": ["model", "architecture"]
+                          },
+                          "framework": {
+                            "type": ["string", "null"]
+                          },
+                          "language": {
+                            "type": ["string", "null"]
+                          },
+                          "primary": {
+                            "type": ["object", "null"],
+                            "properties": {
+                              "metric": {
+                                "type": "string"
+                              },
+                              "unit": {
+                                "type": "string"
+                              },
+                              "statistic": {
+                                "type": "string"
+                              },
+                              "value": {
+                                "type": "number"
+                              },
+                              "sampleCount": {
+                                "type": ["number", "null"]
+                              },
+                              "uncertainty": {
+                                "type": ["object", "null"],
+                                "properties": {
+                                  "low": {
+                                    "type": "number"
+                                  },
+                                  "high": {
+                                    "type": "number"
+                                  }
+                                },
+                                "required": ["low", "high"]
+                              }
+                            },
+                            "required": [
+                              "metric",
+                              "unit",
+                              "statistic",
+                              "value",
+                              "sampleCount",
+                              "uncertainty"
+                            ]
+                          },
+                          "evidence": {
+                            "type": ["string", "null"],
+                            "enum": [
+                              "verified",
+                              "replicated",
+                              "reproducible",
+                              "reported",
+                              null
+                            ]
+                          },
+                          "match": {
+                            "type": "string",
+                            "enum": [
+                              "exact",
+                              "compatible",
+                              "supported_unobserved",
+                              "related"
+                            ]
+                          },
+                          "mismatches": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "field": {
+                                  "type": "string"
+                                },
+                                "requested": {
+                                  "type": "string"
+                                },
+                                "observed": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": ["field", "requested", "observed"]
+                            }
+                          },
+                          "rank": {
+                            "type": ["number", "null"]
+                          },
+                          "tiedWithPrevious": {
+                            "type": "boolean"
+                          },
+                          "sourceAvailable": {
+                            "type": "boolean"
+                          },
+                          "installable": {
+                            "type": "boolean"
+                          },
+                          "license": {
+                            "type": "object",
+                            "properties": {
+                              "declared": {
+                                "type": ["string", "null"]
+                              },
+                              "concluded": {
+                                "type": ["string", "null"]
+                              }
+                            },
+                            "required": ["declared", "concluded"]
+                          },
+                          "lastTestedAt": {
+                            "type": ["string", "null"]
+                          },
+                          "stale": {
+                            "type": "boolean"
+                          },
+                          "disputed": {
+                            "type": "boolean"
+                          },
+                          "caveats": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "required": [
+                          "runId",
+                          "implementation",
+                          "install",
+                          "project",
+                          "revision",
+                          "operation",
+                          "workloadSummary",
+                          "hardware",
+                          "framework",
+                          "language",
+                          "primary",
+                          "evidence",
+                          "match",
+                          "mismatches",
+                          "rank",
+                          "tiedWithPrevious",
+                          "sourceAvailable",
+                          "installable",
+                          "license",
+                          "lastTestedAt",
+                          "stale",
+                          "disputed",
+                          "caveats"
+                        ]
+                      }
+                    },
+                    "limitations": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "provenance": {
+                      "type": "object",
+                      "properties": {
+                        "source": {
+                          "type": ["object", "null"],
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "kind": {
+                              "type": "string"
+                            },
+                            "url": {
+                              "type": ["string", "null"]
+                            },
+                            "license": {
+                              "type": ["string", "null"]
+                            },
+                            "externalId": {
+                              "type": ["string", "null"]
+                            },
+                            "observedAt": {
+                              "type": ["string", "null"]
+                            }
+                          },
+                          "required": [
+                            "name",
+                            "kind",
+                            "url",
+                            "license",
+                            "externalId",
+                            "observedAt"
+                          ]
+                        },
+                        "authors": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "importedAt": {
+                          "type": ["string", "null"]
+                        }
+                      },
+                      "required": ["source", "authors", "importedAt"]
+                    },
+                    "sourceCode": {
+                      "type": ["object", "null"],
+                      "properties": {
+                        "fileName": {
+                          "type": ["string", "null"]
+                        },
+                        "language": {
+                          "type": "string",
+                          "enum": ["python", "cpp", "text"]
+                        },
+                        "content": {
+                          "type": "string"
+                        },
+                        "license": {
+                          "type": ["string", "null"]
+                        },
+                        "attribution": {
+                          "type": ["object", "null"],
+                          "properties": {
+                            "text": {
+                              "type": "string"
+                            },
+                            "url": {
+                              "type": ["string", "null"]
+                            }
+                          },
+                          "required": ["text", "url"]
+                        },
+                        "diff": {
+                          "type": ["object", "null"],
+                          "properties": {
+                            "previousSlug": {
+                              "type": "string"
+                            },
+                            "previousName": {
+                              "type": "string"
+                            },
+                            "lines": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": ["add", "del", "ctx"]
+                                  },
+                                  "text": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": ["kind", "text"]
+                              }
+                            }
+                          },
+                          "required": ["previousSlug", "previousName", "lines"]
+                        }
+                      },
+                      "required": [
+                        "fileName",
+                        "language",
+                        "license",
+                        "attribution"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "illustrative",
+                    "implementation",
+                    "project",
+                    "usage",
+                    "interface",
+                    "support",
+                    "source",
+                    "license",
+                    "trust",
+                    "bestResults",
+                    "limitations",
+                    "provenance",
+                    "sourceCode"
+                  ]
+                }
               }
             }
           },
@@ -3435,7 +4740,487 @@
             "description": "Immutable run evidence dossier",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "illustrative": {
+                      "type": "boolean"
+                    },
+                    "run": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "digest": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "passed",
+                            "incorrect_shape",
+                            "incorrect_dtype",
+                            "incorrect_numerical",
+                            "compile_error",
+                            "runtime_error",
+                            "timeout",
+                            "resource_exceeded",
+                            "invalid_reference",
+                            "policy_violation",
+                            "suspected_reward_hack",
+                            "incomplete_evidence",
+                            "revoked"
+                          ]
+                        },
+                        "observedAt": {
+                          "type": "string"
+                        },
+                        "publishedAt": {
+                          "type": ["string", "null"]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "digest",
+                        "status",
+                        "observedAt",
+                        "publishedAt"
+                      ]
+                    },
+                    "evidence": {
+                      "type": "string",
+                      "enum": [
+                        "verified",
+                        "replicated",
+                        "reproducible",
+                        "reported"
+                      ]
+                    },
+                    "lifecycle": {
+                      "type": "object",
+                      "properties": {
+                        "supersedesId": {
+                          "type": ["string", "null"]
+                        },
+                        "supersededById": {
+                          "type": ["string", "null"]
+                        },
+                        "retracted": {
+                          "type": ["object", "null"],
+                          "properties": {
+                            "at": {
+                              "type": "string"
+                            },
+                            "reason": {
+                              "type": "string"
+                            }
+                          },
+                          "required": ["at", "reason"]
+                        },
+                        "disputed": {
+                          "type": ["object", "null"],
+                          "properties": {
+                            "reason": {
+                              "type": "string"
+                            }
+                          },
+                          "required": ["reason"]
+                        },
+                        "stale": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "supersedesId",
+                        "supersededById",
+                        "retracted",
+                        "disputed",
+                        "stale"
+                      ]
+                    },
+                    "primary": {
+                      "type": "object",
+                      "properties": {
+                        "metric": {
+                          "type": "string"
+                        },
+                        "unit": {
+                          "type": "string"
+                        },
+                        "statistic": {
+                          "type": "string"
+                        },
+                        "value": {
+                          "type": "number"
+                        },
+                        "sampleCount": {
+                          "type": ["number", "null"]
+                        },
+                        "uncertainty": {
+                          "type": ["object", "null"],
+                          "properties": {
+                            "low": {
+                              "type": "number"
+                            },
+                            "high": {
+                              "type": "number"
+                            }
+                          },
+                          "required": ["low", "high"]
+                        }
+                      },
+                      "required": [
+                        "metric",
+                        "unit",
+                        "statistic",
+                        "value",
+                        "sampleCount",
+                        "uncertainty"
+                      ]
+                    },
+                    "sourceNativeMetrics": {
+                      "type": ["object", "null"],
+                      "additionalProperties": {
+                        "type": "number"
+                      }
+                    },
+                    "cohort": {
+                      "type": "object",
+                      "properties": {
+                        "comparisonKey": {
+                          "type": "string"
+                        },
+                        "profile": {
+                          "type": "string",
+                          "enum": [
+                            "source_native",
+                            "strict_exact",
+                            "controlled_equivalent",
+                            "compatible_workload",
+                            "reported"
+                          ]
+                        },
+                        "rank": {
+                          "type": ["number", "null"]
+                        },
+                        "eligible": {
+                          "type": "boolean"
+                        },
+                        "ineligibleReasons": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": [
+                        "comparisonKey",
+                        "profile",
+                        "rank",
+                        "eligible",
+                        "ineligibleReasons"
+                      ]
+                    },
+                    "implementation": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "slug": {
+                          "type": "string"
+                        },
+                        "revision": {
+                          "type": ["string", "null"]
+                        }
+                      },
+                      "required": ["name", "slug", "revision"]
+                    },
+                    "project": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "slug": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["name", "slug"]
+                    },
+                    "operation": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "slug": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["name", "slug"]
+                    },
+                    "workload": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "digest": {
+                          "type": "string"
+                        },
+                        "label": {
+                          "type": "string"
+                        },
+                        "axes": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "anyOf": [
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "string"
+                              }
+                            ]
+                          }
+                        },
+                        "tensors": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "key": {
+                                "type": "string"
+                              },
+                              "value": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["key", "value"]
+                          }
+                        },
+                        "tolerance": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "key": {
+                                "type": "string"
+                              },
+                              "value": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["key", "value"]
+                          }
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "digest",
+                        "label",
+                        "axes",
+                        "tensors",
+                        "tolerance"
+                      ]
+                    },
+                    "correctness": {
+                      "type": ["object", "null"],
+                      "properties": {
+                        "comparator": {
+                          "type": "string"
+                        },
+                        "maxAbsoluteError": {
+                          "type": ["number", "null"]
+                        },
+                        "maxRelativeError": {
+                          "type": ["number", "null"]
+                        },
+                        "matchedRatio": {
+                          "type": ["number", "null"]
+                        },
+                        "passed": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "comparator",
+                        "maxAbsoluteError",
+                        "maxRelativeError",
+                        "matchedRatio",
+                        "passed"
+                      ]
+                    },
+                    "measurements": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "metric": {
+                            "type": "string"
+                          },
+                          "statistic": {
+                            "type": "string"
+                          },
+                          "value": {
+                            "type": "number"
+                          },
+                          "unit": {
+                            "type": "string"
+                          },
+                          "sampleCount": {
+                            "type": ["number", "null"]
+                          }
+                        },
+                        "required": [
+                          "metric",
+                          "statistic",
+                          "value",
+                          "unit",
+                          "sampleCount"
+                        ]
+                      }
+                    },
+                    "protocol": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "key": {
+                            "type": "string"
+                          },
+                          "value": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["key", "value"]
+                      }
+                    },
+                    "environment": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "key": {
+                            "type": "string"
+                          },
+                          "value": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["key", "value"]
+                      }
+                    },
+                    "artifacts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "role": {
+                            "type": "string"
+                          },
+                          "digest": {
+                            "type": "string"
+                          },
+                          "mediaType": {
+                            "type": "string"
+                          },
+                          "sizeBytes": {
+                            "type": ["number", "null"]
+                          },
+                          "uri": {
+                            "type": ["string", "null"]
+                          },
+                          "availability": {
+                            "type": "string",
+                            "enum": ["public", "upstream", "unavailable"]
+                          }
+                        },
+                        "required": [
+                          "role",
+                          "digest",
+                          "mediaType",
+                          "sizeBytes",
+                          "uri",
+                          "availability"
+                        ]
+                      }
+                    },
+                    "provenance": {
+                      "type": "object",
+                      "properties": {
+                        "source": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "kind": {
+                              "type": "string"
+                            },
+                            "url": {
+                              "type": ["string", "null"]
+                            },
+                            "license": {
+                              "type": ["string", "null"]
+                            },
+                            "externalId": {
+                              "type": ["string", "null"]
+                            },
+                            "observedAt": {
+                              "type": ["string", "null"]
+                            }
+                          },
+                          "required": [
+                            "name",
+                            "kind",
+                            "url",
+                            "license",
+                            "externalId",
+                            "observedAt"
+                          ]
+                        },
+                        "externalId": {
+                          "type": ["string", "null"]
+                        },
+                        "parserVersion": {
+                          "type": ["string", "null"]
+                        },
+                        "snapshotDigest": {
+                          "type": ["string", "null"]
+                        }
+                      },
+                      "required": [
+                        "source",
+                        "externalId",
+                        "parserVersion",
+                        "snapshotDigest"
+                      ]
+                    },
+                    "manifest": {}
+                  },
+                  "required": [
+                    "illustrative",
+                    "run",
+                    "evidence",
+                    "lifecycle",
+                    "primary",
+                    "sourceNativeMetrics",
+                    "cohort",
+                    "implementation",
+                    "project",
+                    "operation",
+                    "workload",
+                    "correctness",
+                    "measurements",
+                    "protocol",
+                    "environment",
+                    "artifacts",
+                    "provenance"
+                  ]
+                }
               }
             }
           },
@@ -3979,7 +5764,7 @@
                       "type": "string",
                       "maxLength": 200
                     },
-                    "minItems": 1,
+                    "minItems": 2,
                     "maxItems": 8
                   }
                 },
@@ -4003,7 +5788,192 @@
                       "type": "array",
                       "items": {
                         "type": "object",
-                        "additionalProperties": {}
+                        "properties": {
+                          "runId": {
+                            "type": "string"
+                          },
+                          "digest": {
+                            "type": "string"
+                          },
+                          "implementation": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "slug": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["name", "slug"]
+                          },
+                          "project": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "slug": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["name", "slug"]
+                          },
+                          "operation": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "slug": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["name", "slug"]
+                          },
+                          "workloadLabel": {
+                            "type": "string"
+                          },
+                          "hardware": {
+                            "type": "string"
+                          },
+                          "primary": {
+                            "type": ["object", "null"],
+                            "properties": {
+                              "metric": {
+                                "type": "string"
+                              },
+                              "unit": {
+                                "type": "string"
+                              },
+                              "statistic": {
+                                "type": "string"
+                              },
+                              "value": {
+                                "type": "number"
+                              },
+                              "sampleCount": {
+                                "type": ["number", "null"]
+                              },
+                              "uncertainty": {
+                                "type": ["object", "null"],
+                                "properties": {
+                                  "low": {
+                                    "type": "number"
+                                  },
+                                  "high": {
+                                    "type": "number"
+                                  }
+                                },
+                                "required": ["low", "high"]
+                              }
+                            },
+                            "required": [
+                              "metric",
+                              "unit",
+                              "statistic",
+                              "value",
+                              "sampleCount",
+                              "uncertainty"
+                            ]
+                          },
+                          "evidence": {
+                            "type": "string",
+                            "enum": [
+                              "verified",
+                              "replicated",
+                              "reproducible",
+                              "reported"
+                            ]
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "passed",
+                              "incorrect_shape",
+                              "incorrect_dtype",
+                              "incorrect_numerical",
+                              "compile_error",
+                              "runtime_error",
+                              "timeout",
+                              "resource_exceeded",
+                              "invalid_reference",
+                              "policy_violation",
+                              "suspected_reward_hack",
+                              "incomplete_evidence",
+                              "revoked"
+                            ]
+                          },
+                          "comparisonKey": {
+                            "type": "string"
+                          },
+                          "rank": {
+                            "type": ["number", "null"]
+                          },
+                          "tiedWithPrevious": {
+                            "type": "boolean"
+                          },
+                          "eligible": {
+                            "type": "boolean"
+                          },
+                          "ineligibleReasons": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "license": {
+                            "type": "object",
+                            "properties": {
+                              "declared": {
+                                "type": ["string", "null"]
+                              },
+                              "concluded": {
+                                "type": ["string", "null"]
+                              }
+                            },
+                            "required": ["declared", "concluded"]
+                          },
+                          "install": {
+                            "type": ["object", "null"],
+                            "properties": {
+                              "kind": {
+                                "type": "string"
+                              },
+                              "command": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["kind", "command"]
+                          },
+                          "sourceAvailable": {
+                            "type": "boolean"
+                          },
+                          "observedAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "runId",
+                          "digest",
+                          "implementation",
+                          "project",
+                          "operation",
+                          "workloadLabel",
+                          "hardware",
+                          "primary",
+                          "evidence",
+                          "status",
+                          "comparisonKey",
+                          "rank",
+                          "tiedWithPrevious",
+                          "eligible",
+                          "ineligibleReasons",
+                          "license",
+                          "install",
+                          "sourceAvailable",
+                          "observedAt"
+                        ]
                       }
                     },
                     "comparable": {
@@ -4081,6 +6051,205 @@
           },
           "404": {
             "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "number"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["type", "title", "status", "code", "requestId"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/exports/catalog.jsonl.zst": {
+      "get": {
+        "responses": {
+          "302": {
+            "description": "Redirect to the latest immutable catalog export"
+          },
+          "404": {
+            "description": "No export generated yet",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "number"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["type", "title", "status", "code", "requestId"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/corrections": {
+      "post": {
+        "description": "Retract a run or mark it superseded (site_admin session required).",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "action": {
+                    "type": "string",
+                    "enum": ["retract", "supersede"]
+                  },
+                  "runId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "supersedesRunId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 2000
+                  }
+                },
+                "required": ["action", "runId", "reason"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The applied correction",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "retracted": {
+                          "type": "boolean",
+                          "enum": [true]
+                        },
+                        "newLeaderRunId": {
+                          "type": ["string", "null"]
+                        }
+                      },
+                      "required": ["retracted", "newLeaderRunId"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "superseded": {
+                          "type": "boolean",
+                          "enum": [true]
+                        }
+                      },
+                      "required": ["superseded"]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not a site admin",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "number"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["type", "title", "status", "code", "requestId"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/revalidate": {
+      "post": {
+        "description": "Drop catalog caches (importer bearer token required).",
+        "responses": {
+          "200": {
+            "description": "Caches dropped",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "revalidated": {
+                      "type": "boolean",
+                      "enum": [true]
+                    },
+                    "at": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["revalidated", "at"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
             "content": {
               "application/json": {
                 "schema": {
@@ -4757,6 +6926,290 @@
                       "runs"
                     ]
                   }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "number"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["type", "title", "status", "code", "requestId"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/serving-runs/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Serving run evidence dossier",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "illustrative": {
+                      "type": "boolean"
+                    },
+                    "run": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "digest": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string"
+                        },
+                        "observedAt": {
+                          "type": "string"
+                        },
+                        "publishedAt": {
+                          "type": ["string", "null"]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "digest",
+                        "status",
+                        "observedAt",
+                        "publishedAt"
+                      ]
+                    },
+                    "cohort": {
+                      "type": "object",
+                      "properties": {
+                        "key": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": "string"
+                        },
+                        "qualityPolicy": {
+                          "type": "string"
+                        },
+                        "scenario": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "key",
+                        "description",
+                        "qualityPolicy",
+                        "scenario"
+                      ]
+                    },
+                    "model": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "slug": {
+                          "type": "string"
+                        },
+                        "license": {
+                          "type": ["string", "null"]
+                        }
+                      },
+                      "required": ["name", "slug", "license"]
+                    },
+                    "stack": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "version": {
+                          "type": ["string", "null"]
+                        }
+                      },
+                      "required": ["name", "version"]
+                    },
+                    "configuration": {
+                      "type": "object",
+                      "properties": {
+                        "summary": {
+                          "type": "string"
+                        },
+                        "dtype": {
+                          "type": ["string", "null"]
+                        },
+                        "quantization": {
+                          "type": ["string", "null"]
+                        },
+                        "facts": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "key": {
+                                "type": "string"
+                              },
+                              "value": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["key", "value"]
+                          }
+                        }
+                      },
+                      "required": ["summary", "dtype", "quantization", "facts"]
+                    },
+                    "workload": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "streaming": {
+                          "type": "boolean"
+                        },
+                        "loadGeneration": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["name", "streaming", "loadGeneration"]
+                    },
+                    "topology": {
+                      "type": "object",
+                      "properties": {
+                        "acceleratorModel": {
+                          "type": "string"
+                        },
+                        "perNode": {
+                          "type": "number"
+                        },
+                        "nodes": {
+                          "type": "number"
+                        },
+                        "total": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "acceleratorModel",
+                        "perNode",
+                        "nodes",
+                        "total"
+                      ]
+                    },
+                    "harness": {
+                      "type": "string"
+                    },
+                    "measurements": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "metric": {
+                            "type": "string"
+                          },
+                          "statistic": {
+                            "type": "string"
+                          },
+                          "value": {
+                            "type": "number"
+                          },
+                          "unit": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["metric", "statistic", "value", "unit"]
+                      }
+                    },
+                    "caveats": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "lifecycle": {
+                      "type": "object",
+                      "properties": {
+                        "retracted": {
+                          "type": ["object", "null"],
+                          "properties": {
+                            "at": {
+                              "type": "string"
+                            },
+                            "reason": {
+                              "type": "string"
+                            }
+                          },
+                          "required": ["at", "reason"]
+                        }
+                      },
+                      "required": ["retracted"]
+                    },
+                    "attribution": {
+                      "type": "object",
+                      "properties": {
+                        "line": {
+                          "type": "string"
+                        },
+                        "url": {
+                          "type": ["string", "null"]
+                        }
+                      },
+                      "required": ["line", "url"]
+                    },
+                    "manifest": {}
+                  },
+                  "required": [
+                    "illustrative",
+                    "run",
+                    "cohort",
+                    "model",
+                    "stack",
+                    "configuration",
+                    "workload",
+                    "topology",
+                    "harness",
+                    "measurements",
+                    "caveats",
+                    "lifecycle",
+                    "attribution"
+                  ]
                 }
               }
             }

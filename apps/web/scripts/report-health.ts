@@ -40,11 +40,16 @@ type ReviewSlice = {
 }
 
 try {
+  // Kernel and serving corpora publish into different run tables; a source
+  // counts whichever it feeds (MLPerf is serving-only and must not read 0).
   const rows = (await database.execute(
     sql`select s.slug, s.kind, max(ss.fetched_at) last_fetched,
           count(distinct ss.id) snapshots,
           (select count(*) from benchmark_runs r
-             where r.source_id = s.id and r.published_at is not null) runs
+             where r.source_id = s.id and r.published_at is not null) runs,
+          (select count(*) from serving_runs r
+             where r.source_id = s.id and r.published_at is not null)
+            serving_runs
         from sources s left join source_snapshots ss on ss.source_id = s.id
         group by s.id order by s.slug`,
   )) as {
@@ -53,6 +58,7 @@ try {
     last_fetched: Date | string | null
     snapshots: string | number
     runs: string | number
+    serving_runs: string | number
   }[]
 
   const now = Date.now()
@@ -74,6 +80,7 @@ try {
       declaredFreshnessDays: declaredDays,
       snapshots: Number(row.snapshots),
       publishedRuns: Number(row.runs),
+      publishedServingRuns: Number(row.serving_runs),
     }
   })
 

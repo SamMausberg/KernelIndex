@@ -4,6 +4,63 @@
  */
 
 export interface paths {
+  "/me": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: {
+      parameters: {
+        query?: never
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description The presented API key's identity, scopes, and quota */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              keyId: string
+              scopes: string[]
+              name: string | null
+              usedToday: number | null
+              quotaPerDay: number | null
+            }
+          }
+        }
+        /** @description No API key presented */
+        401: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              type: string
+              title: string
+              status: number
+              code: string
+              detail?: string
+              requestId: string
+            }
+          }
+        }
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   "/search": {
     parameters: {
       query?: never
@@ -1091,7 +1148,191 @@ export interface paths {
             [name: string]: unknown
           }
           content: {
-            "application/json": unknown
+            "application/json": {
+              illustrative: boolean
+              operation: {
+                id: string
+                slug: string
+                name: string
+                family: string
+                aliases: string[]
+                models: string[]
+                semanticDigest: string
+                summary: string
+                supersededById: string | null
+              }
+              semantics: {
+                inputs: {
+                  name: string
+                  dtype: string
+                  shape: string
+                  layout: string | null
+                }[]
+                outputs: {
+                  name: string
+                  dtype: string
+                  shape: string
+                  layout: string | null
+                }[]
+                axes: {
+                  name: string
+                  /** @enum {string} */
+                  role: "variable" | "constant" | "derived"
+                  value: number | null
+                  constraint: string | null
+                }[]
+                expression: string | null
+                determinism: string
+                constraints: string[]
+              }
+              workloads: {
+                id: string
+                digest: string
+                label: string
+                axes: {
+                  [key: string]: number | string
+                }
+                dtypes: string[]
+                toleranceSummary: string
+              }[]
+              selectedWorkloadId: string | null
+              cohortOptions: {
+                key: string
+                label: string
+                runs: number
+              }[]
+              cohort: {
+                comparisonKey: string
+                /** @enum {string} */
+                profile:
+                  | "source_native"
+                  | "strict_exact"
+                  | "controlled_equivalent"
+                  | "compatible_workload"
+                  | "reported"
+                description: string
+                facts: {
+                  key: string
+                  value: string
+                }[]
+              } | null
+              records: {
+                runId: string | null
+                implementation: {
+                  name: string
+                  slug: string
+                }
+                install: {
+                  kind: string
+                  command: string
+                } | null
+                project: {
+                  name: string
+                  slug: string
+                }
+                revision: string | null
+                operation: {
+                  name: string
+                  slug: string
+                }
+                workloadSummary: string
+                hardware: {
+                  model: string
+                  architecture: string | null
+                }
+                framework: string | null
+                language: string | null
+                primary: {
+                  metric: string
+                  unit: string
+                  statistic: string
+                  value: number
+                  sampleCount: number | null
+                  uncertainty: {
+                    low: number
+                    high: number
+                  } | null
+                } | null
+                /** @enum {string|null} */
+                evidence:
+                  | "verified"
+                  | "replicated"
+                  | "reproducible"
+                  | "reported"
+                  | null
+                /** @enum {string} */
+                match:
+                  | "exact"
+                  | "compatible"
+                  | "supported_unobserved"
+                  | "related"
+                mismatches: {
+                  field: string
+                  requested: string
+                  observed: string
+                }[]
+                rank: number | null
+                tiedWithPrevious: boolean
+                sourceAvailable: boolean
+                installable: boolean
+                license: {
+                  declared: string | null
+                  concluded: string | null
+                }
+                lastTestedAt: string | null
+                stale: boolean
+                disputed: boolean
+                caveats: string[]
+              }[]
+              implementations: {
+                slug: string
+                name: string
+                project: {
+                  name: string
+                  slug: string
+                }
+                language: string | null
+                framework: string | null
+                /** @enum {string|null} */
+                evidence:
+                  | "verified"
+                  | "replicated"
+                  | "reproducible"
+                  | "reported"
+                  | null
+                bestPrimary: {
+                  metric: string
+                  unit: string
+                  statistic: string
+                  value: number
+                  sampleCount: number | null
+                  uncertainty: {
+                    low: number
+                    high: number
+                  } | null
+                } | null
+                sourceAvailable: boolean
+                installable: boolean
+                license: {
+                  declared: string | null
+                  concluded: string | null
+                }
+              }[]
+              coverage: {
+                verified: number
+                reproducible: number
+                reported: number
+                lastObservedAt: string | null
+              }
+              sources: {
+                name: string
+                kind: string
+                url: string | null
+                license: string | null
+                externalId: string | null
+                observedAt: string | null
+              }[]
+            }
           }
         }
         /** @description Not found */
@@ -1146,7 +1387,168 @@ export interface paths {
             [name: string]: unknown
           }
           content: {
-            "application/json": unknown
+            "application/json": {
+              illustrative: boolean
+              implementation: {
+                id: string
+                slug: string
+                name: string
+                digest: string
+                revision: string | null
+                supersededById: string | null
+              }
+              project: {
+                name: string
+                slug: string
+                repositoryUrl: string | null
+              }
+              usage: {
+                install: {
+                  kind: string
+                  command: string
+                } | null
+                invocationExample: string | null
+                requirements: {
+                  name: string
+                  constraint: string
+                }[]
+              }
+              interface: {
+                language: string
+                framework: string | null
+                symbol: string | null
+                sourcePath: string | null
+              }
+              support: {
+                hardware: string[]
+                architectures: string[]
+                dtypes: string[]
+                layouts: string[]
+                axes: string[]
+              }
+              source: {
+                available: boolean
+                url: string | null
+                commit: string | null
+                treeDigest: string | null
+              }
+              license: {
+                declared: string | null
+                concluded: string | null
+                evidencePath: string | null
+              }
+              trust: {
+                /** @enum {string|null} */
+                evidence:
+                  | "verified"
+                  | "replicated"
+                  | "reproducible"
+                  | "reported"
+                  | null
+                summary: string
+              }
+              bestResults: {
+                runId: string | null
+                implementation: {
+                  name: string
+                  slug: string
+                }
+                install: {
+                  kind: string
+                  command: string
+                } | null
+                project: {
+                  name: string
+                  slug: string
+                }
+                revision: string | null
+                operation: {
+                  name: string
+                  slug: string
+                }
+                workloadSummary: string
+                hardware: {
+                  model: string
+                  architecture: string | null
+                }
+                framework: string | null
+                language: string | null
+                primary: {
+                  metric: string
+                  unit: string
+                  statistic: string
+                  value: number
+                  sampleCount: number | null
+                  uncertainty: {
+                    low: number
+                    high: number
+                  } | null
+                } | null
+                /** @enum {string|null} */
+                evidence:
+                  | "verified"
+                  | "replicated"
+                  | "reproducible"
+                  | "reported"
+                  | null
+                /** @enum {string} */
+                match:
+                  | "exact"
+                  | "compatible"
+                  | "supported_unobserved"
+                  | "related"
+                mismatches: {
+                  field: string
+                  requested: string
+                  observed: string
+                }[]
+                rank: number | null
+                tiedWithPrevious: boolean
+                sourceAvailable: boolean
+                installable: boolean
+                license: {
+                  declared: string | null
+                  concluded: string | null
+                }
+                lastTestedAt: string | null
+                stale: boolean
+                disputed: boolean
+                caveats: string[]
+              }[]
+              limitations: string[]
+              provenance: {
+                source: {
+                  name: string
+                  kind: string
+                  url: string | null
+                  license: string | null
+                  externalId: string | null
+                  observedAt: string | null
+                } | null
+                authors: string[]
+                importedAt: string | null
+              }
+              sourceCode: {
+                fileName: string | null
+                /** @enum {string} */
+                language: "python" | "cpp" | "text"
+                content?: string
+                license: string | null
+                attribution: {
+                  text: string
+                  url: string | null
+                } | null
+                diff?: {
+                  previousSlug: string
+                  previousName: string
+                  lines: {
+                    /** @enum {string} */
+                    kind: "add" | "del" | "ctx"
+                    text: string
+                  }[]
+                } | null
+              } | null
+            }
           }
         }
         /** @description Not found */
@@ -1199,7 +1601,145 @@ export interface paths {
             [name: string]: unknown
           }
           content: {
-            "application/json": unknown
+            "application/json": {
+              illustrative: boolean
+              run: {
+                id: string
+                digest: string
+                /** @enum {string} */
+                status:
+                  | "passed"
+                  | "incorrect_shape"
+                  | "incorrect_dtype"
+                  | "incorrect_numerical"
+                  | "compile_error"
+                  | "runtime_error"
+                  | "timeout"
+                  | "resource_exceeded"
+                  | "invalid_reference"
+                  | "policy_violation"
+                  | "suspected_reward_hack"
+                  | "incomplete_evidence"
+                  | "revoked"
+                observedAt: string
+                publishedAt: string | null
+              }
+              /** @enum {string} */
+              evidence: "verified" | "replicated" | "reproducible" | "reported"
+              lifecycle: {
+                supersedesId: string | null
+                supersededById: string | null
+                retracted: {
+                  at: string
+                  reason: string
+                } | null
+                disputed: {
+                  reason: string
+                } | null
+                stale: boolean
+              }
+              primary: {
+                metric: string
+                unit: string
+                statistic: string
+                value: number
+                sampleCount: number | null
+                uncertainty: {
+                  low: number
+                  high: number
+                } | null
+              }
+              sourceNativeMetrics: {
+                [key: string]: number
+              } | null
+              cohort: {
+                comparisonKey: string
+                /** @enum {string} */
+                profile:
+                  | "source_native"
+                  | "strict_exact"
+                  | "controlled_equivalent"
+                  | "compatible_workload"
+                  | "reported"
+                rank: number | null
+                eligible: boolean
+                ineligibleReasons: string[]
+              }
+              implementation: {
+                name: string
+                slug: string
+                revision: string | null
+              }
+              project: {
+                name: string
+                slug: string
+              }
+              operation: {
+                name: string
+                slug: string
+              }
+              workload: {
+                id: string
+                digest: string
+                label: string
+                axes: {
+                  [key: string]: number | string
+                }
+                tensors: {
+                  key: string
+                  value: string
+                }[]
+                tolerance: {
+                  key: string
+                  value: string
+                }[]
+              }
+              correctness: {
+                comparator: string
+                maxAbsoluteError: number | null
+                maxRelativeError: number | null
+                matchedRatio: number | null
+                passed: boolean
+              } | null
+              measurements: {
+                metric: string
+                statistic: string
+                value: number
+                unit: string
+                sampleCount: number | null
+              }[]
+              protocol: {
+                key: string
+                value: string
+              }[]
+              environment: {
+                key: string
+                value: string
+              }[]
+              artifacts: {
+                role: string
+                digest: string
+                mediaType: string
+                sizeBytes: number | null
+                uri: string | null
+                /** @enum {string} */
+                availability: "public" | "upstream" | "unavailable"
+              }[]
+              provenance: {
+                source: {
+                  name: string
+                  kind: string
+                  url: string | null
+                  license: string | null
+                  externalId: string | null
+                  observedAt: string | null
+                }
+                externalId: string | null
+                parserVersion: string | null
+                snapshotDigest: string | null
+              }
+              manifest?: unknown
+            }
           }
         }
         /** @description Not found */
@@ -1444,7 +1984,69 @@ export interface paths {
             "application/json": {
               illustrative: boolean
               runs: {
-                [key: string]: unknown
+                runId: string
+                digest: string
+                implementation: {
+                  name: string
+                  slug: string
+                }
+                project: {
+                  name: string
+                  slug: string
+                }
+                operation: {
+                  name: string
+                  slug: string
+                }
+                workloadLabel: string
+                hardware: string
+                primary: {
+                  metric: string
+                  unit: string
+                  statistic: string
+                  value: number
+                  sampleCount: number | null
+                  uncertainty: {
+                    low: number
+                    high: number
+                  } | null
+                } | null
+                /** @enum {string} */
+                evidence:
+                  | "verified"
+                  | "replicated"
+                  | "reproducible"
+                  | "reported"
+                /** @enum {string} */
+                status:
+                  | "passed"
+                  | "incorrect_shape"
+                  | "incorrect_dtype"
+                  | "incorrect_numerical"
+                  | "compile_error"
+                  | "runtime_error"
+                  | "timeout"
+                  | "resource_exceeded"
+                  | "invalid_reference"
+                  | "policy_violation"
+                  | "suspected_reward_hack"
+                  | "incomplete_evidence"
+                  | "revoked"
+                comparisonKey: string
+                rank: number | null
+                tiedWithPrevious: boolean
+                eligible: boolean
+                ineligibleReasons: string[]
+                license: {
+                  declared: string | null
+                  concluded: string | null
+                }
+                install: {
+                  kind: string
+                  command: string
+                } | null
+                sourceAvailable: boolean
+                observedAt: string
               }[]
               comparable: boolean
               /** @enum {string|null} */
@@ -1471,6 +2073,184 @@ export interface paths {
         }
         /** @description Not found */
         404: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              type: string
+              title: string
+              status: number
+              code: string
+              detail?: string
+              requestId: string
+            }
+          }
+        }
+      }
+    }
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/exports/catalog.jsonl.zst": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: {
+      parameters: {
+        query?: never
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Redirect to the latest immutable catalog export */
+        302: {
+          headers: {
+            [name: string]: unknown
+          }
+          content?: never
+        }
+        /** @description No export generated yet */
+        404: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              type: string
+              title: string
+              status: number
+              code: string
+              detail?: string
+              requestId: string
+            }
+          }
+        }
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/corrections": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description Retract a run or mark it superseded (site_admin session required). */
+    post: {
+      parameters: {
+        query?: never
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody?: {
+        content: {
+          "application/json": {
+            /** @enum {string} */
+            action: "retract" | "supersede"
+            /** Format: uuid */
+            runId: string
+            /** Format: uuid */
+            supersedesRunId?: string
+            reason: string
+          }
+        }
+      }
+      responses: {
+        /** @description The applied correction */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json":
+              | {
+                  /** @enum {boolean} */
+                  retracted: true
+                  newLeaderRunId: string | null
+                }
+              | {
+                  /** @enum {boolean} */
+                  superseded: true
+                }
+          }
+        }
+        /** @description Not a site admin */
+        403: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              type: string
+              title: string
+              status: number
+              code: string
+              detail?: string
+              requestId: string
+            }
+          }
+        }
+      }
+    }
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/revalidate": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description Drop catalog caches (importer bearer token required). */
+    post: {
+      parameters: {
+        query?: never
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Caches dropped */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              revalidated: true
+              at: string
+            }
+          }
+        }
+        /** @description Missing or invalid token */
+        401: {
           headers: {
             [name: string]: unknown
           }
@@ -1755,6 +2535,122 @@ export interface paths {
               dtype: string | null
               runs: number
             }[]
+          }
+        }
+        /** @description Not found */
+        404: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              type: string
+              title: string
+              status: number
+              code: string
+              detail?: string
+              requestId: string
+            }
+          }
+        }
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/serving-runs/{id}": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          id: string
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Serving run evidence dossier */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              illustrative: boolean
+              run: {
+                id: string
+                digest: string
+                status: string
+                observedAt: string
+                publishedAt: string | null
+              }
+              cohort: {
+                key: string
+                description: string
+                qualityPolicy: string
+                scenario: string
+              }
+              model: {
+                name: string
+                slug: string
+                license: string | null
+              }
+              stack: {
+                name: string
+                version: string | null
+              }
+              configuration: {
+                summary: string
+                dtype: string | null
+                quantization: string | null
+                facts: {
+                  key: string
+                  value: string
+                }[]
+              }
+              workload: {
+                name: string
+                streaming: boolean
+                loadGeneration: string
+              }
+              topology: {
+                acceleratorModel: string
+                perNode: number
+                nodes: number
+                total: number
+              }
+              harness: string
+              measurements: {
+                metric: string
+                statistic: string
+                value: number
+                unit: string
+              }[]
+              caveats: string[]
+              lifecycle: {
+                retracted: {
+                  at: string
+                  reason: string
+                } | null
+              }
+              attribution: {
+                line: string
+                url: string | null
+              }
+              manifest?: unknown
+            }
           }
         }
         /** @description Not found */

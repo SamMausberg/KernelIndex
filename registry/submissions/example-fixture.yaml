@@ -1,0 +1,200 @@
+# CI fixture: a complete, valid submission bundle that keeps the PR-path
+# validation exercised (§15.2). Fictional manifests mirroring
+# registry/examples — never publish this file.
+projects:
+  - apiVersion: kernelindex.dev/v1alpha1
+    kind: SoftwareProject
+    metadata:
+      name: meridian-kernels
+      title: Meridian Kernels (fictional)
+    spec:
+      name: Meridian Kernels
+      repository: https://example.invalid/meridian/kernels
+      host:
+        kind: other
+        id: example.invalid/meridian/kernels
+operations:
+  - apiVersion: kernelindex.dev/v1alpha1
+    kind: OperationSpec
+    metadata:
+      name: rmsnorm-h4096
+      title: RMSNorm, hidden size 4096
+      labels:
+        domain: normalization
+    spec:
+      family: rmsnorm
+      axes:
+        tokens: { role: variable, type: integer, minimum: 1 }
+        hidden: { role: constant, type: integer, value: 4096 }
+      inputs:
+        - name: input
+          tensor:
+            shape: [tokens, hidden]
+            dtype: bf16
+            layout: row_major
+        - name: weight
+          tensor:
+            shape: [hidden]
+            dtype: bf16
+            layout: contiguous
+        - name: epsilon
+          scalar: { dtype: fp32 }
+      outputs:
+        - name: output
+          tensor:
+            shape: [tokens, hidden]
+            dtype: bf16
+            layout: row_major
+      semantics:
+        expression: "output = cast_bf16(input * rsqrt(mean(cast_fp32(input)^2, axis=-1) + epsilon) * weight)"
+        mutation: none
+        determinism: deterministic
+workloads:
+  - apiVersion: kernelindex.dev/v1alpha1
+    kind: WorkloadCase
+    metadata:
+      name: rmsnorm-h4096-tokens-2048
+      title: RMSNorm h4096, tokens 2048
+    spec:
+      operationSpecDigest: sha256:7a3b25630f0628b21ed74b6adb588d28f7e29191f9038bed6f56ed393deefb5b
+      axes: { tokens: 2048, hidden: 4096 }
+      tensors:
+        input:
+          shape: [2048, 4096]
+          dtype: bf16
+          strides: [4096, 1]
+          alignmentBytes: 16
+          data:
+            generator: normal
+            seed: 230485
+            parameters: { mean: 0.0, stddev: 1.0 }
+        weight:
+          shape: [4096]
+          dtype: bf16
+          strides: [1]
+          alignmentBytes: 16
+          data:
+            generator: normal
+            seed: 230486
+            parameters: { mean: 1.0, stddev: 0.1 }
+      scalars:
+        epsilon: { dtype: fp32, value: 0.000001 }
+      correctness:
+        comparator: elementwise_close
+        maxAbsoluteError: 0.01
+        maxRelativeError: 0.01
+        requiredMatchedRatio: 0.99
+        nanPolicy: reject
+        infinityPolicy: exact_match
+implementations:
+  - projectSlug: meridian-kernels
+    manifest:
+      apiVersion: kernelindex.dev/v1alpha1
+      kind: ImplementationRevision
+      metadata:
+        name: meridian-rmsnorm
+        title: meridian-rmsnorm (fictional)
+        authors:
+          - github: fictional-author
+      spec:
+        projectRevision:
+          repository: https://example.invalid/meridian/kernels
+          commit: b81d40e0b81d40e0b81d40e0b81d40e0b81d40e0
+        operation:
+          specDigest: sha256:7a3b25630f0628b21ed74b6adb588d28f7e29191f9038bed6f56ed393deefb5b
+        callable:
+          language: triton
+          path: kernels/rmsnorm.py
+          symbol: rmsnorm
+          interface: pytorch
+        support:
+          hardwareArchitectures: [sm_100]
+          productsTested: [NVIDIA B200 SXM]
+          axes: ["tokens >= 1", "hidden == 4096"]
+          dtypes: [bf16]
+          layouts: [row_major]
+        licensing:
+          declared: Apache-2.0
+          concluded: Apache-2.0
+          evidence:
+            path: LICENSE
+runs:
+  - run:
+      apiVersion: kernelindex.dev/v1alpha1
+      kind: BenchmarkRun
+      metadata:
+        name: fixture-meridian-rmsnorm-b200
+        title: Fixture benchmark run (fictional)
+      spec:
+        implementationDigest: sha256:d41ca017379516ba6a4b7ef46f4fbaca852d46f762298328dbe436738b3d421e
+        workloadDigest: sha256:944ceb3a7d7d4a4c47f1f8ed239363f4be78a2a90293b4325fb18a274cf97aa3
+        protocolDigest: sha256:6ac212f99724757d058e7a7f440314debd2fed235c5178bc006b62c0d5e0d295
+        environmentDigest: sha256:46cf7b24b586c71505152d0103b9e84101de1ac5b66cdd76aabc88356e93db79
+        status: passed
+        correctness:
+          comparator: elementwise_close
+          maximumAbsoluteError: 0.0042
+          maximumRelativeError: 0.0081
+          matchedRatio: 1.0
+        timing:
+          primaryStatistic: median
+          samples: 200
+          latencyNs:
+            median: 8120
+            p05: 8072
+            p95: 8151
+            minimum: 8054
+            maximum: 8390
+            mad: 24
+            confidence95: [8095, 8151]
+        observedAt: 2026-08-01T12:00:00Z
+    protocol:
+      apiVersion: kernelindex.dev/v1alpha1
+      kind: BenchmarkProtocol
+      metadata:
+        name: example-fixed-clock-median
+        title: Example fixed-clock median-latency protocol
+      spec:
+        harness:
+          name: example-harness
+          version: "1.0"
+        measurement:
+          timer: device_events
+          synchronization: device_sync
+          compileIncluded: false
+          warmupIterations: 50
+          samples: 200
+          inputRegeneration: per_sample
+          primaryStatistic: median
+        correctness:
+          reference: fp32 eager reference
+          comparator: elementwise_close
+        devicePolicy:
+          clocksLocked: true
+          persistenceMode: true
+        comparability:
+          family: example_fixed_clock
+          notes: Comparable only inside this example protocol family.
+    environment:
+      apiVersion: kernelindex.dev/v1alpha1
+      kind: ExecutionEnvironment
+      metadata:
+        name: example-b200-sxm
+        title: Example NVIDIA B200 SXM environment
+      spec:
+        hardware:
+          vendor: nvidia
+          product: NVIDIA B200 SXM
+          architecture: sm_100
+          memoryBytes: 206158430208
+          count: 1
+        software:
+          operatingSystem: Ubuntu 24.04
+          driver: "580.00"
+          cudaToolkit: "13.1"
+          framework:
+            name: pytorch
+            version: "2.9"
+        settings:
+          clocksLocked: true
+          persistenceMode: true

@@ -2,7 +2,7 @@
 // Schemas in registry/schemas and the RFC 8785 canonical spec digest —
 // no server round trip, no dependency on the web app's code.
 import { createHash } from "node:crypto"
-import { readFileSync } from "node:fs"
+import { existsSync, readFileSync } from "node:fs"
 import path from "node:path"
 import ajv2020 from "ajv/dist/2020.js"
 import ajvFormats from "ajv-formats"
@@ -17,10 +17,18 @@ const canonicalize = canonicalizeModule as unknown as (
 
 import { parse as parseYaml } from "yaml"
 
-const SCHEMAS_DIR = path.resolve(
-  import.meta.dirname,
-  "../../../registry/schemas",
-)
+// Located by walking up from this file, so the tooling keeps working from a
+// build output directory or a moved file — not just the exact src/ layout.
+const SCHEMAS_DIR = (() => {
+  let dir = import.meta.dirname
+  while (true) {
+    const candidate = path.join(dir, "registry", "schemas")
+    if (existsSync(candidate)) return candidate
+    const parent = path.dirname(dir)
+    if (parent === dir) return candidate // unreachable in a checkout; reads fail closed
+    dir = parent
+  }
+})()
 
 const kebab = (kind: string) =>
   kind.replaceAll(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase()

@@ -1,0 +1,16 @@
+# Illustrative example manifest. Fictional; not real benchmark evidence.
+apiVersion: kernelindex.dev/v1alpha1
+kind: ServingStackRevision
+metadata:
+  name: example-meridian-serve-0.4.1
+  title: Example serving stack (fictional)
+spec:
+  project:
+    name: meridian-serve
+    repository: https://example.com/meridian/meridian-serve
+  revision:
+    version: 0.4.1
+    commit: 9a3f2b8c1d4e5f60718293a4b5c6d7e8f901a2b3
+  backends: [pytorch, cuda]
+  apiProtocol: openai
+  license: Apache-2.0

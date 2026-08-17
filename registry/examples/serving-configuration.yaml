@@ -1,0 +1,19 @@
+# Illustrative example manifest. Fictional; not real benchmark evidence.
+apiVersion: kernelindex.dev/v1alpha1
+kind: ServingConfiguration
+metadata:
+  name: example-meridian-serve-tp2-fp8
+  title: Example serving configuration (fictional)
+spec:
+  stackDigest: sha256:f00ca9e39835e6c1fa6e95d16904fbf633492ea3c61c63774943f0d83fb10717
+  dtype: fp8
+  parallelism:
+    tensor: 2
+  attentionBackend: flashinfer
+  kvCache:
+    dtype: fp8
+  limits:
+    maxSequenceLength: 32768
+    maxBatchSize: 256
+  options:
+    enable_chunked_prefill: "true"

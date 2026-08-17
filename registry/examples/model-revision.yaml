@@ -1,0 +1,17 @@
+# Illustrative example manifest. Fictional; not real benchmark evidence.
+apiVersion: kernelindex.dev/v1alpha1
+kind: ModelRevision
+metadata:
+  name: example-meridian-8b
+  title: Example served model (fictional)
+spec:
+  model: meridian-8b-instruct
+  repository:
+    host: huggingface
+    id: example/meridian-8b-instruct
+    revision: a1b2c3d
+  architecture: decoder-only transformer
+  parameterCount: 8000000000
+  contextLength: 32768
+  modality: text
+  license: Apache-2.0

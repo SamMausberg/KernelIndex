@@ -4,9 +4,17 @@
 // full units, and untruncated digests. Exit codes: 0 ok, 1 error, 2 usage.
 import { readFileSync } from "node:fs"
 import { parseArgs } from "node:util"
-import { client, type ResolveEnvelope } from "@kernelindex/sdk"
+import {
+  type CompareModel,
+  client,
+  type ResolveEnvelope,
+  type ResolveKernelRequest,
+  type ResolveServingRequest,
+  type ServingResolveModel,
+} from "@kernelindex/sdk"
 import { digestManifest, validateManifest } from "@kernelindex/sdk/manifest"
 import { parse as parseYaml } from "yaml"
+import { formatPrimary, tableLines } from "./render.ts"
 
 const HELP = `ki — KernelIndex command line
 
@@ -16,6 +24,10 @@ Usage:
   ki resolve serving --manifest <p>  serving resolution: objective or Pareto
   ki show <operation|implementation|run|serving-run> <id-or-slug>
   ki compare run <id> <id> [...]     aligned comparison (2–8 runs)
+  ki records [--limit n] [--cursor c]   current record holders, newest first
+  ki serving <runs|configs>          serving corpus listings
+  ki export                          immutable catalog export URL
+  ki auth status                     API key identity, scopes, and quota
   ki manifest validate <path>        validate a manifest against its schema
   ki manifest digest <path>          canonical RFC 8785 spec digest
 
@@ -25,6 +37,8 @@ Flags:
   --json           machine JSON on stdout
   --jsonl          one JSON line per result row
   --quiet          suppress human headers
+  --limit <n>      page size for listings
+  --cursor <c>     pagination cursor from a previous listing
 `
 
 const { values, positionals } = parseArgs({
@@ -37,6 +51,8 @@ const { values, positionals } = parseArgs({
     jsonl: { type: "boolean", default: false },
     quiet: { type: "boolean", default: false },
     help: { type: "boolean", default: false },
+    limit: { type: "string" },
+    cursor: { type: "string" },
   },
 })
 
@@ -53,54 +69,30 @@ const api = client({
   apiKey: values["api-key"] ?? process.env.KI_API_KEY,
 })
 
-/** Machine output: exactly one JSON document (or JSONL rows), nothing else. */
+/** Machine output: exactly one JSON document, or one line per row. A command
+ * without row semantics rejects --jsonl instead of silently degrading. */
 function emit(document: unknown, rows?: unknown[]) {
-  if (values.jsonl && rows) {
+  if (values.jsonl) {
+    if (!rows) usage("--jsonl is not available for this command; use --json")
     for (const row of rows) console.log(JSON.stringify(row))
     return true
   }
-  if (values.json || values.jsonl) {
+  if (values.json) {
     console.log(JSON.stringify(document, null, 2))
     return true
   }
   return false
 }
 
-const NS = [
-  { limit: 1e3, divisor: 1, unit: "ns" },
-  { limit: 1e6, divisor: 1e3, unit: "µs" },
-  { limit: 1e9, divisor: 1e6, unit: "ms" },
-  { limit: Number.POSITIVE_INFINITY, divisor: 1e9, unit: "s" },
-]
-function formatPrimary(
-  primary: { value: number; unit: string } | null,
-): string {
-  if (!primary) return "—"
-  const ns =
-    primary.unit === "ns"
-      ? primary.value
-      : primary.unit === "s"
-        ? primary.value * 1e9
-        : null
-  if (ns === null) return `${primary.value} ${primary.unit}`
-  const scale = NS.find((s) => ns < s.limit) ?? NS[3]
-  const value = ns / scale.divisor
-  return `${value.toFixed(value < 10 && scale.unit !== "ns" ? 2 : 0)} ${scale.unit}`
+function pageOptions() {
+  const limit = values.limit === undefined ? undefined : Number(values.limit)
+  if (limit !== undefined && (!Number.isInteger(limit) || limit < 1))
+    usage("--limit must be a positive integer")
+  return { limit, cursor: values.cursor }
 }
 
 function table(rows: string[][]) {
-  if (rows.length === 0) return
-  const widths = rows[0].map((_, column) =>
-    Math.max(...rows.map((row) => row[column].length)),
-  )
-  for (const row of rows) {
-    console.log(
-      row
-        .map((cell, index) => cell.padEnd(widths[index]))
-        .join("  ")
-        .trimEnd(),
-    )
-  }
+  for (const line of tableLines(rows)) console.log(line)
 }
 
 function printEnvelope(envelope: ResolveEnvelope) {
@@ -136,22 +128,7 @@ function printEnvelope(envelope: ResolveEnvelope) {
 }
 
 /** Serving output (§13.8): per-cohort tables, frontier marked, no score. */
-function printServing(model: {
-  policyVersion: string
-  groups: {
-    description: string
-    rows: {
-      rank: number | null
-      onFrontier: boolean
-      configuration: string
-      stack: string
-      hardware: { total: number }
-      qualityPolicy: string
-      measurements: { metric: string; statistic: string; value: number }[]
-    }[]
-    excluded: { configuration: string; reasons: string[] }[]
-  }[]
-}) {
+function printServing(model: ServingResolveModel) {
   if (!values.quiet) console.log(`serving resolution · ${model.policyVersion}`)
   for (const group of model.groups) {
     console.log(`\n${group.description}`)
@@ -190,6 +167,19 @@ function printServing(model: {
   }
 }
 
+function printCompare(model: CompareModel) {
+  console.log(model.explanation)
+  table(
+    model.runs.map((run) => [
+      run.rank === null ? "—" : String(run.rank),
+      run.implementation.name,
+      formatPrimary(run.primary),
+      run.evidence,
+      run.hardware,
+    ]),
+  )
+}
+
 async function main(): Promise<number> {
   const [command, ...rest] = positionals
 
@@ -204,14 +194,15 @@ async function main(): Promise<number> {
   if (command === "resolve") {
     if (!values.manifest || !["kernel", "serving"].includes(rest[0]))
       usage("usage: ki resolve <kernel|serving> --manifest <path>")
+    // The request file is unvalidated user input; the server validates it.
     const request = readManifestFile(values.manifest)
     if (rest[0] === "serving") {
-      const model = await api.resolveServing(request)
-      if (emit(model)) return 0
+      const model = await api.resolveServing(request as ResolveServingRequest)
+      if (emit(model, model.groups)) return 0
       printServing(model)
       return 0
     }
-    const envelope = await api.resolveKernel(request)
+    const envelope = await api.resolveKernel(request as ResolveKernelRequest)
     if (emit(envelope, envelope.groups.exact)) return 0
     printEnvelope(envelope)
     return 0
@@ -224,10 +215,11 @@ async function main(): Promise<number> {
       !["operation", "implementation", "run", "serving-run"].includes(kind)
     )
       usage("usage: ki show <operation|implementation|run|serving-run> <id>")
-    const dossier =
-      kind === "serving-run"
-        ? await api.showServingRun(id)
-        : await api.show(kind, id)
+    const dossier = await api.show(
+      kind as "operation" | "implementation" | "run" | "serving-run",
+      id,
+    )
+    if (emit(dossier)) return 0
     console.log(JSON.stringify(dossier, null, 2))
     return 0
   }
@@ -236,25 +228,92 @@ async function main(): Promise<number> {
     if (rest[0] !== "run" || rest.length < 3)
       usage("usage: ki compare run <id> <id> [...]")
     const model = await api.compare(rest.slice(1))
-    if (emit(model)) return 0
-    console.log(model.explanation)
-    table(
-      model.runs.map((entry) => {
-        const run = entry as {
-          rank: number | null
-          implementation: { name: string }
-          primary: { value: number; unit: string } | null
-          evidence: string | null
-          hardware: string
-        }
-        return [
-          run.rank === null ? "—" : String(run.rank),
-          run.implementation.name,
-          formatPrimary(run.primary),
-          run.evidence ?? "no evidence",
+    if (emit(model, model.runs)) return 0
+    printCompare(model)
+    return 0
+  }
+
+  if (command === "records") {
+    const page = await api.records(pageOptions())
+    if (emit(page, page.records)) return 0
+    if (!values.quiet && page.records[0])
+      console.log(`current records · newest first`)
+    table([
+      [
+        "operation",
+        "workload",
+        "record",
+        "implementation",
+        "hardware",
+        "since",
+      ],
+      ...page.records.map((holder) => [
+        holder.operation.name,
+        holder.workloadSummary,
+        formatPrimary(holder.current.primary),
+        holder.current.implementation.name,
+        holder.hardware,
+        holder.since.slice(0, 10),
+      ]),
+    ])
+    if (page.nextCursor && !values.quiet)
+      console.log(`next: ki records --cursor ${page.nextCursor}`)
+    return 0
+  }
+
+  if (command === "serving") {
+    if (rest[0] === "runs") {
+      const page = await api.servingRuns(pageOptions())
+      if (emit(page, page.runs)) return 0
+      table([
+        ["id", "model", "stack", "scenario", "hardware", "gpus", "observed"],
+        ...page.runs.map((run) => [
+          run.id,
+          run.model,
+          run.stack,
+          run.scenario,
           run.hardware,
-        ]
-      }),
+          String(run.totalAccelerators),
+          run.observedAt.slice(0, 10),
+        ]),
+      ])
+      if (page.nextCursor && !values.quiet)
+        console.log(`next: ki serving runs --cursor ${page.nextCursor}`)
+      return 0
+    }
+    if (rest[0] === "configs") {
+      const configs = await api.servingConfigurations()
+      if (emit(configs, configs)) return 0
+      table([
+        ["stack", "configuration", "dtype", "runs"],
+        ...configs.map((config) => [
+          config.stack,
+          config.summary,
+          config.dtype ?? "—",
+          String(config.runs),
+        ]),
+      ])
+      return 0
+    }
+    usage("usage: ki serving <runs|configs>")
+  }
+
+  if (command === "export") {
+    const url = await api.exportUrl()
+    if (emit({ url })) return 0
+    console.log(url)
+    return 0
+  }
+
+  if (command === "auth") {
+    if (rest[0] !== "status") usage("usage: ki auth status")
+    const identity = await api.me()
+    if (emit(identity)) return 0
+    console.log(
+      `key ${identity.name ?? identity.keyId} · scopes ${identity.scopes.join(", ")}` +
+        (identity.quotaPerDay !== null
+          ? ` · ${identity.usedToday ?? 0}/${identity.quotaPerDay} today`
+          : ""),
     )
     return 0
   }

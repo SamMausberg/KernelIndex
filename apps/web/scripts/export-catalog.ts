@@ -4,7 +4,13 @@
 // Artifact bodies and snapshot payloads stay out — they are fetchable
 // through the API and would swell the snapshot; digests are included.
 import { createHash } from "node:crypto"
-import { mkdirSync, writeFileSync } from "node:fs"
+import {
+  mkdirSync,
+  readdirSync,
+  statSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs"
 import path from "node:path"
 import { compress } from "@mongodb-js/zstd"
 import { isNotNull } from "drizzle-orm"
@@ -103,7 +109,24 @@ try {
       2,
     )}\n`,
   )
-  console.log(`${name} · ${lines.length} objects · ${compressed.length} bytes`)
+  // Retention: keep the newest three snapshots so the repo stays small;
+  // git history preserves anything older.
+  const KEEP = 3
+  const stale = readdirSync(exportsDir)
+    .filter(
+      (file) => file.startsWith("catalog-") && file.endsWith(".jsonl.zst"),
+    )
+    .map((file) => ({
+      file,
+      mtime: statSync(path.join(exportsDir, file)).mtimeMs,
+    }))
+    .sort((a, b) => b.mtime - a.mtime)
+    .slice(KEEP)
+  for (const entry of stale) unlinkSync(path.join(exportsDir, entry.file))
+  console.log(
+    `${name} · ${lines.length} objects · ${compressed.length} bytes` +
+      (stale.length > 0 ? ` · pruned ${stale.length} old snapshot(s)` : ""),
+  )
 } finally {
   await client.end()
 }

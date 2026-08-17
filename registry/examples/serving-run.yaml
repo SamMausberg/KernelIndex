@@ -1,0 +1,34 @@
+# Illustrative example manifest. Fictional; not real benchmark evidence.
+apiVersion: kernelindex.dev/v1alpha1
+kind: ServingRun
+metadata:
+  name: example-meridian-8b-tp2-b200
+  title: Example serving run (fictional)
+spec:
+  modelDigest: sha256:a8bee6f772dc4b4c35b199f27fe3e40f7b3b2266dc57e0da432a047a5d52e22d
+  configurationDigest: sha256:8951b4b4c5edbcb2708cacf29f9936bdbc18584aae204ea710c30921c060a5ea
+  workloadDigest: sha256:48d84537ce32c83fade011934806f89f1585710e0235921a168a7fed96bb880d
+  topology:
+    acceleratorVendor: nvidia
+    acceleratorModel: NVIDIA B200
+    acceleratorsPerNode: 2
+    nodeCount: 1
+    interconnect: NVLink
+  harness:
+    name: example_loadgen
+    version: 1.2.0
+  qualityPolicy: exact_model
+  status: valid
+  measurements:
+    - metric: output_token_throughput_tps
+      unit: tokens_per_second
+      statistic: reported
+      value: 14250
+    - metric: ttft_ms
+      unit: ms
+      statistic: p99
+      value: 1480
+      sampleCount: 4800
+  caveats:
+    - Fictional example evidence for schema documentation only.
+  observedAt: 2026-08-01T12:00:00Z

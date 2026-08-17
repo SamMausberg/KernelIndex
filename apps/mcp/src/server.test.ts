@@ -1,4 +1,4 @@
-// MCP contract (§21.2): the eight §13.10 tools exist, and the local
+// MCP contract (§21.2): the §13.10 tools exist at API parity, and the local
 // manifest tools validate real registry examples without any network.
 import { readdirSync, readFileSync } from "node:fs"
 import path from "node:path"
@@ -21,7 +21,7 @@ async function connected() {
 }
 
 describe("mcp server", () => {
-  it("exposes exactly the eight read-only tools", async () => {
+  it("exposes exactly the read-only tool set", async () => {
     const client = await connected()
     const { tools } = await client.listTools()
     expect(tools.map((tool) => tool.name).sort()).toEqual([
@@ -30,7 +30,10 @@ describe("mcp server", () => {
       "get_implementation",
       "get_manifest_schema",
       "get_operation",
+      "get_serving_run",
+      "list_records",
       "resolve_kernel",
+      "resolve_serving",
       "search_catalog",
       "validate_manifest",
     ])

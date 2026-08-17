@@ -83,9 +83,6 @@ jobs:
       - name: data-quality invariants
         run: cd apps/web && node scripts/check-invariants.ts
 
-      - name: sync record events
-        run: cd apps/web && node scripts/sync-record-events.ts
-
       - name: prune product events past retention
         run: cd apps/web && node scripts/prune-events.ts
 

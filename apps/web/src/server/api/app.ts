@@ -2,8 +2,6 @@
 // use — never a loopback HTTP call, never reimplemented ranking. Responses
 // carry stable IDs, digests, canonical units, absolute timestamps, and the
 // ranking policy version; errors are RFC 9457 Problem Details.
-import { readFileSync } from "node:fs"
-import path from "node:path"
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import { cors } from "hono/cors"
 import { HTTPException } from "hono/http-exception"
@@ -25,14 +23,21 @@ import { deployability } from "../policy/deployability.ts"
 import { RANKING_POLICY_VERSION } from "../policy/ranking.ts"
 import {
   compareResponse,
+  correctionRequest,
+  correctionResponse,
+  implementationDossier,
+  meResponse,
+  operationDossier,
   problemDetails,
   type ResolveKernelRequest,
   recordsResponse,
   resolveKernelRequest,
   resolveResponse,
   resolveServingRequest,
+  runDossier,
   servingConfigurationSummary,
   servingResolveResponse,
+  servingRunDossier,
   servingRunsResponse,
 } from "./schemas.ts"
 
@@ -202,21 +207,41 @@ api.use(async (c, next) => {
 
 // Key introspection (§13.6): the one key-mandatory route; private, never
 // cached. `ki auth status` consumes it.
-api.get("/me", async (c) => {
-  const identity = c.get("apiKey")
-  if (!identity) fail(401, "API_KEY_REQUIRED", "send an API key bearer token")
-  const { listApiKeys } = await import("../api-keys.ts")
-  const keys = await listApiKeys(identity.userId)
-  const key = keys.find((row) => row.id === identity.keyId)
-  c.header("Cache-Control", "private, no-store")
-  return c.json({
-    keyId: identity.keyId,
-    scopes: identity.scopes,
-    name: key?.name ?? null,
-    usedToday: key?.usedToday ?? null,
-    quotaPerDay: key?.quotaPerDay ?? null,
-  })
-})
+api.openapi(
+  createRoute({
+    method: "get",
+    path: "/me",
+    security: [{ apiKey: [] }],
+    responses: {
+      200: {
+        description: "The presented API key's identity, scopes, and quota",
+        content: { "application/json": { schema: meResponse } },
+      },
+      401: {
+        description: "No API key presented",
+        content: { "application/json": { schema: problemDetails } },
+      },
+    },
+  }),
+  async (c) => {
+    const identity = c.get("apiKey")
+    if (!identity) fail(401, "API_KEY_REQUIRED", "send an API key bearer token")
+    const { listApiKeys } = await import("../api-keys.ts")
+    const keys = await listApiKeys(identity.userId)
+    const key = keys.find((row) => row.id === identity.keyId)
+    c.header("Cache-Control", "private, no-store")
+    return c.json(
+      {
+        keyId: identity.keyId,
+        scopes: identity.scopes,
+        name: key?.name ?? null,
+        usedToday: key?.usedToday ?? null,
+        quotaPerDay: key?.quotaPerDay ?? null,
+      },
+      200,
+    )
+  },
+)
 
 api.openapi(
   createRoute({
@@ -254,11 +279,8 @@ api.openapi(
   },
 )
 
-// Dossier responses reuse the page models verbatim; the OpenAPI document
-// describes them as open objects (the typed contracts live on the resolver,
-// records, and compare routes).
-const record = z.unknown()
-
+// Dossier responses reuse the page models verbatim; the wire schemas in
+// schemas.ts mirror them with drift gates, so the SDK types every route.
 api.openapi(
   createRoute({
     method: "get",
@@ -270,7 +292,10 @@ api.openapi(
         cohort: z.string().max(200).optional(),
       }),
     },
-    responses: json(record, "Operation dossier (the web page's model)"),
+    responses: json(
+      operationDossier,
+      "Operation dossier (the web page's model)",
+    ),
   }),
   async (c) => {
     const { idOrSlug } = c.req.valid("param")
@@ -291,7 +316,7 @@ api.openapi(
       // Bounded include (§13.2): source adds the mirrored code body.
       query: z.object({ include: z.enum(["source"]).optional() }),
     },
-    responses: json(record, "Implementation dossier"),
+    responses: json(implementationDossier, "Implementation dossier"),
   }),
   async (c) => {
     const { idOrSlug } = c.req.valid("param")
@@ -316,7 +341,7 @@ api.openapi(
     method: "get",
     path: "/runs/{idOrDigest}",
     request: { params: z.object({ idOrDigest: z.string().max(200) }) },
-    responses: json(record, "Immutable run evidence dossier"),
+    responses: json(runDossier, "Immutable run evidence dossier"),
   }),
   async (c) => {
     const { idOrDigest } = c.req.valid("param")
@@ -384,7 +409,7 @@ api.openapi(
         content: {
           "application/json": {
             schema: z.object({
-              runs: z.array(z.string().max(200)).min(1).max(8),
+              runs: z.array(z.string().max(200)).min(2).max(8),
             }),
           },
         },
@@ -399,76 +424,124 @@ api.openapi(
   },
 )
 
-// Versioned immutable export (§13.2): redirect to the latest snapshot; the
-// catalog is never rebuilt during an ordinary request.
-api.get("/exports/catalog.jsonl.zst", (c) => {
-  try {
-    const pointer = JSON.parse(
-      readFileSync(
-        path.join(process.cwd(), "../../registry/exports/latest.json"),
-        "utf8",
-      ),
-    ) as { url: string }
-    return c.redirect(pointer.url, 302)
-  } catch {
-    fail(
-      404,
-      "EXPORT_NOT_AVAILABLE",
-      "no catalog export has been generated yet",
-    )
-  }
-})
+// Versioned immutable export (§13.2): redirect to the latest snapshot. The
+// pointer is a build-time import — the export workflow commits it, the push
+// deploys — because a cwd-relative read escapes the traced bundle on Vercel.
+api.openapi(
+  createRoute({
+    method: "get",
+    path: "/exports/catalog.jsonl.zst",
+    responses: {
+      302: { description: "Redirect to the latest immutable catalog export" },
+      404: {
+        description: "No export generated yet",
+        content: { "application/json": { schema: problemDetails } },
+      },
+    },
+  }),
+  async (c) => {
+    try {
+      const pointer = await import(
+        "../../../../../registry/exports/latest.json"
+      )
+      return c.redirect(pointer.default.url, 302)
+    } catch {
+      fail(
+        404,
+        "EXPORT_NOT_AVAILABLE",
+        "no catalog export has been generated yet",
+      )
+    }
+  },
+)
 
 // §10.7 corrections (Week 6): maintainer-only retraction and supersession
 // through the append-only write path; the session cookie authorizes.
-api.post("/corrections", async (c) => {
-  c.header("Cache-Control", "private, no-store")
-  const { sessionUser, canCorrectRuns } = await import(
-    "../policy/authorization.ts"
-  )
-  const user = await sessionUser(c.req.raw.headers)
-  if (user === null || !canCorrectRuns(user)) {
-    fail(403, "FORBIDDEN", "correcting runs requires the site_admin role")
-  }
-  const body = z
-    .object({
-      action: z.enum(["retract", "supersede"]),
-      runId: z.uuid(),
-      supersedesRunId: z.uuid().optional(),
-      reason: z.string().min(3).max(2000),
-    })
-    .safeParse(await c.req.json())
-  if (!body.success) fail(400, "INVALID_BODY", body.error.message)
-  const { db } = await import("../db/client.ts")
-  const corrections = await import("../catalog/corrections.ts")
-  const actor = { id: user.id, name: user.name }
-  const result =
-    body.data.action === "retract"
-      ? await corrections.retractRun(db(), {
-          runId: body.data.runId,
-          reason: body.data.reason,
-          actor,
-        })
-      : await corrections.markSuperseded(db(), {
-          originalRunId: body.data.supersedesRunId ?? body.data.runId,
-          supersedingRunId: body.data.runId,
-          reason: body.data.reason,
-          actor,
-        })
-  revalidateTag("catalog", "max")
-  return c.json(result)
-})
+api.openapi(
+  createRoute({
+    method: "post",
+    path: "/corrections",
+    description:
+      "Retract a run or mark it superseded (site_admin session required).",
+    request: {
+      body: { content: { "application/json": { schema: correctionRequest } } },
+    },
+    responses: {
+      200: {
+        description: "The applied correction",
+        content: { "application/json": { schema: correctionResponse } },
+      },
+      403: {
+        description: "Not a site admin",
+        content: { "application/json": { schema: problemDetails } },
+      },
+    },
+  }),
+  async (c) => {
+    c.header("Cache-Control", "private, no-store")
+    const { sessionUser, canCorrectRuns } = await import(
+      "../policy/authorization.ts"
+    )
+    const user = await sessionUser(c.req.raw.headers)
+    if (user === null || !canCorrectRuns(user)) {
+      fail(403, "FORBIDDEN", "correcting runs requires the site_admin role")
+    }
+    const body = c.req.valid("json")
+    const { db } = await import("../db/client.ts")
+    const corrections = await import("../catalog/corrections.ts")
+    const actor = { id: user.id, name: user.name }
+    const result =
+      body.action === "retract"
+        ? await corrections.retractRun(db(), {
+            runId: body.runId,
+            reason: body.reason,
+            actor,
+          })
+        : await corrections.markSuperseded(db(), {
+            originalRunId: body.supersedesRunId ?? body.runId,
+            supersedingRunId: body.runId,
+            reason: body.reason,
+            actor,
+          })
+    revalidateTag("catalog", "max")
+    return c.json(result, 200)
+  },
+)
 
 // §10.8 step 9: the importer calls this after publishing so caches drop
 // immediately instead of waiting out the revalidate window.
-api.post("/revalidate", (c) => {
-  const token = process.env.REVALIDATE_TOKEN
-  if (!token || c.req.header("authorization") !== `Bearer ${token}`) {
-    fail(401, "UNAUTHORIZED", "missing or invalid token")
-  }
-  revalidateTag("catalog", "max")
-  return c.json({ revalidated: true, at: new Date().toISOString() })
-})
+api.openapi(
+  createRoute({
+    method: "post",
+    path: "/revalidate",
+    description: "Drop catalog caches (importer bearer token required).",
+    responses: {
+      200: {
+        description: "Caches dropped",
+        content: {
+          "application/json": {
+            schema: z.object({ revalidated: z.literal(true), at: z.string() }),
+          },
+        },
+      },
+      401: {
+        description: "Missing or invalid token",
+        content: { "application/json": { schema: problemDetails } },
+      },
+    },
+  }),
+  (c) => {
+    const token = process.env.REVALIDATE_TOKEN
+    if (!token || c.req.header("authorization") !== `Bearer ${token}`) {
+      fail(401, "UNAUTHORIZED", "missing or invalid token")
+    }
+    revalidateTag("catalog", "max")
+    return c.json(
+      { revalidated: true as const, at: new Date().toISOString() },
+      200,
+    )
+  },
+)
 
 /** One info block for the runtime doc route and the generated snapshot, so
  * the committed openapi.json can never drift from what the API serves. */
@@ -548,14 +621,21 @@ api.openapi(
   },
 )
 
-// Dossier: open object like the other dossier routes; the model is the page.
-api.get("/serving-runs/:id", async (c) => {
-  await servingGate()
-  const model = await getServingRunPage(c.req.param("id"))
-  if (!model) fail(404, "SERVING_RUN_NOT_FOUND", "no such serving run")
-  c.header("Cache-Control", CACHE_MEDIUM)
-  return c.json(model)
-})
+api.openapi(
+  createRoute({
+    method: "get",
+    path: "/serving-runs/{id}",
+    request: { params: z.object({ id: z.string().max(200) }) },
+    responses: json(servingRunDossier, "Serving run evidence dossier"),
+  }),
+  async (c) => {
+    await servingGate()
+    const model = await getServingRunPage(c.req.valid("param").id)
+    if (!model) fail(404, "SERVING_RUN_NOT_FOUND", "no such serving run")
+    c.header("Cache-Control", CACHE_MEDIUM)
+    return c.json(model)
+  },
+)
 
 api.doc("/openapi.json", OPENAPI_INFO)
 
