@@ -24,10 +24,10 @@ export default async function GpusPage() {
         title="GPUs"
         context="coverage per hardware model · records held · freshness"
       />
-      <main className="shell animate-fade-in pb-20">
+      <main className="shell animate-fade-in pt-7 pb-20">
         <div className="overflow-x-auto">
           <div
-            className={`${GRID} items-baseline border-b border-border-strong pb-2 text-[11.5px] text-faint`}
+            className={`${GRID} items-baseline border-b border-border-strong pb-3 text-[11.5px] text-faint`}
           >
             <div>GPU</div>
             <div>Architecture</div>
@@ -39,7 +39,7 @@ export default async function GpusPage() {
           {model.gpus.map((gpu) => (
             <div
               key={gpu.slug}
-              className={`${GRID} h-[47px] items-center border-b border-line transition-colors hover:bg-raised`}
+              className={`${GRID} h-[52px] items-center border-b border-line transition-colors hover:bg-raised`}
             >
               <div className="min-w-0 truncate">
                 <Link

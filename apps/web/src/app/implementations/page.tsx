@@ -25,10 +25,10 @@ export default async function ProjectsPage() {
         title="Projects"
         context="standing per project · records held · licensing · availability"
       />
-      <main className="shell animate-fade-in pb-20">
+      <main className="shell animate-fade-in pt-7 pb-20">
         <div className="overflow-x-auto">
           <div
-            className={`${GRID} items-baseline border-b border-border-strong pb-2 text-[11.5px] text-faint`}
+            className={`${GRID} items-baseline border-b border-border-strong pb-3 text-[11.5px] text-faint`}
           >
             <div>Project</div>
             <div className="text-right">Kernels</div>
@@ -42,7 +42,7 @@ export default async function ProjectsPage() {
           {model.projects.map((project) => (
             <div
               key={project.slug}
-              className={`${GRID} h-[47px] items-center border-b border-line transition-colors hover:bg-raised`}
+              className={`${GRID} h-[52px] items-center border-b border-line transition-colors hover:bg-raised`}
             >
               <div className="min-w-0 truncate">
                 {project.repositoryUrl ? (
