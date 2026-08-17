@@ -22,7 +22,7 @@ import { recordEvent } from "@/server/events"
 
 export const metadata: Metadata = { title: "Serving" }
 
-const GROUP_CAP = 30
+const GROUP_CAP = 12
 const FACET_CAP = 80
 
 type Params = {

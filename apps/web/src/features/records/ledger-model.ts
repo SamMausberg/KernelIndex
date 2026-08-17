@@ -18,9 +18,9 @@ export type RecordsFilters = {
 }
 
 export const DAY_MS = 24 * 60 * 60 * 1000
-// 50 keeps the first paint light (each server-rendered row costs ~5KB of
-// HTML+flight); once the model loads, paging is an instant client slice.
-export const PAGE_SIZE = 50
+// Each server-rendered row costs ~5KB of HTML+flight; 25 keeps the first
+// paint light, and once the model loads paging is an instant client slice.
+export const PAGE_SIZE = 25
 /** History entries shipped per holder in the SSR slice; the full history
  * arrives with the deferred /records/data model. */
 export const HISTORY_PREVIEW = 6
