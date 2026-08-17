@@ -72,14 +72,24 @@ export function SweepChart({ sweep }: { sweep: OperationSweep }) {
     : niceTicks(yHi)
 
   // Dense sweeps (FlashInfer definitions carry dozens of cases) keep at
-  // most seven x tick labels, always including both ends.
+  // most seven x tick labels, chosen by rendered position so they stay
+  // evenly spread under a log axis, ends always included.
+  const plotWidth = WIDTH - PAD.left - PAD.right
   const tickXs =
     xs.length <= 7
       ? xs
-      : Array.from(
-          { length: 7 },
-          (_, i) => xs[Math.round((i * (xs.length - 1)) / 6)],
-        )
+      : [
+          ...new Set(
+            Array.from({ length: 7 }, (_, i) => {
+              const target = PAD.left + (i / 6) * plotWidth
+              return xs.reduce((nearest, x) =>
+                Math.abs(xPos(x) - target) < Math.abs(xPos(nearest) - target)
+                  ? x
+                  : nearest,
+              )
+            }),
+          ),
+        ]
 
   // Direct labels at the right edge, nudged apart so they never collide —
   // only for series that actually reach the final workload; a trace ending
