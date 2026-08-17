@@ -4234,6 +4234,25 @@ The founder's SOL result is the reference-quality acceptance fixture. It include
 
 ### 22.16 Post-beta sequence
 
+**Post-beta refinement pass (2026-08-17).** Shipped as one program: the
+OpenAPI contract closed at 15 typed routes (dossier wire schemas carry the
+same drift gates as the resolver; the SDK's raw-fetch bypasses are gone);
+CLI gained `records`, `serving`, `export`, and `auth status` with consistent
+`--json/--jsonl`, plus tests; MCP gained serving and records tools; the
+export redirect became a build-time pointer import (the cwd-relative read
+404'd on Vercel); source health counts serving runs. New public surfaces:
+`/gpus` and `/gpus/[slug]` (hardware axis), `/implementations` (project
+standing), a server-rendered workload sweep chart on operation pages
+(best-per-workload traces, environment/protocol/dtype held constant — a
+visualization, never a cross-cohort ranking), a record-progression timeline
+in the ledger, `/badges/implementations/[slug].svg`, and `/docs/api`
+rendered from the committed OpenAPI document. Identity: optional Google as
+a second provider (claims stay GitHub-gated). Serving manifest kinds gained
+example fixtures and a digest-chain test; `registry/submissions/` gained a
+CI fixture so the PR path executes. ADR 0003 scopes the first verification
+lane (design only). npm publishing of sdk/cli/mcp deliberately held until
+the machine surface proves demand.
+
 Prioritize by measured demand:
 
 1. controlled maintainer-approved verification on one GPU/provider;

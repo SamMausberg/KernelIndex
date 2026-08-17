@@ -78,6 +78,7 @@ export default async function GpuPage({ params }: Props) {
                   <div className="min-w-0 truncate">
                     <Link
                       href={`/operations/${holder.operation.slug}`}
+                      prefetch={false}
                       className="text-[13px]"
                     >
                       {holder.operation.name}
@@ -95,6 +96,7 @@ export default async function GpuPage({ params }: Props) {
                   <div className="min-w-0 truncate">
                     <Link
                       href={`/implementations/${holder.current.implementation.slug}`}
+                      prefetch={false}
                       className="text-[12.5px]"
                     >
                       {holder.current.implementation.name}

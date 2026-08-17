@@ -36,6 +36,26 @@ describe("environment configuration", () => {
     ).toBe(false)
   })
 
+  it("google needs its full pair on top of a complete github setup", () => {
+    expect(
+      environmentSchema.safeParse({
+        ...production,
+        GOOGLE_CLIENT_ID: "google-id",
+        GOOGLE_CLIENT_SECRET: "google-secret",
+      }).success,
+    ).toBe(true)
+    expect(
+      environmentSchema.safeParse({ ...production, GOOGLE_CLIENT_ID: "only" })
+        .success,
+    ).toBe(false)
+    expect(
+      environmentSchema.safeParse({
+        GOOGLE_CLIENT_ID: "google-id",
+        GOOGLE_CLIENT_SECRET: "google-secret",
+      }).success,
+    ).toBe(false)
+  })
+
   it("requires an HTTPS production origin", () => {
     expect(
       environmentSchema.safeParse({

@@ -42,7 +42,11 @@ export default async function GpusPage() {
               className={`${GRID} border-b border-line py-3 transition-colors hover:bg-raised`}
             >
               <div className="min-w-0 truncate">
-                <Link href={`/gpus/${gpu.slug}`} className="text-[13px]">
+                <Link
+                  href={`/gpus/${gpu.slug}`}
+                  prefetch={false}
+                  className="text-[13px]"
+                >
                   {gpu.model}
                 </Link>
               </div>

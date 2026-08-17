@@ -20,6 +20,10 @@ export const environmentSchema = z
     SERVING_CATALOG_ENABLED: optional(z.string()),
     GITHUB_CLIENT_ID: optional(z.string().trim().min(1)),
     GITHUB_CLIENT_SECRET: optional(z.string().trim().min(1)),
+    /** Optional second sign-in provider. GitHub stays primary — project
+        claims verify repository ownership — so Google requires it. */
+    GOOGLE_CLIENT_ID: optional(z.string().trim().min(1)),
+    GOOGLE_CLIENT_SECRET: optional(z.string().trim().min(1)),
     AUTH_SECRET: optional(z.string().min(32)),
     REVALIDATE_TOKEN: optional(z.string().min(32)),
   })
@@ -50,6 +54,11 @@ export const environmentSchema = z
     if (authRequested && !auth.every(Boolean))
       issue(
         "Authentication requires SITE_ORIGIN, DATABASE_URL, AUTH_SECRET, GITHUB_CLIENT_ID, and GITHUB_CLIENT_SECRET together",
+      )
+    const google = [env.GOOGLE_CLIENT_ID, env.GOOGLE_CLIENT_SECRET]
+    if (google.some(Boolean) && !(google.every(Boolean) && auth.every(Boolean)))
+      issue(
+        "Google sign-in requires GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET together, on top of a complete GitHub auth configuration",
       )
     if (
       env.VERCEL_ENV === "production" &&

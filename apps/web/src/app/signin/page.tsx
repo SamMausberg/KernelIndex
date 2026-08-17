@@ -1,4 +1,5 @@
-// Sign-in (§13.6): GitHub OAuth through Better Auth is the only identity —
+// Sign-in (§13.6): OAuth through Better Auth — GitHub primary (project
+// claims verify repository ownership), Google optionally beside it —
 // KernelIndex never sees or stores a password, and roles are KernelIndex
 // rows granted server-side, never derived from OAuth. Public reads need no
 // account; an account unlocks the contribution surfaces.
@@ -8,7 +9,7 @@ import Link from "next/link"
 import { redirect } from "next/navigation"
 import { ContextHeader } from "@/components/context-header"
 import { safeNextPath } from "@/lib/paths"
-import { authConfigured } from "@/server/auth"
+import { authConfigured, googleEnabled } from "@/server/auth"
 import { sessionUser } from "@/server/policy/authorization"
 import { SignInButton } from "./sign-in-button"
 
@@ -44,12 +45,18 @@ export default async function SignInPage({
         <div className="max-w-[560px]">
           {authConfigured ? (
             <div className="plate px-6 py-6">
-              <SignInButton next={next} />
+              <SignInButton provider="github" next={next} primary />
+              {googleEnabled && (
+                <div className="mt-3">
+                  <SignInButton provider="google" next={next} />
+                </div>
+              )}
               <p className="mt-4 max-w-[52ch] text-[12.5px] leading-relaxed text-subtle">
-                GitHub is the only identity KernelIndex uses: benchmark
-                provenance ties to code identity, and no password is ever
-                created or stored here. Sessions are HTTP-only cookies; sign out
-                at any time from your account.
+                No password is ever created or stored here; sessions are
+                HTTP-only cookies, and you can sign out at any time from your
+                account.
+                {googleEnabled &&
+                  " Claiming a project requires GitHub — claims verify repository ownership."}
               </p>
             </div>
           ) : (
