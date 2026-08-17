@@ -1284,6 +1284,24 @@ export interface paths {
                 disputed: boolean
                 caveats: string[]
               }[]
+              sweep: {
+                axis: string
+                unit: string
+                metricLabel: string
+                environmentLabel: string
+                series: {
+                  implementation: {
+                    name: string
+                    slug: string
+                  }
+                  points: {
+                    x: number
+                    value: number
+                    workloadId: string
+                  }[]
+                }[]
+                overflow: number
+              } | null
               implementations: {
                 slug: string
                 name: string

@@ -3871,6 +3871,73 @@
                         ]
                       }
                     },
+                    "sweep": {
+                      "type": ["object", "null"],
+                      "properties": {
+                        "axis": {
+                          "type": "string"
+                        },
+                        "unit": {
+                          "type": "string"
+                        },
+                        "metricLabel": {
+                          "type": "string"
+                        },
+                        "environmentLabel": {
+                          "type": "string"
+                        },
+                        "series": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "implementation": {
+                                "type": "object",
+                                "properties": {
+                                  "name": {
+                                    "type": "string"
+                                  },
+                                  "slug": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": ["name", "slug"]
+                              },
+                              "points": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "x": {
+                                      "type": "number"
+                                    },
+                                    "value": {
+                                      "type": "number"
+                                    },
+                                    "workloadId": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": ["x", "value", "workloadId"]
+                                }
+                              }
+                            },
+                            "required": ["implementation", "points"]
+                          }
+                        },
+                        "overflow": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "axis",
+                        "unit",
+                        "metricLabel",
+                        "environmentLabel",
+                        "series",
+                        "overflow"
+                      ]
+                    },
                     "implementations": {
                       "type": "array",
                       "items": {
@@ -4050,6 +4117,7 @@
                     "cohortOptions",
                     "cohort",
                     "records",
+                    "sweep",
                     "implementations",
                     "coverage",
                     "sources"
