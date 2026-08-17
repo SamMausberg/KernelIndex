@@ -349,6 +349,29 @@ export type ImplementationSummary = {
   license: LicenseInfo
 }
 
+/** One implementation's trace across a workload sweep (same environment,
+ * protocol, and hardware; only the sweep axis varies). Points are the best
+ * eligible value per workload — a visualization of scaling, never a ranking
+ * across cohorts (§11.1). */
+export type SweepSeries = {
+  implementation: { name: string; slug: string }
+  points: { x: number; value: number; workloadId: string }[]
+}
+
+export type OperationSweep = {
+  /** The one numeric axis that varies, e.g. "tokens". */
+  axis: string
+  /** Canonical y unit (e.g. "ns") and its label, e.g. "latency · median". */
+  unit: string
+  metricLabel: string
+  /** The held-constant facts: hardware and environment/protocol line. */
+  environmentLabel: string
+  /** Best implementations first; capped for legibility. */
+  series: SweepSeries[]
+  /** Implementations beyond the cap. */
+  overflow: number
+}
+
 /** §16.8: operation page as one scrollable document. */
 export type OperationPageModel = {
   illustrative: boolean
@@ -380,6 +403,8 @@ export type OperationPageModel = {
   cohort: CohortContext | null
   /** Current records for the selected workload. */
   records: ResultRow[]
+  /** Scaling sweep across the workload family, when one exists. */
+  sweep: OperationSweep | null
   implementations: ImplementationSummary[]
   coverage: {
     verified: number
@@ -543,4 +568,67 @@ export type CoverageSource = {
 export type CoveragePageModel = {
   illustrative: boolean
   sources: CoverageSource[]
+}
+
+export type HardwareIndexModel = {
+  illustrative: boolean
+  gpus: HardwareIndexEntry[]
+}
+
+export type ProjectIndexModel = {
+  illustrative: boolean
+  projects: ProjectIndexEntry[]
+}
+
+/** One GPU in the hardware index (§16.4 GPU-first navigation). */
+export type HardwareIndexEntry = {
+  slug: string
+  model: string
+  architecture: string | null
+  runs: number
+  operations: number
+  records: number
+  lastObservedAt: string | null
+}
+
+/** Per-operation-family coverage on one GPU. */
+export type HardwareFamilyCoverage = {
+  family: string
+  operations: number
+  runs: number
+  withSource: number
+}
+
+export type HardwarePageModel = {
+  illustrative: boolean
+  hardware: { slug: string; model: string; architecture: string | null }
+  stats: {
+    runs: number
+    operations: number
+    implementations: number
+    lastObservedAt: string | null
+  }
+  /** Current records held on this GPU, newest first. */
+  records: RecordHolder[]
+  families: HardwareFamilyCoverage[]
+  sources: SourceRef[]
+}
+
+/** One software project's standing in the projects index. */
+export type ProjectIndexEntry = {
+  slug: string
+  name: string
+  repositoryUrl: string | null
+  implementations: number
+  runs: number
+  /** Current records held across all cohorts. */
+  records: number
+  bestEvidence: EvidenceLevel | null
+  /** Distinct concluded license expressions; empty means unknown. */
+  licenses: string[]
+  installable: boolean
+  sourceAvailable: boolean
+  /** Distinct GPU models measured. */
+  hardware: string[]
+  lastObservedAt: string | null
 }

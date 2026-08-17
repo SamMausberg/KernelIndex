@@ -1,6 +1,7 @@
 // The JSON route handlers serve seam models with CDN cache headers; they
 // must keep working under the fixtures backend (e2e runs against it).
 import { describe, expect, it } from "vitest"
+import { GET as badge } from "./badges/implementations/[slug]/route.ts"
 import { POST as beacon } from "./e/route.ts"
 import { GET as recordsData } from "./records/data/route.ts"
 import { GET as suggest } from "./suggest/route.ts"
@@ -21,6 +22,21 @@ describe("JSON routes", () => {
     const model = await response.json()
     expect(Array.isArray(model.records)).toBe(true)
     expect(Array.isArray(model.hardwareOptions)).toBe(true)
+  })
+
+  it("/badges serves a record-count SVG and 404s unknown slugs", async () => {
+    const request = new Request("http://test/badges")
+    const response = await badge(request, {
+      params: Promise.resolve({ slug: "meridian-rmsnorm.svg" }),
+    })
+    expect(response.headers.get("Content-Type")).toBe("image/svg+xml")
+    const svg = await response.text()
+    expect(svg).toContain("kernelindex")
+    expect(svg).not.toContain("<script")
+    const missing = await badge(request, {
+      params: Promise.resolve({ slug: "no-such-kernel" }),
+    })
+    expect(missing.status).toBe(404)
   })
 
   it("/e answers 204 to every beacon, hostile ones included", async () => {

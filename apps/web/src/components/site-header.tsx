@@ -5,9 +5,13 @@ import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
 import { CommandK } from "./command-k"
 
+// GPUs and Projects yield on narrow screens (search reaches both); the
+// original five keep the mobile header on one uncramped line.
 const NAV = [
   { label: "Search", href: "/search" },
   { label: "Records", href: "/records" },
+  { label: "GPUs", href: "/gpus", desktopOnly: true },
+  { label: "Projects", href: "/implementations", desktopOnly: true },
   { label: "Serving", href: "/serving" },
   { label: "Docs", href: "/docs" },
   { label: "Contribute", href: "/submit" },
@@ -75,7 +79,7 @@ export function SiteHeader({
               href={item.href}
               className={`transition-colors hover:text-fg hover:no-underline ${
                 pathname.startsWith(item.href) ? "text-fg" : "text-subtle"
-              }`}
+              }${item.desktopOnly ? " max-md:hidden" : ""}`}
             >
               {item.label}
             </Link>

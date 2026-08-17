@@ -103,3 +103,11 @@ export function implementationDisplayName(
   })
   return kept.length > 0 ? kept.join(" · ") : slug
 }
+
+/** URL slug for a GPU model name: "NVIDIA B200 SXM" → "nvidia-b200-sxm". */
+export function hardwareSlug(model: string): string {
+  return model
+    .toLowerCase()
+    .replaceAll(/[^a-z0-9]+/g, "-")
+    .replaceAll(/^-+|-+$/g, "")
+}

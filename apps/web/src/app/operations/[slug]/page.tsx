@@ -8,6 +8,7 @@ import { KeyValueList } from "@/components/key-value-list"
 import { Metric } from "@/components/metric"
 import { Section } from "@/components/section"
 import { AvailabilityCell, EvidenceCell } from "@/components/trust"
+import { SweepChart } from "@/features/operations/sweep"
 import { WorkloadPicker } from "@/features/operations/workload-picker"
 import { ResultRowItem, ResultTableHead } from "@/features/search/result-row"
 import { getOperationPage } from "@/lib/catalog"
@@ -200,6 +201,12 @@ export default async function OperationPage({ params, searchParams }: Props) {
             </p>
           )}
         </Section>
+
+        {model.sweep && (
+          <Section id="sweep" title={`Scaling by ${model.sweep.axis}`}>
+            <SweepChart sweep={model.sweep} />
+          </Section>
+        )}
 
         <Section id="implementations" title="Implementations">
           <div className="overflow-x-auto">

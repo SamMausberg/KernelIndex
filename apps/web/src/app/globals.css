@@ -41,6 +41,16 @@
   --color-success: #6fd39c;
   --color-warning: #d9a54a;
 
+  /* Categorical series colors for charts, cobalt first — assigned in this
+     fixed order, never cycled past five (fold the rest). Validated on the
+     dark surface for CVD separation, chroma, and contrast (dataviz gates);
+     never reused for status, and text beside them stays in text tokens. */
+  --color-viz-1: #5b8ee0;
+  --color-viz-2: #2aa889;
+  --color-viz-3: #a379e8;
+  --color-viz-4: #d0618f;
+  --color-viz-5: #b98a3d;
+
   /* ABC Diatype leads when locally available; hosted fallbacks otherwise. */
   --font-sans:
     "ABC Diatype", var(--font-instrument-sans), "Helvetica Neue", Helvetica,
@@ -289,6 +299,22 @@
   /* The well is the focus ring; never double-box the inner input. */
   .well input:focus-visible {
     outline: none;
+  }
+
+  /* Sweep chart hover: emphasize one trace, reveal its point values.
+     Opacity transitions only — nothing repaints continuously. */
+  .sweep .series {
+    transition: opacity 0.15s;
+  }
+  .sweep svg:has(.series:hover) .series:not(:hover) {
+    opacity: 0.35;
+  }
+  .sweep .pt-label {
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .sweep .series:hover .pt-label {
+    opacity: 1;
   }
 
   /* Route-transition scan: a light streak crossing the page once. */

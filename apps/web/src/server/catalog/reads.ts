@@ -84,6 +84,15 @@ import {
 } from "./present.ts"
 import { eligibleRunFilter } from "./record-events.ts"
 import { diffSource } from "./source-diff.ts"
+import { computeSweep } from "./sweep.ts"
+
+// Hardware and project index reads live beside this module; the seam
+// resolves them through the same import (§27.5).
+export {
+  getHardwareIndex,
+  getHardwarePage,
+  getProjectIndex,
+} from "./surfaces.ts"
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
@@ -94,6 +103,8 @@ const runColumns = {
   id: schema.benchmarkRuns.id,
   observedAt: schema.benchmarkRuns.observedAt,
   comparisonKey: schema.benchmarkRuns.comparisonKey,
+  protocolKey: schema.benchmarkRuns.protocolKey,
+  environmentKey: schema.benchmarkRuns.environmentKey,
   hardwareModel: schema.benchmarkRuns.hardwareModel,
   hardwareArchitecture: schema.benchmarkRuns.hardwareArchitecture,
   cudaMajor: schema.benchmarkRuns.cudaMajor,
@@ -1254,6 +1265,63 @@ export async function getOperationPage(
   const implementations = implementationSummaries(implRows, joined, operation)
   const evidence = joined.map((j) => runEvidence(j.run))
 
+  // Sweep inputs (§16.8): everything that must be held constant for two
+  // runs to share the chart, folded into one key; the axes come from the
+  // WorkloadCase manifests already loaded above.
+  const sweepConstant = (j: OperationJoinedRun) =>
+    [
+      j.run.protocolKey,
+      j.run.environmentKey,
+      j.run.hardwareModel,
+      j.run.primaryMetric,
+      j.run.primaryStatistic ?? "value",
+      j.run.primaryUnit ?? "",
+      j.workload.dtypes.join("/"),
+    ].join("|")
+  const anchor =
+    groups.cohort !== null
+      ? (joined.find(
+          (j) => j.run.comparisonKey === groups.cohort?.comparisonKey,
+        ) ?? null)
+      : null
+  const sweep = computeSweep({
+    anchorWorkloadId: selectedWorkloadId,
+    anchorConstantKey: anchor ? sweepConstant(anchor) : null,
+    environmentLabel: anchor
+      ? [anchor.run.hardwareModel, anchor.run.environmentSummary]
+          .filter(Boolean)
+          .join(" · ")
+      : "",
+    metricLabel: anchor
+      ? `${anchor.run.primaryMetric} · ${anchor.run.primaryStatistic ?? "value"}`
+      : "",
+    unit: anchor?.run.primaryUnit ?? "",
+    lowerIsBetter: (anchor?.run.primaryUnit ?? "ns") === "ns",
+    runs: joined
+      .filter((j) => j.run.primaryValue !== null)
+      .map((j) => ({
+        workloadId: j.workload.id,
+        implementation: {
+          name: implementationDisplayName(
+            j.implementation.title ?? undefined,
+            operation,
+            j.implementation.slug,
+          ),
+          slug: j.implementation.slug,
+        },
+        value: j.run.primaryValue as number,
+        constantKey: sweepConstant(j),
+      })),
+    workloadAxes: new Map(
+      workloadRows.flatMap((row) => {
+        const workloadManifest = row.manifest as AnyWorkloadManifest
+        return workloadManifest.kind === "WorkloadCase"
+          ? [[row.id, { ...workloadManifest.spec.axes }] as const]
+          : []
+      }),
+    ),
+  })
+
   return {
     illustrative: pageIllustrative(joined),
     operation: {
@@ -1301,6 +1369,7 @@ export async function getOperationPage(
     cohortOptions: groups.cohortOptions,
     cohort: groups.cohort,
     records: groups.exact,
+    sweep,
     implementations,
     coverage: {
       verified: evidence.filter(

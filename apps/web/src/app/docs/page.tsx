@@ -254,8 +254,9 @@ rmsnorm gpu:B200 dtype:bf16 shape:[2048,4096] framework=pytorch trust:verified`}
             Everything visible here is backed by canonical manifests with RFC
             8785 content digests. The public REST API at{" "}
             <span className="font-mono text-[12.5px]">/api/v1</span> returns the
-            same resolver decisions as these pages, never scraped HTML,
-            documented at{" "}
+            same resolver decisions as these pages, never scraped HTML. The
+            rendered reference lives at <Link href="/docs/api">/docs/api</Link>;
+            the machine contract at{" "}
             <a href="/api/v1/openapi.json" className="font-mono text-[12.5px]">
               /api/v1/openapi.json
             </a>
@@ -283,7 +284,10 @@ ki search "gemm b200 nvfp4" --json | jq '.groups.exact[0]'
 ki manifest digest my-run.yaml
 
 # bulk export (versioned, immutable, zstd JSONL):
-curl -L https://kernelindex.com/api/v1/exports/catalog.jsonl.zst`}
+curl -L https://kernelindex.com/api/v1/exports/catalog.jsonl.zst
+
+# README badge: current records held by an implementation (SVG):
+![KernelIndex](https://kernelindex.com/badges/implementations/<slug>.svg)`}
           </pre>
           <p className="mt-4">
             <strong className="font-medium text-fg">API keys.</strong> Public

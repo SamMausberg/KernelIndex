@@ -8,6 +8,8 @@ import type {
   CompareRun,
   CoveragePageModel,
   EvidenceLevel,
+  HardwareIndexModel,
+  HardwarePageModel,
   HomePageModel,
   ImplementationPageModel,
   LicenseInfo,
@@ -16,6 +18,7 @@ import type {
   OperationIndexEntry,
   OperationPageModel,
   PrimaryMetric,
+  ProjectIndexModel,
   RecordHolder,
   RecordsPageModel,
   ResultRow,
@@ -24,6 +27,7 @@ import type {
   SearchInput,
   SearchPageModel,
 } from "@/lib/catalog-models"
+import { hardwareSlug } from "@/lib/names"
 import {
   describeIntent,
   parseQuery,
@@ -36,6 +40,7 @@ import {
   chooserMatch,
   rankChooserMatches,
 } from "@/server/catalog/chooser"
+import { computeSweep } from "@/server/catalog/sweep"
 import { RANKING_POLICY_VERSION, rankCohort } from "@/server/policy/ranking"
 
 const ILLUSTRATIVE = true
@@ -83,6 +88,14 @@ const WORKLOADS = {
     label: "tokens = 1024 · bf16 · [1024, 4096]",
     axes: { tokens: 1024, hidden: 4096 },
     summary: "bf16 · [1024, 4096] · row-major",
+    toleranceSummary: "abs ≤ 1e-2, rel ≤ 1e-2, matched ≥ 99%",
+  },
+  "wl-4096": {
+    id: "wl-4096",
+    digest: digest("workload:rmsnorm-h4096:tokens-4096"),
+    label: "tokens = 4096 · bf16 · [4096, 4096]",
+    axes: { tokens: 4096, hidden: 4096 },
+    summary: "bf16 · [4096, 4096] · row-major",
     toleranceSummary: "abs ≤ 1e-2, rel ≤ 1e-2, matched ≥ 99%",
   },
 } as const
@@ -371,6 +384,51 @@ const RUNS: FxRun[] = [
     },
     ineligibleReasons: ["RETRACTED"],
   },
+  // The tokens=4096 points that complete the sweep traces (§16.8): meridian
+  // spans 1024/2048/4096, ionflux 2048/4096.
+  {
+    id: "run-fx-0011",
+    status: "passed",
+    evidence: "verified",
+    impl: {
+      name: "meridian-rmsnorm",
+      slug: "meridian-rmsnorm",
+      revision: "b81d40e",
+    },
+    project: { name: "Meridian Kernels (fictional)", slug: "meridian-kernels" },
+    workloadId: "wl-4096",
+    latencyNs: 16350,
+    ci: [16290, 16412],
+    samples: 200,
+    rank: null,
+    match: "exact",
+    sourceAvailable: true,
+    installable: true,
+    license: APACHE,
+    lastTestedAt: FRESH,
+  },
+  {
+    id: "run-fx-0012",
+    status: "passed",
+    evidence: "verified",
+    impl: {
+      name: "ionflux-rmsnorm",
+      slug: "ionflux-rmsnorm",
+      revision: "3f9c2ad",
+    },
+    project: { name: "IonFlux (fictional)", slug: "ionflux" },
+    workloadId: "wl-4096",
+    latencyNs: 15660,
+    ci: [15602, 15731],
+    samples: 200,
+    rank: null,
+    match: "exact",
+    sourceAvailable: false,
+    installable: false,
+    license: UNKNOWN_LICENSE,
+    lastTestedAt: FRESH,
+    caveats: ["No public source", "License unknown"],
+  },
 ]
 
 function rowFromRun(r: FxRun): ResultRow {
@@ -451,7 +509,7 @@ export async function getHomePage(): Promise<HomePageModel> {
   return {
     illustrative: ILLUSTRATIVE,
     latest,
-    stats: { operations: 2, runs: 8, gpus: 1 },
+    stats: { operations: 2, runs: 10, gpus: 1 },
   }
 }
 
@@ -581,7 +639,7 @@ export async function getOperationIndex(): Promise<OperationIndexEntry[]> {
       slug: "rmsnorm-h4096",
       family: "rmsnorm",
       aliases: ["rms_norm", "root mean square norm"],
-      runs: 8,
+      runs: 10,
       lastObservedAt: FRESH,
     },
     {
@@ -708,11 +766,34 @@ export async function getOperationPage(
   _cohort?: string,
 ): Promise<OperationPageModel | null> {
   if (slug !== "rmsnorm-h4096") return null
-  const selected: WorkloadId = workload === "wl-1024" ? "wl-1024" : "wl-2048"
+  const selected: WorkloadId =
+    workload === "wl-1024" || workload === "wl-4096" ? workload : "wl-2048"
   const records =
     selected === "wl-2048"
       ? RANKED.map(rowFromRun)
-      : RUNS.filter((r) => r.workloadId === "wl-1024").map(rowFromRun)
+      : RUNS.filter((r) => r.workloadId === selected).map(rowFromRun)
+  // Same sweep derivation as the postgres backend: every eligible run joins
+  // (match quality is query-relative, not a cohort fact), and the fixture
+  // corpus shares one environment/protocol, so the constant key is constant.
+  const sweep = computeSweep({
+    anchorWorkloadId: selected,
+    anchorConstantKey: "fixture",
+    environmentLabel: `${B200.model} · CUDA 13.1 · PyTorch 2.9.0 · ki-fixed-clock v1`,
+    metricLabel: "latency · median",
+    unit: "ns",
+    lowerIsBetter: true,
+    runs: RUNS.filter(
+      (r) => r.status === "passed" && !r.retracted && !r.supersededById,
+    ).map((r) => ({
+      workloadId: r.workloadId,
+      implementation: { name: r.impl.name, slug: r.impl.slug },
+      value: r.latencyNs,
+      constantKey: "fixture",
+    })),
+    workloadAxes: new Map(
+      Object.values(WORKLOADS).map((w) => [w.id, { ...w.axes }]),
+    ),
+  })
   return {
     illustrative: ILLUSTRATIVE,
     operation: {
@@ -777,6 +858,7 @@ export async function getOperationPage(
     cohortOptions: [],
     cohort: selected === "wl-2048" ? COHORT_2048 : null,
     records,
+    sweep,
     implementations: [
       {
         slug: "meridian-rmsnorm",
@@ -822,7 +904,7 @@ export async function getOperationPage(
       },
     ],
     coverage: {
-      verified: 3,
+      verified: 5,
       reproducible: 3,
       reported: 2,
       lastObservedAt: FRESH,
@@ -1301,6 +1383,101 @@ export async function getComparePage(
 
 // Serving fixtures (§8.16, Week 9): same seam, separate module.
 export * from "./serving"
+
+/** Eligible fixture runs: the same filter every ranked surface applies. */
+const eligible = () =>
+  RUNS.filter((r) => r.status === "passed" && !r.retracted && !r.supersededById)
+
+export async function getHardwareIndex(): Promise<HardwareIndexModel> {
+  const runs = eligible()
+  const { records } = await getRecordsPage()
+  return {
+    illustrative: ILLUSTRATIVE,
+    gpus: [
+      {
+        slug: hardwareSlug(B200.model),
+        model: B200.model,
+        architecture: B200.architecture,
+        runs: runs.length,
+        operations: 1,
+        records: records.length,
+        lastObservedAt: FRESH,
+      },
+    ],
+  }
+}
+
+export async function getHardwarePage(
+  slug: string,
+): Promise<HardwarePageModel | null> {
+  if (slug !== hardwareSlug(B200.model)) return null
+  const runs = eligible()
+  const { records } = await getRecordsPage()
+  return {
+    illustrative: ILLUSTRATIVE,
+    hardware: { slug, model: B200.model, architecture: B200.architecture },
+    stats: {
+      runs: runs.length,
+      operations: 1,
+      implementations: new Set(runs.map((r) => r.impl.slug)).size,
+      lastObservedAt: FRESH,
+    },
+    records,
+    families: [
+      {
+        family: "rmsnorm",
+        operations: 1,
+        runs: runs.length,
+        withSource: runs.filter((r) => r.sourceAvailable).length,
+      },
+    ],
+    sources: [FIXTURE_SOURCE_REF],
+  }
+}
+
+export async function getProjectIndex(): Promise<ProjectIndexModel> {
+  const { records } = await getRecordsPage()
+  const bySlug = new Map<string, { name: string; runs: FxRun[] }>()
+  for (const run of eligible()) {
+    const entry = bySlug.get(run.project.slug) ?? {
+      name: run.project.name,
+      runs: [],
+    }
+    entry.runs.push(run)
+    bySlug.set(run.project.slug, entry)
+  }
+  const order: EvidenceLevel[] = [
+    "replicated",
+    "verified",
+    "reproducible",
+    "reported",
+  ]
+  return {
+    illustrative: ILLUSTRATIVE,
+    projects: [...bySlug.entries()].map(([slug, entry]) => ({
+      slug,
+      name: entry.name,
+      repositoryUrl: null,
+      implementations: new Set(entry.runs.map((r) => r.impl.slug)).size,
+      runs: entry.runs.length,
+      records: records.filter((h) => h.current.project.slug === slug).length,
+      bestEvidence:
+        order.find((level) => entry.runs.some((r) => r.evidence === level)) ??
+        null,
+      licenses: [
+        ...new Set(
+          entry.runs
+            .map((r) => r.license.concluded)
+            .filter((license): license is string => license !== null),
+        ),
+      ],
+      installable: entry.runs.some((r) => r.installable),
+      sourceAvailable: entry.runs.some((r) => r.sourceAvailable),
+      hardware: [B200.model],
+      lastObservedAt: FRESH,
+    })),
+  }
+}
 
 /** Coverage rows sized to the fixture catalog, visibly illustrative. */
 export async function getCoveragePage(): Promise<CoveragePageModel> {

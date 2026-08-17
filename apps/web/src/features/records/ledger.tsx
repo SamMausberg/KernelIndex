@@ -22,6 +22,7 @@ import {
   type RecordsView,
   recordsHref,
 } from "./ledger-model"
+import { RecordTimeline } from "./timeline"
 
 const VIEWS: { key: RecordsView; label: string }[] = [
   { key: "current", label: "Current records" },
@@ -175,6 +176,14 @@ function HolderRow({ holder }: { holder: RecordHolder }) {
         </div>
         <div className="mt-3 text-[11.5px] tracking-[0.03em] text-faint uppercase">
           Record history
+        </div>
+        {/* Day-quantized "now": identical between server render and
+            hydration, so the step coordinates never mismatch. */}
+        <div className="mt-2">
+          <RecordTimeline
+            history={holder.history}
+            now={Math.floor(Date.now() / DAY_MS) * DAY_MS}
+          />
         </div>
         {timeline.map((event, index) => (
           <div

@@ -474,6 +474,27 @@ export const operationDossier = z.object({
   ),
   cohort: cohortContext.nullable(),
   records: z.array(resultRow),
+  sweep: z
+    .object({
+      axis: z.string(),
+      unit: z.string(),
+      metricLabel: z.string(),
+      environmentLabel: z.string(),
+      series: z.array(
+        z.object({
+          implementation: z.object({ name: z.string(), slug: z.string() }),
+          points: z.array(
+            z.object({
+              x: z.number(),
+              value: z.number(),
+              workloadId: z.string(),
+            }),
+          ),
+        }),
+      ),
+      overflow: z.number(),
+    })
+    .nullable(),
   implementations: z.array(implementationSummary),
   coverage: z.object({
     verified: z.number(),

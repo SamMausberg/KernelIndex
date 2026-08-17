@@ -8,10 +8,13 @@ import { cache } from "react"
 import type {
   ComparePageModel,
   CoveragePageModel,
+  HardwareIndexModel,
+  HardwarePageModel,
   HomePageModel,
   ImplementationPageModel,
   OperationIndexEntry,
   OperationPageModel,
+  ProjectIndexModel,
   RecordsPageModel,
   RunPageModel,
   SearchInput,
@@ -42,6 +45,9 @@ type CatalogReads = {
   getRunPage(id: string): Promise<RunPageModel | null>
   getComparePage(runIds: string[]): Promise<ComparePageModel>
   getCoveragePage(): Promise<CoveragePageModel>
+  getHardwareIndex(): Promise<HardwareIndexModel>
+  getHardwarePage(slug: string): Promise<HardwarePageModel | null>
+  getProjectIndex(): Promise<ProjectIndexModel>
   // Serving (§8.16): a separate resolver surface behind the same seam.
   resolveServing(input: ServingResolveInput): Promise<ServingResolveModel>
   getServingRunPage(id: string): Promise<ServingRunPageModel | null>
@@ -220,6 +226,36 @@ export const listServingConfigurations = cache(
       return (await reads()).listServingConfigurations()
     },
     ["serving-configurations", BACKEND],
+    { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },
+  ),
+)
+
+export const getHardwareIndex = cache(
+  cached(
+    async (): Promise<HardwareIndexModel> => {
+      return (await reads()).getHardwareIndex()
+    },
+    ["hardware-index", BACKEND],
+    { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },
+  ),
+)
+
+export const getHardwarePage = cache(
+  cached(
+    async (slug: string): Promise<HardwarePageModel | null> => {
+      return (await reads()).getHardwarePage(slug)
+    },
+    ["hardware", BACKEND],
+    { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },
+  ),
+)
+
+export const getProjectIndex = cache(
+  cached(
+    async (): Promise<ProjectIndexModel> => {
+      return (await reads()).getProjectIndex()
+    },
+    ["project-index", BACKEND],
     { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },
   ),
 )
