@@ -31,6 +31,7 @@
   },
   "dependencies": {
     "@hono/zod-openapi": "^1.6.0",
+    "@vercel/analytics": "2.0.1",
     "better-auth": "^1.6.29",
     "canonicalize": "4.0.0",
     "clsx": "2.1.1",

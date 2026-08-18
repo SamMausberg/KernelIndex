@@ -359,8 +359,10 @@ curl -L https://kernelindex.com/api/v1/exports/catalog.jsonl.zst
           <p>
             A few first-party counters — a search happened, a result was opened.
             No cookies, no IDs, no IP addresses, never the query text. Counters
-            are deleted after 90 days. Accounts store only the name and email
-            your sign-in provider shares, and you can delete yours anytime from{" "}
+            are deleted after 90 days. Hosting adds cookieless, aggregate
+            page-view counts (Vercel Web Analytics), with no persistent visitor
+            ID. Accounts store only the name and email your sign-in provider
+            shares, and you can delete yours anytime from{" "}
             <Link href="/account">/account</Link>. Full policy:{" "}
             <Link href="/legal">Legal</Link>.
           </p>

@@ -79,8 +79,10 @@ export default function LegalPage() {
             The site keeps a small set of first-party counters: a search
             happened, a result was opened. No cookies for tracking, no IDs, no
             IP addresses, no query text. Counters are deleted after 90 days.
-            Issue reports store only what you type, and contact details are
-            optional.
+            Vercel, the hosting provider, additionally counts page views for us
+            (Web Analytics) — cookieless and aggregate, with no persistent
+            visitor ID. Issue reports store only what you type, and contact
+            details are optional.
           </p>
           <p className="mt-3">
             Questions or requests about your data:{" "}
