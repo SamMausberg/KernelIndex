@@ -68,3 +68,15 @@ vs the 150 KiB §16.18 budget. 2026-08-16 measurement: 127–138 KiB
 corpus, uncached over WAN: search 91–151 ms, home 106 ms, records 229 ms,
 serving resolve 707 ms (178 cohorts) — all inside the §16.18/§19.9
 budgets; no query-plan changes warranted at this scale.
+
+2026-08-18 page-load pass (local prod build over the same corpus):
+operation pages went ISR (search params moved to the records island +
+/operations/[slug]/data), cutting a cold render from ~250 ms to ~25 ms
+and making the 466 operation pages CDN-cacheable; /records/data slimmed
+3.52 MB → 2.65 MB via the LedgerModel projection (the public /api/v1
+record shape is unchanged); the full-ledger read memoizes once in
+reads.ts for all callers (gpus/projects/badges previously re-ran it per
+request); serving dedupes its facets read and overlaps resolve with the
+form shell; the implementation dossier read collapsed ~7 sequential
+round trips to ~4; quiet-link prefetches on hover intent (80 ms rest)
+instead of never. Bundles after: 117–128 KiB (/search largest).

@@ -16,7 +16,10 @@ import { Select } from "@/components/select"
 import { ServingCohorts } from "@/features/serving/results"
 import { getServingFacets, resolveServing } from "@/lib/catalog"
 import { countNoun } from "@/lib/format"
-import type { ServingResolveInput } from "@/lib/serving-models"
+import type {
+  ServingResolveInput,
+  ServingResolveModel,
+} from "@/lib/serving-models"
 import { servingEnabled } from "@/server/env"
 import { recordEvent } from "@/server/events"
 
@@ -133,15 +136,17 @@ function UnitInput({
   )
 }
 
-/** The slow half: resolve, count, and render — streamed behind Suspense. */
+/** The slow half: resolve, count, and render — streamed behind Suspense.
+ * The resolve promise starts in the page body, before the facets await, so
+ * the two reads overlap instead of forming a waterfall. */
 async function ServingResults({
-  params,
+  resolved,
   requested,
 }: {
-  params: Params
+  resolved: Promise<ServingResolveModel>
   requested: boolean
 }) {
-  const model = await resolveServing(inputOf(params))
+  const model = await resolved
   const feasible = model.groups.reduce((n, group) => n + group.rows.length, 0)
   // §20.5: only actual resolver requests count, not the default view.
   if (requested)
@@ -201,6 +206,10 @@ export default async function ServingPage({
 }) {
   if (!servingEnabled) notFound()
   const params = await searchParams
+  const resolved = resolveServing(inputOf(params))
+  // An early rejection (before the Suspense subtree awaits) must not become
+  // an unhandled rejection; ServingResults still receives it on await.
+  resolved.catch(() => {})
   const facets = await getServingFacets()
 
   return (
@@ -326,7 +335,7 @@ export default async function ServingPage({
           }
         >
           <ServingResults
-            params={params}
+            resolved={resolved}
             requested={Object.keys(params).length > 0}
           />
         </Suspense>

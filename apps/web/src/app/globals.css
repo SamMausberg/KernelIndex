@@ -278,7 +278,7 @@
      approximates a collapsed row so the scrollbar stays stable. */
   .row-cv {
     content-visibility: auto;
-    contain-intrinsic-size: auto 47px;
+    contain-intrinsic-size: auto var(--row-h, 47px);
   }
 
   /* Sweep chart hover: emphasize one trace, reveal its point values.

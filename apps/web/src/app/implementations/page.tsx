@@ -42,7 +42,7 @@ export default async function ProjectsPage() {
           {model.projects.map((project) => (
             <div
               key={project.slug}
-              className={`${GRID} h-[52px] items-center border-b border-line transition-colors hover:bg-raised`}
+              className={`${GRID} row-cv h-[52px] [--row-h:52px] items-center border-b border-line transition-colors hover:bg-raised`}
             >
               <div className="min-w-0 truncate">
                 {project.repositoryUrl ? (

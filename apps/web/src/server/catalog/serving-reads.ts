@@ -15,6 +15,7 @@ import {
   or,
   sql,
 } from "drizzle-orm"
+import { cache } from "react"
 import type {
   ServingCohortGroup,
   ServingConfigurationSummary,
@@ -178,8 +179,10 @@ function candidateOf(
 }
 
 /** Corpus-wide facet lists and total, independent of any filter — the
- * resolver form renders from this while results stream. */
-export async function getServingFacets(): Promise<ServingFacetsModel> {
+ * resolver form renders from this while results stream. Request-deduped
+ * with React cache: the page shell and resolveServing read the same facets
+ * in one request. */
+export const getServingFacets = cache(async (): Promise<ServingFacetsModel> => {
   const database = db()
   const [models, workloads, hardware, [total]] = await Promise.all([
     database
@@ -227,7 +230,7 @@ export async function getServingFacets(): Promise<ServingFacetsModel> {
     hardware: hardware.map((row) => row.model),
     totalRuns: total?.n ?? 0,
   }
-}
+})
 
 export async function resolveServing(
   input: ServingResolveInput,

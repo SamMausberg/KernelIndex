@@ -1,3 +1,7 @@
+// Operation dossier (§16.6): ISR — the server always renders the default
+// workload/cohort variant from CDN cache, and the records island applies any
+// deep-linked selection after loading its variant from /operations/[slug]/
+// data. Selections never make this page dynamic (records pattern, §16.12).
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { ContextHeader } from "@/components/context-header"
@@ -8,17 +12,14 @@ import { Metric } from "@/components/metric"
 import { Link } from "@/components/quiet-link"
 import { Section } from "@/components/section"
 import { AvailabilityCell, EvidenceCell } from "@/components/trust"
-import { SweepChart } from "@/features/operations/sweep"
-import { WorkloadPicker } from "@/features/operations/workload-picker"
-import { ResultRowItem, ResultTableHead } from "@/features/search/result-row"
+import { OperationRecords } from "@/features/operations/operation-records"
+import { operationVariant } from "@/features/operations/variant"
 import { getOperationPage } from "@/lib/catalog"
 import { formatDateUTC } from "@/lib/format"
-import { WatchButton } from "./watch-button"
 
-type Props = {
-  params: Promise<{ slug: string }>
-  searchParams: Promise<{ workload?: string; cohort?: string }>
-}
+type Props = { params: Promise<{ slug: string }> }
+
+export const revalidate = 300
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
@@ -28,17 +29,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: model.operation.name }
 }
 
-export default async function OperationPage({ params, searchParams }: Props) {
+export default async function OperationPage({ params }: Props) {
   const { slug } = await params
-  const { workload, cohort } = await searchParams
-  const model = await getOperationPage(slug, workload, cohort)
+  const model = await getOperationPage(slug)
   if (!model) notFound()
   const { operation, semantics, coverage } = model
-  const best = model.records[0]?.primary ?? null
-  // The page answers "what holds this cohort"; the deep tail lives in
-  // search, which paginates. Rendering every row made 900KB pages.
-  const records = model.records.slice(0, 60)
-  const overflow = model.records.length - records.length
 
   return (
     <>
@@ -107,106 +102,12 @@ export default async function OperationPage({ params, searchParams }: Props) {
       </ContextHeader>
 
       <main className="shell animate-fade-in pb-20">
-        <Section id="records" title="Current records">
-          {/* The sweep table stays compact; the cohort panel uses the rest
-              of the width instead of leaving it empty. */}
-          <div className="mb-4 grid grid-cols-[minmax(0,1fr)_minmax(300px,370px)] gap-11 max-lg:grid-cols-1">
-            <div>
-              <WorkloadPicker
-                workloads={model.workloads}
-                selectedId={model.selectedWorkloadId}
-                slug={operation.slug}
-              />
-              {model.cohortOptions.length > 1 && (
-                <div className="flex flex-wrap items-center gap-2 text-[12.5px]">
-                  <span className="mr-1 text-faint">Hardware</span>
-                  {model.cohortOptions.map((option) => (
-                    <Link
-                      key={option.key}
-                      href={`/operations/${operation.slug}?${new URLSearchParams(
-                        {
-                          ...(model.selectedWorkloadId
-                            ? { workload: model.selectedWorkloadId }
-                            : {}),
-                          cohort: option.key,
-                        },
-                      ).toString()}`}
-                      className={`key px-2.5 py-[3px] font-mono text-[12px] whitespace-nowrap hover:no-underline ${
-                        option.key === model.cohort?.comparisonKey
-                          ? "key-on"
-                          : "text-subtle hover:text-fg"
-                      }`}
-                    >
-                      {option.label}
-                      <span className="ml-1.5 text-[11px] text-faint">
-                        {option.runs}
-                      </span>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-            {model.cohort && (
-              <div className="border-l border-border pl-9 max-lg:border-l-0 max-lg:pl-0">
-                <div className="mb-2.5 text-[12.5px] text-subtle">
-                  {model.cohort.profile === "source_native"
-                    ? "Source-native cohort"
-                    : "Exact cohort"}
-                </div>
-                <KeyValueList
-                  items={[
-                    ...model.cohort.facts,
-                    { key: "results", value: String(model.records.length) },
-                    ...(coverage.lastObservedAt
-                      ? [
-                          {
-                            key: "last observed",
-                            value: formatDateUTC(coverage.lastObservedAt),
-                          },
-                        ]
-                      : []),
-                  ]}
-                />
-                <WatchButton comparisonKey={model.cohort.comparisonKey} />
-              </div>
-            )}
-          </div>
-          <div className="overflow-x-auto">
-            {records.length > 0 ? (
-              <>
-                <ResultTableHead relativeLabel="vs #1" />
-                {records.map((row) => (
-                  <ResultRowItem
-                    key={row.runId ?? row.implementation.slug}
-                    row={row}
-                    best={best}
-                    relative
-                  />
-                ))}
-              </>
-            ) : (
-              <p className="py-6 text-[13px] text-faint">
-                No published measurement for the selected workload.
-              </p>
-            )}
-          </div>
-          {overflow > 0 && (
-            <p className="mt-3 text-[12.5px] text-faint">
-              {overflow} more row{overflow === 1 ? "" : "s"} in this cohort.{" "}
-              <Link
-                href={`/search?q=${encodeURIComponent(`op:${operation.slug}`)}`}
-              >
-                Open all in search →
-              </Link>
-            </p>
-          )}
-        </Section>
-
-        {model.sweep && (
-          <Section id="sweep" title={`Scaling by ${model.sweep.axis}`}>
-            <SweepChart sweep={model.sweep} />
-          </Section>
-        )}
+        <OperationRecords
+          slug={operation.slug}
+          workloads={model.workloads}
+          lastObservedAt={coverage.lastObservedAt}
+          initial={operationVariant(model)}
+        />
 
         <Section id="implementations" title="Implementations">
           <div className="overflow-x-auto">

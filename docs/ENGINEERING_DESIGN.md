@@ -348,7 +348,7 @@ Moving files between folders inside one repository is cheaper than maintaining p
 | Hosting | Vercel web deployment | runtime, region, cost, or portability requirements fail |
 | Catalog | fixtures, then managed PostgreSQL | PostgreSQL cannot satisfy a measured requirement |
 | Search | PostgreSQL FTS, trigram, filters, and ranking views | relevance or latency misses a documented SLO at real scale |
-| Cache | framework/CDN caching and PostgreSQL (in place since 2026-08-15: unstable_cache over the catalog seam, ISR on home/run/implementation pages, CDN-cached /suggest and /records/data routes, functions pinned to pdx1 beside the database) | a dedicated cache system is needed beyond the framework layers |
+| Cache | framework/CDN caching and PostgreSQL (in place since 2026-08-15, extended 2026-08-18: unstable_cache over the catalog seam; ISR on home/run/implementation/operation pages — operation workload/cohort selection is a client island over the CDN-cached /operations/[slug]/data route, so search params never make the page dynamic; CDN-cached /suggest and /records/data routes with the ledger slimmed to the LedgerModel projection; one in-process ledger memo shared by every reads.ts caller; hover-intent prefetch in quiet-link instead of viewport prefetch; functions pinned to pdx1 beside the database) | a dedicated cache system is needed beyond the framework layers |
 | Imports | local command or GitHub Actions | retries, concurrency, or review workflows need durable jobs |
 | Queue | PostgreSQL row state, then Graphile Worker | a persistent worker has real jobs |
 | Artifacts | upstream immutable links, small DB metadata, reviewed Git files | durable binaries or large logs require S3-compatible storage |
