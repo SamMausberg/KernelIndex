@@ -90,7 +90,8 @@ export async function GET(): Promise<Response> {
     {
       headers: {
         "Content-Type": "application/atom+xml; charset=utf-8",
-        "Cache-Control": "public, max-age=0, s-maxage=300",
+        "Cache-Control":
+          "public, max-age=0, s-maxage=300, stale-while-revalidate=86400",
       },
     },
   )

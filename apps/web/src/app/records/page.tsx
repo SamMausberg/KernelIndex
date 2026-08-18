@@ -7,6 +7,7 @@ import { RecordsLedger } from "@/features/records/ledger"
 import {
   DEFAULT_FILTERS,
   ledgerSlice,
+  slimModel,
   slimSlice,
 } from "@/features/records/ledger-model"
 import { getRecordsPage } from "@/lib/catalog"
@@ -16,7 +17,7 @@ export const revalidate = 300
 
 export default async function RecordsPage() {
   const model = await getRecordsPage()
-  const slice = slimSlice(ledgerSlice(model, DEFAULT_FILTERS))
+  const slice = slimSlice(ledgerSlice(slimModel(model), DEFAULT_FILTERS))
   return (
     <>
       {model.illustrative && <IllustrativeNotice />}

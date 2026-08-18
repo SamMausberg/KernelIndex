@@ -103,19 +103,11 @@ export const getHomePage = cache(
 )
 
 // The full ledger model outgrows the framework data cache's entry limit as
-// the corpus scales, so it memoizes in-process instead.
-const RECORDS_MEMO_MS = 60_000
-let recordsMemo: { at: number; value: Promise<RecordsPageModel> } | null = null
+// the corpus scales; the postgres backend memoizes it in-process instead
+// (shared with the GPU/project surfaces), so this layer is request-dedupe
+// only.
 export const getRecordsPage = cache(async (): Promise<RecordsPageModel> => {
-  if (recordsMemo && Date.now() - recordsMemo.at < RECORDS_MEMO_MS) {
-    return recordsMemo.value
-  }
-  const value = (async () => (await reads()).getRecordsPage())()
-  recordsMemo = { at: Date.now(), value }
-  value.catch(() => {
-    recordsMemo = null
-  })
-  return value
+  return (await reads()).getRecordsPage()
 })
 
 export const getOperationIndex = cache(

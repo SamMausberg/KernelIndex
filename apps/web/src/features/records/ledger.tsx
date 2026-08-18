@@ -10,12 +10,13 @@ import { Metric } from "@/components/metric"
 // the URL kept shareable. Markup is identical to the server-rendered form.
 import { Link } from "@/components/quiet-link"
 import { AvailabilityCell, EvidenceCell } from "@/components/trust"
-import type { RecordHolder, RecordsPageModel } from "@/lib/catalog"
 import { formatDateShort, formatDateUTC, formatPrimary } from "@/lib/format"
 import {
   DAY_MS,
   filtersFromParams,
   type LedgerEvent,
+  type LedgerHolder,
+  type LedgerModel,
   type LedgerSlice,
   ledgerSlice,
   type RecordsFilters,
@@ -31,8 +32,8 @@ const VIEWS: { key: RecordsView; label: string }[] = [
 ]
 
 // One in-flight/settled fetch of the full model per session (CDN-cached).
-let modelPromise: Promise<RecordsPageModel | null> | null = null
-function loadModel(): Promise<RecordsPageModel | null> {
+let modelPromise: Promise<LedgerModel | null> | null = null
+function loadModel(): Promise<LedgerModel | null> {
   modelPromise ??= fetch("/records/data")
     .then((response) => (response.ok ? response.json() : null))
     .catch(() => {
@@ -99,7 +100,7 @@ function LatestBreaks({ latest }: { latest: LedgerEvent[] }) {
   )
 }
 
-function HolderRow({ holder }: { holder: RecordHolder }) {
+function HolderRow({ holder }: { holder: LedgerHolder }) {
   const record = holder.current
   const isNew = Date.now() - new Date(holder.since).getTime() < 14 * DAY_MS
   const margin = holder.history[0].improvementPct
@@ -605,7 +606,7 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
   // island owns the URL. Deep-linked filters apply right after hydration
   // (window.location, not useSearchParams — that would drop the table out
   // of the static HTML). Interactions never navigate.
-  const [model, setModel] = useState<RecordsPageModel | null>(null)
+  const [model, setModel] = useState<LedgerModel | null>(null)
   const [filters, setFilters] = useState(initial.filters)
 
   // The full model loads on first interaction intent, not on mount: most

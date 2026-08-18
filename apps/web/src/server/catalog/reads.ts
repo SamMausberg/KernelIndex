@@ -709,9 +709,10 @@ function pageIllustrative(rows: JoinedRun[]): boolean {
   return rows.length > 0 && rows.every((j) => j.source.kind === "illustrative")
 }
 
-/** §16.5: most recent published records across all operations, newest first. */
+/** §16.5: most recent published records across all operations, newest first.
+ * The row and stat reads are independent and run together. */
 export async function getHomePage(): Promise<HomePageModel> {
-  const rows = await db()
+  const rowsQuery = db()
     .select({
       run: runColumns,
       implementation: implementationColumns,
@@ -755,18 +756,21 @@ export async function getHomePage(): Promise<HomePageModel> {
     )
     .orderBy(desc(schema.benchmarkRuns.observedAt))
     .limit(8)
-  const [stats] = await db()
-    .select({
-      operations: sql<number>`count(distinct ${schema.workloads.operationId})::int`,
-      runs: sql<number>`count(*)::int`,
-      gpus: sql<number>`count(distinct ${schema.benchmarkRuns.hardwareModel})::int`,
-    })
-    .from(schema.benchmarkRuns)
-    .innerJoin(
-      schema.workloads,
-      eq(schema.benchmarkRuns.workloadId, schema.workloads.id),
-    )
-    .where(eligibleRunFilter())
+  const [rows, [stats]] = await Promise.all([
+    rowsQuery,
+    db()
+      .select({
+        operations: sql<number>`count(distinct ${schema.workloads.operationId})::int`,
+        runs: sql<number>`count(*)::int`,
+        gpus: sql<number>`count(distinct ${schema.benchmarkRuns.hardwareModel})::int`,
+      })
+      .from(schema.benchmarkRuns)
+      .innerJoin(
+        schema.workloads,
+        eq(schema.benchmarkRuns.workloadId, schema.workloads.id),
+      )
+      .where(eligibleRunFilter()),
+  ])
   return {
     illustrative: pageIllustrative(rows),
     latest: rows.map((j) =>
@@ -781,8 +785,27 @@ export async function getHomePage(): Promise<HomePageModel> {
  * (§11.10). Events whose run has since lost eligibility (retraction,
  * supersession) drop out of the visible sequence; until the correction write
  * path ships, no retraction-cause events exist to display in their place.
+ *
+ * The full ledger outgrows the framework data cache's entry limit, so it
+ * memoizes in-process instead — shared by every caller of this module
+ * (records page and /records/data, the GPU/project surfaces, badges), which
+ * previously each re-ran the unbounded query.
  */
-export async function getRecordsPage(): Promise<RecordsPageModel> {
+const RECORDS_MEMO_MS = 60_000
+let recordsMemo: { at: number; value: Promise<RecordsPageModel> } | null = null
+export function getRecordsPage(): Promise<RecordsPageModel> {
+  if (recordsMemo && Date.now() - recordsMemo.at < RECORDS_MEMO_MS) {
+    return recordsMemo.value
+  }
+  const value = readRecordsPage()
+  recordsMemo = { at: Date.now(), value }
+  value.catch(() => {
+    recordsMemo = null
+  })
+  return value
+}
+
+async function readRecordsPage(): Promise<RecordsPageModel> {
   const rows = await db()
     .select({
       event: {
@@ -1532,47 +1555,57 @@ async function implementationSourceCode(
   const manifest = implementation.manifest as ImplementationRevisionManifest
   const spec = manifest.spec.source
   if (!spec) return null
-  const [artifact] = await database
-    .select({
-      content: schema.artifacts.content,
-      mediaType: schema.artifacts.mediaType,
-      license: schema.artifacts.license,
-    })
-    .from(schema.artifacts)
-    .where(eq(schema.artifacts.contentDigest, spec.contentDigest))
+  const current = submissionNumber(manifest.spec.projectRevision.version)
+  // The artifact, attribution, and sibling-revision reads are independent
+  // round trips; only the previous-artifact fetch depends on the siblings.
+  const [[artifact], attributionRow, siblings] = await Promise.all([
+    database
+      .select({
+        content: schema.artifacts.content,
+        mediaType: schema.artifacts.mediaType,
+        license: schema.artifacts.license,
+      })
+      .from(schema.artifacts)
+      .where(eq(schema.artifacts.contentDigest, spec.contentDigest)),
+    sourceSlug !== null
+      ? database
+          .select({ name: schema.sources.name, policy: schema.sources.policy })
+          .from(schema.sources)
+          .where(eq(schema.sources.slug, sourceSlug))
+          .then(([sourceRow]) => sourceRow ?? null)
+      : null,
+    current !== null
+      ? database
+          .select({
+            slug: schema.implementations.slug,
+            title: schema.implementations.title,
+            manifest: schema.implementations.manifest,
+          })
+          .from(schema.implementations)
+          .where(
+            and(
+              eq(schema.implementations.projectId, implementation.projectId),
+              eq(
+                schema.implementations.operationId,
+                implementation.operationId,
+              ),
+            ),
+          )
+      : [],
+  ])
   if (!artifact || artifact.content === null) return null
 
   let attribution: { text: string; url: string | null } | null = null
-  if (sourceSlug !== null) {
-    const [sourceRow] = await database
-      .select({ name: schema.sources.name, policy: schema.sources.policy })
-      .from(schema.sources)
-      .where(eq(schema.sources.slug, sourceSlug))
-    if (sourceRow) {
-      const policy = sourcePolicy(sourceRow.policy)
-      attribution = {
-        text: policy.attribution ?? sourceRow.name,
-        url: policy.url ?? null,
-      }
+  if (attributionRow) {
+    const policy = sourcePolicy(attributionRow.policy)
+    attribution = {
+      text: policy.attribution ?? attributionRow.name,
+      url: policy.url ?? null,
     }
   }
 
   let diff: NonNullable<ImplementationPageModel["sourceCode"]>["diff"] = null
-  const current = submissionNumber(manifest.spec.projectRevision.version)
   if (current !== null) {
-    const siblings = await database
-      .select({
-        slug: schema.implementations.slug,
-        title: schema.implementations.title,
-        manifest: schema.implementations.manifest,
-      })
-      .from(schema.implementations)
-      .where(
-        and(
-          eq(schema.implementations.projectId, implementation.projectId),
-          eq(schema.implementations.operationId, implementation.operationId),
-        ),
-      )
     const previous = siblings
       .map((sibling) => {
         const siblingSpec = (sibling.manifest as ImplementationRevisionManifest)
@@ -1690,13 +1723,16 @@ export async function getImplementationPage(
   )
   const variant = manifest.spec.buildVariants?.[0]
   const evidence = joined.length > 0 ? runEvidence(joined[0].run) : null
-  const refs = await sourceRefs(joined)
-  const sourceCode = await implementationSourceCode(
-    database,
-    implementation,
-    { name: operation.name, slug: operation.slug },
-    joined[0]?.source.slug ?? null,
-  )
+  // Independent round trips: source refs and the source-code bundle together.
+  const [refs, sourceCode] = await Promise.all([
+    sourceRefs(joined),
+    implementationSourceCode(
+      database,
+      implementation,
+      { name: operation.name, slug: operation.slug },
+      joined[0]?.source.slug ?? null,
+    ),
+  ])
 
   return {
     illustrative: pageIllustrative(joined),

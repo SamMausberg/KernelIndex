@@ -1,7 +1,62 @@
 // Pure ledger derivations shared by the server page (deep-link rendering)
 // and the client island (instant interactions): filters, sorts, pagination,
 // and the flattened event views over the records model (§16.12).
-import type { RecordEvent, RecordHolder, RecordsPageModel } from "@/lib/catalog"
+import type {
+  RecordEvent,
+  RecordHolder,
+  RecordsPageModel,
+  ResultRow,
+} from "@/lib/catalog"
+
+/**
+ * The web payload boundary (§16.12 payload budget): the catalog model keeps
+ * the full ResultRow per holder for the public API, but the ledger — SSR
+ * slice and the multi-MB /records/data fetch alike — ships only the fields
+ * the record surfaces render.
+ */
+export type LedgerRow = Pick<
+  ResultRow,
+  | "runId"
+  | "implementation"
+  | "project"
+  | "primary"
+  | "evidence"
+  | "sourceAvailable"
+  | "installable"
+  | "license"
+>
+export type LedgerHolder = Omit<RecordHolder, "current"> & {
+  current: LedgerRow
+}
+export type LedgerModel = Omit<RecordsPageModel, "records"> & {
+  records: LedgerHolder[]
+}
+
+/** Catalog model → ledger model, memoized so repeat callers (page render,
+ * data route) and the event flattener below see one stable object. */
+const slimMemo = new WeakMap<RecordsPageModel, LedgerModel>()
+export function slimModel(model: RecordsPageModel): LedgerModel {
+  const memo = slimMemo.get(model)
+  if (memo) return memo
+  const slim: LedgerModel = {
+    ...model,
+    records: model.records.map((holder) => ({
+      ...holder,
+      current: {
+        runId: holder.current.runId,
+        implementation: holder.current.implementation,
+        project: holder.current.project,
+        primary: holder.current.primary,
+        evidence: holder.current.evidence,
+        sourceAvailable: holder.current.sourceAvailable,
+        installable: holder.current.installable,
+        license: holder.current.license,
+      },
+    })),
+  }
+  slimMemo.set(model, slim)
+  return slim
+}
 
 export type RecordsView = "current" | "broken" | "history"
 export type RecordsSort = "date" | "improvement" | "leads" | "operation"
@@ -64,7 +119,7 @@ export function filtersFromParams(params: {
 /** Trim per-holder histories in an SSR slice to the preview depth; the
  * island swaps in the full model before any interaction needs more. */
 export function slimSlice(slice: LedgerSlice): LedgerSlice {
-  const slim = (holder: RecordHolder): RecordHolder => ({
+  const slim = (holder: LedgerHolder): LedgerHolder => ({
     ...holder,
     history: holder.history.slice(0, HISTORY_PREVIEW),
   })
@@ -111,14 +166,19 @@ export function recordsHref(
 
 /** One record transition joined to its cohort and the record it displaced. */
 export type LedgerEvent = {
-  holder: RecordHolder
+  holder: LedgerHolder
   event: RecordEvent
   previous: RecordEvent | null
 }
 
-/** Every record event in the ledger, newest first. */
-export function allRecordEvents(model: RecordsPageModel): LedgerEvent[] {
-  return model.records
+/** Every record event in the ledger, newest first. Memoized per model: the
+ * island re-slices on every filter keystroke, and re-flattening + re-sorting
+ * thousands of events each time was measurable interaction jank. */
+const eventsMemo = new WeakMap<LedgerModel, LedgerEvent[]>()
+export function allRecordEvents(model: LedgerModel): LedgerEvent[] {
+  const memo = eventsMemo.get(model)
+  if (memo) return memo
+  const events = model.records
     .flatMap((holder) =>
       holder.history.map((event, index) => ({
         holder,
@@ -129,6 +189,8 @@ export function allRecordEvents(model: RecordsPageModel): LedgerEvent[] {
     .sort((a, b) =>
       a.event.at < b.event.at ? 1 : a.event.at > b.event.at ? -1 : 0,
     )
+  eventsMemo.set(model, events)
+  return events
 }
 
 /** Transitions of the last 30 days, largest improvement first. */
@@ -144,12 +206,12 @@ export function recentlyBroken(events: LedgerEvent[]): LedgerEvent[] {
     )
 }
 
-export const isVerifiedHolder = (holder: RecordHolder) =>
+export const isVerifiedHolder = (holder: LedgerHolder) =>
   holder.current.evidence === "verified" ||
   holder.current.evidence === "replicated"
 
 /** One filter policy for all three views: nothing is silently ignored. */
-export function keepHolder(holder: RecordHolder, filters: RecordsFilters) {
+export function keepHolder(holder: LedgerHolder, filters: RecordsFilters) {
   if (filters.hardware !== null && holder.hardware !== filters.hardware)
     return false
   if (filters.verified && !isVerifiedHolder(holder)) return false
@@ -169,9 +231,9 @@ const collator = new Intl.Collator(undefined, { numeric: true })
 
 /** Sorted copy under the ledger's four presentation sorts. */
 export function sortHolders(
-  holders: RecordHolder[],
+  holders: LedgerHolder[],
   sort: RecordsSort,
-): RecordHolder[] {
+): LedgerHolder[] {
   const sorted = [...holders]
   // "date" keeps the backend order: newest record first.
   if (sort === "operation")
@@ -217,7 +279,7 @@ export type LedgerSlice = {
   hardwareCounts: Record<string, number>
   recordsTotal: number
   context: string | undefined
-  holders?: { rows: RecordHolder[]; total: number; pageCount: number }
+  holders?: { rows: LedgerHolder[]; total: number; pageCount: number }
   /** Lead story for the current view: newest breaks under the filters. */
   latest?: LedgerEvent[]
   broken?: { rows: LedgerEvent[]; total: number; pageCount: number }
@@ -226,7 +288,7 @@ export type LedgerSlice = {
 
 /** Server- and client-shared derivation of one view window from the model. */
 export function ledgerSlice(
-  model: RecordsPageModel,
+  model: LedgerModel,
   filters: RecordsFilters,
 ): LedgerSlice {
   const events = allRecordEvents(model)
@@ -253,7 +315,7 @@ export function ledgerSlice(
     recordsTotal: model.records.length,
     context,
   }
-  const kept = (holder: RecordHolder) => keepHolder(holder, filters)
+  const kept = (holder: LedgerHolder) => keepHolder(holder, filters)
   if (filters.view === "current") {
     const holders = sortHolders(model.records.filter(kept), filters.sort)
     const page = pageSlice(holders, filters.page)
