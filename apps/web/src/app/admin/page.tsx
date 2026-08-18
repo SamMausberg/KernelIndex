@@ -13,6 +13,7 @@ import * as schema from "@/server/db/schema"
 import { eventSummary } from "@/server/events"
 import { FLASHINFER_SOURCE } from "@/server/import/flashinfer/types"
 import { GPUMODE_SOURCE } from "@/server/import/gpumode/types"
+import { LIGER_SOURCE } from "@/server/import/liger/types"
 import { MLPERF_SOURCE } from "@/server/import/mlperf/types"
 import { SOL_SOURCE } from "@/server/import/sol/types"
 import {
@@ -28,9 +29,13 @@ import {
 
 /** Declared freshness intervals (§19.9), keyed by source slug. */
 const FRESHNESS_DAYS: Record<string, number> = Object.fromEntries(
-  [SOL_SOURCE, GPUMODE_SOURCE, FLASHINFER_SOURCE, MLPERF_SOURCE].map(
-    (source) => [source.slug, source.policy.freshnessDays],
-  ),
+  [
+    SOL_SOURCE,
+    GPUMODE_SOURCE,
+    FLASHINFER_SOURCE,
+    MLPERF_SOURCE,
+    LIGER_SOURCE,
+  ].map((source) => [source.slug, source.policy.freshnessDays]),
 )
 
 export const metadata: Metadata = { title: "Review" }

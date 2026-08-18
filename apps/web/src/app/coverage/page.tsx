@@ -11,6 +11,7 @@ import { formatDateUTC } from "@/lib/format"
 import { servingEnabled } from "@/server/env"
 import { FLASHINFER_SOURCE } from "@/server/import/flashinfer/types"
 import { GPUMODE_SOURCE } from "@/server/import/gpumode/types"
+import { LIGER_SOURCE } from "@/server/import/liger/types"
 import { MLPERF_SOURCE } from "@/server/import/mlperf/types"
 import { SOL_SOURCE } from "@/server/import/sol/types"
 
@@ -46,12 +47,19 @@ const FACTS: Record<
     license: "Apache-2.0 result repos; MLPerf™ is a trademark of MLCommons",
     freshnessDays: MLPERF_SOURCE.policy.freshnessDays,
   },
+  [LIGER_SOURCE.slug]: {
+    name: LIGER_SOURCE.name,
+    url: "https://github.com/linkedin/Liger-Kernel",
+    license: "BSD-2-Clause; environment metadata incomplete upstream",
+    freshnessDays: LIGER_SOURCE.policy.freshnessDays,
+  },
 }
 
 const LIMITATIONS = [
   "Nothing here has been rerun by KernelIndex. Every number is shown exactly as its source published it, so no record is Verified yet.",
   "SOL-ExecBench leaderboard rows are suite averages, not per-case traces. They never answer an exact-case request.",
   "FlashInfer-Bench imports are the library baselines at a pinned revision; LLM-generated traces are excluded.",
+  "Liger-Kernel rows record no CUDA, driver, or torch version. Environments carry hardware only, and only kernels whose benchmark-script semantics were verified import.",
   "MLPerf serving rows measure one thing: token throughput. The TTFT/TPOT bounds shown are the benchmark's rules, not measurements.",
   "Hardware coverage follows the sources, not a survey. A GPU or kernel missing here says nothing about its speed.",
 ]

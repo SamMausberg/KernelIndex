@@ -319,13 +319,16 @@ curl -L https://kernelindex.com/api/v1/exports/catalog.jsonl.zst
             <a href="https://huggingface.co/datasets/GPUMODE/kernelbot-data">
               GPU Mode and the KernelBot dataset
             </a>
-            , the NVIDIA SOL-ExecBench public leaderboard, and FlashInfer-Bench.
-            Serving results are official MLPerf™ Inference results, shown
-            unmodified (MLPerf™ is a trademark of MLCommons). Each source's
-            license and required credit is on <Link href="/legal">Legal</Link>;
-            live counts and limits on <Link href="/coverage">Coverage</Link>.
-            Rights holders can have anything removed — contested records come
-            down first, questions after.
+            , the NVIDIA SOL-ExecBench public leaderboard, FlashInfer-Bench, and
+            the{" "}
+            <a href="https://github.com/linkedin/Liger-Kernel">Liger-Kernel</a>{" "}
+            benchmark suite. Serving results are official MLPerf™ Inference
+            results, shown unmodified (MLPerf™ is a trademark of MLCommons).
+            Each source's license and required credit is on{" "}
+            <Link href="/legal">Legal</Link>; live counts and limits on{" "}
+            <Link href="/coverage">Coverage</Link>. Rights holders can have
+            anything removed — contested records come down first, questions
+            after.
           </p>
         </Section>
 

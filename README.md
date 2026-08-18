@@ -48,6 +48,7 @@ pnpm --filter @kernelindex/web import:sol -- --dry-run   # review report only
 pnpm --filter @kernelindex/web import:sol -- --publish   # real SOL records
 pnpm --filter @kernelindex/web import:gpumode -- --group helion --dry-run
 pnpm --filter @kernelindex/web import:gpumode -- --group helion --publish
+pnpm --filter @kernelindex/web import:liger -- --dry-run
 ```
 
 The importer is idempotent: re-running with unchanged upstream data inserts

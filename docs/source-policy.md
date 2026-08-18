@@ -91,12 +91,19 @@ legalnotices@ the project contact removes the contested records immediately
   upstream "Infinity" error bounds as no-bound; unknown-definition solutions
   review as ambiguities), reviewed 2026-08-16.
 
-## Liger-Kernel (planned)
+## Liger-Kernel (active — `liger-kernel-bench`)
 
-- `linkedin/Liger-Kernel` committed benchmark CSVs, **BSD-2-Clause**
-  (verified 2026-08-14). Redistribution fine with notice. Environment
-  metadata is incomplete (no CUDA/driver): rows import as reported evidence
-  with explicit environment-unknown caveats, never as strict cohorts.
+- `linkedin/Liger-Kernel` committed benchmark CSV
+  (`benchmark/data/all_benchmark_data.csv`), **BSD-2-Clause** (verified
+  2026-08-14). Redistribution fine with notice. Environment metadata is
+  incomplete (no CUDA/driver/torch versions): environments carry hardware
+  only, the Liger release rides run labels, and the protocol's comparability
+  notes state the caveat.
+- The CSV spans benchmark-script eras. Only kernels whose tensor semantics
+  were verified against the producing script import (curated in
+  `apps/web/src/server/import/liger/kernels.ts`); every other kernel or
+  config shape is counted and skipped in the import report. Timed passes
+  (forward/backward/full) are separate protocols; memory rows are skipped.
 
 ## Rejected or blocked (reviewed 2026-08-14)
 
