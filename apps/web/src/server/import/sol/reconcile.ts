@@ -50,6 +50,7 @@ export type ImportReport = {
     incorrect: number
     disqualified: number
     filtered: number
+    reviewedImplausible: number
   }
   /** Proposed operations per family — the tranche-review summary (§14.8). */
   operationsByFamily: Record<string, number>
@@ -67,6 +68,16 @@ export type ReconcileOptions = {
   /** Restrict to one evaluation stack version (--source-revision). */
   stackVersion?: string
 }
+
+/** Reviewed §14.8 verdicts: submissions confirmed to beat a per-case
+ * speed-of-light bound stay excluded as implausible. The rationale lives
+ * here so the audit trail is in git; remove an entry to re-open review. */
+const REVIEWED_IMPLAUSIBLE = new Map<number, string>([
+  [
+    36950,
+    "2026-08-18: 1.913 ms on 012_moe_expert_batched_execution_with_capacity_factor beats the 1.974 ms minimum per-case SOL bound",
+  ],
+])
 
 function selectSubmissions(
   all: SolSubmission[],
@@ -96,9 +107,14 @@ function selectSubmissions(
     } else if (solBoundMs !== null && submission.latency_ms < solBoundMs) {
       // §14.8: suspicious or impossible performance goes to review, and a
       // bogus leader must not silently pull a slower entry into the top N.
-      report.ambiguities.push(
-        `submission ${submission.id} (${submission.username}) on '${submission.kernel_name}' reports ${submission.latency_ms} ms, beating the minimum per-case speed-of-light bound ${solBoundMs} ms — skipped pending review`,
-      )
+      // A reviewed verdict keeps the exclusion without re-flagging weekly.
+      if (REVIEWED_IMPLAUSIBLE.has(submission.id)) {
+        report.skippedSubmissions.reviewedImplausible++
+      } else {
+        report.ambiguities.push(
+          `submission ${submission.id} (${submission.username}) on '${submission.kernel_name}' reports ${submission.latency_ms} ms, beating the minimum per-case speed-of-light bound ${solBoundMs} ms — skipped pending review`,
+        )
+      }
     } else {
       usable.push(submission)
     }
@@ -150,7 +166,12 @@ export async function reconcile(
       snapshots: data.snapshots.length,
     },
     selectedSubmissions: 0,
-    skippedSubmissions: { incorrect: 0, disqualified: 0, filtered: 0 },
+    skippedSubmissions: {
+      incorrect: 0,
+      disqualified: 0,
+      filtered: 0,
+      reviewedImplausible: 0,
+    },
     operationsByFamily: {},
     proposed: [],
     ambiguities: [],
