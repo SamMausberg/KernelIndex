@@ -38,16 +38,18 @@ jobs:
       # Each source: dry-run → machine gate (no unexpected issues or
       # ambiguities) → publish. A failed gate uploads the report and stops
       # that source without touching the catalog.
+      # --top 10 (default 3) deepens every B200 cohort with the next-best
+      # leaderboard submissions per kernel; the walk already covers them all.
       - name: import sol
         if: contains(env.SOURCES, 'sol')
         run: |
           cd apps/web
-          node scripts/import-sol.ts --dry-run --output /tmp/sol.json
+          node scripts/import-sol.ts --top 10 --dry-run --output /tmp/sol.json
           node -e '
             const r = require("/tmp/sol.json");
             const bad = r.issues.length + r.ambiguities.length;
             if (bad > 0) { console.error("gate failed:", bad, "items"); process.exit(1) }'
-          node scripts/import-sol.ts --publish
+          node scripts/import-sol.ts --top 10 --publish
       - name: import gpumode
         if: contains(env.SOURCES, 'gpumode') && always() && !cancelled()
         run: |
