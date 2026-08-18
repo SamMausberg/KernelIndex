@@ -81,7 +81,7 @@ describe.skipIf(!url)("postgres catalog reads", () => {
   it("searchCatalog explains a no-result query", async () => {
     const model = await searchCatalog({ query: "nonexistent-operation-xyz" })
     expect(model.groups.exact).toHaveLength(0)
-    expect(model.noResult?.guidance).toContain("No matching operation")
+    expect(model.noResult?.guidance).toContain("No operation by that name")
   })
 
   it("getOperationPage returns semantics, workloads, and records", async () => {
