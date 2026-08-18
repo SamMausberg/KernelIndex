@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const model = await getOperationPage(slug)
   // Fail in metadata so unknown slugs return a real 404, not a soft-404.
   if (!model) notFound()
-  return { title: model.operation.name }
+  return { title: model.operation.name, description: model.operation.summary }
 }
 
 export default async function OperationPage({ params }: Props) {

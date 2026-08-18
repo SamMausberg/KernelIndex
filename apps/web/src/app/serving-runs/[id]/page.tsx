@@ -29,7 +29,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const model = await getServingRunPage(id)
   // Fail in metadata so unknown IDs return a real 404, not a soft-404.
   if (!model) notFound()
-  return { title: `Serving run ${model.run.id.slice(0, 8)}` }
+  return {
+    title: `Serving run ${model.run.id.slice(0, 8)}`,
+    description: `LLM serving benchmark evidence: ${model.model.name} on ${model.stack.name} — configuration, workload, protocol, and metrics as published.`,
+  }
 }
 
 export default async function ServingRunPage({ params }: Props) {

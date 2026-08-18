@@ -35,7 +35,7 @@ Claim rules (keep these when quoting results):
 - API keys (higher quota): sign in at https://kernelindex.com/account
 
 ## MCP
-- Read-only stdio server (8 tools) in apps/mcp of
+- Read-only stdio server (11 tools) in apps/mcp of
   https://github.com/SamMausberg/KernelIndex - run from the checkout.
 
 ## CLI

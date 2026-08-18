@@ -1,6 +1,7 @@
 # KernelIndex
 
-**Find the fastest verified GPU kernel for your exact workload.**
+**[kernelindex.com](https://kernelindex.com)** — find the fastest verified
+GPU kernel for your exact workload.
 
 KernelIndex is the public performance index for GPU software. It resolves an
 exact workload (operation, shape, dtype, layout, hardware, framework) to the

@@ -34,7 +34,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // Metadata resolves before headers flush: failing here makes the status
   // a real 404 instead of a soft-404 streamed into a 200.
   if (!model) notFound()
-  return { title: model.implementation.name }
+  const hardware = model.support.hardware.join(", ")
+  return {
+    title: model.implementation.name,
+    description: `${model.implementation.name} — GPU kernel implementation from ${model.project.name}: install, license, supported hardware${hardware ? ` (${hardware})` : ""}, and benchmark evidence.`,
+  }
 }
 
 export default async function ImplementationPage({ params }: Props) {

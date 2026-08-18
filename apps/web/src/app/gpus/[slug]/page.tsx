@@ -27,7 +27,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
   const model = await getHardwarePage(slug)
   if (!model) notFound()
-  return { title: model.hardware.model }
+  return {
+    title: model.hardware.model,
+    description: `GPU kernel benchmark evidence on ${model.hardware.model}: ${model.stats.runs} published runs across ${model.stats.operations} operations, with source, license, and protocol for every record.`,
+  }
 }
 
 const RECORD_GRID =
