@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import { realpathSync } from "node:fs"
+import { pathToFileURL } from "node:url"
 import {
   client,
   type ResolveKernelRequest,
@@ -181,6 +183,11 @@ export function buildServer(): McpServer {
 }
 
 // Connect stdio only when executed directly, so tests import buildServer.
-if (process.argv[1]?.endsWith("server.ts")) {
+// argv[1] is realpathed and compared as a URL so the check holds for the
+// checkout (server.ts), the built package (server.js), and bin symlinks.
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href
+) {
   await buildServer().connect(new StdioServerTransport())
 }

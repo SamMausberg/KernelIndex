@@ -20,6 +20,10 @@ import { parse as parseYaml } from "yaml"
 // Located by walking up from this file, so the tooling keeps working from a
 // build output directory or a moved file — not just the exact src/ layout.
 const SCHEMAS_DIR = (() => {
+  // A published package ships the generated schemas beside this file; a
+  // checkout finds them by walking up to registry/schemas.
+  const bundled = path.join(import.meta.dirname, "schemas")
+  if (existsSync(bundled)) return bundled
   let dir = import.meta.dirname
   while (true) {
     const candidate = path.join(dir, "registry", "schemas")

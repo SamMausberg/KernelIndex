@@ -1,14 +1,34 @@
 {
   "name": "@kernelindex/mcp",
-  "private": true,
+  "version": "0.1.0",
   "type": "module",
-  "description": "Read-only MCP server over the public KernelIndex REST API (§13.10). Stdio transport; run from the checkout: node apps/mcp/src/server.ts",
+  "description": "Read-only MCP server over the public KernelIndex REST API. Stdio transport: npx -y @kernelindex/mcp",
+  "license": "Apache-2.0",
+  "homepage": "https://kernelindex.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SamMausberg/KernelIndex.git",
+    "directory": "apps/mcp"
+  },
+  "engines": {
+    "node": ">=20.11"
+  },
+  "files": [
+    "dist"
+  ],
   "bin": {
     "kernelindex-mcp": "./src/server.ts"
   },
+  "publishConfig": {
+    "access": "public",
+    "bin": {
+      "kernelindex-mcp": "./dist/server.js"
+    }
+  },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "prepack": "tsc -p tsconfig.build.json"
   },
   "dependencies": {
     "@kernelindex/sdk": "workspace:*",

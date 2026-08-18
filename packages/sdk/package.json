@@ -1,16 +1,43 @@
 {
   "name": "@kernelindex/sdk",
-  "private": true,
+  "version": "0.1.0",
   "type": "module",
-  "description": "Generated KernelIndex API client and local manifest tooling (§13.9), shared by the CLI and MCP. Never published before the contract is stable.",
+  "description": "Typed KernelIndex API client (generated from the public OpenAPI contract) and local manifest tooling.",
+  "license": "Apache-2.0",
+  "homepage": "https://kernelindex.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SamMausberg/KernelIndex.git",
+    "directory": "packages/sdk"
+  },
+  "engines": {
+    "node": ">=20.11"
+  },
+  "files": [
+    "dist"
+  ],
   "exports": {
     ".": "./src/index.ts",
     "./manifest": "./src/manifest.ts"
   },
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "./manifest": {
+        "types": "./dist/manifest.d.ts",
+        "default": "./dist/manifest.js"
+      }
+    }
+  },
   "scripts": {
     "generate": "openapi-typescript openapi.json -o src/generated/api.d.ts && pnpm exec biome format --write src/generated/api.d.ts",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "prepack": "tsc -p tsconfig.build.json && node --eval \"const fs=require('node:fs');fs.cpSync('src/generated','dist/generated',{recursive:true});fs.cpSync('../../registry/schemas','dist/schemas',{recursive:true})\""
   },
   "dependencies": {
     "ajv": "^8.17.1",

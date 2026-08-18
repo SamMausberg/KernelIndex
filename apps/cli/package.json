@@ -1,14 +1,34 @@
 {
   "name": "@kernelindex/cli",
-  "private": true,
+  "version": "0.1.0",
   "type": "module",
-  "description": "ki — the KernelIndex command line (§13.8). Readable tables by default; stable --json/--jsonl for machines.",
+  "description": "ki — the KernelIndex command line. Readable tables by default; stable --json/--jsonl for machines.",
+  "license": "Apache-2.0",
+  "homepage": "https://kernelindex.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SamMausberg/KernelIndex.git",
+    "directory": "apps/cli"
+  },
+  "engines": {
+    "node": ">=20.11"
+  },
+  "files": [
+    "dist"
+  ],
   "bin": {
     "ki": "./src/ki.ts"
   },
+  "publishConfig": {
+    "access": "public",
+    "bin": {
+      "ki": "./dist/ki.js"
+    }
+  },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "prepack": "tsc -p tsconfig.build.json"
   },
   "dependencies": {
     "@kernelindex/sdk": "workspace:*",
