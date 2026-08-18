@@ -16,6 +16,12 @@ import { formatDateShort, formatDateUTC } from "@/lib/format"
 type Props = { params: Promise<{ slug: string }> }
 
 export const revalidate = 300
+// Without generateStaticParams a dynamic-param route never registers for
+// ISR (Next 16 renders it per request, `revalidate` or not); an empty list
+// keeps the build DB-free while unknown slugs render once and cache.
+export function generateStaticParams(): { slug: string }[] {
+  return []
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params

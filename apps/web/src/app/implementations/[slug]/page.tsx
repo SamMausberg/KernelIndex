@@ -16,6 +16,12 @@ import { evidenceLabel, formatDateShort, formatDateUTC } from "@/lib/format"
 
 // Implementation dossiers change only on importer runs; ISR on first hit.
 export const revalidate = 300
+// Without generateStaticParams a dynamic-param route never registers for
+// ISR (Next 16 renders it per request, `revalidate` or not); an empty list
+// keeps the build DB-free while unknown slugs render once and cache.
+export function generateStaticParams(): { slug: string }[] {
+  return []
+}
 
 const EVIDENCE_GRID =
   "grid grid-cols-[minmax(260px,1.6fr)_170px_150px_90px_110px] min-w-[780px]"
