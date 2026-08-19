@@ -118,7 +118,7 @@ export function ServingCohorts({ groups }: { groups: ServingCohortGroup[] }) {
           </p>
           <div className="mt-3 overflow-x-auto">
             <div
-              className={`${GRID} border-b border-border-strong text-mini text-faint`}
+              className={`${GRID} border-b border-border-strong font-mono text-label text-faint uppercase`}
             >
               <div className="py-2">#</div>
               <div className="py-2">Configuration</div>

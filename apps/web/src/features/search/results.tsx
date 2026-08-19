@@ -500,7 +500,7 @@ export function SearchResults({
                   <Link
                     href={`/search?q=${encodeURIComponent(facet.removeQuery)}`}
                     aria-label={`Remove ${facet.display}`}
-                    className="text-faint transition-colors hover:text-fg hover:no-underline"
+                    className="text-faint transition-colors hover:text-fg no-underline"
                   >
                     ✕
                   </Link>
@@ -535,7 +535,7 @@ export function SearchResults({
                   {model.operation ? (
                     <Link
                       href={`/operations/${model.operation.slug}`}
-                      className="text-fg transition-colors hover:text-accent-bright hover:no-underline"
+                      className="text-fg transition-colors hover:text-accent-bright no-underline"
                     >
                       {model.operation.name}
                     </Link>
@@ -631,7 +631,7 @@ export function SearchResults({
                       event.preventDefault()
                       apply({ view: mode.key })
                     }}
-                    className={`pb-2 text-body transition-colors hover:text-fg hover:no-underline ${
+                    className={`pb-2 text-body transition-colors hover:text-fg no-underline ${
                       selected
                         ? "-mb-px border-b border-fg font-medium text-fg"
                         : total === 0
@@ -696,7 +696,7 @@ export function SearchResults({
                           event.preventDefault()
                           apply({ view, sort: option.key })
                         }}
-                        className="text-subtle transition-colors hover:text-fg hover:no-underline"
+                        className="text-subtle transition-colors hover:text-fg no-underline"
                       >
                         {option.label}
                       </Link>

@@ -53,7 +53,7 @@ export default function DocsPage() {
           <a
             key={id}
             href={`#${id}`}
-            className="block py-1 text-small text-faint transition-colors hover:text-fg hover:no-underline"
+            className="block py-1 text-small text-faint transition-colors hover:text-fg no-underline"
           >
             {label}
           </a>

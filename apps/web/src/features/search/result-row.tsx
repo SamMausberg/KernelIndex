@@ -32,7 +32,7 @@ export function availabilityText(row: ResultRow) {
 export function ResultTableHead({ relativeLabel }: { relativeLabel?: string }) {
   return (
     <div
-      className={`${RESULT_GRID} border-b border-border-strong text-mini text-faint`}
+      className={`${RESULT_GRID} border-b border-border-strong font-mono text-label text-faint uppercase`}
     >
       <div className="py-2">#</div>
       <div className="py-2">Implementation</div>

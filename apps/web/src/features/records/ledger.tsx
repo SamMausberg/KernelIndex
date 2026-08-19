@@ -450,7 +450,7 @@ function ControlStrip({
 }) {
   const { filters } = slice
   const chip = (selected: boolean) =>
-    `key text-small whitespace-nowrap hover:no-underline ${
+    `key text-small whitespace-nowrap no-underline ${
       selected ? "key-on" : "text-subtle hover:text-fg"
     }`
   return (
@@ -492,7 +492,7 @@ function ControlStrip({
                       ?.removeAttribute("open")
                     navigate({ hardware: value })
                   }}
-                  className={`flex items-baseline justify-between gap-6 px-3 py-1.5 text-small hover:bg-accent-soft hover:no-underline ${
+                  className={`flex items-baseline justify-between gap-6 px-3 py-1.5 text-small hover:bg-accent-soft no-underline ${
                     selected ? "text-fg" : "text-subtle"
                   }`}
                 >
@@ -584,7 +584,7 @@ function ControlStrip({
             filters={filters}
             patch={{ filter: "" }}
             navigate={navigate}
-            className="text-small text-faint transition-colors hover:text-fg hover:no-underline"
+            className="text-small text-faint transition-colors hover:text-fg no-underline"
           >
             Clear filter
           </FilterLink>
@@ -658,7 +658,7 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
               filters={slice.filters}
               patch={{ view: view.key }}
               navigate={navigate}
-              className={`whitespace-nowrap transition-colors hover:text-fg hover:no-underline ${
+              className={`whitespace-nowrap transition-colors hover:text-fg no-underline ${
                 slice.filters.view === view.key ? "text-fg" : "text-subtle"
               }`}
             >
@@ -672,7 +672,7 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
           <a
             key="feed"
             href="/records/feed.xml"
-            className="whitespace-nowrap text-subtle transition-colors hover:text-fg hover:no-underline"
+            className="whitespace-nowrap text-subtle transition-colors hover:text-fg no-underline"
           >
             Feed
           </a>,
@@ -717,7 +717,7 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
                           filters={slice.filters}
                           patch={{ sort: option.key }}
                           navigate={navigate}
-                          className="whitespace-nowrap text-subtle transition-colors hover:text-fg hover:no-underline"
+                          className="whitespace-nowrap text-subtle transition-colors hover:text-fg no-underline"
                         >
                           {option.label}
                         </FilterLink>
@@ -729,7 +729,7 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
             />
             <div className="overflow-x-auto">
               <div
-                className={`${CURRENT_GRID} border-b border-border-strong text-mini text-faint`}
+                className={`${CURRENT_GRID} border-b border-border-strong font-mono text-label text-faint uppercase`}
               >
                 <div className="py-2">Operation / workload</div>
                 <div className="py-2 pr-4 text-right">Current record</div>

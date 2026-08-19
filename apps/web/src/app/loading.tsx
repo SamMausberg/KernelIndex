@@ -1,5 +1,5 @@
-/** Route loading state: the template's scan line already plays; content
- * streams in with nothing extra painted over it. */
+/** Route loading state: nothing painted — content streams in under the
+ * sticky header with no interstitial chrome. */
 export default function Loading() {
   return null
 }

@@ -84,7 +84,7 @@ function SourceRows({
     <div className="overflow-x-auto">
       <div className="min-w-[760px]">
         <div
-          className={`${GRID} border-b border-border-strong pb-2 text-mini text-faint`}
+          className={`${GRID} border-b border-border-strong pb-2 font-mono text-label text-faint uppercase`}
         >
           <span>Source</span>
           <span className="text-right">Runs</span>
@@ -166,7 +166,7 @@ export default async function CoveragePage() {
           </p>
           <div className="overflow-x-auto">
             <div className="min-w-[560px] max-w-[720px]">
-              <div className="grid grid-cols-[minmax(180px,1.4fr)_repeat(3,minmax(96px,0.6fr))] items-baseline gap-x-4 border-b border-border-strong pb-2 text-mini text-faint">
+              <div className="grid grid-cols-[minmax(180px,1.4fr)_repeat(3,minmax(96px,0.6fr))] items-baseline gap-x-4 border-b border-border-strong pb-2 font-mono text-label text-faint uppercase">
                 <span>Family</span>
                 {model.hero.gpus.map((gpu) => (
                   <span key={gpu} className="text-right">

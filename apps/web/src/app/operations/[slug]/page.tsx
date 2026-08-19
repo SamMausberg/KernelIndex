@@ -131,7 +131,7 @@ export default async function OperationPage({ params }: Props) {
 
         <Section id="implementations" title="Implementations">
           <div className="overflow-x-auto">
-            <div className="grid min-w-[940px] grid-cols-[minmax(240px,1.6fr)_150px_150px_92px_minmax(150px,1fr)] border-b border-border-strong text-mini text-faint">
+            <div className="grid min-w-[940px] grid-cols-[minmax(240px,1.6fr)_150px_150px_92px_minmax(150px,1fr)] border-b border-border-strong font-mono text-label text-faint uppercase">
               <div className="py-2">Implementation</div>
               <div className="py-2">Runtime</div>
               <div className="py-2 pr-3.5 text-right">Best latency</div>

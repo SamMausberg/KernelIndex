@@ -70,7 +70,7 @@ export default async function GpuPage({ params }: Props) {
           {records.length > 0 ? (
             <div className="overflow-x-auto">
               <div
-                className={`${RECORD_GRID} border-b border-border-strong pb-2 text-mini text-faint`}
+                className={`${RECORD_GRID} border-b border-border-strong pb-2 font-mono text-label text-faint uppercase`}
               >
                 <div>Operation · workload</div>
                 <div className="pr-3.5 text-right">Record</div>
@@ -136,7 +136,7 @@ export default async function GpuPage({ params }: Props) {
 
         <Section id="coverage" title="Coverage by operation family">
           <div className="overflow-x-auto">
-            <div className="grid min-w-[560px] grid-cols-[minmax(200px,1.4fr)_repeat(3,110px)] items-baseline gap-x-4 border-b border-border-strong pb-2 text-mini text-faint">
+            <div className="grid min-w-[560px] grid-cols-[minmax(200px,1.4fr)_repeat(3,110px)] items-baseline gap-x-4 border-b border-border-strong pb-2 font-mono text-label text-faint uppercase">
               <div>Family</div>
               <div className="text-right">Operations</div>
               <div className="text-right">Runs</div>

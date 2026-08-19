@@ -74,7 +74,7 @@ export function OperationList({
   const maxRuns = Math.max(100, ...entries.map((entry) => entry.runs))
   return (
     <div className="overflow-x-auto">
-      <div className="grid min-w-[738px] grid-cols-[minmax(280px,1fr)_150px_190px_92px] text-mini text-faint">
+      <div className="grid min-w-[738px] grid-cols-[minmax(280px,1fr)_150px_190px_92px] border-b border-border-strong font-mono text-label text-faint uppercase">
         <div className="py-2">Operation</div>
         <div className="py-2">Family</div>
         <div className="py-2 text-right">Published runs</div>
@@ -84,7 +84,7 @@ export function OperationList({
         <Link
           key={entry.slug}
           href={hrefFor(entry)}
-          className={`grid ${entry.match ? "h-14" : "h-12"} min-w-[738px] grid-cols-[minmax(280px,1fr)_150px_190px_92px] items-center border-t border-line transition-colors hover:bg-raised hover:no-underline`}
+          className={`grid ${entry.match ? "h-14" : "h-12"} min-w-[738px] grid-cols-[minmax(280px,1fr)_150px_190px_92px] items-center border-t border-line transition-colors hover:bg-raised no-underline`}
         >
           <span className="min-w-0 pr-4">
             <span className="block truncate text-body text-fg">
@@ -224,7 +224,7 @@ export function StartState({
                 <Link
                   key={option.key}
                   href={browseHref(filters, { sort: option.key })}
-                  className="text-subtle transition-colors hover:text-fg hover:no-underline"
+                  className="text-subtle transition-colors hover:text-fg no-underline"
                 >
                   {option.label}
                 </Link>

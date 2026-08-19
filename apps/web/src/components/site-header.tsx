@@ -67,7 +67,7 @@ export function SiteHeader({
       <div className="shell flex h-14 items-center gap-7 max-md:gap-4 max-md:px-4">
         <Link
           href="/"
-          className="font-mono text-lead font-medium text-fg hover:no-underline"
+          className="font-mono text-lead font-medium text-fg no-underline"
         >
           KernelIndex
         </Link>
@@ -79,7 +79,7 @@ export function SiteHeader({
             <Link
               key={item.href}
               href={item.href}
-              className={`transition-colors hover:text-fg hover:no-underline ${
+              className={`transition-colors hover:text-fg no-underline ${
                 pathname.startsWith(item.href) ? "text-fg" : "text-subtle"
               }${item.desktopOnly ? " max-md:hidden" : ""}`}
             >
@@ -91,7 +91,7 @@ export function SiteHeader({
         {!onSearch && (
           <Link
             href="/search"
-            className="well flex h-9 w-[220px] items-center gap-2 px-2.5 text-body text-faint transition-colors hover:text-subtle hover:no-underline max-md:hidden"
+            className="well flex h-9 w-[220px] items-center gap-2 px-2.5 text-body text-faint transition-colors hover:text-subtle no-underline max-md:hidden"
           >
             Search
             <kbd className="key ml-auto px-1.5 py-0.5 font-mono text-mini">
@@ -104,14 +104,14 @@ export function SiteHeader({
           {sessionName !== null ? (
             <Link
               href="/account"
-              className="max-w-[160px] truncate text-subtle transition-colors hover:text-fg hover:no-underline"
+              className="max-w-[160px] truncate text-subtle transition-colors hover:text-fg no-underline"
             >
               {sessionName}
             </Link>
           ) : (
             <Link
               href="/signin"
-              className="text-subtle transition-colors hover:text-fg hover:no-underline"
+              className="text-subtle transition-colors hover:text-fg no-underline"
             >
               Sign in
             </Link>

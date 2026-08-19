@@ -112,7 +112,7 @@ export function OperationRecords({
                         : {}),
                       cohort: option.key,
                     }).toString()}`}
-                    className={`key font-mono text-small whitespace-nowrap hover:no-underline ${
+                    className={`key font-mono text-small whitespace-nowrap no-underline ${
                       option.key === variant.cohort?.comparisonKey
                         ? "key-on"
                         : "text-subtle hover:text-fg"

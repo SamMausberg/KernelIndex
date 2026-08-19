@@ -20,7 +20,7 @@ export function LatestRecords({ rows }: { rows: RecordHolder[] }) {
   return (
     <div className="overflow-x-auto border-t border-border-strong">
       <div
-        className={`${GRID} border-b border-border-strong text-mini text-faint`}
+        className={`${GRID} border-b border-border-strong font-mono text-label text-faint uppercase`}
       >
         <div className="px-4 py-2.5">Operation / workload</div>
         <div className="px-4 py-2.5">Implementation</div>

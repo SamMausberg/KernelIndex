@@ -24,7 +24,7 @@ function ChipRow({
         <Link
           key={option.id}
           href={`/operations/${slug}?workload=${option.id}`}
-          className={`key font-mono text-small whitespace-nowrap hover:no-underline ${
+          className={`key font-mono text-small whitespace-nowrap no-underline ${
             option.id === selectedId ? "key-on" : "text-subtle hover:text-fg"
           }`}
         >
@@ -144,7 +144,7 @@ export function WorkloadPicker({
               <Link
                 key={option.id}
                 href={`/operations/${slug}?workload=${option.id}`}
-                className={`grid border-b border-line font-mono text-small transition-colors last:border-b-0 hover:bg-raised hover:no-underline ${
+                className={`grid border-b border-line font-mono text-small transition-colors last:border-b-0 hover:bg-raised no-underline ${
                   option.id === selectedId
                     ? "text-accent"
                     : "text-subtle hover:text-fg"
@@ -176,7 +176,7 @@ export function WorkloadPicker({
             <Link
               key={option.id}
               href={`/operations/${slug}?workload=${option.id}`}
-              className={`key font-mono text-small whitespace-nowrap hover:no-underline ${
+              className={`key font-mono text-small whitespace-nowrap no-underline ${
                 option.id === selectedId
                   ? "key-on"
                   : "text-subtle hover:text-fg"

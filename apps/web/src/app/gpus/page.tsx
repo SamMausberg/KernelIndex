@@ -26,7 +26,7 @@ export default async function GpusPage() {
       <main className="shell animate-fade-in pt-7 pb-24">
         <div className="overflow-x-auto">
           <div
-            className={`${GRID} items-baseline border-b border-border-strong pb-3 text-mini text-faint`}
+            className={`${GRID} items-baseline border-b border-border-strong pb-3 font-mono text-label text-faint uppercase`}
           >
             <div>GPU</div>
             <div>Architecture</div>

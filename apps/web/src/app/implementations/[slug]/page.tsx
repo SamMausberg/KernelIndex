@@ -215,7 +215,7 @@ export default async function ImplementationPage({ params }: Props) {
             {model.bestResults.length > 0 ? (
               <div className="min-w-[780px]">
                 <div
-                  className={`${EVIDENCE_GRID} border-b border-border-strong text-mini text-faint`}
+                  className={`${EVIDENCE_GRID} border-b border-border-strong font-mono text-label text-faint uppercase`}
                 >
                   <div className="py-2">Operation / workload</div>
                   <div className="py-2">Hardware</div>

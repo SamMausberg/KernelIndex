@@ -25,18 +25,21 @@ export function SiteFooter() {
             <Link
               key={link.href}
               href={link.href}
-              className="text-small text-subtle"
+              className="text-small text-subtle no-underline transition-colors hover:text-fg"
             >
               {link.label}
             </Link>
           ))}
           <a
             href="https://github.com/SamMausberg/KernelIndex"
-            className="text-small text-subtle"
+            className="text-small text-subtle no-underline transition-colors hover:text-fg"
           >
             GitHub
           </a>
-          <a href="/records/feed.xml" className="text-small text-subtle">
+          <a
+            href="/records/feed.xml"
+            className="text-small text-subtle no-underline transition-colors hover:text-fg"
+          >
             Feed
           </a>
         </span>

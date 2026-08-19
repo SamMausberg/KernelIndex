@@ -47,7 +47,7 @@ export function FilterChip({
       role="button"
       aria-pressed={on}
       onClick={onClick}
-      className={`key text-small whitespace-nowrap hover:no-underline ${
+      className={`key text-small whitespace-nowrap no-underline ${
         on ? "key-on" : "text-subtle hover:text-fg"
       }`}
     >

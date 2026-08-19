@@ -339,23 +339,4 @@
   .sweep .series:hover .pt-label {
     opacity: 1;
   }
-
-  /* Route-transition scan: a flat accent hairline crossing the page once —
-     the instrument's sweep. Solid ink, no gradient. */
-  .scan-line {
-    height: 1px;
-    transform-origin: left;
-    animation: scan 0.55s var(--ease-out) both;
-    background: var(--color-accent);
-  }
-  @keyframes scan {
-    from {
-      transform: scaleX(0);
-      opacity: 0.9;
-    }
-    to {
-      transform: scaleX(1);
-      opacity: 0;
-    }
-  }
 }
