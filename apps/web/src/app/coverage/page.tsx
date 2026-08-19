@@ -159,6 +159,51 @@ export default async function CoveragePage() {
           <SourceRows rows={kernel} breadthLabel="Ops" />
         </Section>
 
+        <Section id="priority" title="Priority coverage">
+          <p className="mb-4 max-w-[76ch] text-[13.5px] text-muted">
+            The operations an inference engineer asks about first, on the GPUs
+            they ask about first. Published runs per cell; a zero is a stated
+            gap, not a claim.
+          </p>
+          <div className="overflow-x-auto">
+            <div className="min-w-[560px] max-w-[720px]">
+              <div className="grid grid-cols-[minmax(180px,1.4fr)_repeat(3,minmax(96px,0.6fr))] items-baseline gap-x-4 border-b border-border pb-2 font-mono text-[10px] tracking-[0.08em] text-faint uppercase">
+                <span>Family</span>
+                {model.hero.gpus.map((gpu) => (
+                  <span key={gpu} className="text-right">
+                    {gpu.replace("NVIDIA ", "")}
+                  </span>
+                ))}
+                <span className="text-right">All GPUs</span>
+              </div>
+              {model.hero.rows.map((row) => (
+                <div
+                  key={row.family}
+                  className="grid grid-cols-[minmax(180px,1.4fr)_repeat(3,minmax(96px,0.6fr))] items-baseline gap-x-4 border-b border-line py-2.5 text-[13px]"
+                >
+                  <Link
+                    href={`/search?q=${encodeURIComponent(row.family)}`}
+                    className="font-mono text-[12.5px]"
+                  >
+                    {row.family}
+                  </Link>
+                  {row.runs.map((runs, index) => (
+                    <span
+                      key={model.hero.gpus[index]}
+                      className={`text-right font-mono text-[12.5px] ${runs === 0 ? "text-faint" : ""}`}
+                    >
+                      {runs === 0 ? "0 · gap" : runs.toLocaleString("en-US")}
+                    </span>
+                  ))}
+                  <span className="text-right font-mono text-[12.5px] text-subtle">
+                    {row.total.toLocaleString("en-US")}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Section>
+
         {servingEnabled && serving.length > 0 && (
           <Section id="serving" title="Serving evidence">
             <p className="mb-4 max-w-[76ch] text-[13.5px] text-muted">

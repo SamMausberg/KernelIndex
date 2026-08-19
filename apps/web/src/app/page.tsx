@@ -45,6 +45,25 @@ export default async function Home() {
                 coverage →
               </Link>
             </p>
+            <p className="mt-1.5 font-mono text-[12px] text-faint">
+              for agents:{" "}
+              <Link href="/docs#agents" className="text-faint">
+                MCP
+              </Link>{" "}
+              ·{" "}
+              <Link href="/docs/api" className="text-faint">
+                API
+              </Link>{" "}
+              ·{" "}
+              <Link href="/docs#data" className="text-faint">
+                CLI
+              </Link>{" "}
+              ·{" "}
+              <a href="/llms.txt" className="text-faint">
+                llms.txt
+              </a>{" "}
+              — the same resolver, never scraped HTML
+            </p>
           </div>
         </section>
 

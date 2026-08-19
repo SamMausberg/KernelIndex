@@ -300,13 +300,20 @@ function Recommendation({
             No install recipe recorded for this revision.
           </p>
         )}
-        <div className="mt-3.5 flex flex-wrap gap-x-5 gap-y-1 text-[13px]">
+        <div className="mt-3.5 flex flex-wrap gap-x-5 gap-y-1">
           {top.sourceAvailable && (
-            <Link href={`/implementations/${top.implementation.slug}#code`}>
+            <Link
+              href={`/implementations/${top.implementation.slug}#code`}
+              className="action"
+            >
               View source →
             </Link>
           )}
-          {top.runId && <Link href={`/runs/${top.runId}`}>Run dossier →</Link>}
+          {top.runId && (
+            <Link href={`/runs/${top.runId}`} className="action">
+              Run dossier →
+            </Link>
+          )}
         </div>
         {fasterInCohort?.primary && (
           <p className="mt-3.5 text-[13px] text-subtle">

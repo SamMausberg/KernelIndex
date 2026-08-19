@@ -2,7 +2,7 @@ import { Metric } from "@/components/metric"
 import { Link } from "@/components/quiet-link"
 import { AvailabilityCell, EvidenceCell } from "@/components/trust"
 import type { RecordHolder } from "@/lib/catalog"
-import { formatDateUTC, formatPrimary, formatSolScore } from "@/lib/format"
+import { formatDateUTC, formatPrimary, formatSolScoreCell } from "@/lib/format"
 
 const GRID =
   "grid grid-cols-[1.2fr_1.2fr_110px_150px_130px_100px_165px_92px] min-w-[1120px]"
@@ -70,13 +70,13 @@ export function LatestRecords({ rows }: { rows: RecordHolder[] }) {
             <div className="px-4 text-right whitespace-nowrap">
               <Metric
                 primary={row.primary}
+                secondary={
+                  row.solScore !== null
+                    ? formatSolScoreCell(row.solScore)
+                    : null
+                }
                 valueClassName="font-mono text-[13.5px] text-fg"
               />
-              {row.solScore !== null && (
-                <div className="font-mono text-[10.5px] leading-tight text-subtle">
-                  {formatSolScore(row.solScore)}
-                </div>
-              )}
             </div>
             <div className="truncate px-4 font-mono text-[12px] whitespace-nowrap">
               {event?.improvementPct !== null && event?.previousValue ? (

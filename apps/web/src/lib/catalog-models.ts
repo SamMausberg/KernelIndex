@@ -581,9 +581,19 @@ export type CoverageSource = {
   lastFetched: string | null
 }
 
+/** One priority family's eligible-run counts across the hero GPUs — the
+ * public, falsifiable definition of "enough records": a zero is a gap. */
+export type HeroCoverageRow = {
+  family: string
+  /** Aligned with the model's hero GPU list. */
+  runs: number[]
+  total: number
+}
+
 export type CoveragePageModel = {
   illustrative: boolean
   sources: CoverageSource[]
+  hero: { gpus: string[]; rows: HeroCoverageRow[] }
 }
 
 export type HardwareIndexModel = {

@@ -10,7 +10,7 @@ import { Metric } from "@/components/metric"
 // the URL kept shareable. Markup is identical to the server-rendered form.
 import { Link } from "@/components/quiet-link"
 import { AvailabilityCell, EvidenceCell } from "@/components/trust"
-import { formatDateUTC, formatPrimary, formatSolScore } from "@/lib/format"
+import { formatDateUTC, formatPrimary, formatSolScoreCell } from "@/lib/format"
 import {
   DAY_MS,
   filtersFromParams,
@@ -46,9 +46,9 @@ function loadModel(): Promise<LedgerModel | null> {
 const CURRENT_GRID =
   "grid grid-cols-[minmax(280px,1.5fr)_170px_150px_minmax(150px,0.9fr)_156px_92px_minmax(150px,1fr)_92px_28px] min-w-[1254px]"
 
-/** The lead story (§16.12): the newest broken records under the filters.
- * Flat hairline cards, no gradient or catch-light; the whole card reaches
- * the record's run, and the only hover signal is the border waking up. */
+/** The lead story (§16.12): the newest broken records under the filters —
+ * hairline rows in the page's own table idiom, no cards or lifted surfaces.
+ * The whole row reaches the record's run. */
 function LatestBreaks({ latest }: { latest: LedgerEvent[] }) {
   if (latest.length === 0) return null
   return (
@@ -56,11 +56,11 @@ function LatestBreaks({ latest }: { latest: LedgerEvent[] }) {
       <div className="text-[10.5px] tracking-[0.08em] text-faint uppercase">
         Latest breaks
       </div>
-      <div className="mt-2 grid grid-cols-3 gap-3 max-lg:grid-cols-1">
+      <div className="mt-1.5 overflow-x-auto border-t border-border-strong">
         {latest.map(({ holder, event }) => (
           <div
             key={event.runId}
-            className="relative rounded-[5px] border border-border bg-raised px-4 py-3 transition-colors hover:border-edge-hover"
+            className="relative grid min-w-[900px] grid-cols-[minmax(240px,1.2fr)_260px_minmax(200px,1fr)_92px] items-baseline gap-x-6 border-b border-line py-2.5 transition-colors hover:bg-raised"
           >
             <Link
               href={`/runs/${event.runId}`}
@@ -68,31 +68,30 @@ function LatestBreaks({ latest }: { latest: LedgerEvent[] }) {
               aria-label={`Record run for ${holder.operation.name}`}
               className="absolute inset-0"
             />
-            <div className="flex items-baseline justify-between gap-3">
-              <span className="truncate text-[13px] text-fg">
-                {holder.operation.name}
+            <span className="truncate text-[13px] text-fg">
+              {holder.operation.name}
+              <span className="ml-2 font-mono text-[11.5px] text-faint">
+                {holder.workloadSummary}
               </span>
-              <span className="font-mono text-[11.5px] whitespace-nowrap text-faint">
-                {formatDateUTC(event.at)}
-              </span>
-            </div>
-            <div className="mt-1.5 font-mono text-[13px]">
+            </span>
+            <span className="font-mono text-[13px] whitespace-nowrap">
               <span className="text-faint">
                 {event.previousValue ? formatPrimary(event.previousValue) : "—"}
               </span>{" "}
               <span className="text-ghost">→</span>{" "}
-              <span className="text-[15px] text-fg">
-                {formatPrimary(event.value)}
-              </span>
+              <span className="text-fg">{formatPrimary(event.value)}</span>
               {event.improvementPct !== null && (
                 <span className="ml-2 text-[12px] text-success">
                   {event.improvementPct.toFixed(1)}%
                 </span>
               )}
-            </div>
-            <div className="mt-1 truncate text-[12px] text-subtle">
+            </span>
+            <span className="truncate text-[12px] text-subtle">
               {event.implementation.name} · {holder.hardware}
-            </div>
+            </span>
+            <span className="text-right font-mono text-[11.5px] whitespace-nowrap text-faint">
+              {formatDateUTC(event.at)}
+            </span>
           </div>
         ))}
       </div>
@@ -123,13 +122,13 @@ function HolderRow({ holder }: { holder: LedgerHolder }) {
           <Metric
             primary={record.primary}
             spread
+            secondary={
+              record.solScore !== null
+                ? formatSolScoreCell(record.solScore)
+                : null
+            }
             valueClassName="font-mono text-[14px] text-fg"
           />
-          {record.solScore !== null && (
-            <div className="font-mono text-[10.5px] leading-tight text-subtle">
-              {formatSolScore(record.solScore)}
-            </div>
-          )}
         </div>
         <div className="truncate pr-3 font-mono text-[12px] whitespace-nowrap">
           {margin !== null ? (
@@ -238,32 +237,44 @@ function HolderRow({ holder }: { holder: LedgerHolder }) {
             .
           </p>
         )}
-        <div className="mt-3.5 flex flex-wrap gap-x-4 gap-y-1 text-[12.5px]">
+        <div className="mt-3.5 flex flex-wrap items-baseline gap-x-5 gap-y-1">
           {record.sourceAvailable && (
             <Link
               href={`/implementations/${record.implementation.slug}#code`}
               prefetch={false}
+              className="action"
             >
               View source →
             </Link>
           )}
           {record.runId && (
-            <Link href={`/runs/${record.runId}`} prefetch={false}>
+            <Link
+              href={`/runs/${record.runId}`}
+              prefetch={false}
+              className="action"
+            >
               Run dossier →
             </Link>
           )}
-          <Link href={`/operations/${holder.operation.slug}`} prefetch={false}>
-            Operation
+          <Link
+            href={`/operations/${holder.operation.slug}`}
+            prefetch={false}
+            className="action"
+          >
+            Operation →
           </Link>
           {record.runId && holder.history.length >= 2 && (
             <Link
               href={`/compare?run=${record.runId}&run=${holder.history[1].runId}`}
               prefetch={false}
+              className="action"
             >
-              Compare with previous record
+              Compare with previous record →
             </Link>
           )}
-          <Link href="/docs#records">How records are decided</Link>
+          <Link href="/docs#records" className="text-[12.5px]">
+            How records are decided
+          </Link>
         </div>
       </div>
     </details>

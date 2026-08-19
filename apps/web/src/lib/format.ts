@@ -139,6 +139,11 @@ export function formatSolScore(score: number): string {
   return `${Math.round(score * 100)}% of SOL`
 }
 
+/** "62% SOL" — the dense-cell form for the metric annotation slot. */
+export function formatSolScoreCell(score: number): string {
+  return `${Math.round(score * 100)}% SOL`
+}
+
 /** Verbose storage dtype names → their element family, display only —
  * manifests and digests keep the source-declared name. */
 const DTYPE_DISPLAY: Record<string, string> = { float4_e2m1fn_x2: "fp4" }

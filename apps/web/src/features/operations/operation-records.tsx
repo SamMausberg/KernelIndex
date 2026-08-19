@@ -175,7 +175,10 @@ export function OperationRecords({
         {overflow > 0 && (
           <p className="mt-3 text-[12.5px] text-faint">
             {overflow} more row{overflow === 1 ? "" : "s"} in this cohort.{" "}
-            <Link href={`/search?q=${encodeURIComponent(`op:${slug}`)}`}>
+            <Link
+              href={`/search?q=${encodeURIComponent(`op:${slug}`)}`}
+              className="action"
+            >
               Open all in search →
             </Link>
           </p>

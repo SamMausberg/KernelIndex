@@ -6,7 +6,7 @@ import type { PrimaryMetric, ResultRow } from "@/lib/catalog"
 import {
   formatDateUTC,
   formatRelative,
-  formatSolScore,
+  formatSolScoreCell,
   humanizeField,
 } from "@/lib/format"
 
@@ -188,15 +188,13 @@ export function ResultRowItem({
           <Metric
             primary={row.primary}
             spread
+            secondary={
+              row.solScore !== null ? formatSolScoreCell(row.solScore) : null
+            }
             valueClassName={`font-mono ${
               row.rank === 1 ? "text-[14.5px]" : "text-[13.5px]"
             } text-fg`}
           />
-          {row.solScore !== null && (
-            <div className="font-mono text-[10.5px] leading-tight text-subtle">
-              {formatSolScore(row.solScore)}
-            </div>
-          )}
         </div>
         <RelativeCell row={row} best={best} relative={relative} />
         <EvidenceCell row={row} />
@@ -222,17 +220,25 @@ export function ResultRowItem({
         </p>
         <div className="mt-2.5 flex flex-wrap items-center gap-x-6 gap-y-2">
           <TierChips row={row} />
-          <span className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-[12.5px]">
+          <span className="flex flex-wrap items-baseline gap-x-5 gap-y-1">
             {row.sourceAvailable && (
-              <Link href={`/implementations/${row.implementation.slug}#code`}>
+              <Link
+                href={`/implementations/${row.implementation.slug}#code`}
+                className="action"
+              >
                 View source →
               </Link>
             )}
             {row.runId && (
-              <Link href={`/runs/${row.runId}`}>Run dossier →</Link>
+              <Link href={`/runs/${row.runId}`} className="action">
+                Run dossier →
+              </Link>
             )}
             {row.runId && compareWith && compareWith !== row.runId && (
-              <Link href={`/compare?run=${compareWith}&run=${row.runId}`}>
+              <Link
+                href={`/compare?run=${compareWith}&run=${row.runId}`}
+                className="action"
+              >
                 Compare with #1 →
               </Link>
             )}
