@@ -5,7 +5,6 @@ import { FilterChip } from "@/components/chip"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
 import { Meter } from "@/components/meter"
 import { Pager } from "@/components/pager"
-import { Section } from "@/components/section"
 import * as fixtures from "@/data/fixtures/catalog"
 import { RecordsLedger } from "@/features/records/ledger"
 import { ledgerSlice } from "@/features/records/ledger-model"
@@ -62,7 +61,7 @@ export default async function DesignLabPage() {
         <IllustrativeNotice />
       </State>
 
-      <State label="components · chip, pager, meter, collapsible section">
+      <State label="components · chip, pager, meter">
         <div className="space-y-6 p-6">
           <div className="flex flex-wrap items-center gap-2">
             <FilterChip href="#" on={false} label="Has source" count={12} />
@@ -85,11 +84,6 @@ export default async function DesignLabPage() {
               calibrated rule at 100 / 62 / 13%
             </span>
           </div>
-          <Section title="Protocol" summary="5 fields">
-            <p className="text-small text-muted">
-              Collapsible section body — hidden until the count is opened.
-            </p>
-          </Section>
         </div>
       </State>
 

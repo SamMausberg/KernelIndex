@@ -10,7 +10,6 @@ import { Section } from "@/components/section"
 import { ReportForm } from "@/features/reports/report-form"
 import { getRunPage } from "@/lib/catalog"
 import {
-  countNoun,
   evidenceLabel,
   formatDateUTC,
   formatPrimary,
@@ -231,16 +230,7 @@ export default async function RunPage({ params }: Props) {
             )}
           </Section>
 
-          <Section
-            id="workload"
-            title="Workload"
-            summary={countNoun(
-              Object.keys(model.workload.axes).length +
-                model.workload.tensors.length +
-                model.workload.tolerance.length,
-              "field",
-            )}
-          >
+          <Section id="workload" title="Workload">
             <KeyValueList
               items={[
                 ...Object.entries(model.workload.axes).map(([key, value]) => ({
@@ -279,27 +269,15 @@ export default async function RunPage({ params }: Props) {
             )}
           </Section>
 
-          <Section
-            id="protocol"
-            title="Protocol"
-            summary={countNoun(model.protocol.length, "field")}
-          >
+          <Section id="protocol" title="Protocol">
             <KeyValueList items={model.protocol} />
           </Section>
 
-          <Section
-            id="environment"
-            title="Environment"
-            summary={countNoun(model.environment.length, "field")}
-          >
+          <Section id="environment" title="Environment">
             <KeyValueList items={model.environment} />
           </Section>
 
-          <Section
-            id="artifacts"
-            title="Artifacts"
-            summary={countNoun(model.artifacts.length, "artifact")}
-          >
+          <Section id="artifacts" title="Artifacts">
             {model.artifacts.length > 0 ? (
               <KeyValueList
                 items={model.artifacts.map((artifact) => ({
