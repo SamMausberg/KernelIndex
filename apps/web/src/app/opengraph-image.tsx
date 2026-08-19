@@ -1,6 +1,6 @@
 // Site-wide social card (§16.18): the wordmark and promise on the matte
 // canvas — flat, no glow, colors mirroring the globals.css tokens and the
-// wordmark set in the site's own data face. Rendered once at build; also
+// wordmark set in the site's public identity face. Rendered once at build; also
 // the twitter:image via the metadata route convention.
 import { ImageResponse } from "next/og"
 
@@ -15,13 +15,13 @@ const SUBTLE = "#a2a8bb"
 const FAINT = "#757c93"
 const ACCENT_DIM = "#52699f"
 
-/** IBM Plex Mono 500 as TTF: the css2 API serves truetype URLs when the
+/** Space Grotesk 500 as TTF: the css2 API serves truetype URLs when the
  * request carries no browser user agent. Falls back to the default face if
  * the fetch fails — the card renders either way. */
-async function plexMono(): Promise<ArrayBuffer | null> {
+async function identityFace(): Promise<ArrayBuffer | null> {
   try {
     const css = await fetch(
-      "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500",
+      "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500",
     ).then((response) => response.text())
     const url = css.match(/src: url\((.+?)\) format\('truetype'\)/)?.[1]
     if (!url) return null
@@ -32,7 +32,7 @@ async function plexMono(): Promise<ArrayBuffer | null> {
 }
 
 export default async function Image() {
-  const mono = await plexMono()
+  const mono = await identityFace()
   return new ImageResponse(
     <div
       style={{
@@ -44,7 +44,7 @@ export default async function Image() {
         background: CANVAS,
         color: FG,
         padding: "72px 80px",
-        fontFamily: mono ? "IBM Plex Mono" : "monospace",
+        fontFamily: mono ? "Space Grotesk" : "sans-serif",
       }}
     >
       <div style={{ display: "flex", fontSize: 28, color: SUBTLE }}>
@@ -91,7 +91,7 @@ export default async function Image() {
     {
       ...size,
       fonts: mono
-        ? [{ name: "IBM Plex Mono", data: mono, weight: 500 as const }]
+        ? [{ name: "Space Grotesk", data: mono, weight: 500 as const }]
         : undefined,
     },
   )

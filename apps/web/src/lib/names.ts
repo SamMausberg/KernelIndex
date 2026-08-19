@@ -95,11 +95,19 @@ export function implementationDisplayName(
   slug: string,
 ): string {
   if (!title) return slug
-  const operationKey = kebabish(operation.name)
+  // A segment repeats the operation when it contains the operation's name
+  // or slug, or when it IS the slug minus a source prefix (board names like
+  // "amd-fp8-mm" under "gpumode-amd-fp8-mm"). A segment that merely shares
+  // the slug's prefix ("Liger fused" under "liger-fused-add-rms-norm") is
+  // the implementation's identity and stays.
+  const operationKeys = [kebabish(operation.name), operation.slug]
   const kept = title.split(" · ").filter((segment) => {
     const key = kebabish(segment.trim())
-    if (key === "" || key === operationKey) return false
-    return key.length < 4 || !operation.slug.includes(key)
+    if (key === "") return false
+    if (operation.slug.endsWith(`-${key}`)) return false
+    return !operationKeys.some(
+      (opKey) => key === opKey || (opKey.length >= 6 && key.includes(opKey)),
+    )
   })
   return kept.length > 0 ? kept.join(" · ") : slug
 }

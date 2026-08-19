@@ -487,7 +487,7 @@ export function SearchResults({
     <>
       {/* z-30: the suggest popup must paint above the result sections. */}
       <div className="relative z-30 border-b border-border bg-surface">
-        <div className="shell animate-fade-in pt-5 pb-4">
+        <div className="shell animate-fade-in pt-4 pb-3.5">
           <SearchField query={model.query} />
           {(model.facets.length > 0 || model.queryIssues.length > 0) && (
             <div className="mt-2.5 flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
@@ -789,11 +789,26 @@ export function SearchResults({
                       </Link>
                     </>
                   )}
+                  {/* §12: the faster number is stated, never hidden — an
+                      empty filtered view still names the best it is hiding. */}
                   {state.source &&
                     groupsByMode[view].some((row) => !row.sourceAvailable) && (
                       <>
-                        {" "}
-                        <Link
+                        {(() => {
+                          const best = groupsByMode[view].find(
+                            (row) => row.primary !== null,
+                          )?.primary
+                          return best ? (
+                            <>
+                              {" "}
+                              Best without source:{" "}
+                              <span className="font-mono text-subtle">
+                                {formatPrimary(best)}
+                              </span>
+                              .
+                            </>
+                          ) : null
+                        })()} <Link
                           href={searchHref(model.query, state, {
                             source: false,
                           })}

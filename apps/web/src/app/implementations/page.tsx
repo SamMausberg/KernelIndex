@@ -15,8 +15,14 @@ export const revalidate = 300
 const GRID =
   "grid grid-cols-[minmax(230px,1.5fr)_80px_80px_90px_minmax(190px,1.1fr)_minmax(180px,1.2fr)_110px] gap-x-6 min-w-[1060px]"
 
+// SSR row cap (§16 payload budget): the tail of the standing table is
+// hundreds of one-submission contest identities; every project past the cap
+// stays reachable from its implementations' pages, and the cut is stated.
+const ROW_CAP = 100
+
 export default async function ProjectsPage() {
   const model = await getProjectIndex()
+  const shown = model.projects.slice(0, ROW_CAP)
   return (
     <>
       {model.illustrative && <IllustrativeNotice />}
@@ -37,7 +43,7 @@ export default async function ProjectsPage() {
             <div>Hardware</div>
             <div className="text-right">Last observed</div>
           </div>
-          {model.projects.map((project) => (
+          {shown.map((project) => (
             <div
               key={project.slug}
               className={`${GRID} row-cv h-12 items-center border-b border-line transition-colors hover:bg-raised`}
@@ -81,6 +87,8 @@ export default async function ProjectsPage() {
           ))}
         </div>
         <p className="mt-4 text-small text-faint">
+          {model.projects.length > ROW_CAP &&
+            `Showing the ${ROW_CAP} most present of ${model.projects.length} projects; the rest are reachable from their implementations' pages. `}
           Ordered by corpus presence, not merit: results are comparable only
           inside cohorts. <Link href="/docs#comparability">Why? →</Link>
         </p>

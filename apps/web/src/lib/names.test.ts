@@ -65,6 +65,18 @@ describe("implementationDisplayName", () => {
     ).toBe("submission 30771")
   })
 
+  it("keeps an implementation identity sharing the operation slug's prefix", () => {
+    // Liger: the op slug starts with the provider name; the provider segment
+    // is the implementation's identity, not repetition.
+    expect(
+      implementationDisplayName(
+        "Fused add + RMSNorm · Liger fused",
+        { name: "Fused add + RMSNorm", slug: "liger-fused-add-rms-norm" },
+        "liger-bench-fused-add-rms-norm-liger-fused-add-rms-norm",
+      ),
+    ).toBe("Liger fused")
+  })
+
   it("falls back to the slug when the title carries nothing new", () => {
     expect(
       implementationDisplayName(

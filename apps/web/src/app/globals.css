@@ -53,12 +53,15 @@
   --color-viz-4: #d0618f;
   --color-viz-5: #b98a3d;
 
-  /* Two faces, both self-hosted (§16.2): Instrument Sans is the UI voice,
-     IBM Plex Mono is the data and identity face — a true monospace, so
-     digits align by construction. */
+  /* The house faces (§16.2): ABC Diatype leads when locally available;
+     the self-hosted pair (Instrument Sans for UI, Space Grotesk as the
+     data face) renders for everyone else. */
   --font-sans:
-    var(--font-instrument-sans), "Helvetica Neue", Helvetica, Arial, sans-serif;
-  --font-mono: var(--font-plex-mono), ui-monospace, SFMono-Regular, monospace;
+    "ABC Diatype", var(--font-instrument-sans), "Helvetica Neue", Helvetica,
+    Arial, sans-serif;
+  --font-mono:
+    "ABC Diatype Semi Mono", "ABC Diatype Semi-Mono", var(--font-space-grotesk),
+    ui-monospace, monospace;
 
   /*
    * Type roles (§16.2). Every text size on the site is one of these nine —

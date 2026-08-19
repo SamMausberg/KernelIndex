@@ -1,24 +1,23 @@
 import { Analytics } from "@vercel/analytics/next"
 import type { Metadata } from "next"
-import { IBM_Plex_Mono, Instrument_Sans } from "next/font/google"
+import { Instrument_Sans, Space_Grotesk } from "next/font/google"
 import { SiteFooter } from "@/components/site-footer"
 import { SiteHeader } from "@/components/site-header"
 import { authConfigured } from "@/server/auth"
 import { servingEnabled } from "@/server/env"
 import "./globals.css"
 
-// Self-hosted via next/font (§16.2). Instrument Sans is the UI voice; IBM
-// Plex Mono is the data and identity face — a true monospace, so every
-// latency, digest, and date is tabular by construction.
+// Self-hosted via next/font (§16.2); exposed as variables so the token
+// stacks in globals.css can prefer ABC Diatype when it is available.
 const instrumentSans = Instrument_Sans({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
   variable: "--font-instrument-sans",
 })
-const plexMono = IBM_Plex_Mono({
+const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
-  weight: ["400", "500"],
-  variable: "--font-plex-mono",
+  weight: ["400", "500", "600"],
+  variable: "--font-space-grotesk",
 })
 
 export const metadata: Metadata = {
@@ -57,7 +56,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${instrumentSans.variable} ${plexMono.variable}`}
+      className={`${instrumentSans.variable} ${spaceGrotesk.variable}`}
     >
       {/* suppressHydrationWarning: extensions (Grammarly) mutate <body> attrs
           pre-hydration; React 19 treats that as a mismatch. Attrs only. */}

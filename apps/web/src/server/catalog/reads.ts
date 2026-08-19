@@ -368,7 +368,8 @@ function groupRuns(
     (a, b) => b[1].length - a[1].length,
   )
   // One selectable option per measured environment cohort; equal hardware
-  // labels (distinct runner fleets) get a short digest disambiguator.
+  // labels (distinct runner fleets) get a human ordinal — the cohort facts
+  // panel states what actually differs, never a leaked digest fragment.
   const cohortOptions = rankedCohorts.map(([key, list]) => ({
     key,
     label: list[0].run.hardwareModel,
@@ -378,9 +379,12 @@ function groupRuns(
   for (const option of cohortOptions) {
     labelCounts.set(option.label, (labelCounts.get(option.label) ?? 0) + 1)
   }
+  const labelOrdinals = new Map<string, number>()
   for (const option of cohortOptions) {
     if ((labelCounts.get(option.label) ?? 0) > 1) {
-      option.label = `${option.label} · ${option.key.slice(-6)}`
+      const ordinal = (labelOrdinals.get(option.label) ?? 0) + 1
+      labelOrdinals.set(option.label, ordinal)
+      option.label = `${option.label} · env ${ordinal}`
     }
   }
   const primaryCohort =
@@ -515,11 +519,17 @@ async function fillCohortFacts(groups: {
   const framework = software.framework
     ? `${software.framework.name} ${software.framework.version}`
     : null
+  // A source that never declared its statistic renders as the harness alone,
+  // not the word "unspecified" presented as if it were one.
+  const statistic =
+    measurement.primaryStatistic === "unspecified"
+      ? null
+      : measurement.primaryStatistic
   const protocol = [
     `${stored.protocol.spec.harness.name}${stored.protocol.spec.harness.version ? ` ${stored.protocol.spec.harness.version}` : ""}`,
-    measurement.samples
-      ? `${measurement.primaryStatistic} of ${measurement.samples}`
-      : measurement.primaryStatistic,
+    statistic && measurement.samples
+      ? `${statistic} of ${measurement.samples}`
+      : statistic,
     measurement.compileIncluded === false ? "compile excluded" : null,
   ]
     .filter(Boolean)

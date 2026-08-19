@@ -168,9 +168,19 @@ export function workloadLabel(
   dtypes: string[],
 ): string {
   // The suite's own title only repeats the operation, which every surface
-  // already names beside this label.
+  // already names beside this label. Sources that don't declare how they
+  // aggregate get the honest count alone — never the word "unspecified"
+  // rendered as if it were a statistic.
   if (workload.kind === "WorkloadSuite") {
-    return `suite of ${workload.spec.cases.length} cases · ${workload.spec.aggregation.statistic} ${workload.spec.aggregation.metric}`
+    const aggregation = [
+      workload.spec.aggregation.statistic,
+      workload.spec.aggregation.metric,
+    ]
+      .filter((part) => part && part !== "unspecified")
+      .join(" ")
+    return [`suite of ${workload.spec.cases.length} cases`, aggregation]
+      .filter(Boolean)
+      .join(" · ")
   }
   const axes = Object.entries(workload.spec.axes)
     .map(([name, value]) => `${name} = ${value}`)
