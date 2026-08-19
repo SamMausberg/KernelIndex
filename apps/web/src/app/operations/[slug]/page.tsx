@@ -105,6 +105,24 @@ export default async function OperationPage({ params }: Props) {
             {operation.summary}
           </p>
         )}
+        {operation.equivalents.length > 0 && (
+          <p className="mt-2 text-[12.5px] text-subtle">
+            Also indexed as{" "}
+            {operation.equivalents.map((equivalent, index) => (
+              <span key={equivalent.slug}>
+                {index > 0 && ", "}
+                <Link
+                  href={`/operations/${equivalent.slug}`}
+                  className="font-mono text-[12px]"
+                >
+                  {equivalent.slug}
+                </Link>
+              </span>
+            ))}{" "}
+            — reviewed as the same computation; every definition's cohorts are
+            shown here, ranked separately.
+          </p>
+        )}
       </ContextHeader>
 
       <main className="shell animate-fade-in pb-20">

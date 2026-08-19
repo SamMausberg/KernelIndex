@@ -28,7 +28,8 @@
     "openapi:generate": "node scripts/generate-openapi.ts && pnpm exec biome format --write ../../packages/sdk/openapi.json",
     "import:mlperf": "node --env-file-if-exists=.env.local scripts/import-mlperf.ts",
     "import:liger": "node --env-file-if-exists=.env.local scripts/import-liger.ts",
-    "check:bundles": "node scripts/check-bundle-budget.ts"
+    "check:bundles": "node scripts/check-bundle-budget.ts",
+    "relate:operations": "node --env-file-if-exists=.env.local scripts/relate-operations.ts"
   },
   "dependencies": {
     "@hono/zod-openapi": "^1.6.0",

@@ -810,6 +810,7 @@ export async function getOperationPage(
       name: "RMSNorm, hidden 4096",
       family: "rmsnorm",
       aliases: ["rms_norm", "RMSLayerNorm"],
+      equivalents: [],
       models: ["llama-3.1-8b"],
       semanticDigest: digest("operation:rmsnorm-h4096"),
       summary:

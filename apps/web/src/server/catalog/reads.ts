@@ -84,6 +84,7 @@ import {
   workloadTensorKeyValues,
 } from "./present.ts"
 import { eligibleRunFilter } from "./record-events.ts"
+import { equivalenceGroups, equivalentOperationIds } from "./relations.ts"
 import { diffSource } from "./source-diff.ts"
 import { computeSweep } from "./sweep.ts"
 
@@ -170,12 +171,14 @@ type OperationJoinedRun = JoinedRun & {
   workload: Pick<WorkloadRow, "id" | "dtypes" | "shapeSummary" | "layoutKeys">
 }
 
-/** Published eligible runs for one operation, fastest first. Bounded: the
- * ranked table, sweep, and compatible groups never show more than this,
- * and the tail is reachable through the API's cursor surfaces. */
+/** Published eligible runs for one operation — reviewed-equivalent ids ride
+ * along so one page presents every definition's cohorts (still separate
+ * cohorts) — fastest first. Bounded: the ranked table, sweep, and compatible
+ * groups never show more than this, and the tail is reachable through the
+ * API's cursor surfaces. */
 const OPERATION_RUNS_LIMIT = 600
 async function joinedRunsForOperation(
-  operationId: string,
+  operationIds: string[],
 ): Promise<OperationJoinedRun[]> {
   return db()
     .select({
@@ -208,7 +211,10 @@ async function joinedRunsForOperation(
       eq(schema.benchmarkRuns.sourceId, schema.sources.id),
     )
     .where(
-      and(eq(schema.workloads.operationId, operationId), eligibleRunFilter()),
+      and(
+        inArray(schema.workloads.operationId, operationIds),
+        eligibleRunFilter(),
+      ),
     )
     .orderBy(schema.benchmarkRuns.primaryValue)
     .limit(OPERATION_RUNS_LIMIT)
@@ -931,17 +937,58 @@ export async function getOperationIndex(): Promise<OperationIndexEntry[]> {
     if (bucket) bucket.push(row.alias)
     else aliasesById.set(row.operationId, [row.alias])
   }
-  return operations.map((operation) => {
-    const stats = statsById.get(operation.id)
-    return {
-      name: humanizeOperationName(operation.name),
-      slug: operation.slug,
-      family: operation.family,
-      aliases: aliasesById.get(operation.id) ?? [],
-      runs: stats?.n ?? 0,
-      lastObservedAt: stats?.lastObservedAt?.toISOString() ?? null,
+  // Reviewed-equivalent definitions collapse to one browse/chooser row: the
+  // member with the most evidence carries the union counts, and the other
+  // definitions' names stay findable as aliases. Presentation only — the
+  // operation pages and cohorts of every member remain intact (§8.4).
+  const byId = new Map(operations.map((operation) => [operation.id, operation]))
+  const skip = new Set<string>()
+  for (const ids of new Set((await equivalenceGroups()).values())) {
+    const members = ids.flatMap((id) => byId.get(id) ?? [])
+    if (members.length < 2) continue
+    const [canonical, ...rest] = [...members].sort(
+      (a, b) =>
+        (statsById.get(b.id)?.n ?? 0) - (statsById.get(a.id)?.n ?? 0) ||
+        a.slug.localeCompare(b.slug),
+    )
+    const canonicalStats = statsById.get(canonical.id) ?? {
+      operationId: canonical.id,
+      n: 0,
+      lastObservedAt: null,
     }
-  })
+    const canonicalAliases = aliasesById.get(canonical.id) ?? []
+    aliasesById.set(canonical.id, canonicalAliases)
+    for (const member of rest) {
+      skip.add(member.id)
+      const stats = statsById.get(member.id)
+      canonicalStats.n += stats?.n ?? 0
+      if (
+        stats?.lastObservedAt &&
+        (canonicalStats.lastObservedAt === null ||
+          stats.lastObservedAt > canonicalStats.lastObservedAt)
+      )
+        canonicalStats.lastObservedAt = stats.lastObservedAt
+      canonicalAliases.push(
+        member.name,
+        member.slug,
+        ...(aliasesById.get(member.id) ?? []),
+      )
+    }
+    statsById.set(canonical.id, canonicalStats)
+  }
+  return operations
+    .filter((operation) => !skip.has(operation.id))
+    .map((operation) => {
+      const stats = statsById.get(operation.id)
+      return {
+        name: humanizeOperationName(operation.name),
+        slug: operation.slug,
+        family: operation.family,
+        aliases: aliasesById.get(operation.id) ?? [],
+        runs: stats?.n ?? 0,
+        lastObservedAt: stats?.lastObservedAt?.toISOString() ?? null,
+      }
+    })
 }
 
 const EMPTY_GROUPS = {
@@ -1029,6 +1076,10 @@ export async function searchCatalog(
       const idBySlug = new Map(
         hits.map((hit) => [hit.operation.slug, hit.operation.id]),
       )
+      // Chooser rows count reviewed-equivalent evidence too, matching the
+      // union their operation pages present.
+      const groups = await equivalenceGroups()
+      const idsFor = (id: string) => groups.get(id) ?? [id]
       const runRows = await db()
         .select({
           operationId: schema.workloads.operationId,
@@ -1047,7 +1098,10 @@ export async function searchCatalog(
         )
         .where(
           and(
-            inArray(schema.workloads.operationId, [...idBySlug.values()]),
+            inArray(
+              schema.workloads.operationId,
+              [...idBySlug.values()].flatMap(idsFor),
+            ),
             eligibleRunFilter(),
           ),
         )
@@ -1062,7 +1116,9 @@ export async function searchCatalog(
         matches.map((entry) => ({
           ...entry,
           match: chooserMatch(
-            byOperation.get(idBySlug.get(entry.slug) ?? "") ?? [],
+            idsFor(idBySlug.get(entry.slug) ?? "").flatMap(
+              (id) => byOperation.get(id) ?? [],
+            ),
             facets,
           ),
         })),
@@ -1071,21 +1127,25 @@ export async function searchCatalog(
     return { ...base, matches, noResult: null }
   }
   const operation = hits[0].operation
-  const nearMisses = hits.slice(1, 6).map((hit) => hit.operation)
+  const equivalentIds = await equivalentOperationIds(operation.id)
+  const nearMisses = hits
+    .slice(1, 6)
+    .map((hit) => hit.operation)
+    .filter((op) => !equivalentIds.includes(op.id))
 
   const database = db()
   const [joined, workloadRows, related, implRows] = await Promise.all([
-    joinedRunsForOperation(operation.id),
+    joinedRunsForOperation(equivalentIds),
     database
       .select()
       .from(schema.workloads)
-      .where(eq(schema.workloads.operationId, operation.id)),
+      .where(inArray(schema.workloads.operationId, equivalentIds)),
     database
       .select()
       .from(schema.operations)
       .where(eq(schema.operations.family, operation.family))
       .limit(6),
-    implementationRows(operation.id),
+    implementationRows(equivalentIds),
   ])
   const selectedWorkloadId = selectWorkloadId(intent, workloadRows, joined)
   const manifestById = new Map(
@@ -1109,7 +1169,7 @@ export async function searchCatalog(
   const relatedItems = [...related, ...nearMisses]
     .filter(
       (op, index, all) =>
-        op.id !== operation.id &&
+        !equivalentIds.includes(op.id) &&
         all.findIndex((other) => other.id === op.id) === index,
     )
     .slice(0, 6)
@@ -1158,8 +1218,9 @@ export async function searchCatalog(
   }
 }
 
-/** Implementations (with their project) declared for one operation. */
-async function implementationRows(operationId: string) {
+/** Implementations (with their project) declared for one operation and its
+ * reviewed equivalents. */
+async function implementationRows(operationIds: string[]) {
   return db()
     .select({
       implementation: schema.implementations,
@@ -1170,7 +1231,7 @@ async function implementationRows(operationId: string) {
       schema.projects,
       eq(schema.implementations.projectId, schema.projects.id),
     )
-    .where(eq(schema.implementations.operationId, operationId))
+    .where(inArray(schema.implementations.operationId, operationIds))
 }
 
 type ImplementationRows = Awaited<ReturnType<typeof implementationRows>>
@@ -1246,19 +1307,29 @@ export async function getOperationPage(
     .where(eq(schema.operations.slug, slug))
   if (!operation) return null
   const manifest = operation.manifest as OperationSpecManifest
+  const equivalentIds = await equivalentOperationIds(operation.id)
 
-  const [workloadRows, aliases, joined, implRows] = await Promise.all([
-    database
-      .select()
-      .from(schema.workloads)
-      .where(eq(schema.workloads.operationId, operation.id)),
-    database
-      .select({ alias: schema.operationAliases.alias })
-      .from(schema.operationAliases)
-      .where(eq(schema.operationAliases.operationId, operation.id)),
-    joinedRunsForOperation(operation.id),
-    implementationRows(operation.id),
-  ])
+  const [workloadRows, aliases, joined, implRows, equivalentRows] =
+    await Promise.all([
+      database
+        .select()
+        .from(schema.workloads)
+        .where(inArray(schema.workloads.operationId, equivalentIds)),
+      database
+        .select({ alias: schema.operationAliases.alias })
+        .from(schema.operationAliases)
+        .where(eq(schema.operationAliases.operationId, operation.id)),
+      joinedRunsForOperation(equivalentIds),
+      implementationRows(equivalentIds),
+      database
+        .select({
+          id: schema.operations.id,
+          name: schema.operations.name,
+          slug: schema.operations.slug,
+        })
+        .from(schema.operations)
+        .where(inArray(schema.operations.id, equivalentIds)),
+    ])
   const requestedWorkload = workloadRows.find(
     (w) => w.id === workload || w.workloadDigest === workload,
   )
@@ -1363,6 +1434,12 @@ export async function getOperationPage(
       name: humanizeOperationName(operation.name),
       family: operation.family,
       aliases: aliases.map((row) => row.alias),
+      equivalents: equivalentRows
+        .filter((row) => row.id !== operation.id)
+        .map((row) => ({
+          name: humanizeOperationName(row.name),
+          slug: row.slug,
+        })),
       models: operation.tags
         .filter((tag) => tag.startsWith("model:"))
         .map((tag) => tag.slice(6)),

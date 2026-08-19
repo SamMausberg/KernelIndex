@@ -394,6 +394,9 @@ export type OperationPageModel = {
     name: string
     family: string
     aliases: string[]
+    /** Reviewed exactly-equivalent definitions from other sources (§8.4);
+     * their cohorts render on this page but never merge. */
+    equivalents: { name: string; slug: string }[]
     /** Model slugs whose workloads this operation serves (from model: tags). */
     models: string[]
     semanticDigest: string

@@ -461,6 +461,7 @@ export const operationDossier = z.object({
     name: z.string(),
     family: z.string(),
     aliases: z.array(z.string()),
+    equivalents: z.array(z.object({ name: z.string(), slug: z.string() })),
     models: z.array(z.string()),
     semanticDigest: z.string(),
     summary: z.string(),

@@ -73,6 +73,35 @@ export const operationAliases = pgTable(
   ],
 )
 
+/**
+ * Reviewed cross-source operation relations (§8.4). Only reviewed rows exist
+ * — never inferred at read time — and a relation never merges cohorts: it
+ * lets surfaces present one computation's separately-imported definitions
+ * (and their separate cohorts) together. Pairs are stored once, ordered by
+ * slug, with the review rationale.
+ */
+export const operationRelations = pgTable(
+  "operation_relations",
+  {
+    id: id(),
+    fromOperationId: uuid("from_operation_id")
+      .notNull()
+      .references(() => operations.id),
+    toOperationId: uuid("to_operation_id")
+      .notNull()
+      .references(() => operations.id),
+    relation: text("relation").notNull(),
+    rationale: text("rationale").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    uniqueIndex("operation_relations_pair_unique").on(
+      t.fromOperationId,
+      t.toOperationId,
+    ),
+  ],
+)
+
 /** Concrete axis/input/tolerance binding for an operation (§8.5). */
 export const workloads = pgTable(
   "workloads",
