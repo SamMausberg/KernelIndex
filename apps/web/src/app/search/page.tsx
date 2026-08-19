@@ -103,7 +103,7 @@ export default async function SearchPage({
     <Suspense
       fallback={
         <main className="shell pt-6">
-          <p className="py-4 font-mono text-[12.5px] text-faint">resolving…</p>
+          <p className="py-4 font-mono text-small text-faint">resolving…</p>
         </main>
       }
     >

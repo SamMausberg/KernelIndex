@@ -100,16 +100,16 @@ export function HeroSearch() {
     <form
       action="/search"
       onSubmit={submit}
-      className="well relative z-30 mt-7 flex h-[46px] max-w-[620px] items-center gap-3 pr-2 pl-4"
+      className="well relative z-30 mt-7 flex h-12 max-w-[620px] items-center gap-3 pr-2 pl-4"
     >
       <SuggestInput
         placeholder="Search operation, GPU, dtype, shape, framework…"
-        className="min-w-0 flex-1 border-0 bg-transparent p-0 font-mono text-[14px] outline-none"
+        className="min-w-0 flex-1 border-0 bg-transparent p-0 font-mono text-body outline-none"
       />
       <button
         type="submit"
         aria-label="Search"
-        className="key flex-none cursor-pointer px-2 pb-[2px] font-mono text-[12.5px] text-faint hover:text-fg"
+        className="key flex-none cursor-pointer px-2 pb-0.5 font-mono text-small text-faint hover:text-fg"
       >
         ↵
       </button>

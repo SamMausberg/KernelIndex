@@ -26,10 +26,10 @@ export function ReportForm({
     message: "",
   } as ReportState)
   if (state.filed)
-    return <p className="text-[12.5px] text-subtle">{state.message}</p>
+    return <p className="text-small text-subtle">{state.message}</p>
   return (
     <details className="group">
-      <summary className="cursor-pointer list-none text-[12.5px] text-faint transition-colors hover:text-fg">
+      <summary className="cursor-pointer list-none text-small text-faint transition-colors hover:text-fg">
         Report an issue with this{" "}
         {targetKind === "serving_run" ? "serving run" : "run"}{" "}
         <span aria-hidden="true" className="group-open:hidden">
@@ -40,7 +40,7 @@ export function ReportForm({
         <input type="hidden" name="targetKind" value={targetKind} />
         <input type="hidden" name="targetId" value={targetId} />
         <div className="flex flex-wrap items-center gap-3">
-          <label className="text-[12.5px] text-subtle" htmlFor="report-reason">
+          <label className="text-small text-subtle" htmlFor="report-reason">
             Reason
           </label>
           <Select
@@ -58,7 +58,7 @@ export function ReportForm({
           maxLength={4000}
           placeholder="what is wrong, and how you can tell"
           aria-label="Report detail"
-          className="well w-full px-2.5 py-2 font-mono text-[12px] outline-none"
+          className="well w-full px-2.5 py-2 font-mono text-small outline-none"
         />
         <div className="flex flex-wrap gap-3">
           <input
@@ -66,28 +66,28 @@ export function ReportForm({
             type="url"
             placeholder="evidence URL (optional)"
             aria-label="Evidence URL"
-            className="well w-[300px] px-2.5 py-1.5 font-mono text-[12px] outline-none"
+            className="well w-[300px] px-2.5 py-1.5 font-mono text-small outline-none"
           />
           <input
             name="contact"
             placeholder="contact for follow-up (optional)"
             aria-label="Contact"
-            className="well w-[240px] px-2.5 py-1.5 font-mono text-[12px] outline-none"
+            className="well w-[240px] px-2.5 py-1.5 font-mono text-small outline-none"
           />
         </div>
         <div className="flex items-center gap-3">
           <button
             type="submit"
             disabled={pending}
-            className="key cursor-pointer px-3 py-1 text-[12.5px] hover:text-fg"
+            className="key cursor-pointer px-3 py-1 text-small hover:text-fg"
           >
             File report
           </button>
           {state.message && (
-            <span className="text-[12px] text-warning">{state.message}</span>
+            <span className="text-small text-warning">{state.message}</span>
           )}
         </div>
-        <p className="text-[12px] leading-relaxed text-faint">
+        <p className="text-small leading-relaxed text-faint">
           A maintainer reviews every report. If accepted, the record is
           retracted or superseded — its history stays visible.
         </p>

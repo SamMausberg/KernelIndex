@@ -21,7 +21,7 @@ function RunHeader({ run }: { run: CompareRun }) {
       <div className="flex items-baseline gap-2">
         {run.rank !== null && (
           <span
-            className={`font-mono text-[12.5px] ${run.rank === 1 ? "text-fg" : "text-faint"}`}
+            className={`font-mono text-small ${run.rank === 1 ? "text-fg" : "text-faint"}`}
           >
             #{run.rank}
             {run.tiedWithPrevious ? "=" : ""}
@@ -29,27 +29,27 @@ function RunHeader({ run }: { run: CompareRun }) {
         )}
         <Link
           href={`/implementations/${run.implementation.slug}`}
-          className="truncate font-mono text-[13px]"
+          className="truncate font-mono text-body"
         >
           {run.implementation.name}
         </Link>
       </div>
-      <div className="mt-1.5 font-mono text-[17px] text-fg">
+      <div className="mt-1.5 font-mono text-title text-fg">
         {run.primary ? formatPrimary(run.primary) : "—"}
         {run.primary && (
-          <span className="ml-1.5 text-[11.5px] text-faint">
+          <span className="ml-1.5 text-mini text-faint">
             {formatSpread(run.primary)}
           </span>
         )}
       </div>
-      <div className="mt-1 text-[12px] text-subtle">
-        {strong && <span className="mr-1 text-[9px] text-success">●</span>}
+      <div className="mt-1 text-small text-subtle">
+        {strong && <span className="mr-1 text-label text-success">●</span>}
         {evidenceLabel(run.evidence)}
         {" · "}
         <Link href={`/runs/${run.runId}`}>run dossier</Link>
       </div>
       {!run.eligible && (
-        <div className="mt-1 text-[11.5px] text-warning">
+        <div className="mt-1 text-mini text-warning">
           Ineligible: {run.ineligibleReasons.join(", ")}
         </div>
       )}
@@ -61,15 +61,13 @@ export function CompareView({ model }: { model: ComparePageModel }) {
   if (model.runs.length === 0) {
     return (
       <main className="shell animate-fade-in pb-24 pt-10">
-        <p className="max-w-[64ch] text-[14px] text-muted">
-          {model.explanation}
-        </p>
+        <p className="max-w-[64ch] text-body text-muted">{model.explanation}</p>
         {model.missingIds.length > 0 && (
-          <p className="mt-3 font-mono text-[12.5px] text-warning">
+          <p className="mt-3 font-mono text-small text-warning">
             Not found: {model.missingIds.join(", ")}
           </p>
         )}
-        <p className="mt-4 text-[13px] text-subtle">
+        <p className="mt-4 text-body text-subtle">
           Pick runs from any <Link href="/search">search result</Link> or the{" "}
           <Link href="/records">records ledger</Link>. Each row links here.
         </p>
@@ -85,7 +83,7 @@ export function CompareView({ model }: { model: ComparePageModel }) {
   return (
     <main className="shell animate-fade-in pb-24">
       <section
-        className={`mt-6 border px-4 py-3 text-[13.5px] ${
+        className={`mt-6 border px-4 py-3 text-body ${
           model.comparable
             ? "border-border bg-surface text-muted"
             : "border-warning/40 bg-raised text-warning"
@@ -93,7 +91,7 @@ export function CompareView({ model }: { model: ComparePageModel }) {
       >
         {model.explanation}
         {!model.comparable && model.firstMaterialMismatch && (
-          <span className="ml-2 text-[12.5px] text-subtle">
+          <span className="ml-2 text-small text-subtle">
             First material mismatch:{" "}
             <span className="font-mono">{model.firstMaterialMismatch}</span>.
           </span>
@@ -101,7 +99,7 @@ export function CompareView({ model }: { model: ComparePageModel }) {
       </section>
 
       {model.missingIds.length > 0 && (
-        <p className="mt-3 font-mono text-[12.5px] text-warning">
+        <p className="mt-3 font-mono text-small text-warning">
           Not found: {model.missingIds.join(", ")}
         </p>
       )}
@@ -112,7 +110,7 @@ export function CompareView({ model }: { model: ComparePageModel }) {
             className="grid border-b border-border-strong"
             style={columns(model.runs.length)}
           >
-            <div className="self-end py-2 text-[11.5px] text-faint">
+            <div className="self-end py-2 text-mini text-faint">
               {model.comparable
                 ? `ranked under ${model.policyVersion}`
                 : "no ranks: not comparable"}
@@ -126,7 +124,7 @@ export function CompareView({ model }: { model: ComparePageModel }) {
             className="grid items-baseline border-b border-line"
             style={columns(model.runs.length)}
           >
-            <div className="py-2.5 text-[11.5px] tracking-[0.03em] text-faint uppercase">
+            <div className="py-2.5 text-label text-faint uppercase">
               Comparison identity
             </div>
           </div>
@@ -137,7 +135,7 @@ export function CompareView({ model }: { model: ComparePageModel }) {
               style={columns(model.runs.length)}
             >
               <div
-                className={`py-2.5 pr-3 text-[12.5px] ${
+                className={`py-2.5 pr-3 text-small ${
                   field.differs ? "text-warning" : "text-subtle"
                 }`}
               >
@@ -147,7 +145,7 @@ export function CompareView({ model }: { model: ComparePageModel }) {
               {field.values.map((value, index) => (
                 <div
                   key={`${field.field}-${model.runs[index].runId}`}
-                  className={`min-w-0 truncate py-2.5 pr-4 font-mono text-[12.5px] ${
+                  className={`min-w-0 truncate py-2.5 pr-4 font-mono text-small ${
                     field.differs ? "text-fg" : "text-muted"
                   }`}
                 >
@@ -161,7 +159,7 @@ export function CompareView({ model }: { model: ComparePageModel }) {
             className="grid items-baseline border-b border-line"
             style={columns(model.runs.length)}
           >
-            <div className="pt-4 pb-2.5 text-[11.5px] tracking-[0.03em] text-faint uppercase">
+            <div className="pt-4 pb-2.5 text-label text-faint uppercase">
               Context
             </div>
           </div>
@@ -171,13 +169,13 @@ export function CompareView({ model }: { model: ComparePageModel }) {
               className="grid items-baseline border-b border-line transition-colors hover:bg-raised"
               style={columns(model.runs.length)}
             >
-              <div className="py-2.5 pr-3 text-[12.5px] text-subtle">
+              <div className="py-2.5 pr-3 text-small text-subtle">
                 {field.field}
               </div>
               {field.values.map((value, index) => (
                 <div
                   key={`${field.field}-${model.runs[index].runId}`}
-                  className={`min-w-0 truncate py-2.5 pr-4 font-mono text-[12.5px] ${
+                  className={`min-w-0 truncate py-2.5 pr-4 font-mono text-small ${
                     field.differs ? "text-fg" : "text-muted"
                   }`}
                 >
@@ -190,13 +188,13 @@ export function CompareView({ model }: { model: ComparePageModel }) {
       </div>
 
       <div className="mt-8 flex flex-wrap items-baseline justify-between gap-5 border-t border-border pt-5">
-        <p className="max-w-[70ch] text-[12.5px] text-subtle">
+        <p className="max-w-[70ch] text-small text-subtle">
           {model.comparable
             ? "Ranks compare only these runs. Too close to call shares a rank."
             : "No winner: these runs didn't measure the same thing. The rows above show what differs."}{" "}
           <Link href="/docs#comparability">Why comparable?</Link>
         </p>
-        <div className="flex items-center gap-4 text-[12.5px]">
+        <div className="flex items-center gap-4 text-small">
           <span className="flex items-center gap-1.5 text-subtle">
             Markdown <CopyButton text={markdown} />
           </span>
@@ -206,7 +204,7 @@ export function CompareView({ model }: { model: ComparePageModel }) {
         </div>
       </div>
       {model.runs.map((run) => (
-        <p key={run.runId} className="mt-2 font-mono text-[11px] text-faint">
+        <p key={run.runId} className="mt-2 font-mono text-mini text-faint">
           {run.implementation.name} · {run.digest.slice(0, 20)}… · observed{" "}
           {formatDateUTC(run.observedAt)}
         </p>

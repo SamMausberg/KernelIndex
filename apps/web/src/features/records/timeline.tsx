@@ -44,7 +44,7 @@ export function RecordTimeline({
   return (
     <svg
       viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-      className="block h-[44px] w-[300px] max-w-full"
+      className="block h-12 w-[300px] max-w-full"
       role="img"
       aria-label={`Record progression over ${events.length} events`}
     >

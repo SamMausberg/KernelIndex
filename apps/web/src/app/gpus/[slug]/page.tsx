@@ -60,18 +60,18 @@ export default async function GpuPage({ params }: Props) {
         }
       >
         {model.hardware.architecture && (
-          <span className="key mt-2.5 inline-block px-2 py-[3px] font-mono text-[11.5px] text-subtle">
+          <span className="key mt-2.5 inline-block px-2 py-1 font-mono text-mini text-subtle">
             {model.hardware.architecture}
           </span>
         )}
       </ContextHeader>
 
-      <main className="shell animate-fade-in pb-20">
+      <main className="shell animate-fade-in pb-24">
         <Section id="records" title="Records held on this GPU">
           {records.length > 0 ? (
             <div className="overflow-x-auto">
               <div
-                className={`${RECORD_GRID} border-b border-border-strong pb-2 text-[11.5px] text-faint`}
+                className={`${RECORD_GRID} border-b border-border-strong pb-2 text-mini text-faint`}
               >
                 <div>Operation · workload</div>
                 <div className="pr-3.5 text-right">Record</div>
@@ -88,43 +88,43 @@ export default async function GpuPage({ params }: Props) {
                     <Link
                       href={`/operations/${holder.operation.slug}`}
                       prefetch={false}
-                      className="text-[13px]"
+                      className="text-body"
                     >
                       {holder.operation.name}
                     </Link>
-                    <span className="ml-2 font-mono text-[11.5px] text-faint">
+                    <span className="ml-2 font-mono text-mini text-faint">
                       {holder.workloadSummary}
                     </span>
                   </div>
                   <div className="pr-3.5 text-right whitespace-nowrap">
                     <Metric
                       primary={holder.current.primary}
-                      valueClassName="font-mono text-[13px] text-fg"
+                      valueClassName="font-mono text-body text-fg"
                     />
                   </div>
                   <div className="min-w-0 truncate">
                     <Link
                       href={`/implementations/${holder.current.implementation.slug}`}
                       prefetch={false}
-                      className="text-[12.5px]"
+                      className="text-small"
                     >
                       {holder.current.implementation.name}
                     </Link>
                   </div>
                   <EvidenceCell row={holder.current} />
-                  <div className="text-right font-mono text-[11.5px] text-faint">
+                  <div className="text-right font-mono text-mini text-faint">
                     {formatDateUTC(holder.since)}
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="py-2 text-[13px] text-faint">
+            <p className="py-2 text-body text-faint">
               No current records on this GPU under the default source-backed
               filter.
             </p>
           )}
-          <p className="mt-3 text-[12.5px] text-faint">
+          <p className="mt-3 text-small text-faint">
             {overflow > 0 &&
               `${overflow} more record${overflow === 1 ? "" : "s"} · `}
             <Link
@@ -137,7 +137,7 @@ export default async function GpuPage({ params }: Props) {
 
         <Section id="coverage" title="Coverage by operation family">
           <div className="overflow-x-auto">
-            <div className="grid min-w-[560px] grid-cols-[minmax(200px,1.4fr)_repeat(3,110px)] items-baseline gap-x-4 border-b border-border-strong pb-2 text-[11.5px] text-faint">
+            <div className="grid min-w-[560px] grid-cols-[minmax(200px,1.4fr)_repeat(3,110px)] items-baseline gap-x-4 border-b border-border-strong pb-2 text-mini text-faint">
               <div>Family</div>
               <div className="text-right">Operations</div>
               <div className="text-right">Runs</div>
@@ -148,16 +148,16 @@ export default async function GpuPage({ params }: Props) {
                 key={family.family}
                 className="grid min-w-[560px] grid-cols-[minmax(200px,1.4fr)_repeat(3,110px)] items-baseline gap-x-4 border-b border-line py-2.5"
               >
-                <div className="font-mono text-[12.5px] text-muted">
+                <div className="font-mono text-small text-muted">
                   {family.family}
                 </div>
-                <div className="text-right font-mono text-[12.5px] text-subtle">
+                <div className="text-right font-mono text-small text-subtle">
                   {family.operations.toLocaleString("en-US")}
                 </div>
-                <div className="text-right font-mono text-[12.5px] text-subtle">
+                <div className="text-right font-mono text-small text-subtle">
                   {family.runs.toLocaleString("en-US")}
                 </div>
-                <div className="text-right font-mono text-[12.5px] text-subtle">
+                <div className="text-right font-mono text-small text-subtle">
                   {family.withSource.toLocaleString("en-US")}
                 </div>
               </div>
@@ -165,7 +165,7 @@ export default async function GpuPage({ params }: Props) {
           </div>
         </Section>
 
-        <div className="mt-12 flex flex-wrap items-baseline justify-between gap-5 border-t border-border pt-5 text-[12.5px]">
+        <div className="mt-12 flex flex-wrap items-baseline justify-between gap-5 border-t border-border pt-5 text-small">
           <span className="text-subtle">
             Sources:{" "}
             {model.sources.map((source, index) => (
@@ -181,7 +181,7 @@ export default async function GpuPage({ params }: Props) {
             ))}
           </span>
           {model.stats.lastObservedAt && (
-            <span className="font-mono text-[12px] text-faint">
+            <span className="font-mono text-small text-faint">
               last observed {formatDateUTC(model.stats.lastObservedAt)}
             </span>
           )}

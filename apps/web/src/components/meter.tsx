@@ -15,10 +15,10 @@ export function Meter({
   return (
     <span
       aria-hidden="true"
-      className={`inline-block h-[3px] flex-none rounded-[1px] bg-line ${className}`}
+      className={`inline-block h-[3px] flex-none bg-line ${className}`}
     >
       <span
-        className="block h-full rounded-[1px] bg-accent-dim"
+        className="block h-full bg-accent-dim"
         style={{ width: `${pct}%` }}
       />
     </span>

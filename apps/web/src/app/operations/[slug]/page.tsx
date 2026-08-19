@@ -59,22 +59,19 @@ export default async function OperationPage({ params }: Props) {
             and the semantic digest are one click away, never the lead. */}
         <details className="group mt-2.5">
           <summary className="flex cursor-pointer list-none flex-wrap items-center gap-2 [&::-webkit-details-marker]:hidden">
-            <span className="key px-2 py-[3px] text-[11.5px] text-subtle">
+            <span className="key text-mini text-subtle">
               {operation.family}
             </span>
-            <span className="text-[11.5px] text-faint transition-colors group-open:hidden hover:text-fg">
+            <span className="text-mini text-faint transition-colors group-open:hidden hover:text-fg">
               identity ›
             </span>
-            <span className="hidden text-[11.5px] text-faint transition-colors hover:text-fg group-open:inline">
+            <span className="hidden text-mini text-faint transition-colors hover:text-fg group-open:inline">
               identity ⌄
             </span>
           </summary>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             {operation.aliases.map((alias) => (
-              <span
-                key={alias}
-                className="key px-2 py-[3px] font-mono text-[11.5px] text-subtle"
-              >
+              <span key={alias} className="key font-mono text-mini text-subtle">
                 <span className="mr-1.5 font-sans text-faint">alias</span>
                 {alias}
               </span>
@@ -82,18 +79,18 @@ export default async function OperationPage({ params }: Props) {
             {operation.models.slice(0, 4).map((model_) => (
               <span
                 key={model_}
-                className="key px-2 py-[3px] font-mono text-[11.5px] text-subtle"
+                className="key font-mono text-mini text-subtle"
               >
                 <span className="mr-1.5 font-sans text-faint">model</span>
                 {model_}
               </span>
             ))}
             {operation.models.length > 4 && (
-              <span className="text-[11.5px] text-faint">
+              <span className="text-mini text-faint">
                 +{operation.models.length - 4} models
               </span>
             )}
-            <span className="key px-2 py-[3px] font-mono text-[11.5px] text-subtle">
+            <span className="key font-mono text-mini text-subtle">
               <span className="mr-1.5 font-sans text-faint">sha256</span>
               {operation.semanticDigest.replace("sha256:", "").slice(0, 12)}…
             </span>
@@ -101,19 +98,19 @@ export default async function OperationPage({ params }: Props) {
           </div>
         </details>
         {operation.summary && (
-          <p className="mt-3 max-w-[76ch] text-[13.5px] leading-relaxed text-muted">
+          <p className="mt-3 max-w-[76ch] text-body leading-relaxed text-muted">
             {operation.summary}
           </p>
         )}
         {operation.equivalents.length > 0 && (
-          <p className="mt-2 text-[12.5px] text-subtle">
+          <p className="mt-2 text-small text-subtle">
             Also indexed as{" "}
             {operation.equivalents.map((equivalent, index) => (
               <span key={equivalent.slug}>
                 {index > 0 && ", "}
                 <Link
                   href={`/operations/${equivalent.slug}`}
-                  className="font-mono text-[12px]"
+                  className="font-mono text-small"
                 >
                   {equivalent.slug}
                 </Link>
@@ -125,7 +122,7 @@ export default async function OperationPage({ params }: Props) {
         )}
       </ContextHeader>
 
-      <main className="shell animate-fade-in pb-20">
+      <main className="shell animate-fade-in pb-24">
         <OperationRecords
           slug={operation.slug}
           workloads={model.workloads}
@@ -135,7 +132,7 @@ export default async function OperationPage({ params }: Props) {
 
         <Section id="implementations" title="Implementations">
           <div className="overflow-x-auto">
-            <div className="grid min-w-[940px] grid-cols-[minmax(240px,1.6fr)_150px_150px_92px_minmax(150px,1fr)] border-b border-border-strong text-[11.5px] text-faint">
+            <div className="grid min-w-[940px] grid-cols-[minmax(240px,1.6fr)_150px_150px_92px_minmax(150px,1fr)] border-b border-border-strong text-mini text-faint">
               <div className="py-2">Implementation</div>
               <div className="py-2">Runtime</div>
               <div className="py-2 pr-3.5 text-right">Best latency</div>
@@ -154,17 +151,17 @@ export default async function OperationPage({ params }: Props) {
                 <div className="min-w-0 truncate py-3 pr-3">
                   <Link
                     href={`/implementations/${impl.slug}`}
-                    className="text-[13px]"
+                    className="text-body"
                   >
                     {impl.name}
                   </Link>
                   {impl.project.name !== impl.name && (
-                    <span className="ml-2 text-[12px] text-faint">
+                    <span className="ml-2 text-small text-faint">
                       {impl.project.name}
                     </span>
                   )}
                 </div>
-                <div className="py-3 font-mono text-[12px] text-subtle">
+                <div className="py-3 font-mono text-small text-subtle">
                   {[impl.language, impl.framework]
                     .filter(Boolean)
                     .join(" · ") || "—"}
@@ -172,7 +169,7 @@ export default async function OperationPage({ params }: Props) {
                 <div className="py-3 pr-3.5 text-right whitespace-nowrap">
                   <Metric
                     primary={impl.bestPrimary}
-                    valueClassName="font-mono text-[13px] text-fg"
+                    valueClassName="font-mono text-body text-fg"
                   />
                 </div>
                 <div className="py-3">
@@ -189,7 +186,7 @@ export default async function OperationPage({ params }: Props) {
         <Section id="semantics" title="Semantics">
           <div className="grid grid-cols-2 gap-10 max-lg:grid-cols-1">
             <div>
-              <div className="text-[11.5px] tracking-[0.03em] text-faint uppercase">
+              <div className="text-label text-faint uppercase">
                 Inputs and outputs
               </div>
               <div className="mt-2">
@@ -206,7 +203,7 @@ export default async function OperationPage({ params }: Props) {
               </div>
             </div>
             <div>
-              <div className="text-[11.5px] tracking-[0.03em] text-faint uppercase">
+              <div className="text-label text-faint uppercase">
                 Axes and behavior
               </div>
               <div className="mt-2">
@@ -230,13 +227,13 @@ export default async function OperationPage({ params }: Props) {
             </div>
           </div>
           {semantics.expression && (
-            <pre className="plate mt-5 overflow-x-auto px-4 py-3 font-mono text-[12.5px] leading-relaxed text-muted">
+            <pre className="plate mt-5 overflow-x-auto px-4 py-3 font-mono text-small leading-relaxed text-muted">
               {semantics.expression}
             </pre>
           )}
         </Section>
 
-        <div className="mt-12 flex flex-wrap items-baseline justify-between gap-5 border-t border-border pt-5 text-[12.5px]">
+        <div className="mt-12 flex flex-wrap items-baseline justify-between gap-5 border-t border-border pt-5 text-small">
           <span className="text-subtle">
             {model.sources.length > 0 ? (
               <>
@@ -260,7 +257,7 @@ export default async function OperationPage({ params }: Props) {
             )}
           </span>
           {coverage.lastObservedAt && (
-            <span className="font-mono text-[12px] text-faint">
+            <span className="font-mono text-small text-faint">
               last observed {formatDateUTC(coverage.lastObservedAt)}
             </span>
           )}

@@ -11,7 +11,7 @@ export function SignOutButton() {
         await authClient.signOut()
         window.location.assign("/")
       }}
-      className="cursor-pointer text-[13px] text-subtle transition-colors hover:text-fg"
+      className="cursor-pointer text-body text-subtle transition-colors hover:text-fg"
     >
       Sign out
     </button>

@@ -36,8 +36,8 @@ export default async function AccountPage() {
           title="Account"
           context="submissions and project claims live here once you are signed in"
         />
-        <main className="shell pt-8 pb-20">
-          <p className="max-w-[64ch] text-[13.5px] text-muted">
+        <main className="shell pt-8 pb-24">
+          <p className="max-w-[64ch] text-body text-muted">
             {authConfigured ? (
               <a href="/signin">Sign in with GitHub</a>
             ) : (
@@ -79,21 +79,21 @@ export default async function AccountPage() {
         ].join(" · ")}
         meta={<SignOutButton />}
       />
-      <main className="shell animate-fade-in pb-20">
+      <main className="shell animate-fade-in pb-24">
         {firstRun && (
           <div className="mt-8 border border-border px-5 py-4">
-            <div className="font-mono text-[10px] tracking-[0.08em] text-faint uppercase">
+            <div className="font-mono text-label text-faint uppercase">
               First steps
             </div>
             <dl className="mt-3 space-y-2.5">
               {FIRST_STEPS.map(([term, detail]) => (
-                <div key={term} className="flex gap-3 text-[13px]">
+                <div key={term} className="flex gap-3 text-body">
                   <dt className="w-[150px] shrink-0 text-fg">{term}</dt>
                   <dd className="text-subtle">{detail}</dd>
                 </div>
               ))}
             </dl>
-            <p className="mt-3 text-[12.5px] text-faint">
+            <p className="mt-3 text-small text-faint">
               Start from the <a href="/records">records ledger</a>, or read the{" "}
               <a href="/docs#agents">agent quickstart</a>.
             </p>
@@ -101,7 +101,7 @@ export default async function AccountPage() {
         )}
         <Section id="changes" title="Changes">
           {unseen === 0 && (
-            <p className="text-[13px] text-faint">
+            <p className="text-body text-faint">
               Nothing new on your watched cohorts or submissions. Watch a cohort
               from any operation page.
             </p>
@@ -109,7 +109,7 @@ export default async function AccountPage() {
           {feed.records.map((event) => (
             <p
               key={`${event.runId}-${event.cause}`}
-              className="border-b border-line py-2 text-[13px]"
+              className="border-b border-line py-2 text-body"
             >
               <a href={`/operations/${event.operation.slug}`}>
                 {event.operation.name}
@@ -119,14 +119,14 @@ export default async function AccountPage() {
                 by {event.implementation}
               </span>
               {event.value !== null && (
-                <span className="ml-2 font-mono text-[12.5px] text-fg">
+                <span className="ml-2 font-mono text-small text-fg">
                   {event.value} {event.unit}
                 </span>
               )}
-              <span className="ml-2 font-mono text-[11.5px] text-faint">
+              <span className="ml-2 font-mono text-mini text-faint">
                 {event.at.slice(0, 10)}
               </span>{" "}
-              <a href={`/runs/${event.runId}`} className="text-[12.5px]">
+              <a href={`/runs/${event.runId}`} className="text-small">
                 Run →
               </a>
             </p>
@@ -134,15 +134,15 @@ export default async function AccountPage() {
           {feed.submissions.map((submission) => (
             <p
               key={submission.id}
-              className="border-b border-line py-2 text-[13px]"
+              className="border-b border-line py-2 text-body"
             >
-              <span className="font-mono text-[12.5px]">
+              <span className="font-mono text-small">
                 {submission.id.slice(0, 13)}…
               </span>{" "}
               <span className="text-subtle">
                 submission moved to {submission.state}
               </span>
-              <span className="ml-2 font-mono text-[11.5px] text-faint">
+              <span className="ml-2 font-mono text-mini text-faint">
                 {submission.at.slice(0, 10)}
               </span>
             </p>
@@ -152,7 +152,7 @@ export default async function AccountPage() {
               <form action={markSeenAction}>
                 <button
                   type="submit"
-                  className="key cursor-pointer px-2.5 py-[3px] text-[12px] text-subtle hover:text-fg"
+                  className="key cursor-pointer px-2.5 py-1 text-small text-subtle hover:text-fg"
                 >
                   Mark all seen
                 </button>
@@ -162,7 +162,7 @@ export default async function AccountPage() {
               <form
                 key={watch.comparisonKey}
                 action={unwatchAction}
-                className="inline-flex items-center gap-1.5 text-[12px]"
+                className="inline-flex items-center gap-1.5 text-small"
               >
                 <input
                   type="hidden"
@@ -185,14 +185,14 @@ export default async function AccountPage() {
         </Section>
         <Section id="submissions" title="Your submissions">
           {mine.length === 0 && (
-            <p className="text-[13px] text-faint">
+            <p className="text-body text-faint">
               None yet. <a href="/submit">Submit evidence</a>.
             </p>
           )}
           {mine.map((submission) => (
             <p
               key={submission.id}
-              className="border-b border-line py-2 font-mono text-[12.5px] text-subtle"
+              className="border-b border-line py-2 font-mono text-small text-subtle"
             >
               {submission.createdAt.toISOString().slice(0, 10)} ·{" "}
               {submission.id.slice(0, 13)}… · {submission.state}
@@ -201,9 +201,9 @@ export default async function AccountPage() {
           ))}
         </Section>
         <Section id="api-keys" title="API keys">
-          <p className="mb-3 max-w-[70ch] text-[12.5px] text-subtle">
+          <p className="mb-3 max-w-[70ch] text-small text-subtle">
             Send a key as{" "}
-            <span className="font-mono text-[12px]">
+            <span className="font-mono text-small">
               Authorization: Bearer ki_…
             </span>
             . Reads need no key — a key raises your quota. The secret shows once
@@ -212,13 +212,13 @@ export default async function AccountPage() {
           {keys.map((key) => (
             <div
               key={key.id}
-              className="flex flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-line py-2 text-[12.5px]"
+              className="flex flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-line py-2 text-small"
             >
-              <span className="font-mono text-[12px]">{key.prefix}…</span>
+              <span className="font-mono text-small">{key.prefix}…</span>
               <span className={key.revokedAt ? "text-faint" : undefined}>
                 {key.name}
               </span>
-              <span className="font-mono text-[11.5px] text-faint">
+              <span className="font-mono text-mini text-faint">
                 {key.scopes.join(" ")}
               </span>
               <span className="text-faint">
@@ -241,7 +241,7 @@ export default async function AccountPage() {
           {claims.map((claim) => (
             <p
               key={claim.id}
-              className="border-b border-line py-2 font-mono text-[12.5px] text-subtle"
+              className="border-b border-line py-2 font-mono text-small text-subtle"
             >
               {claim.evidenceUrl} · {claim.state}
             </p>

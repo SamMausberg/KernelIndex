@@ -13,6 +13,8 @@
   --color-canvas: #020309;
   --color-surface: #060810;
   --color-raised: #0b0e18;
+  /* Input wells sit below the canvas — the one surface darker than it. */
+  --color-well: #04050c;
 
   /* 1px hairline hierarchy: row separators < section borders < controls. */
   --color-line: #0f1220;
@@ -51,27 +53,62 @@
   --color-viz-4: #d0618f;
   --color-viz-5: #b98a3d;
 
-  /* ABC Diatype leads when locally available; hosted fallbacks otherwise. */
+  /* Two faces, both self-hosted (§16.2): Instrument Sans is the UI voice,
+     IBM Plex Mono is the data and identity face — a true monospace, so
+     digits align by construction. */
   --font-sans:
-    "ABC Diatype", var(--font-instrument-sans), "Helvetica Neue", Helvetica,
-    Arial, sans-serif;
-  --font-mono:
-    "ABC Diatype Semi Mono", "ABC Diatype Semi-Mono", var(--font-space-grotesk),
-    ui-monospace, monospace;
+    var(--font-instrument-sans), "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, SFMono-Regular, monospace;
 
-  /* One-shot entrance animations only — nothing repaints continuously.
-     Entrances fill backwards, not both: a forwards fill would leave every
-     animated wrapper a permanent stacking context, painting later content
-     over popups (the search suggestions). Scan keeps `both` — its end state
-     is invisible. */
-  --animate-row-in: row-in 0.32s cubic-bezier(0.22, 0.7, 0.2, 1) backwards;
-  --animate-fade-in: fade-in 0.2s ease backwards;
-  --animate-scan: scan 0.55s cubic-bezier(0.22, 0.7, 0.2, 1) both;
+  /*
+   * Type roles (§16.2). Every text size on the site is one of these nine —
+   * never a raw pixel value. Titles carry their tracking and leading here,
+   * so call sites state the role and nothing else.
+   *
+   *   label    uppercase mono eyebrows, table-head cells with tracking
+   *   mini     table meta: dates, units, counters, chips' numerals
+   *   small    secondary text: chips, captions, expansion prose
+   *   body     primary text: cells, links, nav, prose
+   *   lead     section headings, emphasized values
+   *   title    page h1
+   *   display  standalone statements (error, not-found)
+   *   readout  the measurement numeral (search hero, run dossier)
+   *   hero     the homepage headline only
+   */
+  --text-label: 10.5px;
+  --text-label--letter-spacing: 0.08em;
+  --text-mini: 11.5px;
+  --text-small: 12.5px;
+  --text-body: 13.5px;
+  --text-lead: 15px;
+  --text-lead--letter-spacing: -0.01em;
+  --text-title: 20px;
+  --text-title--line-height: 1.25;
+  --text-title--letter-spacing: -0.015em;
+  --text-display: 28px;
+  --text-display--line-height: 1.2;
+  --text-display--letter-spacing: -0.015em;
+  --text-readout: 34px;
+  --text-readout--line-height: 1;
+  --text-hero: clamp(32px, 3.6vw, 44px);
+  --text-hero--line-height: 1.12;
+  --text-hero--letter-spacing: -0.02em;
+
+  /* Motion grammar: two speeds, one house curve, always property-scoped.
+     One-shot entrances only — nothing repaints continuously. Entrances fill
+     backwards, not both: a forwards fill would leave every animated wrapper
+     a permanent stacking context, painting later content over popups (the
+     search suggestions). */
+  --speed-quick: 120ms;
+  --speed-regular: 200ms;
+  --ease-out: cubic-bezier(0.22, 0.7, 0.2, 1);
+  --animate-row-in: row-in 0.3s var(--ease-out) backwards;
+  --animate-fade-in: fade-in var(--speed-regular) var(--ease-out) backwards;
 
   @keyframes row-in {
     from {
       opacity: 0;
-      transform: translateY(7px);
+      transform: translateY(6px);
     }
     to {
       opacity: 1;
@@ -84,16 +121,6 @@
     }
     to {
       opacity: 1;
-    }
-  }
-  @keyframes scan {
-    from {
-      transform: scaleX(0);
-      opacity: 1;
-    }
-    to {
-      transform: scaleX(1);
-      opacity: 0;
     }
   }
 }
@@ -195,10 +222,11 @@
     @apply mx-auto w-full max-w-[880px] px-7;
   }
 
-  /* Raised surface: flat fill, hairline border. Depth is the border. */
+  /* Raised surface: flat fill, hairline border. Depth is the border.
+     Radius system: 4px controls, 6px panels and popups — nothing else. */
   .plate {
     border: 1px solid var(--color-border);
-    border-radius: 5px;
+    border-radius: 6px;
     background: var(--color-surface);
   }
 
@@ -206,7 +234,7 @@
      wide right padding keeps long lines off the border while scrolling. */
   .source-view pre {
     padding: 12px 24px 12px 16px;
-    font-size: 12.5px;
+    font-size: var(--text-small);
     line-height: 1.6;
     background: transparent !important;
   }
@@ -215,19 +243,22 @@
      one visible step up from body links — size and weight state the
      significance, the arrow stays text, nothing fills or glows. */
   .action {
-    font-size: 13.5px;
+    font-size: var(--text-body);
     font-weight: 500;
     white-space: nowrap;
   }
 
-  /* Small flat control — keys, chips, copy. State lives in the border. */
+  /* Small flat control — keys, chips, copy. State lives in the border.
+     The padding is part of the control; call sites override it only for
+     form buttons (px-3 py-1) and the header kbd. */
   .key {
     border: 1px solid var(--color-border-strong);
     border-radius: 4px;
+    padding: 3px 10px;
     background: var(--color-raised);
     transition:
-      border-color 0.15s,
-      color 0.15s;
+      border-color var(--speed-quick),
+      color var(--speed-quick);
   }
   button.key:hover,
   a.key:hover {
@@ -246,8 +277,8 @@
     color: var(--color-accent);
     background: var(--color-accent-soft);
     transition:
-      border-color 0.15s,
-      color 0.15s;
+      border-color var(--speed-quick),
+      color var(--speed-quick);
   }
   button.key-primary:hover:not(:disabled),
   a.key-primary:hover {
@@ -270,9 +301,9 @@
      border change; the global focus-visible outline covers keyboards. */
   .well {
     border: 1px solid var(--color-border-strong);
-    border-radius: 5px;
-    background: #04050c;
-    transition: border-color 0.16s;
+    border-radius: 4px;
+    background: var(--color-well);
+    transition: border-color var(--speed-quick);
   }
   .well:focus-within {
     border-color: var(--color-accent-dim);
@@ -287,36 +318,41 @@
      approximates a collapsed row so the scrollbar stays stable. */
   .row-cv {
     content-visibility: auto;
-    contain-intrinsic-size: auto var(--row-h, 47px);
+    contain-intrinsic-size: auto var(--row-h, 48px);
   }
 
   /* Sweep chart hover: emphasize one trace, reveal its point values.
      Opacity transitions only — nothing repaints continuously. */
   .sweep .series {
-    transition: opacity 0.15s;
+    transition: opacity var(--speed-quick);
   }
   .sweep svg:has(.series:hover) .series:not(:hover) {
     opacity: 0.35;
   }
   .sweep .pt-label {
     opacity: 0;
-    transition: opacity 0.15s;
+    transition: opacity var(--speed-quick);
   }
   .sweep .series:hover .pt-label {
     opacity: 1;
   }
 
-  /* Route-transition scan: a light streak crossing the page once. */
+  /* Route-transition scan: a flat accent hairline crossing the page once —
+     the instrument's sweep. Solid ink, no gradient. */
   .scan-line {
     height: 1px;
     transform-origin: left;
-    animation: scan 0.55s cubic-bezier(0.22, 0.7, 0.2, 1) both;
-    background: linear-gradient(
-      90deg,
-      transparent,
-      var(--color-accent) 30%,
-      var(--color-accent-bright) 55%,
-      transparent
-    );
+    animation: scan 0.55s var(--ease-out) both;
+    background: var(--color-accent);
+  }
+  @keyframes scan {
+    from {
+      transform: scaleX(0);
+      opacity: 0.9;
+    }
+    to {
+      transform: scaleX(1);
+      opacity: 0;
+    }
   }
 }

@@ -7,10 +7,10 @@ export function KeyValueList({ items }: { items: KeyValue[] }) {
       {items.map((item) => (
         <div
           key={item.key}
-          className="flex justify-between gap-4 border-b border-line py-[6px] text-[12.5px]"
+          className="flex justify-between gap-4 border-b border-line py-1.5 text-small"
         >
           <span className="text-subtle">{item.key}</span>
-          <span className="text-right font-mono text-[12px] text-muted [overflow-wrap:anywhere]">
+          <span className="text-right font-mono text-small text-muted [overflow-wrap:anywhere]">
             {item.value}
           </span>
         </div>

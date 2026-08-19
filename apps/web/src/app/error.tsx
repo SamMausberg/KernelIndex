@@ -10,27 +10,25 @@ export default function ErrorBoundary({
   reset: () => void
 }) {
   return (
-    <main className="shell pt-24 pb-32">
-      <div className="font-mono text-[10px] tracking-[0.08em] text-warning uppercase">
-        Error
-      </div>
-      <h1 className="mt-3 text-[28px] leading-tight font-medium tracking-[-0.015em]">
+    <main className="shell pt-24 pb-24">
+      <div className="font-mono text-label text-warning uppercase">Error</div>
+      <h1 className="mt-3 text-display font-medium">
         This page failed to render.
       </h1>
-      <p className="mt-3 max-w-[52ch] text-[14px] text-muted">
+      <p className="mt-3 max-w-[52ch] text-body text-muted">
         Nothing was lost — published evidence can't change. Try again, or go
         back to search.
         {error.digest && (
-          <span className="mt-2 block font-mono text-[12px] text-faint">
+          <span className="mt-2 block font-mono text-small text-faint">
             reference {error.digest}
           </span>
         )}
       </p>
-      <div className="mt-6 flex items-center gap-5 text-[13.5px]">
+      <div className="mt-6 flex items-center gap-5 text-body">
         <button
           type="button"
           onClick={reset}
-          className="key cursor-pointer px-3 py-1.5 text-[13px] text-fg"
+          className="key cursor-pointer px-3 py-1.5 text-body text-fg"
         >
           Try again
         </button>

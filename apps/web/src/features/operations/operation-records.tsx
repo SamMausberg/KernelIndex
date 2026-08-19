@@ -93,7 +93,7 @@ export function OperationRecords({
       <Section id="records" title="Current records">
         {/* The sweep table stays compact; the cohort panel uses the rest
             of the width instead of leaving it empty. */}
-        <div className="mb-4 grid grid-cols-[minmax(0,1fr)_minmax(300px,370px)] gap-11 max-lg:grid-cols-1">
+        <div className="mb-4 grid grid-cols-[minmax(0,1fr)_minmax(300px,370px)] gap-10 max-lg:grid-cols-1">
           <div>
             <WorkloadPicker
               workloads={workloads}
@@ -101,7 +101,7 @@ export function OperationRecords({
               slug={slug}
             />
             {variant.cohortOptions.length > 1 && (
-              <div className="flex flex-wrap items-center gap-2 text-[12.5px]">
+              <div className="flex flex-wrap items-center gap-2 text-small">
                 <span className="mr-1 text-faint">Hardware</span>
                 {variant.cohortOptions.map((option) => (
                   <Link
@@ -112,14 +112,14 @@ export function OperationRecords({
                         : {}),
                       cohort: option.key,
                     }).toString()}`}
-                    className={`key px-2.5 py-[3px] font-mono text-[12px] whitespace-nowrap hover:no-underline ${
+                    className={`key font-mono text-small whitespace-nowrap hover:no-underline ${
                       option.key === variant.cohort?.comparisonKey
                         ? "key-on"
                         : "text-subtle hover:text-fg"
                     }`}
                   >
                     {option.label}
-                    <span className="ml-1.5 text-[11px] text-faint">
+                    <span className="ml-1.5 text-mini text-faint">
                       {option.runs}
                     </span>
                   </Link>
@@ -129,7 +129,7 @@ export function OperationRecords({
           </div>
           {variant.cohort && (
             <div className="border-l border-border pl-9 max-lg:border-l-0 max-lg:pl-0">
-              <div className="mb-2.5 text-[12.5px] text-subtle">
+              <div className="mb-2.5 text-small text-subtle">
                 {variant.cohort.profile === "source_native"
                   ? "Source-native cohort"
                   : "Exact cohort"}
@@ -167,13 +167,13 @@ export function OperationRecords({
               ))}
             </>
           ) : (
-            <p className="py-6 text-[13px] text-faint">
+            <p className="py-6 text-body text-faint">
               No published measurement for the selected workload.
             </p>
           )}
         </div>
         {overflow > 0 && (
-          <p className="mt-3 text-[12.5px] text-faint">
+          <p className="mt-3 text-small text-faint">
             {overflow} more row{overflow === 1 ? "" : "s"} in this cohort.{" "}
             <Link
               href={`/search?q=${encodeURIComponent(`op:${slug}`)}`}

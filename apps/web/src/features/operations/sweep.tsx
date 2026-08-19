@@ -209,7 +209,7 @@ export function SweepChart({ sweep }: { sweep: OperationSweep }) {
           )
         })}
       </svg>
-      <figcaption className="mt-2 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-[12px] text-faint">
+      <figcaption className="mt-2 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-small text-faint">
         <span className="flex flex-wrap gap-x-4 gap-y-1">
           {sweep.series.map((series, index) => (
             <span

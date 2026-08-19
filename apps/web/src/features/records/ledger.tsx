@@ -53,9 +53,7 @@ function LatestBreaks({ latest }: { latest: LedgerEvent[] }) {
   if (latest.length === 0) return null
   return (
     <div className="mt-5">
-      <div className="text-[10.5px] tracking-[0.08em] text-faint uppercase">
-        Latest breaks
-      </div>
+      <div className="text-label text-faint uppercase">Latest breaks</div>
       <div className="mt-1.5 overflow-x-auto border-t border-border-strong">
         {latest.map(({ holder, event }) => (
           <div
@@ -68,28 +66,28 @@ function LatestBreaks({ latest }: { latest: LedgerEvent[] }) {
               aria-label={`Record run for ${holder.operation.name}`}
               className="absolute inset-0"
             />
-            <span className="truncate text-[13px] text-fg">
+            <span className="truncate text-body text-fg">
               {holder.operation.name}
-              <span className="ml-2 font-mono text-[11.5px] text-faint">
+              <span className="ml-2 font-mono text-mini text-faint">
                 {holder.workloadSummary}
               </span>
             </span>
-            <span className="font-mono text-[13px] whitespace-nowrap">
+            <span className="font-mono text-body whitespace-nowrap">
               <span className="text-faint">
                 {event.previousValue ? formatPrimary(event.previousValue) : "—"}
               </span>{" "}
               <span className="text-ghost">→</span>{" "}
               <span className="text-fg">{formatPrimary(event.value)}</span>
               {event.improvementPct !== null && (
-                <span className="ml-2 text-[12px] text-success">
+                <span className="ml-2 text-small text-success">
                   {event.improvementPct.toFixed(1)}%
                 </span>
               )}
             </span>
-            <span className="truncate text-[12px] text-subtle">
+            <span className="truncate text-small text-subtle">
               {event.implementation.name} · {holder.hardware}
             </span>
-            <span className="text-right font-mono text-[11.5px] whitespace-nowrap text-faint">
+            <span className="text-right font-mono text-mini whitespace-nowrap text-faint">
               {formatDateUTC(event.at)}
             </span>
           </div>
@@ -110,11 +108,11 @@ function HolderRow({ holder }: { holder: LedgerHolder }) {
   return (
     <details className="group row-cv border-b border-line">
       <summary
-        className={`${CURRENT_GRID} h-[47px] cursor-pointer list-none items-center transition-colors hover:bg-raised [&::-webkit-details-marker]:hidden`}
+        className={`${CURRENT_GRID} h-12 cursor-pointer list-none items-center transition-colors hover:bg-raised [&::-webkit-details-marker]:hidden`}
       >
         <div className="min-w-0 truncate pr-3">
-          <span className="text-[13px] text-fg">{holder.operation.name}</span>
-          <span className="ml-2 font-mono text-[11.5px] text-faint">
+          <span className="text-body text-fg">{holder.operation.name}</span>
+          <span className="ml-2 font-mono text-mini text-faint">
             {holder.workloadSummary}
           </span>
         </div>
@@ -127,10 +125,10 @@ function HolderRow({ holder }: { holder: LedgerHolder }) {
                 ? formatSolScoreCell(record.solScore)
                 : null
             }
-            valueClassName="font-mono text-[14px] text-fg"
+            valueClassName="font-mono text-body text-fg"
           />
         </div>
-        <div className="truncate pr-3 font-mono text-[12px] whitespace-nowrap">
+        <div className="truncate pr-3 font-mono text-small whitespace-nowrap">
           {margin !== null ? (
             <span className="text-subtle">
               {margin.toFixed(1)}%
@@ -151,42 +149,42 @@ function HolderRow({ holder }: { holder: LedgerHolder }) {
           <Link
             href={`/implementations/${record.implementation.slug}`}
             prefetch={false}
-            className="text-[13px]"
+            className="text-body"
           >
             {record.implementation.name}
           </Link>
           {record.baseline && (
-            <span className="ml-2 font-mono text-[10.5px] tracking-[0.05em] text-faint uppercase">
+            <span className="ml-2 font-mono text-label text-faint uppercase">
               baseline
             </span>
           )}
           {record.project.name !== record.implementation.name && (
-            <span className="ml-2 text-[12px] text-faint">
+            <span className="ml-2 text-small text-faint">
               {record.project.name}
             </span>
           )}
         </div>
-        <div className="pr-3 font-mono text-[12px] whitespace-nowrap text-muted">
+        <div className="pr-3 font-mono text-small whitespace-nowrap text-muted">
           {holder.hardware}
         </div>
         <EvidenceCell row={record} />
         <AvailabilityCell row={record} />
-        <div className="font-mono text-[11.5px] whitespace-nowrap text-faint">
+        <div className="font-mono text-mini whitespace-nowrap text-faint">
           {formatDateUTC(holder.since)}
           {isNew && <span className="text-accent"> · new</span>}
         </div>
         <div
           aria-hidden="true"
-          className="pr-1 text-right font-mono text-[12px] text-faint transition-transform group-open:rotate-90"
+          className="pr-1 text-right font-mono text-small text-faint transition-transform group-open:rotate-90"
         >
           ›
         </div>
       </summary>
       <div className="border-t border-line bg-surface pb-4">
-        <div className="pt-3 font-mono text-[11.5px] text-faint">
+        <div className="pt-3 font-mono text-mini text-faint">
           {holder.environmentSummary}
         </div>
-        <div className="mt-3 text-[11.5px] tracking-[0.03em] text-faint uppercase">
+        <div className="mt-3 text-label text-faint uppercase">
           Record history
         </div>
         {/* Day-quantized "now": identical between server render and
@@ -200,7 +198,7 @@ function HolderRow({ holder }: { holder: LedgerHolder }) {
         {timeline.map((event, index) => (
           <div
             key={event.runId}
-            className="mt-2 grid grid-cols-[92px_minmax(150px,240px)_minmax(0,1fr)] items-baseline gap-x-5 text-[12.5px] max-md:grid-cols-1 max-md:gap-y-0.5"
+            className="mt-2 grid grid-cols-[92px_minmax(150px,240px)_minmax(0,1fr)] items-baseline gap-x-5 text-small max-md:grid-cols-1 max-md:gap-y-0.5"
           >
             <span
               className={`text-right font-mono max-md:text-left ${
@@ -212,7 +210,7 @@ function HolderRow({ holder }: { holder: LedgerHolder }) {
             <Link
               href={`/implementations/${event.implementation.slug}`}
               prefetch={false}
-              className={`truncate font-mono text-[12.5px] ${index === 0 ? "" : "text-subtle"}`}
+              className={`truncate font-mono text-small ${index === 0 ? "" : "text-subtle"}`}
             >
               {event.implementation.name}
             </Link>
@@ -226,7 +224,7 @@ function HolderRow({ holder }: { holder: LedgerHolder }) {
           </div>
         ))}
         {earlier > 0 && (
-          <p className="mt-2 text-[12px] text-faint">
+          <p className="mt-2 text-small text-faint">
             {earlier} earlier event{earlier === 1 ? "" : "s"} in{" "}
             <Link
               href={`/records?view=history&f=${encodeURIComponent(holder.operation.name)}`}
@@ -272,7 +270,7 @@ function HolderRow({ holder }: { holder: LedgerHolder }) {
               Compare with previous record →
             </Link>
           )}
-          <Link href="/docs#records" className="text-[12.5px]">
+          <Link href="/docs#records" className="text-small">
             How records are decided
           </Link>
         </div>
@@ -287,7 +285,7 @@ const BROKEN_GRID =
 function BrokenRows({ transitions }: { transitions: LedgerEvent[] }) {
   if (transitions.length === 0) {
     return (
-      <p className="py-8 text-[13px] text-faint">
+      <p className="py-8 text-body text-faint">
         No records broken in the last 30 days with these filters.
       </p>
     )
@@ -299,13 +297,13 @@ function BrokenRows({ transitions }: { transitions: LedgerEvent[] }) {
           key={event.runId}
           className={`${BROKEN_GRID} items-center border-b border-line transition-colors hover:bg-raised`}
         >
-          <div className="min-w-0 truncate py-3.5 pr-3 text-[13px] text-fg">
+          <div className="min-w-0 truncate py-3.5 pr-3 text-body text-fg">
             {holder.operation.name}
-            <span className="ml-2 font-mono text-[11.5px] text-faint">
+            <span className="ml-2 font-mono text-mini text-faint">
               {holder.workloadSummary}
             </span>
           </div>
-          <div className="py-3.5 pr-3 font-mono text-[13.5px] whitespace-nowrap">
+          <div className="py-3.5 pr-3 font-mono text-body whitespace-nowrap">
             <span className="text-faint">
               {event.previousValue ? formatPrimary(event.previousValue) : "—"}
             </span>{" "}
@@ -318,23 +316,23 @@ function BrokenRows({ transitions }: { transitions: LedgerEvent[] }) {
             <Link
               href={`/implementations/${event.implementation.slug}`}
               prefetch={false}
-              className="font-mono text-[12.5px]"
+              className="font-mono text-small"
             >
               {event.implementation.name}
             </Link>
             {previous &&
               previous.implementation.slug !== event.implementation.slug && (
-                <span className="ml-2 text-[11.5px] text-faint">
+                <span className="ml-2 text-mini text-faint">
                   over {previous.implementation.name}
                 </span>
               )}
           </div>
-          <div className="py-3.5 pr-3 text-[13px] whitespace-nowrap text-fg">
+          <div className="py-3.5 pr-3 text-body whitespace-nowrap text-fg">
             {event.improvementPct !== null
               ? `${event.improvementPct.toFixed(1)}%`
               : "—"}
           </div>
-          <div className="py-3.5 pr-3 font-mono text-[12px] whitespace-nowrap text-muted">
+          <div className="py-3.5 pr-3 font-mono text-small whitespace-nowrap text-muted">
             {holder.hardware}
           </div>
           <div className="py-3.5">
@@ -343,7 +341,7 @@ function BrokenRows({ transitions }: { transitions: LedgerEvent[] }) {
           <div className="py-3.5">
             <AvailabilityCell row={holder.current} />
           </div>
-          <div className="py-3.5 font-mono text-[11.5px] text-faint">
+          <div className="py-3.5 font-mono text-mini text-faint">
             {formatDateUTC(event.at)}
           </div>
         </div>
@@ -355,7 +353,7 @@ function BrokenRows({ transitions }: { transitions: LedgerEvent[] }) {
 function HistoryRows({ events }: { events: LedgerEvent[] }) {
   if (events.length === 0) {
     return (
-      <p className="py-8 text-[13px] text-faint">
+      <p className="py-8 text-body text-faint">
         No record events under the active filters.
       </p>
     )
@@ -367,18 +365,18 @@ function HistoryRows({ events }: { events: LedgerEvent[] }) {
           key={event.runId}
           className="grid grid-cols-[110px_minmax(0,1fr)] gap-5 border-b border-line transition-colors hover:bg-raised"
         >
-          <div className="py-3.5 font-mono text-[12px] text-faint">
+          <div className="py-3.5 font-mono text-small text-faint">
             {formatDateUTC(event.at)}
           </div>
           <div className="min-w-0 py-3.5">
-            <div className="text-[13px] text-fg">
+            <div className="text-body text-fg">
               {event.previousValue ? "Record set" : "First record"}:{" "}
-              <span className="font-mono text-[12.5px]">
+              <span className="font-mono text-small">
                 {holder.operation.name} · {holder.workloadSummary} ·{" "}
                 {holder.hardware}
               </span>
             </div>
-            <div className="mt-1 text-[12.5px] text-subtle">
+            <div className="mt-1 text-small text-subtle">
               {event.implementation.name} at{" "}
               <span className="font-mono">{formatPrimary(event.value)}</span>
               {event.previousValue && (
@@ -450,7 +448,7 @@ function Pager({
 }) {
   if (pageCount <= 1) return null
   return (
-    <div className="mt-4 flex items-baseline gap-5 text-[12.5px]">
+    <div className="mt-4 flex items-baseline gap-5 text-small">
       {page > 1 ? (
         <FilterLink
           filters={filters}
@@ -462,7 +460,7 @@ function Pager({
       ) : (
         <span className="text-ghost">← Previous</span>
       )}
-      <span className="font-mono text-[12px] text-faint">
+      <span className="font-mono text-small text-faint">
         page {page} of {pageCount}
       </span>
       {page < pageCount ? (
@@ -497,7 +495,7 @@ function ControlStrip({
 }) {
   const { filters } = slice
   const chip = (selected: boolean) =>
-    `key px-2.5 py-[3px] text-[12px] whitespace-nowrap hover:no-underline ${
+    `key text-small whitespace-nowrap hover:no-underline ${
       selected ? "key-on" : "text-subtle hover:text-fg"
     }`
   return (
@@ -513,18 +511,18 @@ function ControlStrip({
           }}
         >
           <summary
-            className={`${chip(filters.hardware !== null)} flex cursor-pointer items-center gap-2 py-[4px] [&::-webkit-details-marker]:hidden`}
+            className={`${chip(filters.hardware !== null)} flex cursor-pointer items-center gap-2 py-1 [&::-webkit-details-marker]:hidden`}
           >
             <span className="text-faint">Hardware</span>
             <span>{filters.hardware ?? "All"}</span>
             <span
               aria-hidden="true"
-              className="font-mono text-[11px] text-faint transition-transform group-open:rotate-90"
+              className="font-mono text-mini text-faint transition-transform group-open:rotate-90"
             >
               ›
             </span>
           </summary>
-          <div className="absolute top-[calc(100%+6px)] left-0 z-40 min-w-[250px] overflow-hidden rounded-[5px] border border-edge bg-raised py-1">
+          <div className="absolute top-[calc(100%+6px)] left-0 z-40 min-w-[250px] overflow-hidden rounded-md border border-edge bg-raised py-1">
             {[null, ...slice.hardwareOptions].map((value) => {
               const selected = filters.hardware === value
               return (
@@ -539,14 +537,14 @@ function ControlStrip({
                       ?.removeAttribute("open")
                     navigate({ hardware: value })
                   }}
-                  className={`flex items-baseline justify-between gap-6 px-3 py-[7px] text-[12.5px] hover:bg-accent-soft hover:no-underline ${
+                  className={`flex items-baseline justify-between gap-6 px-3 py-1.5 text-small hover:bg-accent-soft hover:no-underline ${
                     selected ? "text-fg" : "text-subtle"
                   }`}
                 >
                   <span className="whitespace-nowrap">
                     {value ?? "All hardware"}
                   </span>
-                  <span className="font-mono text-[11.5px] text-faint">
+                  <span className="font-mono text-mini text-faint">
                     {value === null
                       ? slice.recordsTotal
                       : (slice.hardwareCounts[value] ?? 0)}
@@ -564,16 +562,16 @@ function ControlStrip({
             className={chip(filters.verified)}
           >
             Verified{" "}
-            <span className="font-mono text-[11px] text-faint">
+            <span className="font-mono text-mini text-faint">
               {slice.verifiedCount}
             </span>
           </FilterLink>
         ) : (
           <span
             title="No independently verified records yet — every result is source-reported"
-            className="key px-2.5 py-[3px] text-[12px] whitespace-nowrap text-ghost"
+            className="key text-small whitespace-nowrap text-ghost"
           >
-            Verified <span className="font-mono text-[11px]">0</span>
+            Verified <span className="font-mono text-mini">0</span>
           </span>
         )}
         <FilterLink
@@ -592,7 +590,7 @@ function ControlStrip({
             className={chip(filters.baselines)}
           >
             Unbeaten baselines{" "}
-            <span className="font-mono text-[11px] text-faint">
+            <span className="font-mono text-mini text-faint">
               {slice.baselineCount}
             </span>
           </FilterLink>
@@ -606,7 +604,7 @@ function ControlStrip({
             ) as HTMLInputElement
             navigate({ filter: input.value.trim() })
           }}
-          className="well ml-1 flex h-[30px] w-[220px] items-center px-2.5"
+          className="well ml-1 flex h-8 w-[220px] items-center px-2.5"
         >
           {filters.view !== "current" && (
             <input type="hidden" name="view" value={filters.view} />
@@ -631,7 +629,7 @@ function ControlStrip({
             aria-label="Filter records"
             autoComplete="off"
             spellCheck={false}
-            className="min-w-0 flex-1 border-0 bg-transparent p-0 font-mono text-[12px] outline-none"
+            className="min-w-0 flex-1 border-0 bg-transparent p-0 font-mono text-small outline-none"
           />
         </form>
         {filters.filter !== "" && (
@@ -639,13 +637,13 @@ function ControlStrip({
             filters={filters}
             patch={{ filter: "" }}
             navigate={navigate}
-            className="text-[12.5px] text-faint transition-colors hover:text-fg hover:no-underline"
+            className="text-small text-faint transition-colors hover:text-fg hover:no-underline"
           >
             Clear filter
           </FilterLink>
         )}
       </div>
-      <div className="flex flex-wrap items-baseline gap-x-4 text-[12.5px] text-faint">
+      <div className="flex flex-wrap items-baseline gap-x-4 text-small text-faint">
         {status}
       </div>
     </div>
@@ -718,7 +716,7 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
               }`}
             >
               {view.label}{" "}
-              <span className="font-mono text-[11px] text-subtle">
+              <span className="font-mono text-mini text-subtle">
                 {slice.counts[view.key]}
               </span>
             </FilterLink>
@@ -734,7 +732,7 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
         ]}
       />
 
-      <main className="shell animate-fade-in pb-20">
+      <main className="shell animate-fade-in pb-24">
         {slice.filters.view === "current" && slice.holders && (
           <>
             {slice.latest && <LatestBreaks latest={slice.latest} />}
@@ -784,7 +782,7 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
             />
             <div className="overflow-x-auto">
               <div
-                className={`${CURRENT_GRID} border-b border-border-strong text-[11.5px] text-faint`}
+                className={`${CURRENT_GRID} border-b border-border-strong text-mini text-faint`}
               >
                 <div className="py-2">Operation / workload</div>
                 <div className="py-2 pr-4 text-right">Current record</div>
@@ -800,7 +798,7 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
                 <HolderRow key={holder.cohortKey} holder={holder} />
               ))}
               {slice.holders.total === 0 && (
-                <p className="py-8 text-[13px] text-faint">
+                <p className="py-8 text-body text-faint">
                   No records under the active filters.
                 </p>
               )}
@@ -861,11 +859,11 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
         )}
 
         <div className="mt-11 flex flex-wrap items-baseline justify-between gap-5 border-t border-border pt-5">
-          <p className="text-[12.5px] text-subtle">
+          <p className="text-small text-subtle">
             Runs too close to call share a rank.{" "}
             <Link href="/docs#records">How records are decided →</Link>
           </p>
-          <span className="font-mono text-[12px] text-faint">
+          <span className="font-mono text-small text-faint">
             history only grows · <Link href="/legal">data licenses</Link>
           </span>
         </div>

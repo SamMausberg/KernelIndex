@@ -25,10 +25,10 @@ export default async function ProjectsPage() {
         title="Projects"
         context="standing per project · records held · licensing · availability"
       />
-      <main className="shell animate-fade-in pt-7 pb-20">
+      <main className="shell animate-fade-in pt-7 pb-24">
         <div className="overflow-x-auto">
           <div
-            className={`${GRID} items-baseline border-b border-border-strong pb-3 text-[11.5px] text-faint`}
+            className={`${GRID} items-baseline border-b border-border-strong pb-3 text-mini text-faint`}
           >
             <div>Project</div>
             <div className="text-right">Kernels</div>
@@ -42,44 +42,44 @@ export default async function ProjectsPage() {
           {model.projects.map((project) => (
             <div
               key={project.slug}
-              className={`${GRID} row-cv h-[52px] [--row-h:52px] items-center border-b border-line transition-colors hover:bg-raised`}
+              className={`${GRID} row-cv h-12 items-center border-b border-line transition-colors hover:bg-raised`}
             >
               <div className="min-w-0 truncate">
                 {project.repositoryUrl ? (
-                  <a href={project.repositoryUrl} className="text-[13px]">
+                  <a href={project.repositoryUrl} className="text-body">
                     {project.name}
                   </a>
                 ) : (
-                  <span className="text-[13px] text-fg">{project.name}</span>
+                  <span className="text-body text-fg">{project.name}</span>
                 )}
               </div>
-              <div className="text-right font-mono text-[12.5px] text-muted">
+              <div className="text-right font-mono text-small text-muted">
                 {project.implementations.toLocaleString("en-US")}
               </div>
-              <div className="text-right font-mono text-[12.5px] text-muted">
+              <div className="text-right font-mono text-small text-muted">
                 {project.runs.toLocaleString("en-US")}
               </div>
-              <div className="text-right font-mono text-[12.5px] text-fg">
+              <div className="text-right font-mono text-small text-fg">
                 {project.records.toLocaleString("en-US")}
               </div>
-              <div className="text-[12px] text-subtle">
+              <div className="text-small text-subtle">
                 {evidenceLabel(project.bestEvidence)}
               </div>
-              <div className="min-w-0 truncate font-mono text-[11.5px] text-subtle">
+              <div className="min-w-0 truncate font-mono text-mini text-subtle">
                 {project.licenses.length > 0
                   ? project.licenses.join(", ")
                   : "unknown"}
               </div>
-              <div className="min-w-0 truncate font-mono text-[11.5px] text-subtle">
+              <div className="min-w-0 truncate font-mono text-mini text-subtle">
                 {project.hardware.join(", ")}
               </div>
-              <div className="text-right font-mono text-[11.5px] text-faint">
+              <div className="text-right font-mono text-mini text-faint">
                 {formatDateUTC(project.lastObservedAt)}
               </div>
             </div>
           ))}
         </div>
-        <p className="mt-4 text-[12.5px] text-faint">
+        <p className="mt-4 text-small text-faint">
           Ordered by corpus presence, not merit: results are comparable only
           inside cohorts. <Link href="/docs#comparability">Why? →</Link>
         </p>

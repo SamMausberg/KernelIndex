@@ -13,26 +13,24 @@ export function ClaimForm() {
         name="projectSlug"
         placeholder="project slug"
         required
-        className="well w-[240px] px-2.5 py-1.5 font-mono text-[12px] outline-none"
+        className="well w-[240px] px-2.5 py-1.5 font-mono text-small outline-none"
       />
       <input
         name="evidenceUrl"
         placeholder="evidence URL (repo permission, challenge file, DNS …)"
         required
         type="url"
-        className="well w-[360px] px-2.5 py-1.5 font-mono text-[12px] outline-none"
+        className="well w-[360px] px-2.5 py-1.5 font-mono text-small outline-none"
       />
       <button
         type="submit"
         disabled={pending}
-        className="key cursor-pointer px-3 py-1 text-[12.5px] hover:text-fg"
+        className="key cursor-pointer px-3 py-1 text-small hover:text-fg"
       >
         Claim
       </button>
       {state.message && (
-        <span className="font-mono text-[12px] text-faint">
-          {state.message}
-        </span>
+        <span className="font-mono text-small text-faint">{state.message}</span>
       )}
     </form>
   )

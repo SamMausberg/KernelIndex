@@ -27,11 +27,11 @@ export function Metric({
   return (
     <>
       <span className={valueClassName}>{parts.value}</span>
-      <span className="ml-1 inline-block w-[22px] text-left font-mono text-[11px] text-faint">
+      <span className="ml-1 inline-block w-[22px] text-left font-mono text-mini text-faint">
         {parts.unit}
       </span>
       {(spread || secondary !== undefined) && (
-        <span className="ml-1 inline-block min-w-[56px] text-left font-mono text-[11px] text-faint">
+        <span className="ml-1 inline-block min-w-[56px] text-left font-mono text-mini text-faint">
           {slotText}
         </span>
       )}

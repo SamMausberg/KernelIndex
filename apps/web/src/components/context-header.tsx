@@ -20,20 +20,18 @@ export function ContextHeader({
 }) {
   return (
     <div className="border-b border-border bg-surface">
-      <div className="shell animate-fade-in pt-[18px] pb-3.5">
+      <div className="shell animate-fade-in pt-4 pb-3.5">
         <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-1">
           <div className="min-w-0">
-            <h1 className="text-[20px] leading-tight font-medium tracking-[-0.012em]">
-              {title}
-            </h1>
+            <h1 className="text-title font-medium">{title}</h1>
             {context && (
-              <div className="mt-1.5 font-mono text-[12.5px] text-subtle">
+              <div className="mt-1.5 font-mono text-small text-subtle">
                 {context}
               </div>
             )}
           </div>
           {meta && (
-            <div className="flex items-baseline gap-5 pb-px text-[12.5px] text-subtle">
+            <div className="flex items-baseline gap-5 pb-px text-small text-subtle">
               {meta}
             </div>
           )}

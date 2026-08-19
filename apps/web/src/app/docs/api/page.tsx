@@ -56,12 +56,12 @@ export default function ApiReferencePage() {
         title="API reference"
         context={`${routes.length} routes · ${String((openapi as { info: { version: string } }).info.version)} · problem+json errors`}
       />
-      <main className="shell-narrow animate-fade-in pb-24 text-[14px] leading-relaxed text-muted">
+      <main className="shell-narrow animate-fade-in pb-24 text-body leading-relaxed text-muted">
         <p className="mt-2">
           Read API over the catalog. No key needed; a{" "}
-          <span className="font-mono text-[12.5px]">ki_</span> key from{" "}
+          <span className="font-mono text-small">ki_</span> key from{" "}
           <Link href="/account">/account</Link> raises the quota. Contract:{" "}
-          <a href="/api/v1/openapi.json" className="font-mono text-[12.5px]">
+          <a href="/api/v1/openapi.json" className="font-mono text-small">
             /api/v1/openapi.json
           </a>{" "}
           — the SDK, <span className="font-mono">ki</span> CLI, and MCP server
@@ -83,16 +83,14 @@ export default function ApiReferencePage() {
                 className="border-t border-line pt-5"
               >
                 <div className="flex flex-wrap items-baseline gap-3">
-                  <span className="key px-2 py-[2px] font-mono text-[11px] tracking-[0.05em] text-subtle uppercase">
+                  <span className="key py-0.5 font-mono text-label text-subtle uppercase">
                     {method}
                   </span>
-                  <span className="font-mono text-[13.5px] text-fg">
-                    {path}
-                  </span>
+                  <span className="font-mono text-body text-fg">{path}</span>
                 </div>
-                {summary && <p className="mt-2 text-[13px]">{summary}</p>}
+                {summary && <p className="mt-2 text-body">{summary}</p>}
                 {parameters.length > 0 && (
-                  <p className="mt-1.5 text-[12.5px] text-subtle">
+                  <p className="mt-1.5 text-small text-subtle">
                     {parameters.map((parameter, index) => (
                       <span key={parameter.name}>
                         {index > 0 && " · "}
@@ -105,14 +103,14 @@ export default function ApiReferencePage() {
                     ))}
                   </p>
                 )}
-                <pre className="plate mt-3 overflow-x-auto px-4 py-2.5 font-mono text-[12px] leading-relaxed text-muted">
+                <pre className="plate mt-3 overflow-x-auto px-4 py-2.5 font-mono text-small leading-relaxed text-muted">
                   {curlFor(method, path)}
                 </pre>
               </section>
             )
           })}
         </div>
-        <p className="mt-10 border-t border-line pt-5 text-[12.5px] text-faint">
+        <p className="mt-10 border-t border-line pt-5 text-small text-faint">
           Errors are problem+json with a stable{" "}
           <span className="font-mono">code</span>. Responses carry stable IDs,
           digests, and the ranking policy version — the same answers the web

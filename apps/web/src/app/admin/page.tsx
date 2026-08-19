@@ -45,8 +45,8 @@ export default async function AdminPage() {
   const user = authConfigured ? await sessionUser(await headers()) : null
   if (user === null || !canReviewSubmissions(user)) {
     return (
-      <main className="shell-narrow pt-16 pb-20">
-        <p className="text-[13.5px] text-muted">
+      <main className="shell-narrow pt-16 pb-24">
+        <p className="text-body text-muted">
           Review requires the site_admin role.{" "}
           {authConfigured ? (
             <a href="/signin?next=/admin">Sign in with GitHub</a>
@@ -125,23 +125,23 @@ export default async function AdminPage() {
         context={`${pending.length} submissions pending · ${claims.length} claims pending · ${openReports.length} reports open`}
         meta={<span>signed in as {user.name}</span>}
       />
-      <main className="shell animate-fade-in pb-20">
+      <main className="shell animate-fade-in pb-24">
         <Section id="submissions" title="Submissions awaiting review">
           {pending.length === 0 && (
-            <p className="text-[13px] text-faint">Nothing pending.</p>
+            <p className="text-body text-faint">Nothing pending.</p>
           )}
           {pending.map((submission) => (
             <div
               key={submission.id}
-              className="border-b border-line py-3 text-[13px]"
+              className="border-b border-line py-3 text-body"
             >
               <div className="flex flex-wrap items-baseline gap-4">
-                <span className="font-mono text-[12px]">{submission.id}</span>
+                <span className="font-mono text-small">{submission.id}</span>
                 <span className="text-faint">
                   by {submission.userId} · {submission.state}
                 </span>
               </div>
-              <pre className="plate mt-2 max-h-[200px] overflow-auto px-3 py-2 font-mono text-[11.5px] text-subtle">
+              <pre className="plate mt-2 max-h-[200px] overflow-auto px-3 py-2 font-mono text-mini text-subtle">
                 {JSON.stringify(submission.validationReport, null, 2)}
               </pre>
               <div className="mt-2">
@@ -153,16 +153,13 @@ export default async function AdminPage() {
 
         <Section id="claims" title="Project claims">
           {claims.length === 0 && (
-            <p className="text-[13px] text-faint">Nothing pending.</p>
+            <p className="text-body text-faint">Nothing pending.</p>
           )}
           {claims.map(({ claim, project }) => (
-            <div
-              key={claim.id}
-              className="border-b border-line py-3 text-[13px]"
-            >
+            <div key={claim.id} className="border-b border-line py-3 text-body">
               <div className="flex flex-wrap items-baseline gap-4">
                 <span>{project.name}</span>
-                <a href={claim.evidenceUrl} className="font-mono text-[12px]">
+                <a href={claim.evidenceUrl} className="font-mono text-small">
                   {claim.evidenceUrl}
                 </a>
                 <span className="text-faint">by {claim.userId}</span>
@@ -176,17 +173,17 @@ export default async function AdminPage() {
 
         <Section id="reports" title="Open reports">
           {openReports.length === 0 && (
-            <p className="text-[13px] text-faint">Nothing open.</p>
+            <p className="text-body text-faint">Nothing open.</p>
           )}
           {openReports.map((report) => (
             <div
               key={report.id}
-              className="border-b border-line py-3 text-[13px]"
+              className="border-b border-line py-3 text-body"
             >
               <div className="flex flex-wrap items-baseline gap-4">
                 <a
                   href={`/${report.targetKind === "serving_run" ? "serving-runs" : "runs"}/${report.targetId}`}
-                  className="font-mono text-[12px]"
+                  className="font-mono text-small"
                 >
                   {report.targetKind}/{report.targetId.slice(0, 13)}…
                 </a>
@@ -197,12 +194,12 @@ export default async function AdminPage() {
                   {report.contact && ` · ${report.contact}`}
                 </span>
                 {report.evidenceUrl && (
-                  <a href={report.evidenceUrl} className="text-[12.5px]">
+                  <a href={report.evidenceUrl} className="text-small">
                     evidence
                   </a>
                 )}
               </div>
-              <p className="mt-1.5 max-w-[80ch] whitespace-pre-wrap text-[12.5px] text-subtle">
+              <p className="mt-1.5 max-w-[80ch] whitespace-pre-wrap text-small text-subtle">
                 {report.detail}
               </p>
               <div className="mt-2">
@@ -213,7 +210,7 @@ export default async function AdminPage() {
         </Section>
 
         <Section id="sources" title="Sources">
-          <p className="mb-3 text-[12.5px] text-subtle">
+          <p className="mb-3 text-small text-subtle">
             Freshness against each source's declared interval (§19.9). The
             durable review report is registry/reports/source-health.json,
             refreshed by the weekly import workflow.
@@ -221,9 +218,9 @@ export default async function AdminPage() {
           {sources.map((source) => (
             <div
               key={source.slug}
-              className="flex flex-wrap items-baseline gap-4 border-b border-line py-2 text-[13px]"
+              className="flex flex-wrap items-baseline gap-4 border-b border-line py-2 text-body"
             >
-              <span className="font-mono text-[12px]">{source.slug}</span>
+              <span className="font-mono text-small">{source.slug}</span>
               <span className="text-faint">{source.kind}</span>
               <span
                 className={
@@ -244,7 +241,7 @@ export default async function AdminPage() {
         </Section>
 
         <Section id="metrics" title="Product metrics · 30 days">
-          <p className="mb-3 text-[12.5px] text-subtle">
+          <p className="mb-3 text-small text-subtle">
             First-party §20.5 events: no cookies, no identity, coarse facets
             only; rows prune after 90 days. The north star (§20.4) is the share
             of parseable searches answered with at least one exact,
@@ -255,7 +252,7 @@ export default async function AdminPage() {
             const rate = (part: number) =>
               parsed === 0 ? "n/a" : `${Math.round((part / parsed) * 100)}%`
             return (
-              <div className="flex flex-wrap gap-x-8 gap-y-2 text-[13px]">
+              <div className="flex flex-wrap gap-x-8 gap-y-2 text-body">
                 <span>
                   exact useful resolution{" "}
                   <span className="font-mono text-fg">
@@ -282,12 +279,12 @@ export default async function AdminPage() {
           })()}
           <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1.5">
             {metrics.counts.length === 0 && (
-              <span className="text-[13px] text-faint">No events yet.</span>
+              <span className="text-body text-faint">No events yet.</span>
             )}
             {metrics.counts.map((row) => (
               <span
                 key={row.event}
-                className="font-mono text-[12px] text-subtle"
+                className="font-mono text-small text-subtle"
               >
                 {row.event} <span className="text-fg">{row.total}</span>
               </span>
@@ -296,7 +293,7 @@ export default async function AdminPage() {
         </Section>
 
         <Section id="corrections" title="Retract a run">
-          <p className="mb-3 text-[12.5px] text-subtle">
+          <p className="mb-3 text-small text-subtle">
             Retraction marks evidence invalid without deleting it (§10.7); the
             run page keeps resolving and the ledger records the transition.
           </p>
@@ -307,7 +304,7 @@ export default async function AdminPage() {
           {recentAudit.map((event) => (
             <p
               key={event.id}
-              className="border-b border-line py-1.5 font-mono text-[12px] text-subtle"
+              className="border-b border-line py-1.5 font-mono text-small text-subtle"
             >
               {event.at.toISOString().slice(0, 19)} · {event.actor} ·{" "}
               {event.action} · {event.targetKind}/{event.targetId.slice(0, 13)}…

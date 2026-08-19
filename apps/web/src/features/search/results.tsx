@@ -158,11 +158,9 @@ function SearchField({ query }: { query: string }) {
         inputId="header-search-input"
         defaultValue={query}
         placeholder="Search operation, GPU, dtype, shape, framework…"
-        className="min-w-0 flex-1 border-0 bg-transparent p-0 font-mono text-[14px] outline-none"
+        className="min-w-0 flex-1 border-0 bg-transparent p-0 font-mono text-body outline-none"
       />
-      <kbd className="key px-[6px] py-0.5 font-mono text-[12px] text-faint">
-        ⏎
-      </kbd>
+      <kbd className="key px-1.5 py-0.5 font-mono text-small text-faint">⏎</kbd>
     </form>
   )
 }
@@ -171,11 +169,9 @@ function SearchField({ query }: { query: string }) {
 function TierDivider({ label, count }: { label: string; count: number }) {
   return (
     <div className="flex items-baseline gap-3 pt-4 pb-1.5">
-      <span className="text-[10.5px] tracking-[0.08em] text-faint uppercase">
-        {label}
-      </span>
+      <span className="text-label text-faint uppercase">{label}</span>
       <span className="h-px flex-1 self-center bg-line" />
-      <span className="font-mono text-[11px] text-faint">{count}</span>
+      <span className="font-mono text-mini text-faint">{count}</span>
     </div>
   )
 }
@@ -230,23 +226,23 @@ function Recommendation({
       ? exactBaseline.primary.value / top.primary.value
       : null
   return (
-    <section className="grid animate-row-in grid-cols-[minmax(0,1.5fr)_minmax(280px,1fr)] gap-11 border-b border-border py-6 [animation-delay:.02s] max-lg:grid-cols-1">
+    <section className="grid animate-row-in grid-cols-[minmax(0,1.5fr)_minmax(280px,1fr)] gap-10 border-b border-border py-6 [animation-delay:.02s] max-lg:grid-cols-1">
       <div>
-        <div className="font-mono text-[10px] tracking-[0.08em] text-faint uppercase">
+        <div className="font-mono text-label text-faint uppercase">
           {allBaseline ? "Source baseline · unbeaten" : answerLabel(top)}
           {fasterInCohort ? " with source" : ""}
         </div>
         <div className="mt-3 flex flex-wrap items-baseline gap-4">
-          <span className="font-mono text-[34px] leading-none font-medium">
+          <span className="font-mono text-readout font-medium">
             {top.primary ? formatPrimaryParts(top.primary).value : "—"}
             {top.primary && (
-              <span className="ml-1.5 text-[19px] font-normal text-subtle">
+              <span className="ml-1.5 text-title font-normal text-subtle">
                 {formatPrimaryParts(top.primary).unit}
               </span>
             )}
           </span>
           {top.primary && (
-            <span className="font-mono text-[13px] text-subtle">
+            <span className="font-mono text-body text-subtle">
               {[
                 formatSpread(top.primary),
                 top.primary.statistic === "unspecified"
@@ -265,11 +261,11 @@ function Recommendation({
         <div className="mt-3">
           <Link
             href={`/implementations/${top.implementation.slug}`}
-            className="text-[15px] font-medium"
+            className="text-lead font-medium"
           >
             {top.implementation.name}
           </Link>
-          <span className="ml-2.5 text-[13px] text-subtle">
+          <span className="ml-2.5 text-body text-subtle">
             {[
               top.project.name === top.implementation.name
                 ? null
@@ -283,20 +279,20 @@ function Recommendation({
               .join(" · ")}
           </span>
         </div>
-        <p className="mt-2 max-w-[64ch] text-[13.5px] text-muted">
+        <p className="mt-2 max-w-[64ch] text-body text-muted">
           {evidenceLabel(top.evidence)} evidence · last observed{" "}
           {formatDateUTC(top.lastTestedAt)}.
           {top.caveats.length > 0 ? ` ${top.caveats.join(". ")}.` : ""}
         </p>
         {top.install ? (
           <div className="plate mt-4 flex max-w-[520px] items-center gap-2.5 py-2 pr-2 pl-3">
-            <code className="min-w-0 flex-1 truncate font-mono text-[12.5px] text-muted">
+            <code className="min-w-0 flex-1 truncate font-mono text-small text-muted">
               {top.install.command}
             </code>
             <CopyButton text={top.install.command} event="install_copied" />
           </div>
         ) : (
-          <p className="mt-4 text-[12.5px] text-faint">
+          <p className="mt-4 text-small text-faint">
             No install recipe recorded for this revision.
           </p>
         )}
@@ -316,11 +312,11 @@ function Recommendation({
           )}
         </div>
         {fasterInCohort?.primary && (
-          <p className="mt-3.5 text-[13px] text-subtle">
+          <p className="mt-3.5 text-body text-subtle">
             Fastest overall in this cohort:{" "}
             <Link
               href={`/implementations/${fasterInCohort.implementation.slug}`}
-              className="font-mono text-[13px]"
+              className="font-mono text-body"
             >
               {fasterInCohort.implementation.name}
             </Link>{" "}
@@ -333,11 +329,11 @@ function Recommendation({
           </p>
         )}
         {deployableAlternative?.primary && (
-          <p className="mt-2 text-[13px] text-subtle">
+          <p className="mt-2 text-body text-subtle">
             Fastest deployable:{" "}
             <Link
               href={`/implementations/${deployableAlternative.implementation.slug}`}
-              className="font-mono text-[13px]"
+              className="font-mono text-body"
             >
               {deployableAlternative.implementation.name}
             </Link>{" "}
@@ -348,7 +344,7 @@ function Recommendation({
           </p>
         )}
         {hiddenFaster?.primary && (
-          <p className="mt-2 text-[13px] text-subtle">
+          <p className="mt-2 text-body text-subtle">
             Fastest known without source:{" "}
             <span className="font-mono text-fg">
               {formatPrimary(hiddenFaster.primary)}
@@ -362,7 +358,7 @@ function Recommendation({
           </p>
         )}
         {fasterElsewhere?.primary && (
-          <p className="mt-2 text-[13px] text-subtle">
+          <p className="mt-2 text-body text-subtle">
             A faster result exists outside this cohort:{" "}
             <span className="font-mono text-fg">
               {formatPrimary(fasterElsewhere.primary)}
@@ -376,13 +372,13 @@ function Recommendation({
       </div>
       {model.cohort && (
         <div className="border-l border-border pl-9 max-lg:border-l-0 max-lg:pl-0">
-          <div className="flex items-baseline justify-between gap-4 text-[12.5px]">
+          <div className="flex items-baseline justify-between gap-4 text-small">
             <span className="text-subtle">
               {model.cohort.profile === "source_native"
                 ? "Source-native cohort"
                 : "Exact cohort"}
             </span>
-            <Link href="/docs#comparability" className="text-[12px] text-faint">
+            <Link href="/docs#comparability" className="text-small text-faint">
               Why comparable?
             </Link>
           </div>
@@ -498,7 +494,7 @@ export function SearchResults({
               {model.facets.map((facet) => (
                 <span
                   key={facet.token}
-                  className="key inline-flex items-center gap-1.5 px-2 py-[3px] font-mono text-[11.5px] text-muted"
+                  className="key inline-flex items-center gap-1.5 px-2 py-1 font-mono text-mini text-muted"
                 >
                   {facet.display}
                   <Link
@@ -511,8 +507,8 @@ export function SearchResults({
                 </span>
               ))}
               {model.queryIssues.map((issue) => (
-                <span key={issue.token} className="text-[12px] text-warning">
-                  <span className="font-mono text-[11.5px]">{issue.token}</span>
+                <span key={issue.token} className="text-small text-warning">
+                  <span className="font-mono text-mini">{issue.token}</span>
                   {" · "}
                   {issue.message}
                 </span>
@@ -525,7 +521,7 @@ export function SearchResults({
                       model.query,
                     ),
                   )}`}
-                  className="text-[11.5px] text-faint transition-colors hover:text-fg"
+                  className="text-mini text-faint transition-colors hover:text-fg"
                 >
                   Clear filters
                 </Link>
@@ -535,7 +531,7 @@ export function SearchResults({
           {model.operation !== null && (
             <>
               <div className="mt-4 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
-                <h1 className="text-[20px] leading-tight font-medium tracking-[-0.012em]">
+                <h1 className="text-title font-medium">
                   {model.operation ? (
                     <Link
                       href={`/operations/${model.operation.slug}`}
@@ -547,7 +543,7 @@ export function SearchResults({
                     model.interpretedQuery
                   )}
                 </h1>
-                <div className="flex items-baseline gap-5 text-[12.5px]">
+                <div className="flex items-baseline gap-5 text-small">
                   <span className="text-subtle">
                     {model.groups.exact.length} exact measurement
                     {model.groups.exact.length === 1 ? "" : "s"}
@@ -557,7 +553,7 @@ export function SearchResults({
                   </Link>
                 </div>
               </div>
-              <div className="mt-1 font-mono text-[12.5px] text-subtle">
+              <div className="mt-1 font-mono text-small text-subtle">
                 {contextLine(model)}
               </div>
             </>
@@ -565,7 +561,7 @@ export function SearchResults({
         </div>
       </div>
 
-      <main className="shell pb-20">
+      <main className="shell pb-24">
         {model.browse ? (
           <StartState
             operations={model.browse}
@@ -574,10 +570,10 @@ export function SearchResults({
         ) : model.matches ? (
           <section className="animate-row-in pt-6">
             <div className="flex flex-wrap items-baseline justify-between gap-4 border-b border-border-strong pb-3">
-              <h1 className="text-[15px] font-medium tracking-[-0.01em]">
+              <h1 className="text-lead font-medium">
                 {model.matches.length} operations match
               </h1>
-              <span className="text-[12.5px] text-faint">
+              <span className="text-small text-faint">
                 Pick one to compare its implementations
                 {model.facets.length > 0 ? "; your filters carry over" : ""}
               </span>
@@ -596,7 +592,7 @@ export function SearchResults({
           </section>
         ) : model.noResult ? (
           <section className="py-14">
-            <p className="max-w-[64ch] text-[14px] text-muted">
+            <p className="max-w-[64ch] text-body text-muted">
               {model.noResult.guidance}
             </p>
             <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2">
@@ -604,7 +600,7 @@ export function SearchResults({
                 <Link
                   key={suggestion.query}
                   href={`/search?q=${encodeURIComponent(suggestion.query)}`}
-                  className="font-mono text-[13px]"
+                  className="font-mono text-body"
                 >
                   {suggestion.label}
                 </Link>
@@ -635,7 +631,7 @@ export function SearchResults({
                       event.preventDefault()
                       apply({ view: mode.key })
                     }}
-                    className={`pb-[9px] text-[13.5px] transition-colors hover:text-fg hover:no-underline ${
+                    className={`pb-2 text-body transition-colors hover:text-fg hover:no-underline ${
                       selected
                         ? "-mb-px border-b border-fg font-medium text-fg"
                         : total === 0
@@ -644,7 +640,7 @@ export function SearchResults({
                     }`}
                   >
                     {mode.label}{" "}
-                    <span className="font-mono text-[11.5px] text-faint">
+                    <span className="font-mono text-mini text-faint">
                       {total}
                     </span>
                   </Link>
@@ -673,7 +669,7 @@ export function SearchResults({
                         event.preventDefault()
                         if (!dead) apply({ [chip.key]: !on })
                       }}
-                      className={`key px-2.5 py-[3px] text-[12px] hover:no-underline ${
+                      className={`key text-small hover:no-underline ${
                         on
                           ? "key-on"
                           : dead
@@ -682,20 +678,20 @@ export function SearchResults({
                       }`}
                     >
                       {chip.label}{" "}
-                      <span className="font-mono text-[11px] text-faint">
+                      <span className="font-mono text-mini text-faint">
                         {count}
                       </span>
                     </Link>
                   )
                 })}
                 {hidden > 0 && (
-                  <span className="ml-1 text-[12px] text-faint">
+                  <span className="ml-1 text-small text-faint">
                     {hidden} hidden
                   </span>
                 )}
               </div>
               {allRows.length > 1 && (
-                <span className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1 text-[12.5px]">
+                <span className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1 text-small">
                   <span className="whitespace-nowrap text-faint">
                     sorted by
                   </span>
@@ -726,7 +722,7 @@ export function SearchResults({
               )}
             </div>
 
-            <p className="mt-2.5 text-[12.5px] text-faint">
+            <p className="mt-2.5 text-small text-faint">
               {modeNote ??
                 "Ranked by latency within one cohort. Tied ranks share a number."}
               {(() => {
@@ -786,7 +782,7 @@ export function SearchResults({
                   })}
                 </>
               ) : (
-                <p className="py-8 text-[13px] text-faint">
+                <p className="py-8 text-body text-faint">
                   No {view} results for this workload
                   {hidden > 0 ? " under the active filters" : ""}.
                   {alternative && (
@@ -832,7 +828,7 @@ export function SearchResults({
             </div>
 
             {pageCount > 1 && (
-              <div className="mt-4 flex items-baseline gap-5 text-[12.5px]">
+              <div className="mt-4 flex items-baseline gap-5 text-small">
                 {page > 1 ? (
                   <Link
                     href={searchHref(model.query, state, {
@@ -850,7 +846,7 @@ export function SearchResults({
                 ) : (
                   <span className="text-ghost">← Previous</span>
                 )}
-                <span className="font-mono text-[12px] text-faint">
+                <span className="font-mono text-small text-faint">
                   page {page} of {pageCount}
                 </span>
                 {page < pageCount ? (
@@ -874,7 +870,7 @@ export function SearchResults({
             )}
 
             {anyTie && (
-              <p className="mt-3.5 text-[12.5px] text-faint">
+              <p className="mt-3.5 text-small text-faint">
                 N= means tied — too close to call.{" "}
                 <Link href="/docs#ranking">How ranking works →</Link>
               </p>
@@ -882,19 +878,19 @@ export function SearchResults({
 
             {model.related.length > 0 && (
               <section className="mt-12 animate-row-in [animation-delay:.16s]">
-                <h2 className="text-[14px] font-medium text-muted">Related</h2>
+                <h2 className="text-body font-medium text-muted">Related</h2>
                 <div className="mt-2.5 flex flex-wrap gap-x-7 gap-y-2.5">
                   {model.related.map((item) => (
-                    <span key={item.slug} className="text-[13px]">
+                    <span key={item.slug} className="text-body">
                       {item.kind === "operation" ? (
                         <Link
                           href={`/operations/${item.slug}`}
-                          className="font-mono text-[12.5px]"
+                          className="font-mono text-small"
                         >
                           {item.name}
                         </Link>
                       ) : (
-                        <span className="font-mono text-[12.5px] text-muted">
+                        <span className="font-mono text-small text-muted">
                           {item.name}
                         </span>
                       )}
@@ -908,14 +904,14 @@ export function SearchResults({
         )}
 
         <div className="mt-12 flex flex-wrap items-baseline justify-between gap-5 border-t border-border pt-5">
-          <p className="text-[12.5px] text-subtle">
+          <p className="text-small text-subtle">
             {model.operation
               ? "Missing a kernel here? Evidence submissions open with the contribution beta."
               : "Ranked only against runs that measured the same thing."}
           </p>
           {model.cohort && (
             <div className="flex items-center gap-2.5">
-              <span className="font-mono text-[12px] text-faint">
+              <span className="font-mono text-small text-faint">
                 cohort {model.cohort.comparisonKey.slice(0, 23)}…
               </span>
               <CopyButton text={model.cohort.comparisonKey} />
@@ -923,7 +919,7 @@ export function SearchResults({
           )}
         </div>
         {model.sources.length > 0 && (
-          <p className="mt-2 font-mono text-[11.5px] text-faint">
+          <p className="mt-2 font-mono text-mini text-faint">
             {model.sources
               .map(
                 (source) =>

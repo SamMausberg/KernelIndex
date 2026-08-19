@@ -50,7 +50,7 @@ export default function LegalPage() {
         title="Legal"
         context="terms · privacy · source licenses · takedown"
       />
-      <main className="shell-narrow animate-fade-in pb-24 text-[14px] leading-relaxed text-muted">
+      <main className="shell-narrow animate-fade-in pb-24 text-body leading-relaxed text-muted">
         <Section id="terms" title="Terms of use">
           <p>
             KernelIndex is a free public index of GPU performance evidence. The
@@ -98,16 +98,14 @@ export default function LegalPage() {
           <dl className="space-y-4">
             {SOURCES.map((source) => (
               <div key={source.name}>
-                <dt className="text-[13.5px] text-fg">
+                <dt className="text-body text-fg">
                   <a href={source.url}>{source.name}</a>
                 </dt>
-                <dd className="mt-0.5 text-[13px] text-subtle">
-                  {source.terms}
-                </dd>
+                <dd className="mt-0.5 text-body text-subtle">{source.terms}</dd>
               </div>
             ))}
           </dl>
-          <p className="mt-4 text-[13px] text-subtle">
+          <p className="mt-4 text-body text-subtle">
             Live counts and freshness per source are on{" "}
             <Link href="/coverage">Coverage</Link>.
           </p>

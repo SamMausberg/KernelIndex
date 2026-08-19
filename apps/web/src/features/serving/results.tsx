@@ -30,47 +30,47 @@ function metric(
 
 /** A measured value, or an explicit quiet "n/r" (not reported) marker. */
 function cell(value: string | null) {
-  return value ?? <span className="text-[11px] text-faint">n/r</span>
+  return value ?? <span className="text-mini text-faint">n/r</span>
 }
 
 function ResultRow({ row }: { row: ServingResultRow }) {
   return (
     <details className="group row-cv border-b border-line">
       <summary
-        className={`${GRID} h-[47px] cursor-pointer list-none items-center transition-colors hover:bg-raised [&::-webkit-details-marker]:hidden`}
+        className={`${GRID} h-12 cursor-pointer list-none items-center transition-colors hover:bg-raised [&::-webkit-details-marker]:hidden`}
       >
-        <div className="font-mono text-[12.5px] text-faint">
+        <div className="font-mono text-small text-faint">
           {row.rank !== null ? row.rank : row.onFrontier ? "◆" : ""}
         </div>
-        <div className="min-w-0 truncate pr-3 text-[13px] text-fg">
+        <div className="min-w-0 truncate pr-3 text-body text-fg">
           {row.configuration}
         </div>
-        <div className="min-w-0 truncate pr-3 font-mono text-[11.5px] text-subtle">
+        <div className="min-w-0 truncate pr-3 font-mono text-mini text-subtle">
           {row.stack}
         </div>
-        <div className="pr-3 text-right font-mono text-[13px] text-fg">
+        <div className="pr-3 text-right font-mono text-body text-fg">
           {cell(metric(row, "output_token_throughput_tps", "reported"))}
         </div>
-        <div className="pr-3 text-right font-mono text-[12px] text-subtle">
+        <div className="pr-3 text-right font-mono text-small text-subtle">
           {cell(metric(row, "ttft_ms", "p99"))}
         </div>
-        <div className="pr-3 text-right font-mono text-[12px] text-subtle">
+        <div className="pr-3 text-right font-mono text-small text-subtle">
           {cell(metric(row, "tpot_ms", "p99"))}
         </div>
-        <div className="pr-3 text-right font-mono text-[12px] text-muted">
+        <div className="pr-3 text-right font-mono text-small text-muted">
           {row.hardware.total}
         </div>
-        <div className="truncate pr-3 font-mono text-[11.5px] text-faint">
+        <div className="truncate pr-3 font-mono text-mini text-faint">
           {row.qualityPolicy}
         </div>
         <div
           aria-hidden="true"
-          className="pr-1 text-right font-mono text-[12px] text-faint transition-transform group-open:rotate-90"
+          className="pr-1 text-right font-mono text-small text-faint transition-transform group-open:rotate-90"
         >
           ›
         </div>
       </summary>
-      <div className="border-t border-line bg-surface py-3.5 pr-4 pl-9 text-[12.5px] max-md:pl-4">
+      <div className="border-t border-line bg-surface py-3.5 pr-4 pl-9 text-small max-md:pl-4">
         <p className="text-muted">
           {row.hardware.perNode}× {row.hardware.model}
           {row.hardware.nodes > 1 && ` × ${row.hardware.nodes} nodes`}
@@ -80,7 +80,7 @@ function ResultRow({ row }: { row: ServingResultRow }) {
           {row.observedAt.slice(0, 10)}
         </p>
         {row.constraints.length > 0 && (
-          <p className="mt-1.5 font-mono text-[11.5px] text-subtle">
+          <p className="mt-1.5 font-mono text-mini text-subtle">
             {row.constraints
               .map(
                 (view) =>
@@ -111,17 +111,15 @@ export function ServingCohorts({ groups }: { groups: ServingCohortGroup[] }) {
     <div className="space-y-10">
       {groups.map((group) => (
         <section key={group.cohortKey}>
-          <h2 className="text-[15px] font-medium tracking-[-0.008em]">
-            {group.description}
-          </h2>
-          <p className="mt-0.5 text-[12px] text-faint">
+          <h2 className="text-lead font-medium">{group.description}</h2>
+          <p className="mt-0.5 text-small text-faint">
             Ranked only inside this cohort · {group.rows.length} feasible
             {group.excluded.length > 0 &&
               ` · ${group.excluded.length} excluded`}
           </p>
           <div className="mt-3 overflow-x-auto">
             <div
-              className={`${GRID} border-b border-border-strong text-[11.5px] text-faint`}
+              className={`${GRID} border-b border-border-strong text-mini text-faint`}
             >
               <div className="py-2">#</div>
               <div className="py-2">Configuration</div>
@@ -137,13 +135,13 @@ export function ServingCohorts({ groups }: { groups: ServingCohortGroup[] }) {
               <ResultRow key={row.runId} row={row} />
             ))}
             {group.rows.length === 0 && (
-              <p className="py-6 text-[13px] text-faint">
+              <p className="py-6 text-body text-faint">
                 Nothing in this cohort meets the bounds.
               </p>
             )}
           </div>
           {group.rows.length > ROW_CAP && (
-            <p className="mt-2 text-[12px] text-faint">
+            <p className="mt-2 text-small text-faint">
               {group.rows.length - ROW_CAP} more rows in this cohort — narrow
               the filters to see them.
             </p>
@@ -154,7 +152,7 @@ export function ServingCohorts({ groups }: { groups: ServingCohortGroup[] }) {
           />
           {group.excluded.length > 0 && (
             <details className="mt-3">
-              <summary className="cursor-pointer list-none text-[12.5px] text-subtle [&::-webkit-details-marker]:hidden">
+              <summary className="cursor-pointer list-none text-small text-subtle [&::-webkit-details-marker]:hidden">
                 {group.excluded.length} excluded — bound not met, or the metric
                 wasn't reported ›
               </summary>
@@ -162,13 +160,13 @@ export function ServingCohorts({ groups }: { groups: ServingCohortGroup[] }) {
                 {group.excluded.slice(0, EXCLUDED_CAP).map((entry) => (
                   <p
                     key={entry.runId}
-                    className="font-mono text-[11.5px] text-faint"
+                    className="font-mono text-mini text-faint"
                   >
                     {entry.configuration} · {entry.reasons.join(", ")}
                   </p>
                 ))}
                 {group.excluded.length > EXCLUDED_CAP && (
-                  <p className="text-[11.5px] text-faint">
+                  <p className="text-mini text-faint">
                     +{group.excluded.length - EXCLUDED_CAP} more
                   </p>
                 )}

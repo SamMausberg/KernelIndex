@@ -17,20 +17,20 @@ export function WatchButton({ comparisonKey }: { comparisonKey: string }) {
       <button
         type="submit"
         disabled={pending}
-        className="key cursor-pointer px-2.5 py-[3px] text-[12px] text-subtle hover:text-fg"
+        className="key cursor-pointer px-2.5 py-1 text-small text-subtle hover:text-fg"
       >
         Watch cohort
       </button>
       {state.signIn ? (
         <a
           href={`/signin?next=${encodeURIComponent(pathname)}`}
-          className="text-[12px]"
+          className="text-small"
         >
           Sign in to watch records →
         </a>
       ) : (
         state.message && (
-          <span className="text-[12px] text-faint">{state.message}</span>
+          <span className="text-small text-faint">{state.message}</span>
         )
       )}
     </form>

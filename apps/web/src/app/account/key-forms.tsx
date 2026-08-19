@@ -16,24 +16,24 @@ export function CreateKeyForm() {
           placeholder="key name (e.g. laptop, ci)"
           required
           maxLength={80}
-          className="well w-[240px] px-2.5 py-1.5 font-mono text-[12px] outline-none"
+          className="well w-[240px] px-2.5 py-1.5 font-mono text-small outline-none"
         />
         <button
           type="submit"
           disabled={pending}
-          className="key cursor-pointer px-3 py-1 text-[12.5px] hover:text-fg"
+          className="key cursor-pointer px-3 py-1 text-small hover:text-fg"
         >
           Create key
         </button>
         {state.message && (
-          <span className="font-mono text-[12px] text-faint">
+          <span className="font-mono text-small text-faint">
             {state.message}
           </span>
         )}
       </form>
       {state.token && (
         <div className="plate mt-3 flex max-w-[560px] items-center gap-2.5 py-2 pr-2 pl-3">
-          <code className="min-w-0 flex-1 truncate font-mono text-[12.5px] text-muted">
+          <code className="min-w-0 flex-1 truncate font-mono text-small text-muted">
             {state.token}
           </code>
           <CopyButton text={state.token} />
@@ -53,7 +53,7 @@ export function RevokeKeyForm({ id }: { id: string }) {
       <button
         type="submit"
         disabled={pending}
-        className="cursor-pointer text-[12px] text-faint transition-colors hover:text-fg"
+        className="cursor-pointer text-small text-faint transition-colors hover:text-fg"
       >
         {state.message === "revoked" ? "revoked" : "revoke"}
       </button>

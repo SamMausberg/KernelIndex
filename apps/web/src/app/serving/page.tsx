@@ -84,9 +84,7 @@ function ConsoleGroup({
 }) {
   return (
     <div className="flex flex-col gap-2.5">
-      <div className="font-mono text-[10px] tracking-[0.08em] text-faint uppercase">
-        {label}
-      </div>
+      <div className="font-mono text-label text-faint uppercase">{label}</div>
       <div className="flex flex-wrap items-end gap-x-4 gap-y-3">{children}</div>
     </div>
   )
@@ -102,7 +100,7 @@ function Field({
   children: React.ReactNode
 }) {
   return (
-    <div className="flex flex-col gap-1.5 text-[12px]">
+    <div className="flex flex-col gap-1.5 text-small">
       <span className="text-subtle">{label}</span>
       {children}
     </div>
@@ -122,16 +120,16 @@ function UnitInput({
   placeholder: string
 }) {
   return (
-    <span className="well flex h-[30px] w-[96px] items-center gap-1 px-2">
+    <span className="well flex h-8 w-[96px] items-center gap-1 px-2">
       <input
         name={name}
         aria-label={ariaLabel}
         defaultValue={defaultValue ?? ""}
         inputMode="numeric"
         placeholder={placeholder}
-        className="w-full min-w-0 bg-transparent font-mono text-[12px] outline-none"
+        className="w-full min-w-0 bg-transparent font-mono text-small outline-none"
       />
-      <span className="font-mono text-[11px] text-faint">ms</span>
+      <span className="font-mono text-mini text-faint">ms</span>
     </span>
   )
 }
@@ -164,11 +162,11 @@ async function ServingResults({
   return (
     <>
       <div className="flex flex-wrap items-baseline justify-between gap-x-8 gap-y-1.5 py-4">
-        <p className="font-mono text-[12.5px] text-muted">
+        <p className="font-mono text-small text-muted">
           {countNoun(model.groups.length, "cohort")} · {feasible} feasible ·{" "}
           {excluded} excluded
         </p>
-        <p className="max-w-[68ch] text-[12px] text-faint">
+        <p className="max-w-[68ch] text-small text-faint">
           Only runs with the same model, workload, protocol, hardware, and
           quality bar are ranked together. A run missing a metric you bounded is
           left out, not guessed.
@@ -182,14 +180,14 @@ async function ServingResults({
               hundreds of tables. */}
           <ServingCohorts groups={model.groups.slice(0, GROUP_CAP)} />
           {model.groups.length > GROUP_CAP && (
-            <p className="mt-8 text-[12.5px] text-faint">
+            <p className="mt-8 text-small text-faint">
               {model.groups.length - GROUP_CAP} more cohorts. Narrow by model,
               workload, or hardware to see them.
             </p>
           )}
         </>
       ) : (
-        <p className="py-10 text-[13.5px] text-faint">
+        <p className="py-10 text-body text-faint">
           {model.totalRuns === 0
             ? "No serving results yet."
             : "Nothing matches. Loosen the filters or bounds."}
@@ -220,7 +218,7 @@ export default async function ServingPage({
         title="Serving"
         context={`${facets.totalRuns} results · ranked only when you pick an objective`}
       />
-      <main className="shell animate-fade-in pb-20">
+      <main className="shell animate-fade-in pb-24">
         <form
           method="GET"
           className="flex flex-wrap items-stretch gap-x-6 gap-y-4 border-b border-border py-5"
@@ -280,7 +278,7 @@ export default async function ServingPage({
                 defaultValue={params.gpus ?? ""}
                 inputMode="numeric"
                 placeholder="8"
-                className="well h-[30px] w-[70px] px-2 font-mono text-[12px] outline-none"
+                className="well h-8 w-[70px] px-2 font-mono text-small outline-none"
               />
             </Field>
           </ConsoleGroup>
@@ -321,7 +319,7 @@ export default async function ServingPage({
           </ConsoleGroup>
           <button
             type="submit"
-            className="key-primary h-[30px] cursor-pointer self-end px-5 text-[12.5px]"
+            className="key-primary h-8 cursor-pointer self-end px-5 text-small"
           >
             Resolve
           </button>
@@ -329,9 +327,7 @@ export default async function ServingPage({
 
         <Suspense
           fallback={
-            <p className="py-4 font-mono text-[12.5px] text-faint">
-              resolving…
-            </p>
+            <p className="py-4 font-mono text-small text-faint">resolving…</p>
           }
         >
           <ServingResults

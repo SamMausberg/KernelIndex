@@ -57,18 +57,18 @@ export default async function ImplementationPage({ params }: Props) {
       <ContextHeader
         title={
           model.implementation.name === model.implementation.slug ? (
-            <span className="font-mono text-[19px]">
+            <span className="font-mono text-title">
               {model.implementation.name}
             </span>
           ) : (
-            <span className="text-[19px]">{model.implementation.name}</span>
+            <span className="text-title">{model.implementation.name}</span>
           )
         }
         context={
           <>
             {model.implementation.name !== model.implementation.slug && (
               <>
-                <span className="font-mono text-[12px]">
+                <span className="font-mono text-small">
                   {model.implementation.slug}
                 </span>
                 {" · "}
@@ -109,11 +109,11 @@ export default async function ImplementationPage({ params }: Props) {
         }
       />
 
-      <main className="shell animate-fade-in pb-20">
+      <main className="shell animate-fade-in pb-24">
         <Section id="use" title="Use it">
           {/* The deployability verdict first (§16.7): can this be used, in
               one neutral line, before any evidence or provenance. */}
-          <p className="mb-4 text-[13.5px] text-fg">
+          <p className="mb-4 text-body text-fg">
             {model.usage.install
               ? `Installable · ${model.usage.install.kind}`
               : model.source.available
@@ -126,16 +126,16 @@ export default async function ImplementationPage({ params }: Props) {
                 "license unknown"}
             </span>
             {model.source.available && (
-              <Link href="#code" className="ml-4 text-[12.5px]">
+              <Link href="#code" className="ml-4 text-small">
                 View source →
               </Link>
             )}
           </p>
-          <div className="grid grid-cols-[minmax(0,1.5fr)_minmax(280px,1fr)] gap-11 max-lg:grid-cols-1">
+          <div className="grid grid-cols-[minmax(0,1.5fr)_minmax(280px,1fr)] gap-10 max-lg:grid-cols-1">
             <div>
               {model.usage.install ? (
                 <div className="plate flex max-w-[560px] items-center gap-2.5 py-2 pr-2 pl-3">
-                  <code className="min-w-0 flex-1 truncate font-mono text-[12.5px] text-muted">
+                  <code className="min-w-0 flex-1 truncate font-mono text-small text-muted">
                     {model.usage.install.command}
                   </code>
                   <CopyButton
@@ -144,12 +144,12 @@ export default async function ImplementationPage({ params }: Props) {
                   />
                 </div>
               ) : (
-                <p className="text-[13px] text-faint">
+                <p className="text-body text-faint">
                   No install recipe recorded for this revision.
                 </p>
               )}
               {model.usage.invocationExample && (
-                <pre className="plate mt-4 max-w-[560px] overflow-x-auto px-4 py-3 font-mono text-[12.5px] leading-relaxed text-muted">
+                <pre className="plate mt-4 max-w-[560px] overflow-x-auto px-4 py-3 font-mono text-small leading-relaxed text-muted">
                   {model.usage.invocationExample}
                 </pre>
               )}
@@ -180,9 +180,7 @@ export default async function ImplementationPage({ params }: Props) {
               </div>
             </div>
             <div className="border-l border-border pl-9 max-lg:border-l-0 max-lg:pl-0">
-              <div className="mb-2.5 text-[12.5px] text-subtle">
-                Compatibility
-              </div>
+              <div className="mb-2.5 text-small text-subtle">Compatibility</div>
               <KeyValueList
                 items={[
                   {
@@ -220,7 +218,7 @@ export default async function ImplementationPage({ params }: Props) {
             {model.bestResults.length > 0 ? (
               <div className="min-w-[780px]">
                 <div
-                  className={`${EVIDENCE_GRID} border-b border-border-strong text-[11.5px] text-faint`}
+                  className={`${EVIDENCE_GRID} border-b border-border-strong text-mini text-faint`}
                 >
                   <div className="py-2">Operation / workload</div>
                   <div className="py-2">Hardware</div>
@@ -231,33 +229,33 @@ export default async function ImplementationPage({ params }: Props) {
                 {model.bestResults.map((row) => (
                   <div
                     key={row.runId ?? row.workloadSummary}
-                    className={`${EVIDENCE_GRID} h-[47px] items-center border-b border-line transition-colors hover:bg-raised`}
+                    className={`${EVIDENCE_GRID} h-12 items-center border-b border-line transition-colors hover:bg-raised`}
                   >
                     <div className="min-w-0 truncate pr-3">
                       <Link
                         href={`/operations/${row.operation.slug}`}
-                        className="text-[13px] text-fg hover:text-accent-bright"
+                        className="text-body text-fg hover:text-accent-bright"
                       >
                         {row.operation.name}
                       </Link>
-                      <span className="ml-2 font-mono text-[11.5px] text-faint">
+                      <span className="ml-2 font-mono text-mini text-faint">
                         {row.workloadSummary}
                       </span>
                     </div>
-                    <div className="truncate pr-3 font-mono text-[12px] text-muted">
+                    <div className="truncate pr-3 font-mono text-small text-muted">
                       {row.hardware.model}
                     </div>
                     <div className="pr-3.5 text-right whitespace-nowrap">
                       <Metric
                         primary={row.primary}
                         spread
-                        valueClassName="font-mono text-[13.5px] text-fg"
+                        valueClassName="font-mono text-body text-fg"
                       />
                     </div>
-                    <div className="font-mono text-[11.5px] text-faint">
+                    <div className="font-mono text-mini text-faint">
                       {formatDateUTC(row.lastTestedAt)}
                     </div>
-                    <div className="pr-1 text-right text-[12.5px]">
+                    <div className="pr-1 text-right text-small">
                       {row.runId && (
                         <Link href={`/runs/${row.runId}`}>Run →</Link>
                       )}
@@ -266,12 +264,12 @@ export default async function ImplementationPage({ params }: Props) {
                 ))}
               </div>
             ) : (
-              <p className="py-6 text-[13px] text-faint">
+              <p className="py-6 text-body text-faint">
                 No published measurement for this revision.
               </p>
             )}
           </div>
-          <p className="mt-3 text-[12.5px] text-faint">
+          <p className="mt-3 text-small text-faint">
             {evidenceLabel(model.trust.evidence)} ·{" "}
             <Link href="/docs#evidence">How evidence levels are derived →</Link>
           </p>
@@ -280,7 +278,7 @@ export default async function ImplementationPage({ params }: Props) {
         <Section id="source" title="Source and license">
           {/* Same two-column rail as "Use it" so stacked sections share one
               vertical grid line. */}
-          <div className="grid grid-cols-[minmax(0,1.5fr)_minmax(280px,1fr)] gap-11 max-lg:grid-cols-1">
+          <div className="grid grid-cols-[minmax(0,1.5fr)_minmax(280px,1fr)] gap-10 max-lg:grid-cols-1">
             <KeyValueList
               items={[
                 {
@@ -351,9 +349,9 @@ export default async function ImplementationPage({ params }: Props) {
 
         {model.limitations.length > 0 && (
           <Section id="limitations" title="Limitations">
-            <ul className="space-y-1.5 text-[13px] text-muted">
+            <ul className="space-y-1.5 text-body text-muted">
               {model.limitations.map((limitation) => (
-                <li key={limitation} className="font-mono text-[12.5px]">
+                <li key={limitation} className="font-mono text-small">
                   {limitation}
                 </li>
               ))}

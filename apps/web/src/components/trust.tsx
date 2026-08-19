@@ -23,8 +23,8 @@ const EVIDENCE_LABELS: Record<string, string> = {
 export function EvidenceCell({ row }: { row: TrustRow }) {
   const strong = row.evidence === "verified" || row.evidence === "replicated"
   return (
-    <div className="truncate pr-3 text-[12.5px] text-subtle">
-      {strong && <span className="mr-1.5 text-[9px] text-success">●</span>}
+    <div className="truncate pr-3 text-small text-subtle">
+      {strong && <span className="mr-1.5 text-label text-success">●</span>}
       <span className={strong ? "text-fg" : undefined}>
         {row.evidence ? (EVIDENCE_LABELS[row.evidence] ?? row.evidence) : "—"}
       </span>
@@ -40,7 +40,7 @@ export function EvidenceCell({ row }: { row: TrustRow }) {
 export function AvailabilityCell({ row }: { row: TrustRow }) {
   const license = row.license.concluded ?? row.license.declared
   return (
-    <div className="truncate pr-3 text-[12.5px] text-subtle">
+    <div className="truncate pr-3 text-small text-subtle">
       {license ?? <span className="text-faint">license unknown</span>}
       {" · "}
       {row.sourceAvailable ? (
@@ -71,7 +71,7 @@ export function TierChips({ row }: { row: TrustRow }) {
       {chips.map((chip) => (
         <span
           key={chip.text}
-          className={`key px-2 py-[2px] font-mono text-[11px] ${
+          className={`key py-0.5 font-mono text-mini ${
             chip.on ? "text-muted" : "text-faint"
           }`}
         >

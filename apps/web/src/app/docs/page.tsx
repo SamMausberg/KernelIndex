@@ -54,33 +54,31 @@ export default function DocsPage() {
           <a
             key={id}
             href={`#${id}`}
-            className="block py-1 text-[12px] text-faint transition-colors hover:text-fg hover:no-underline"
+            className="block py-1 text-small text-faint transition-colors hover:text-fg hover:no-underline"
           >
             {label}
           </a>
         ))}
       </nav>
-      <main className="shell-narrow animate-fade-in pb-24 text-[14px] leading-relaxed text-muted">
+      <main className="shell-narrow animate-fade-in pb-24 text-body leading-relaxed text-muted">
         <Section id="start" title="Start here">
           <ol className="list-decimal space-y-2.5 pl-5">
             <li>
               Search in the browser:{" "}
               <Link href="/search?q=rmsnorm%20B200%20bf16">
-                <span className="font-mono text-[12.5px]">
-                  rmsnorm B200 bf16
-                </span>
+                <span className="font-mono text-small">rmsnorm B200 bf16</span>
               </Link>{" "}
               returns a ranked list of runs that measured the same thing.
             </li>
             <li>
               The same answer over REST:
-              <pre className="plate mt-2 overflow-x-auto px-4 py-2.5 font-mono text-[12px]">
+              <pre className="plate mt-2 overflow-x-auto px-4 py-2.5 font-mono text-small">
                 {`curl "https://kernelindex.com/api/v1/search?q=rmsnorm%20B200%20bf16"`}
               </pre>
             </li>
             <li>
               Or through the CLI:{" "}
-              <span className="font-mono text-[12.5px]">
+              <span className="font-mono text-small">
                 ki search &quot;rmsnorm B200 bf16&quot; --json
               </span>{" "}
               (commands under <a href="#data">Data and API</a>).
@@ -109,7 +107,7 @@ export default function DocsPage() {
             shape tokens narrow it. If several operations match, you pick one —
             nothing is guessed.
           </p>
-          <pre className="plate mt-3 overflow-x-auto px-4 py-3 font-mono text-[12.5px] leading-relaxed">
+          <pre className="plate mt-3 overflow-x-auto px-4 py-3 font-mono text-small leading-relaxed">
             {`rmsnorm
 rmsnorm B200 bf16 [2048,4096] tokens=2048
 model:deepseek-v3
@@ -117,18 +115,17 @@ op:004-gemm-n128-k2048
 rmsnorm gpu:B200 dtype:bf16 shape:[2048,4096] framework=pytorch trust:verified`}
           </pre>
           <p className="mt-3">
-            Filters take{" "}
-            <span className="font-mono text-[12.5px]">key:value</span> or{" "}
-            <span className="font-mono text-[12.5px]">key=value</span>. Keys:{" "}
-            <span className="font-mono text-[12.5px]">
+            Filters take <span className="font-mono text-small">key:value</span>{" "}
+            or <span className="font-mono text-small">key=value</span>. Keys:{" "}
+            <span className="font-mono text-small">
               op family model gpu arch dtype shape layout framework language
               cuda trust license source installable
             </span>
             , plus axis bindings like{" "}
-            <span className="font-mono text-[12.5px]">tokens=2048</span>.
-            Workload and hardware filters decide what counts as an exact match;
-            trust and license filters only hide rows. A typo in a filter gets a
-            correction hint, not a silent guess.
+            <span className="font-mono text-small">tokens=2048</span>. Workload
+            and hardware filters decide what counts as an exact match; trust and
+            license filters only hide rows. A typo in a filter gets a correction
+            hint, not a silent guess.
           </p>
         </Section>
 
@@ -160,15 +157,12 @@ rmsnorm gpu:B200 dtype:bf16 shape:[2048,4096] framework=pytorch trust:verified`}
         <Section id="ranking" title="How ranking works">
           <p>
             Inside a cohort, runs are ordered by latency under the frozen{" "}
-            <span className="font-mono text-[13px]">ranking-v1</span> policy.
-            Two runs too close to call — overlapping confidence intervals —
-            share a rank, shown as{" "}
-            <span className="font-mono text-[13px]">N=</span>. Every exclusion
-            carries a reason code, like{" "}
-            <span className="font-mono text-[12.5px]">RETRACTED</span> or{" "}
-            <span className="font-mono text-[12.5px]">
-              MISSING_PRIMARY_METRIC
-            </span>
+            <span className="font-mono text-body">ranking-v1</span> policy. Two
+            runs too close to call — overlapping confidence intervals — share a
+            rank, shown as <span className="font-mono text-body">N=</span>.
+            Every exclusion carries a reason code, like{" "}
+            <span className="font-mono text-small">RETRACTED</span> or{" "}
+            <span className="font-mono text-small">MISSING_PRIMARY_METRIC</span>
             .
           </p>
         </Section>
@@ -180,8 +174,8 @@ rmsnorm gpu:B200 dtype:bf16 shape:[2048,4096] framework=pytorch trust:verified`}
                 key={label}
                 className="grid grid-cols-[130px_minmax(0,1fr)] gap-4 border-b border-line py-2.5"
               >
-                <span className="text-[13px] text-fg">{label}</span>
-                <span className="text-[13px]">{description}</span>
+                <span className="text-body text-fg">{label}</span>
+                <span className="text-body">{description}</span>
               </div>
             ))}
           </div>
@@ -220,12 +214,12 @@ rmsnorm gpu:B200 dtype:bf16 shape:[2048,4096] framework=pytorch trust:verified`}
           <p>
             The API returns the same answers as these pages. Reference:{" "}
             <Link href="/docs/api">/docs/api</Link>; machine contract:{" "}
-            <a href="/api/v1/openapi.json" className="font-mono text-[12.5px]">
+            <a href="/api/v1/openapi.json" className="font-mono text-small">
               /api/v1/openapi.json
             </a>
             .
           </p>
-          <pre className="plate mt-4 overflow-x-auto px-4 py-3 font-mono text-[12.5px] leading-relaxed text-muted">
+          <pre className="plate mt-4 overflow-x-auto px-4 py-3 font-mono text-small leading-relaxed text-muted">
             {`# search: a person in a browser, or:
 curl "https://kernelindex.com/api/v1/search?q=rmsnorm%20B200%20bf16"
 
@@ -256,11 +250,11 @@ curl -L https://kernelindex.com/api/v1/exports/catalog.jsonl.zst
             <strong className="font-medium text-fg">API keys.</strong> Reads
             need no key. A key from <Link href="/account">your account</Link>{" "}
             raises the daily quota — send it as{" "}
-            <span className="font-mono text-[12.5px]">
+            <span className="font-mono text-small">
               Authorization: Bearer ki_…
             </span>{" "}
-            (CLI: <span className="font-mono text-[12.5px]">--api-key</span> or{" "}
-            <span className="font-mono text-[12.5px]">$KI_API_KEY</span>). Over
+            (CLI: <span className="font-mono text-small">--api-key</span> or{" "}
+            <span className="font-mono text-small">$KI_API_KEY</span>). Over
             quota returns 429 with Retry-After. Keys are stored as hashes and
             revocable anytime.
           </p>
@@ -277,7 +271,7 @@ curl -L https://kernelindex.com/api/v1/exports/catalog.jsonl.zst
             saying what this index can claim, and every machine surface.
             One-paste MCP setup from a repository checkout:
           </p>
-          <pre className="plate mt-4 overflow-x-auto px-4 py-3 font-mono text-[12.5px] leading-relaxed text-muted">
+          <pre className="plate mt-4 overflow-x-auto px-4 py-3 font-mono text-small leading-relaxed text-muted">
             {`{
   "mcpServers": {
     "kernelindex": {
@@ -305,15 +299,15 @@ curl -L https://kernelindex.com/api/v1/exports/catalog.jsonl.zst
           </p>
           <p className="mt-3">
             Pick an objective (say, maximize tokens/s under{" "}
-            <span className="font-mono text-[12.5px]">p99 ttft_ms ≤ 450</span>)
-            and the cohort ranks under it; pick none and you get the trade-off
+            <span className="font-mono text-small">p99 ttft_ms ≤ 450</span>) and
+            the cohort ranks under it; pick none and you get the trade-off
             frontier. A run missing a bounded metric is excluded with the reason
             stated. API:{" "}
-            <span className="font-mono text-[12.5px]">
+            <span className="font-mono text-small">
               POST /api/v1/resolve/serving
             </span>
             ; CLI:{" "}
-            <span className="font-mono text-[12.5px]">
+            <span className="font-mono text-small">
               ki resolve serving --manifest req.yaml
             </span>
             .
@@ -343,18 +337,17 @@ curl -L https://kernelindex.com/api/v1/exports/catalog.jsonl.zst
           <p>
             Semantics change only by publishing a new version. Current:
             manifests{" "}
-            <span className="font-mono text-[12.5px]">
+            <span className="font-mono text-small">
               kernelindex.dev/v1alpha1
             </span>{" "}
             (
             <a href="https://github.com/SamMausberg/KernelIndex/tree/main/registry/schemas">
               schemas
             </a>
-            ), ranking{" "}
-            <span className="font-mono text-[12.5px]">ranking-v1</span>,
+            ), ranking <span className="font-mono text-small">ranking-v1</span>,
             deployability{" "}
-            <span className="font-mono text-[12.5px]">deployability-v1</span>,
-            serving <span className="font-mono text-[12.5px]">serving-v1</span>.
+            <span className="font-mono text-small">deployability-v1</span>,
+            serving <span className="font-mono text-small">serving-v1</span>.
             Every response names the version it ranked under; every import
             records its parser version. Published runs and their digests never
             change. Method history:{" "}

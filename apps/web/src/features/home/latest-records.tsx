@@ -12,7 +12,7 @@ const GRID =
 export function LatestRecords({ rows }: { rows: RecordHolder[] }) {
   if (rows.length === 0) {
     return (
-      <p className="border-t border-edge py-6 text-[13.5px] text-subtle">
+      <p className="border-t border-edge py-6 text-body text-subtle">
         No published records yet.
       </p>
     )
@@ -20,7 +20,7 @@ export function LatestRecords({ rows }: { rows: RecordHolder[] }) {
   return (
     <div className="overflow-x-auto border-t border-edge">
       <div
-        className={`${GRID} border-b border-border-strong text-[11.5px] tracking-[0.01em] text-faint`}
+        className={`${GRID} border-b border-border-strong text-mini text-faint`}
       >
         <div className="px-4 py-2.5">Operation / workload</div>
         <div className="px-4 py-2.5">Implementation</div>
@@ -37,7 +37,7 @@ export function LatestRecords({ rows }: { rows: RecordHolder[] }) {
         return (
           <div
             key={holder.cohortKey}
-            className={`${GRID} relative h-[52px] items-center border-b border-line transition-colors hover:bg-raised`}
+            className={`${GRID} relative h-12 items-center border-b border-line transition-colors hover:bg-raised`}
           >
             {/* The whole row reaches the record's run dossier; the cell
                 links sit above it (no nested anchors). */}
@@ -48,21 +48,21 @@ export function LatestRecords({ rows }: { rows: RecordHolder[] }) {
                 className="absolute inset-0"
               />
             )}
-            <div className="truncate px-4 text-[13px]">
+            <div className="truncate px-4 text-body">
               <Link
                 href={`/operations/${row.operation.slug}`}
                 className="relative z-10 text-fg hover:text-accent-bright"
               >
                 {row.operation.name}
               </Link>
-              <span className="ml-2 font-mono text-[11.5px] text-faint">
+              <span className="ml-2 font-mono text-mini text-faint">
                 {holder.workloadSummary}
               </span>
             </div>
             <div className="truncate px-4">
               <Link
                 href={`/implementations/${row.implementation.slug}`}
-                className="relative z-10 text-[13px]"
+                className="relative z-10 text-body"
               >
                 {row.implementation.name}
               </Link>
@@ -75,10 +75,10 @@ export function LatestRecords({ rows }: { rows: RecordHolder[] }) {
                     ? formatSolScoreCell(row.solScore)
                     : null
                 }
-                valueClassName="font-mono text-[13.5px] text-fg"
+                valueClassName="font-mono text-body text-fg"
               />
             </div>
-            <div className="truncate px-4 font-mono text-[12px] whitespace-nowrap">
+            <div className="truncate px-4 font-mono text-small whitespace-nowrap">
               {event?.improvementPct !== null && event?.previousValue ? (
                 <span className="text-subtle">
                   {event.improvementPct.toFixed(1)}%
@@ -91,7 +91,7 @@ export function LatestRecords({ rows }: { rows: RecordHolder[] }) {
                 <span className="text-faint">first</span>
               )}
             </div>
-            <div className="truncate px-4 font-mono text-[12.5px] text-muted">
+            <div className="truncate px-4 font-mono text-small text-muted">
               {holder.hardware}
             </div>
             <div className="px-4">
@@ -100,7 +100,7 @@ export function LatestRecords({ rows }: { rows: RecordHolder[] }) {
             <div className="px-4">
               <AvailabilityCell row={row} />
             </div>
-            <div className="px-4 text-right font-mono text-[12px] text-faint">
+            <div className="px-4 text-right font-mono text-small text-faint">
               {formatDateUTC(holder.since)}
             </div>
           </div>

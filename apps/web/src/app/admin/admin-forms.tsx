@@ -19,25 +19,23 @@ export function RetractForm() {
         name="runId"
         placeholder="run id"
         required
-        className="well w-[320px] px-2.5 py-1.5 font-mono text-[12px] outline-none"
+        className="well w-[320px] px-2.5 py-1.5 font-mono text-small outline-none"
       />
       <input
         name="reason"
         placeholder="reason (recorded in the audit trail)"
         required
-        className="well w-[360px] px-2.5 py-1.5 font-mono text-[12px] outline-none"
+        className="well w-[360px] px-2.5 py-1.5 font-mono text-small outline-none"
       />
       <button
         type="submit"
         disabled={pending}
-        className="key cursor-pointer px-3 py-1 text-[12.5px] text-warning hover:text-fg"
+        className="key cursor-pointer px-3 py-1 text-small text-warning hover:text-fg"
       >
         Retract
       </button>
       {state.message && (
-        <span className="font-mono text-[12px] text-faint">
-          {state.message}
-        </span>
+        <span className="font-mono text-small text-faint">{state.message}</span>
       )}
     </form>
   )
@@ -51,14 +49,14 @@ export function ReviewForm({ id }: { id: string }) {
       <input
         name="note"
         placeholder="review note"
-        className="well w-[280px] px-2.5 py-1 font-mono text-[12px] outline-none"
+        className="well w-[280px] px-2.5 py-1 font-mono text-small outline-none"
       />
       <button
         type="submit"
         name="decision"
         value="accepted"
         disabled={pending}
-        className="key cursor-pointer px-2.5 py-0.5 text-[12px] text-success hover:text-fg"
+        className="key cursor-pointer px-2.5 py-0.5 text-small text-success hover:text-fg"
       >
         Accept · publish
       </button>
@@ -67,14 +65,12 @@ export function ReviewForm({ id }: { id: string }) {
         name="decision"
         value="rejected"
         disabled={pending}
-        className="key cursor-pointer px-2.5 py-0.5 text-[12px] text-warning hover:text-fg"
+        className="key cursor-pointer px-2.5 py-0.5 text-small text-warning hover:text-fg"
       >
         Reject
       </button>
       {state.message && (
-        <span className="font-mono text-[12px] text-faint">
-          {state.message}
-        </span>
+        <span className="font-mono text-small text-faint">{state.message}</span>
       )}
     </form>
   )
@@ -88,14 +84,14 @@ export function ReportReviewForm({ id }: { id: string }) {
       <input
         name="note"
         placeholder="resolution note"
-        className="well w-[280px] px-2.5 py-1 font-mono text-[12px] outline-none"
+        className="well w-[280px] px-2.5 py-1 font-mono text-small outline-none"
       />
       <button
         type="submit"
         name="decision"
         value="resolved"
         disabled={pending}
-        className="key cursor-pointer px-2.5 py-0.5 text-[12px] text-success hover:text-fg"
+        className="key cursor-pointer px-2.5 py-0.5 text-small text-success hover:text-fg"
       >
         Resolve
       </button>
@@ -104,14 +100,12 @@ export function ReportReviewForm({ id }: { id: string }) {
         name="decision"
         value="dismissed"
         disabled={pending}
-        className="key cursor-pointer px-2.5 py-0.5 text-[12px] text-warning hover:text-fg"
+        className="key cursor-pointer px-2.5 py-0.5 text-small text-warning hover:text-fg"
       >
         Dismiss
       </button>
       {state.message && (
-        <span className="font-mono text-[12px] text-faint">
-          {state.message}
-        </span>
+        <span className="font-mono text-small text-faint">{state.message}</span>
       )}
     </form>
   )
@@ -125,14 +119,14 @@ export function ClaimReviewForm({ id }: { id: string }) {
       <input
         name="note"
         placeholder="review note"
-        className="well w-[240px] px-2.5 py-1 font-mono text-[12px] outline-none"
+        className="well w-[240px] px-2.5 py-1 font-mono text-small outline-none"
       />
       <button
         type="submit"
         name="decision"
         value="accepted"
         disabled={pending}
-        className="key cursor-pointer px-2.5 py-0.5 text-[12px] text-success hover:text-fg"
+        className="key cursor-pointer px-2.5 py-0.5 text-small text-success hover:text-fg"
       >
         Accept
       </button>
@@ -141,14 +135,12 @@ export function ClaimReviewForm({ id }: { id: string }) {
         name="decision"
         value="rejected"
         disabled={pending}
-        className="key cursor-pointer px-2.5 py-0.5 text-[12px] text-warning hover:text-fg"
+        className="key cursor-pointer px-2.5 py-0.5 text-small text-warning hover:text-fg"
       >
         Reject
       </button>
       {state.message && (
-        <span className="font-mono text-[12px] text-faint">
-          {state.message}
-        </span>
+        <span className="font-mono text-small text-faint">{state.message}</span>
       )}
     </form>
   )

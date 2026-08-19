@@ -18,10 +18,10 @@ export const metadata: Metadata = {
 function State({ label, children }: { label: string; children: ReactNode }) {
   return (
     <section className="mt-10">
-      <h2 className="mb-2 font-mono text-[12px] tracking-[0.04em] text-faint uppercase">
+      <h2 className="mb-2 font-mono text-label text-faint uppercase">
         {label}
       </h2>
-      <div className="overflow-hidden rounded-[4px] border border-edge">
+      <div className="overflow-hidden rounded border border-edge">
         {children}
       </div>
     </section>
@@ -47,10 +47,8 @@ export default async function DesignLabPage() {
   return (
     <div className="shell pb-24">
       <div className="mt-8 flex flex-wrap items-baseline justify-between gap-4">
-        <h1 className="text-[20px] font-medium tracking-[-0.012em]">
-          Design lab
-        </h1>
-        <p className="text-[12.5px] text-subtle">
+        <h1 className="text-title font-medium">Design lab</h1>
+        <p className="text-small text-subtle">
           Deterministic fixture states for every difficult case. Preview only,
           never indexed, never production.
         </p>

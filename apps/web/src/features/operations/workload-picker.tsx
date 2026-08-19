@@ -18,13 +18,13 @@ function ChipRow({
   slug: string
 }) {
   return (
-    <div className="mb-3 flex flex-wrap items-center gap-2 text-[12.5px]">
+    <div className="mb-3 flex flex-wrap items-center gap-2 text-small">
       <span className="mr-1 text-faint">Workload</span>
       {workloads.map((option) => (
         <Link
           key={option.id}
           href={`/operations/${slug}?workload=${option.id}`}
-          className={`key px-2.5 py-[3px] font-mono text-[12px] whitespace-nowrap hover:no-underline ${
+          className={`key font-mono text-small whitespace-nowrap hover:no-underline ${
             option.id === selectedId ? "key-on" : "text-subtle hover:text-fg"
           }`}
         >
@@ -95,7 +95,7 @@ export function WorkloadPicker({
 
   const selected = workloads.find((option) => option.id === selectedId)
   return (
-    <div className="mb-3 text-[12.5px]">
+    <div className="mb-3 text-small">
       {/* The case sweep collapses behind the selection line: the results
           table is the page's answer and must not sit under a wall of case
           numbers (§16.8 hierarchy). */}
@@ -103,16 +103,16 @@ export function WorkloadPicker({
         <summary className="flex cursor-pointer list-none flex-wrap items-baseline gap-x-5 gap-y-1.5 [&::-webkit-details-marker]:hidden">
           <span className="text-faint">Workload</span>
           {selected && (
-            <span className="font-mono text-[12px] text-muted">
+            <span className="font-mono text-small text-muted">
               {selected.label}
             </span>
           )}
           {constantLine && (
-            <span className="font-mono text-[12px] text-faint">
+            <span className="font-mono text-small text-faint">
               {constantLine}
             </span>
           )}
-          <span className="font-mono text-[12px] text-subtle">
+          <span className="font-mono text-small text-subtle">
             {rows.length} cases{" "}
             <span
               aria-hidden="true"
@@ -122,7 +122,7 @@ export function WorkloadPicker({
             </span>
           </span>
         </summary>
-        <div className="mt-2 w-full rounded-[5px] border border-border">
+        <div className="mt-2 w-full rounded-md border border-border">
           <div className="max-h-[300px] overflow-auto">
             <div
               className="sticky top-0 grid border-b border-border-strong bg-surface"
@@ -131,12 +131,12 @@ export function WorkloadPicker({
               {columns.map((name) => (
                 <div
                   key={name}
-                  className="px-3.5 py-1.5 text-right font-mono text-[11px] tracking-[0.03em] text-faint uppercase"
+                  className="px-3.5 py-1.5 text-right font-mono text-label text-faint uppercase"
                 >
                   {name}
                 </div>
               ))}
-              <div className="px-3.5 py-1.5 font-mono text-[11px] tracking-[0.03em] text-faint uppercase">
+              <div className="px-3.5 py-1.5 font-mono text-label text-faint uppercase">
                 dtype
               </div>
             </div>
@@ -144,7 +144,7 @@ export function WorkloadPicker({
               <Link
                 key={option.id}
                 href={`/operations/${slug}?workload=${option.id}`}
-                className={`grid border-b border-line font-mono text-[12px] transition-colors last:border-b-0 hover:bg-raised hover:no-underline ${
+                className={`grid border-b border-line font-mono text-small transition-colors last:border-b-0 hover:bg-raised hover:no-underline ${
                   option.id === selectedId
                     ? "text-accent"
                     : "text-subtle hover:text-fg"
@@ -152,18 +152,18 @@ export function WorkloadPicker({
                 style={{ gridTemplateColumns: template }}
               >
                 {columns.map((name) => (
-                  <span key={name} className="px-3.5 py-[5px] text-right">
+                  <span key={name} className="px-3.5 py-1 text-right">
                     {String(option.axes[name] ?? "—")}
                   </span>
                 ))}
-                <span className="px-3.5 py-[5px]">
+                <span className="px-3.5 py-1">
                   {option.dtypes.length > 0 ? dtypeLabel(option.dtypes) : "—"}
                 </span>
               </Link>
             ))}
           </div>
           {rows.length > 12 && (
-            <div className="border-t border-border px-3.5 py-1 font-mono text-[11px] text-faint">
+            <div className="border-t border-border px-3.5 py-1 font-mono text-mini text-faint">
               scrolls · {rows.length} cases total
             </div>
           )}
@@ -176,7 +176,7 @@ export function WorkloadPicker({
             <Link
               key={option.id}
               href={`/operations/${slug}?workload=${option.id}`}
-              className={`key px-2.5 py-[3px] font-mono text-[12px] whitespace-nowrap hover:no-underline ${
+              className={`key font-mono text-small whitespace-nowrap hover:no-underline ${
                 option.id === selectedId
                   ? "key-on"
                   : "text-subtle hover:text-fg"

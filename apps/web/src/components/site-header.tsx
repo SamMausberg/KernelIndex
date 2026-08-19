@@ -68,11 +68,11 @@ export function SiteHeader({
       <div className="shell flex h-14 items-center gap-7 max-md:gap-4 max-md:px-4">
         <Link
           href="/"
-          className="font-mono text-[14.5px] font-semibold tracking-[-0.02em] text-fg hover:no-underline"
+          className="font-mono text-lead font-semibold text-fg hover:no-underline"
         >
           KernelIndex
         </Link>
-        <nav className="flex gap-[22px] text-[13.5px] max-md:gap-3">
+        <nav className="flex gap-6 text-body max-md:gap-3">
           {/* Hover-intent prefetch via quiet-link: no viewport prefetch —
               the header is on every page — but a rested pointer warms the
               target before the click. */}
@@ -92,16 +92,16 @@ export function SiteHeader({
         {!onSearch && (
           <Link
             href="/search"
-            className="well flex h-[34px] w-[220px] items-center gap-2 px-2.5 text-[13px] text-faint transition-colors hover:text-subtle hover:no-underline max-md:hidden"
+            className="well flex h-9 w-[220px] items-center gap-2 px-2.5 text-body text-faint transition-colors hover:text-subtle hover:no-underline max-md:hidden"
           >
             Search
-            <kbd className="key ml-auto px-[5px] py-0.5 font-mono text-[11px]">
+            <kbd className="key ml-auto px-1.5 py-0.5 font-mono text-mini">
               ⌘K
             </kbd>
           </Link>
         )}
-        <div className="flex items-center gap-3.5 text-[13.5px]">
-          <span className="h-[18px] w-px bg-border max-md:hidden" />
+        <div className="flex items-center gap-3.5 text-body">
+          <span className="h-4 w-px bg-border max-md:hidden" />
           {sessionName !== null ? (
             <Link
               href="/account"

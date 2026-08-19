@@ -72,7 +72,7 @@ export function OperationList({
   const maxRuns = Math.max(100, ...entries.map((entry) => entry.runs))
   return (
     <div className="overflow-x-auto">
-      <div className="grid min-w-[738px] grid-cols-[minmax(280px,1fr)_150px_190px_92px] text-[11.5px] text-faint">
+      <div className="grid min-w-[738px] grid-cols-[minmax(280px,1fr)_150px_190px_92px] text-mini text-faint">
         <div className="py-2">Operation</div>
         <div className="py-2">Family</div>
         <div className="py-2 text-right">Published runs</div>
@@ -82,15 +82,15 @@ export function OperationList({
         <Link
           key={entry.slug}
           href={hrefFor(entry)}
-          className={`grid ${entry.match ? "h-[58px]" : "h-[44px]"} min-w-[738px] grid-cols-[minmax(280px,1fr)_150px_190px_92px] items-center border-t border-line transition-colors hover:bg-raised hover:no-underline`}
+          className={`grid ${entry.match ? "h-14" : "h-12"} min-w-[738px] grid-cols-[minmax(280px,1fr)_150px_190px_92px] items-center border-t border-line transition-colors hover:bg-raised hover:no-underline`}
         >
           <span className="min-w-0 pr-4">
-            <span className="block truncate text-[13.5px] text-fg">
+            <span className="block truncate text-body text-fg">
               {entry.name}
             </span>
             {entry.match && (
               <span
-                className={`mt-0.5 block truncate font-mono text-[11.5px] ${
+                className={`mt-0.5 block truncate font-mono text-mini ${
                   entry.match.matching > 0 ? "text-subtle" : "text-faint"
                 }`}
               >
@@ -108,7 +108,7 @@ export function OperationList({
               </span>
             )}
           </span>
-          <span className="truncate pr-3 text-[12px] text-subtle">
+          <span className="truncate pr-3 text-small text-subtle">
             {entry.family}
           </span>
           <span className="flex items-center justify-end gap-2.5">
@@ -119,14 +119,14 @@ export function OperationList({
               />
             )}
             <span
-              className={`min-w-[52px] text-right font-mono text-[12.5px] ${
+              className={`min-w-[52px] text-right font-mono text-small ${
                 entry.runs > 0 ? "text-muted" : "text-faint"
               }`}
             >
               {entry.runs > 0 ? entry.runs : "none yet"}
             </span>
           </span>
-          <span className="text-right font-mono text-[11.5px] text-faint">
+          <span className="text-right font-mono text-mini text-faint">
             {formatDateUTC(entry.lastObservedAt)}
           </span>
         </Link>
@@ -177,38 +177,36 @@ export function StartState({
 
   return (
     <section className="animate-row-in pt-6">
-      <div className="flex flex-wrap items-baseline gap-x-5 gap-y-2 text-[13px]">
+      <div className="flex flex-wrap items-baseline gap-x-5 gap-y-2 text-body">
         <span className="text-faint">Try</span>
         {examples.map((example) => (
           <Link
             key={example}
             href={`/search?q=${encodeURIComponent(example)}`}
-            className="font-mono text-[12.5px]"
+            className="font-mono text-small"
           >
             {example}
           </Link>
         ))}
         <Link
           href="/docs#query-syntax"
-          className="ml-auto text-[12.5px] text-faint"
+          className="ml-auto text-small text-faint"
         >
           Query syntax
         </Link>
       </div>
-      <div className="mt-3 flex flex-wrap items-baseline gap-x-3.5 gap-y-1.5 text-[12px]">
+      <div className="mt-3 flex flex-wrap items-baseline gap-x-3.5 gap-y-1.5 text-small">
         <span className="text-faint">Filter with</span>
         {SYNTAX_HINTS.map((hint) => (
-          <code key={hint} className="font-mono text-[11.5px] text-subtle">
+          <code key={hint} className="font-mono text-mini text-subtle">
             {hint}
           </code>
         ))}
       </div>
 
       <div className="mt-8 flex flex-wrap items-baseline justify-between gap-4 border-b border-border-strong pb-3">
-        <h2 className="text-[15px] font-medium tracking-[-0.01em]">
-          Browse the index
-        </h2>
-        <div className="flex flex-wrap items-baseline gap-x-4 text-[12.5px]">
+        <h2 className="text-lead font-medium">Browse the index</h2>
+        <div className="flex flex-wrap items-baseline gap-x-4 text-small">
           <span className="text-faint">
             {scoped.length} operation{scoped.length === 1 ? "" : "s"} ·{" "}
             {totalRuns} published runs
@@ -242,7 +240,7 @@ export function StartState({
             <Link
               key={label}
               href={browseHref(filters, { family: value })}
-              className={`key px-2.5 py-[3px] text-[12px] whitespace-nowrap hover:no-underline ${
+              className={`key text-small whitespace-nowrap hover:no-underline ${
                 selected ? "key-on" : "text-subtle hover:text-fg"
               }`}
             >
@@ -260,7 +258,7 @@ export function StartState({
       />
 
       {pageCount > 1 && (
-        <div className="mt-4 flex items-baseline gap-5 text-[12.5px]">
+        <div className="mt-4 flex items-baseline gap-5 text-small">
           {page > 1 ? (
             <Link href={browseHref(filters, { page: page - 1 })}>
               ← Previous
@@ -268,7 +266,7 @@ export function StartState({
           ) : (
             <span className="text-ghost">← Previous</span>
           )}
-          <span className="font-mono text-[12px] text-faint">
+          <span className="font-mono text-small text-faint">
             page {page} of {pageCount}
           </span>
           {page < pageCount ? (

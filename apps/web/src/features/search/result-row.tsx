@@ -32,7 +32,7 @@ export function availabilityText(row: ResultRow) {
 export function ResultTableHead({ relativeLabel }: { relativeLabel?: string }) {
   return (
     <div
-      className={`${RESULT_GRID} border-b border-border-strong text-[11.5px] text-faint`}
+      className={`${RESULT_GRID} border-b border-border-strong text-mini text-faint`}
     >
       <div className="py-2">#</div>
       <div className="py-2">Implementation</div>
@@ -65,7 +65,7 @@ function RelativeCell({
     return (
       <div className="flex items-center gap-2 pr-3">
         <Meter fraction={best.value / row.primary.value} className="w-11" />
-        <span className="font-mono text-[11.5px] text-subtle">
+        <span className="font-mono text-mini text-subtle">
           {formatRelative(row.primary, best)}
         </span>
       </div>
@@ -73,7 +73,7 @@ function RelativeCell({
   }
   if (row.mismatches.length > 0) {
     return (
-      <div className="truncate pr-3 text-[12px] text-subtle">
+      <div className="truncate pr-3 text-small text-subtle">
         {row.mismatches
           .map((mismatch) => humanizeField(mismatch.field))
           .join(", ")}
@@ -157,10 +157,10 @@ export function ResultRowItem({
   return (
     <details className="group row-cv border-b border-line">
       <summary
-        className={`${RESULT_GRID} h-[47px] cursor-pointer list-none items-center transition-colors hover:bg-raised focus-visible:bg-raised [&::-webkit-details-marker]:hidden`}
+        className={`${RESULT_GRID} h-12 cursor-pointer list-none items-center transition-colors hover:bg-raised focus-visible:bg-raised [&::-webkit-details-marker]:hidden`}
       >
         <div
-          className={`font-mono text-[12.5px] ${
+          className={`font-mono text-small ${
             row.rank === 1 ? "text-fg" : "text-faint"
           }`}
         >
@@ -169,17 +169,17 @@ export function ResultRowItem({
         <div className="min-w-0 truncate pr-3">
           <Link
             href={`/implementations/${row.implementation.slug}`}
-            className="text-[13.5px] text-fg hover:text-accent-bright"
+            className="text-body text-fg hover:text-accent-bright"
           >
             {row.implementation.name}
           </Link>
           {row.baseline && (
-            <span className="ml-2 font-mono text-[10.5px] tracking-[0.05em] text-faint uppercase">
+            <span className="ml-2 font-mono text-label text-faint uppercase">
               baseline
             </span>
           )}
           {row.project.name !== row.implementation.name && (
-            <span className="ml-2 text-[12px] text-faint">
+            <span className="ml-2 text-small text-faint">
               {row.project.name}
             </span>
           )}
@@ -192,7 +192,7 @@ export function ResultRowItem({
               row.solScore !== null ? formatSolScoreCell(row.solScore) : null
             }
             valueClassName={`font-mono ${
-              row.rank === 1 ? "text-[14.5px]" : "text-[13.5px]"
+              row.rank === 1 ? "text-lead" : "text-body"
             } text-fg`}
           />
         </div>
@@ -200,7 +200,7 @@ export function ResultRowItem({
         <EvidenceCell row={row} />
         <AvailabilityCell row={row} />
         <div
-          className={`font-mono text-[11.5px] ${
+          className={`font-mono text-mini ${
             row.stale ? "text-warning" : "text-faint"
           }`}
         >
@@ -208,14 +208,14 @@ export function ResultRowItem({
         </div>
         <div
           aria-hidden="true"
-          className="pr-1 text-right font-mono text-[12px] text-faint transition-transform group-open:rotate-90"
+          className="pr-1 text-right font-mono text-small text-faint transition-transform group-open:rotate-90"
         >
           ›
         </div>
       </summary>
 
       <div className="border-t border-line bg-surface py-3.5 pr-4 pl-11 max-md:pl-4">
-        <p className="max-w-[96ch] text-[12.5px] text-muted">
+        <p className="max-w-[96ch] text-small text-muted">
           {whyLine(row, tied, baselineMetric)}
         </p>
         <div className="mt-2.5 flex flex-wrap items-center gap-x-6 gap-y-2">

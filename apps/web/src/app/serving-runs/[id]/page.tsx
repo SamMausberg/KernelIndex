@@ -48,7 +48,7 @@ export default async function ServingRunPage({ params }: Props) {
       <EvidenceOpened kind="serving_run" />
       <ContextHeader
         title={
-          <span className="text-[19px]">{model.configuration.summary}</span>
+          <span className="text-title">{model.configuration.summary}</span>
         }
         context={
           <>
@@ -65,7 +65,7 @@ export default async function ServingRunPage({ params }: Props) {
       {model.lifecycle.retracted && (
         <div className="border-b border-border bg-surface">
           <div className="shell py-2.5">
-            <p className="text-[12.5px] text-warning">
+            <p className="text-small text-warning">
               Retracted {model.lifecycle.retracted.at.slice(0, 10)}:{" "}
               {model.lifecycle.retracted.reason}
             </p>
@@ -73,10 +73,10 @@ export default async function ServingRunPage({ params }: Props) {
         </div>
       )}
 
-      <main className="shell animate-fade-in pb-20">
-        <section className="grid grid-cols-[minmax(0,1.5fr)_minmax(280px,1fr)] gap-11 border-b border-border py-6 max-lg:grid-cols-1">
+      <main className="shell animate-fade-in pb-24">
+        <section className="grid grid-cols-[minmax(0,1.5fr)_minmax(280px,1fr)] gap-10 border-b border-border py-6 max-lg:grid-cols-1">
           <div>
-            <div className="font-mono text-[10px] tracking-[0.08em] text-faint uppercase">
+            <div className="font-mono text-label text-faint uppercase">
               Measurements
             </div>
             <div className="mt-3 max-w-[560px]">
@@ -87,18 +87,18 @@ export default async function ServingRunPage({ params }: Props) {
                 }))}
               />
             </div>
-            <p className="mt-3 max-w-[76ch] text-[13.5px] text-muted">
+            <p className="mt-3 max-w-[76ch] text-body text-muted">
               {model.cohort.description} · observed{" "}
               {model.run.observedAt.slice(0, 10)}
             </p>
             {model.caveats.length > 0 && (
-              <p className="mt-2 text-[12.5px] text-subtle">
+              <p className="mt-2 text-small text-subtle">
                 {model.caveats.join(". ")}.
               </p>
             )}
           </div>
           <div className="border-l border-border pl-9 max-lg:border-l-0 max-lg:pl-0">
-            <div className="mb-2.5 text-[12.5px] text-subtle">Identity</div>
+            <div className="mb-2.5 text-small text-subtle">Identity</div>
             <KeyValueList
               items={[
                 { key: "model", value: model.model.name },
@@ -118,7 +118,7 @@ export default async function ServingRunPage({ params }: Props) {
               ]}
             />
             <div className="mt-3 flex items-center gap-2.5">
-              <span className="font-mono text-[12px] text-faint">
+              <span className="font-mono text-small text-faint">
                 {model.run.digest.slice(0, 30)}…
               </span>
               <CopyButton text={model.run.digest} />
@@ -164,18 +164,18 @@ export default async function ServingRunPage({ params }: Props) {
 
         <Section id="manifest" title="Canonical manifest">
           <details className="group">
-            <summary className="cursor-pointer list-none text-[12.5px] text-accent [&::-webkit-details-marker]:hidden">
+            <summary className="cursor-pointer list-none text-small text-accent [&::-webkit-details-marker]:hidden">
               <span className="group-open:hidden">Show manifest</span>
               <span className="hidden group-open:inline">Hide manifest</span>
             </summary>
-            <pre className="plate mt-3 max-h-[480px] overflow-auto px-4 py-3 font-mono text-[11.5px] leading-relaxed text-muted">
+            <pre className="plate mt-3 max-h-[480px] overflow-auto px-4 py-3 font-mono text-mini leading-relaxed text-muted">
               {JSON.stringify(model.manifest, null, 2)}
             </pre>
           </details>
         </Section>
 
         <div className="mt-10 flex items-center gap-2.5">
-          <span className="text-[12.5px] text-faint">
+          <span className="text-small text-faint">
             Cite this result (permalink, digest, access date)
           </span>
           <CopyButton
@@ -198,7 +198,7 @@ export default async function ServingRunPage({ params }: Props) {
           <ReportForm targetKind="serving_run" targetId={model.run.id} />
         </div>
 
-        <div className="mt-12 flex flex-wrap items-baseline justify-between gap-5 border-t border-border pt-5 text-[12.5px]">
+        <div className="mt-12 flex flex-wrap items-baseline justify-between gap-5 border-t border-border pt-5 text-small">
           <span className="text-subtle">
             {model.attribution.url ? (
               <a href={model.attribution.url}>{model.attribution.line}</a>

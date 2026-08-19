@@ -125,7 +125,7 @@ export function SuggestInput({
           id={listId}
           role="listbox"
           data-suggest-popup
-          className="absolute inset-x-0 top-[calc(100%+8px)] z-50 overflow-hidden rounded-[6px] border border-edge bg-raised py-1"
+          className="absolute inset-x-0 top-[calc(100%+8px)] z-50 overflow-hidden rounded-md border border-edge bg-raised py-1"
         >
           {matches.map((entry, position) => (
             <div
@@ -139,17 +139,17 @@ export function SuggestInput({
                 select(entry)
               }}
               onMouseEnter={() => setActive(position)}
-              className={`flex cursor-pointer items-baseline gap-3.5 px-3.5 py-[8px] ${
+              className={`flex cursor-pointer items-baseline gap-3.5 px-3.5 py-2 ${
                 position === active ? "bg-accent-soft" : ""
               }`}
             >
-              <span className="min-w-0 flex-1 truncate text-[13.5px] text-fg">
+              <span className="min-w-0 flex-1 truncate text-body text-fg">
                 {entry.name}
               </span>
-              <span className="text-[11.5px] text-faint max-sm:hidden">
+              <span className="text-mini text-faint max-sm:hidden">
                 {entry.family}
               </span>
-              <span className="min-w-[56px] text-right font-mono text-[11.5px] text-subtle">
+              <span className="min-w-[56px] text-right font-mono text-mini text-subtle">
                 {entry.runs > 0 ? `${entry.runs} runs` : "no runs"}
               </span>
             </div>

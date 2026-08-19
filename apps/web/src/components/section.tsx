@@ -12,9 +12,7 @@ export function Section({
 }) {
   return (
     <section id={id} className="mt-10">
-      <h2 className="mb-3 text-[15px] font-medium tracking-[-0.01em]">
-        {title}
-      </h2>
+      <h2 className="mb-3 text-lead font-medium">{title}</h2>
       {children}
     </section>
   )

@@ -96,12 +96,12 @@ export function Select({
         onClick={() => (open ? setOpen(false) : openAtSelection())}
         onKeyDown={onKeyDown}
         onBlur={() => setOpen(false)}
-        className="well flex h-[30px] w-full cursor-pointer items-center gap-2 px-2 text-left font-mono text-[12px]"
+        className="well flex h-8 w-full cursor-pointer items-center gap-2 px-2 text-left font-mono text-small"
       >
         <span className="min-w-0 flex-1 truncate">
           {selected ? selected.label : "any"}
         </span>
-        <span aria-hidden="true" className="text-[10px] text-faint">
+        <span aria-hidden="true" className="text-label text-faint">
           ▾
         </span>
       </button>
@@ -109,7 +109,7 @@ export function Select({
         <div
           id={listId}
           role="listbox"
-          className="absolute inset-x-0 top-[calc(100%+6px)] z-50 max-h-[320px] min-w-max overflow-y-auto rounded-[6px] border border-edge bg-raised py-1"
+          className="absolute inset-x-0 top-[calc(100%+6px)] z-50 max-h-[320px] min-w-max overflow-y-auto rounded-md border border-edge bg-raised py-1"
         >
           {options.map((option, position) => (
             <div
@@ -123,19 +123,19 @@ export function Select({
                 choose(option)
               }}
               onMouseEnter={() => setActive(position)}
-              className={`flex cursor-pointer items-baseline gap-3.5 px-3 py-[7px] ${
+              className={`flex cursor-pointer items-baseline gap-3.5 px-3 py-1.5 ${
                 position === active ? "bg-accent-soft" : ""
               }`}
             >
               <span
-                className={`min-w-0 flex-1 truncate text-[12.5px] ${
+                className={`min-w-0 flex-1 truncate text-small ${
                   option.value === value ? "text-accent" : "text-fg"
                 }`}
               >
                 {option.label}
               </span>
               {option.detail && (
-                <span className="shrink-0 font-mono text-[11px] text-faint">
+                <span className="shrink-0 font-mono text-mini text-faint">
                   {option.detail}
                 </span>
               )}

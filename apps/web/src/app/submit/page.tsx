@@ -25,14 +25,14 @@ export default async function SubmitPage() {
           )
         }
       >
-        <p className="mt-1.5 max-w-[72ch] text-[13px] text-subtle">
+        <p className="mt-1.5 max-w-[72ch] text-body text-subtle">
           Paste one YAML document of <a href="/docs#data">manifests</a>{" "}
           describing your runs. Validate shows what was parsed before anything
           is sent; Submit queues it for review. Prefer a PR? A file under
           registry/submissions goes through the same review.
         </p>
       </ContextHeader>
-      <main className="shell-narrow animate-fade-in pb-20">
+      <main className="shell-narrow animate-fade-in pb-24">
         <SubmitForm signedIn={user !== null} signInAvailable={authConfigured} />
       </main>
     </>

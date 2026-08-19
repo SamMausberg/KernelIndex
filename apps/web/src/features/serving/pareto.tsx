@@ -112,19 +112,19 @@ export function ParetoScatter({
           x={W - 8}
           y={H - PAD + 26}
           textAnchor="end"
-          className="fill-[var(--color-faint)] font-mono text-[10px]"
+          className="fill-[var(--color-faint)] font-mono text-label"
         >
           {AXIS_LABELS[xAxis] ?? xAxis} →
         </text>
         <text
           x={PAD}
           y={10}
-          className="fill-[var(--color-faint)] font-mono text-[10px]"
+          className="fill-[var(--color-faint)] font-mono text-label"
         >
           ↑ {AXIS_LABELS[yAxis] ?? yAxis}
         </text>
       </svg>
-      <figcaption className="mt-1 text-[11.5px] text-faint">
+      <figcaption className="mt-1 text-mini text-faint">
         Blue points are the best trade-offs — nothing beats them on both axes.
         Gray points are beaten by one of the blue ones.
       </figcaption>

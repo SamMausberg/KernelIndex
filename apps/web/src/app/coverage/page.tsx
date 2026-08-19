@@ -84,7 +84,7 @@ function SourceRows({
     <div className="overflow-x-auto">
       <div className="min-w-[760px]">
         <div
-          className={`${GRID} border-b border-border pb-2 font-mono text-[10px] tracking-[0.08em] text-faint uppercase`}
+          className={`${GRID} border-b border-border pb-2 font-mono text-label text-faint uppercase`}
         >
           <span>Source</span>
           <span className="text-right">Runs</span>
@@ -103,29 +103,29 @@ function SourceRows({
           return (
             <div
               key={row.slug}
-              className={`${GRID} border-b border-line py-2.5 text-[13px]`}
+              className={`${GRID} border-b border-line py-2.5 text-body`}
             >
               {facts ? (
                 <a href={facts.url}>{facts.name}</a>
               ) : (
-                <span className="font-mono text-[12px]">{row.slug}</span>
+                <span className="font-mono text-small">{row.slug}</span>
               )}
-              <span className="text-right font-mono text-[12.5px]">
+              <span className="text-right font-mono text-small">
                 {row.runs.toLocaleString("en-US")}
               </span>
-              <span className="text-right font-mono text-[12.5px]">
+              <span className="text-right font-mono text-small">
                 {row.breadth.toLocaleString("en-US")}
               </span>
-              <span className="text-right font-mono text-[12.5px]">
+              <span className="text-right font-mono text-small">
                 {row.hardware}
               </span>
               <span
-                className={`font-mono text-[12px] ${stale ? "text-warning" : "text-subtle"}`}
+                className={`font-mono text-small ${stale ? "text-warning" : "text-subtle"}`}
               >
                 {formatDateUTC(row.lastFetched)}
                 {stale && " · stale"}
               </span>
-              <span className="text-[12.5px] text-subtle">
+              <span className="text-small text-subtle">
                 {facts?.license ?? "see source policy"}
               </span>
             </div>
@@ -151,7 +151,7 @@ export default async function CoveragePage() {
       />
       <main className="shell animate-fade-in pb-24">
         <Section id="kernel" title="Kernel evidence">
-          <p className="mb-4 max-w-[76ch] text-[13.5px] text-muted">
+          <p className="mb-4 max-w-[76ch] text-body text-muted">
             {kernelRuns.toLocaleString("en-US")} published kernel runs, each
             linked to its workload, protocol, environment, source snapshot, and
             license. Counts update with the weekly imports.
@@ -160,14 +160,14 @@ export default async function CoveragePage() {
         </Section>
 
         <Section id="priority" title="Priority coverage">
-          <p className="mb-4 max-w-[76ch] text-[13.5px] text-muted">
+          <p className="mb-4 max-w-[76ch] text-body text-muted">
             The operations an inference engineer asks about first, on the GPUs
             they ask about first. Published runs per cell; a zero is a stated
             gap, not a claim.
           </p>
           <div className="overflow-x-auto">
             <div className="min-w-[560px] max-w-[720px]">
-              <div className="grid grid-cols-[minmax(180px,1.4fr)_repeat(3,minmax(96px,0.6fr))] items-baseline gap-x-4 border-b border-border pb-2 font-mono text-[10px] tracking-[0.08em] text-faint uppercase">
+              <div className="grid grid-cols-[minmax(180px,1.4fr)_repeat(3,minmax(96px,0.6fr))] items-baseline gap-x-4 border-b border-border pb-2 font-mono text-label text-faint uppercase">
                 <span>Family</span>
                 {model.hero.gpus.map((gpu) => (
                   <span key={gpu} className="text-right">
@@ -179,23 +179,23 @@ export default async function CoveragePage() {
               {model.hero.rows.map((row) => (
                 <div
                   key={row.family}
-                  className="grid grid-cols-[minmax(180px,1.4fr)_repeat(3,minmax(96px,0.6fr))] items-baseline gap-x-4 border-b border-line py-2.5 text-[13px]"
+                  className="grid grid-cols-[minmax(180px,1.4fr)_repeat(3,minmax(96px,0.6fr))] items-baseline gap-x-4 border-b border-line py-2.5 text-body"
                 >
                   <Link
                     href={`/search?q=${encodeURIComponent(row.family)}`}
-                    className="font-mono text-[12.5px]"
+                    className="font-mono text-small"
                   >
                     {row.family}
                   </Link>
                   {row.runs.map((runs, index) => (
                     <span
                       key={model.hero.gpus[index]}
-                      className={`text-right font-mono text-[12.5px] ${runs === 0 ? "text-faint" : ""}`}
+                      className={`text-right font-mono text-small ${runs === 0 ? "text-faint" : ""}`}
                     >
                       {runs === 0 ? "0 · gap" : runs.toLocaleString("en-US")}
                     </span>
                   ))}
-                  <span className="text-right font-mono text-[12.5px] text-subtle">
+                  <span className="text-right font-mono text-small text-subtle">
                     {row.total.toLocaleString("en-US")}
                   </span>
                 </div>
@@ -206,7 +206,7 @@ export default async function CoveragePage() {
 
         {servingEnabled && serving.length > 0 && (
           <Section id="serving" title="Serving evidence">
-            <p className="mb-4 max-w-[76ch] text-[13.5px] text-muted">
+            <p className="mb-4 max-w-[76ch] text-body text-muted">
               Serving results are kept apart from kernel results — the two are
               never ranked together. Configs counts distinct launch
               configurations.
@@ -216,7 +216,7 @@ export default async function CoveragePage() {
         )}
 
         <Section id="limitations" title="Known limitations">
-          <ul className="max-w-[80ch] list-disc space-y-2.5 pl-5 text-[13.5px] text-muted">
+          <ul className="max-w-[80ch] list-disc space-y-2.5 pl-5 text-body text-muted">
             {LIMITATIONS.map((limitation) => (
               <li key={limitation.slice(0, 24)}>{limitation}</li>
             ))}
@@ -224,7 +224,7 @@ export default async function CoveragePage() {
         </Section>
 
         <Section id="status" title="Data quality">
-          <p className="max-w-[76ch] text-[13.5px] text-muted">
+          <p className="max-w-[76ch] text-body text-muted">
             A weekly job re-imports every source; anything unexpected stops that
             source before it writes. An invariant checker then audits the whole
             catalog. The report lives at{" "}

@@ -62,11 +62,11 @@ export default async function RunPage({ params }: Props) {
       <ContextHeader
         title={
           model.implementation.name === model.implementation.slug ? (
-            <span className="font-mono text-[19px]">
+            <span className="font-mono text-title">
               {model.implementation.name}
             </span>
           ) : (
-            <span className="text-[19px]">{model.implementation.name}</span>
+            <span className="text-title">{model.implementation.name}</span>
           )
         }
         context={
@@ -84,7 +84,7 @@ export default async function RunPage({ params }: Props) {
           <>
             <span className={passed ? "text-fg" : "text-warning"}>
               {passed && (
-                <span className="mr-1.5 text-[9px] text-success">●</span>
+                <span className="mr-1.5 text-label text-success">●</span>
               )}
               {model.run.status.replaceAll("_", " ")}
             </span>
@@ -97,7 +97,7 @@ export default async function RunPage({ params }: Props) {
         <div className="border-b border-border bg-surface">
           <div className="shell py-2.5">
             {lifecycleNotes.map((note) => (
-              <p key={note} className="text-[12.5px] text-warning">
+              <p key={note} className="text-small text-warning">
                 {note}
               </p>
             ))}
@@ -105,20 +105,20 @@ export default async function RunPage({ params }: Props) {
         </div>
       )}
 
-      <main className="shell animate-fade-in pb-20">
-        <section className="grid grid-cols-[minmax(0,1.5fr)_minmax(280px,1fr)] gap-11 border-b border-border py-6 max-lg:grid-cols-1">
+      <main className="shell animate-fade-in pb-24">
+        <section className="grid grid-cols-[minmax(0,1.5fr)_minmax(280px,1fr)] gap-10 border-b border-border py-6 max-lg:grid-cols-1">
           <div>
-            <div className="font-mono text-[10px] tracking-[0.08em] text-faint uppercase">
+            <div className="font-mono text-label text-faint uppercase">
               Primary measurement
             </div>
             <div className="mt-3 flex flex-wrap items-baseline gap-4">
-              <span className="font-mono text-[34px] leading-none font-medium">
+              <span className="font-mono text-readout font-medium">
                 {formatPrimaryParts(model.primary).value}
-                <span className="ml-1.5 text-[19px] font-normal text-subtle">
+                <span className="ml-1.5 text-title font-normal text-subtle">
                   {formatPrimaryParts(model.primary).unit}
                 </span>
               </span>
-              <span className="font-mono text-[13px] text-subtle">
+              <span className="font-mono text-body text-subtle">
                 {[
                   formatSpread(model.primary),
                   `${model.primary.statistic}${
@@ -131,7 +131,7 @@ export default async function RunPage({ params }: Props) {
                   .join(" · ")}
               </span>
             </div>
-            <p className="mt-3 text-[13.5px] text-muted">
+            <p className="mt-3 text-body text-muted">
               {model.cohort.eligible ? (
                 <>
                   {model.cohort.rank !== null &&
@@ -150,13 +150,13 @@ export default async function RunPage({ params }: Props) {
               )}
             </p>
             {model.sourceNativeMetrics && (
-              <p className="mt-3 font-mono text-[12.5px] text-subtle">
+              <p className="mt-3 font-mono text-small text-subtle">
                 {formatSourceNativeMetrics(model.sourceNativeMetrics)}
               </p>
             )}
           </div>
           <div className="border-l border-border pl-9 max-lg:border-l-0 max-lg:pl-0">
-            <div className="mb-2.5 text-[12.5px] text-subtle">Identity</div>
+            <div className="mb-2.5 text-small text-subtle">Identity</div>
             <KeyValueList
               items={[
                 { key: "implementation", value: model.implementation.name },
@@ -180,7 +180,7 @@ export default async function RunPage({ params }: Props) {
               ]}
             />
             <div className="mt-3 flex items-center gap-2.5">
-              <span className="font-mono text-[12px] text-faint">
+              <span className="font-mono text-small text-faint">
                 {model.run.digest.slice(0, 30)}…
               </span>
               <CopyButton text={model.run.digest} />
@@ -225,7 +225,7 @@ export default async function RunPage({ params }: Props) {
                 ]}
               />
             ) : (
-              <p className="text-[13px] text-faint">
+              <p className="text-body text-faint">
                 {passed
                   ? "Marked passed by the source; the correctness policy was not published."
                   : "No correctness policy recorded for this run."}
@@ -266,7 +266,7 @@ export default async function RunPage({ params }: Props) {
                 }))}
               />
             ) : (
-              <p className="text-[13px] text-faint">
+              <p className="text-body text-faint">
                 Only the primary measurement was published.
               </p>
             )}
@@ -289,7 +289,7 @@ export default async function RunPage({ params }: Props) {
                 }))}
               />
             ) : (
-              <p className="text-[13px] text-faint">
+              <p className="text-body text-faint">
                 No artifacts published with this run.
               </p>
             )}
@@ -298,18 +298,18 @@ export default async function RunPage({ params }: Props) {
 
         <Section id="manifest" title="Canonical manifest">
           <details className="group">
-            <summary className="cursor-pointer list-none text-[12.5px] text-accent [&::-webkit-details-marker]:hidden">
+            <summary className="cursor-pointer list-none text-small text-accent [&::-webkit-details-marker]:hidden">
               <span className="group-open:hidden">Show manifest</span>
               <span className="hidden group-open:inline">Hide manifest</span>
             </summary>
-            <pre className="plate mt-3 max-h-[480px] overflow-auto px-4 py-3 font-mono text-[11.5px] leading-relaxed text-muted">
+            <pre className="plate mt-3 max-h-[480px] overflow-auto px-4 py-3 font-mono text-mini leading-relaxed text-muted">
               {JSON.stringify(model.manifest, null, 2)}
             </pre>
           </details>
         </Section>
 
         <div className="mt-10 flex items-center gap-2.5">
-          <span className="text-[12.5px] text-faint">
+          <span className="text-small text-faint">
             Cite this record (permalink, digest, access date)
           </span>
           <CopyButton
@@ -328,7 +328,7 @@ export default async function RunPage({ params }: Props) {
           <ReportForm targetKind="run" targetId={model.run.id} />
         </div>
 
-        <div className="mt-12 flex flex-wrap items-baseline justify-between gap-5 border-t border-border pt-5 text-[12.5px]">
+        <div className="mt-12 flex flex-wrap items-baseline justify-between gap-5 border-t border-border pt-5 text-small">
           <span className="text-subtle">
             Published {formatDateUTC(model.run.publishedAt)} ·{" "}
             {model.provenance.source.url ? (
