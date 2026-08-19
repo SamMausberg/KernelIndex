@@ -47,7 +47,6 @@ export default async function GpuPage({ params }: Props) {
   return (
     <>
       {model.illustrative && <IllustrativeNotice />}
-      <div className="scan-line" />
       <ContextHeader
         title={model.hardware.model}
         meta={

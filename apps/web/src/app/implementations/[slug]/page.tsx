@@ -53,7 +53,6 @@ export default async function ImplementationPage({ params }: Props) {
   return (
     <>
       {model.illustrative && <IllustrativeNotice />}
-      <div className="scan-line" />
       <ContextHeader
         title={
           model.implementation.name === model.implementation.slug ? (

@@ -1,4 +1,6 @@
+import { FilterChip } from "@/components/chip"
 import { Meter } from "@/components/meter"
+import { Pager } from "@/components/pager"
 import { Link } from "@/components/quiet-link"
 import type { OperationIndexEntry } from "@/lib/catalog"
 import { formatDateUTC, formatPrimary } from "@/lib/format"
@@ -235,17 +237,13 @@ export function StartState({
       <div className="flex flex-wrap items-center gap-2 pt-3 pb-1">
         {["All families", ...families].map((label) => {
           const value = label === "All families" ? null : label
-          const selected = filters.family === value
           return (
-            <Link
+            <FilterChip
               key={label}
               href={browseHref(filters, { family: value })}
-              className={`key text-small whitespace-nowrap hover:no-underline ${
-                selected ? "key-on" : "text-subtle hover:text-fg"
-              }`}
-            >
-              {label}
-            </Link>
+              on={filters.family === value}
+              label={label}
+            />
           )
         })}
       </div>
@@ -257,25 +255,11 @@ export function StartState({
         }
       />
 
-      {pageCount > 1 && (
-        <div className="mt-4 flex items-baseline gap-5 text-small">
-          {page > 1 ? (
-            <Link href={browseHref(filters, { page: page - 1 })}>
-              ← Previous
-            </Link>
-          ) : (
-            <span className="text-ghost">← Previous</span>
-          )}
-          <span className="font-mono text-small text-faint">
-            page {page} of {pageCount}
-          </span>
-          {page < pageCount ? (
-            <Link href={browseHref(filters, { page: page + 1 })}>Next →</Link>
-          ) : (
-            <span className="text-ghost">Next →</span>
-          )}
-        </div>
-      )}
+      <Pager
+        page={page}
+        pageCount={pageCount}
+        hrefFor={(target) => browseHref(filters, { page: target })}
+      />
     </section>
   )
 }

@@ -3,7 +3,6 @@ import Link from "next/link"
 export default function NotFound() {
   return (
     <>
-      <div className="scan-line" />
       <main className="shell pt-24 pb-24">
         <div className="font-mono text-label text-faint uppercase">
           Not found

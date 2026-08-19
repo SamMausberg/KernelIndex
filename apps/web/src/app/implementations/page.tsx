@@ -13,14 +13,13 @@ export const metadata: Metadata = { title: "Projects" }
 export const revalidate = 300
 
 const GRID =
-  "grid grid-cols-[minmax(230px,1.5fr)_80px_80px_90px_130px_minmax(150px,1fr)_minmax(180px,1.2fr)_110px] gap-x-6 min-w-[1160px]"
+  "grid grid-cols-[minmax(230px,1.5fr)_80px_80px_90px_minmax(190px,1.1fr)_minmax(180px,1.2fr)_110px] gap-x-6 min-w-[1060px]"
 
 export default async function ProjectsPage() {
   const model = await getProjectIndex()
   return (
     <>
       {model.illustrative && <IllustrativeNotice />}
-      <div className="scan-line" />
       <ContextHeader
         title="Projects"
         context="standing per project · records held · licensing · availability"
@@ -34,8 +33,7 @@ export default async function ProjectsPage() {
             <div className="text-right">Kernels</div>
             <div className="text-right">Runs</div>
             <div className="text-right">Records</div>
-            <div>Best evidence</div>
-            <div>License</div>
+            <div>Trust</div>
             <div>Hardware</div>
             <div className="text-right">Last observed</div>
           </div>
@@ -62,13 +60,16 @@ export default async function ProjectsPage() {
               <div className="text-right font-mono text-small text-fg">
                 {project.records.toLocaleString("en-US")}
               </div>
-              <div className="text-small text-subtle">
+              <div className="min-w-0 truncate text-small text-subtle">
                 {evidenceLabel(project.bestEvidence)}
-              </div>
-              <div className="min-w-0 truncate font-mono text-mini text-subtle">
-                {project.licenses.length > 0
-                  ? project.licenses.join(", ")
-                  : "unknown"}
+                {" · "}
+                {project.licenses.length > 0 ? (
+                  <span className="font-mono text-mini">
+                    {project.licenses.join(", ")}
+                  </span>
+                ) : (
+                  <span className="text-faint">license unknown</span>
+                )}
               </div>
               <div className="min-w-0 truncate font-mono text-mini text-subtle">
                 {project.hardware.join(", ")}

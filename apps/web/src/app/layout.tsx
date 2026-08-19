@@ -1,6 +1,7 @@
 import { Analytics } from "@vercel/analytics/next"
 import type { Metadata } from "next"
 import { IBM_Plex_Mono, Instrument_Sans } from "next/font/google"
+import { SiteFooter } from "@/components/site-footer"
 import { SiteHeader } from "@/components/site-header"
 import { authConfigured } from "@/server/auth"
 import { servingEnabled } from "@/server/env"
@@ -78,6 +79,7 @@ export default function RootLayout({
           authConfigured={authConfigured}
         />
         <div id="main">{children}</div>
+        <SiteFooter />
         {/* Cookieless page-view counts (same-origin /_vercel/insights, so
             the CSP needs no change); disclosed under /docs#privacy. */}
         <Analytics />

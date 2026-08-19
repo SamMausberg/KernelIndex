@@ -119,7 +119,6 @@ export default async function AdminPage() {
 
   return (
     <>
-      <div className="scan-line" />
       <ContextHeader
         title="Review"
         context={`${pending.length} submissions pending · ${claims.length} claims pending · ${openReports.length} reports open`}

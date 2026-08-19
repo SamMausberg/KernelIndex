@@ -3,7 +3,6 @@ import { IllustrativeNotice } from "@/components/illustrative-notice"
 import { HeroSearch } from "@/features/home/hero-search"
 import { LatestRecords } from "@/features/home/latest-records"
 import { getHomePage } from "@/lib/catalog"
-import { releaseSha } from "@/server/env"
 
 // The homepage reads live records; revalidate on a short cycle instead of
 // freezing them into the build (data changes only on importer runs).
@@ -20,7 +19,7 @@ export default async function Home() {
         <section className="relative flex min-h-[56svh] flex-col">
           <div
             data-hero
-            className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col justify-center px-10 pt-6 pb-[4svh] max-md:px-6"
+            className="shell flex flex-1 flex-col justify-center pt-6 pb-[4svh]"
           >
             <h1 className="max-w-[26ch] text-hero font-medium text-pretty">
               Find the fastest known GPU kernel for your exact workload.
@@ -67,7 +66,7 @@ export default async function Home() {
           </div>
         </section>
 
-        <section className="mx-auto max-w-[1400px] px-10 pt-6 max-md:px-6">
+        <section className="shell pt-6">
           <div className="mb-4 flex items-baseline justify-between gap-4">
             <h2 className="text-title font-medium">Latest records</h2>
             <span className="flex gap-5 text-body">
@@ -84,29 +83,6 @@ export default async function Home() {
             </Link>
           </p>
         </section>
-
-        <footer className="mx-auto mt-24 flex max-w-[1400px] flex-wrap items-baseline justify-end gap-x-6 gap-y-3 px-10 pb-16 max-md:px-6">
-          {releaseSha && (
-            <span className="font-mono text-small text-faint">
-              {releaseSha.slice(0, 7)}
-            </span>
-          )}
-          <Link href="/docs" className="text-body text-subtle">
-            Methodology
-          </Link>
-          <Link href="/coverage" className="text-body text-subtle">
-            Coverage
-          </Link>
-          <Link href="/legal" className="text-body text-subtle">
-            Legal
-          </Link>
-          <a
-            href="https://github.com/SamMausberg/KernelIndex"
-            className="text-body text-subtle transition-colors hover:text-fg hover:no-underline"
-          >
-            GitHub
-          </a>
-        </footer>
       </main>
     </>
   )

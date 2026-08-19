@@ -1,4 +1,5 @@
-/** Route loading state: the scan line, nothing else — content streams in. */
+/** Route loading state: the template's scan line already plays; content
+ * streams in with nothing extra painted over it. */
 export default function Loading() {
-  return <div className="scan-line" />
+  return null
 }

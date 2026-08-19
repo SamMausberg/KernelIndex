@@ -70,7 +70,6 @@ export default async function AccountPage() {
     mine.length === 0 && keys.length === 0 && feed.watched.length === 0
   return (
     <>
-      <div className="scan-line" />
       <ContextHeader
         title={user.name}
         context={[

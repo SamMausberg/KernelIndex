@@ -51,7 +51,6 @@ export default function ApiReferencePage() {
   )
   return (
     <>
-      <div className="scan-line" />
       <ContextHeader
         title="API reference"
         context={`${routes.length} routes · ${String((openapi as { info: { version: string } }).info.version)} · problem+json errors`}

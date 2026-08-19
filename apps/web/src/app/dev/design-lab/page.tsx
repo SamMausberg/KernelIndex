@@ -1,7 +1,11 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import type { ReactNode } from "react"
+import { FilterChip } from "@/components/chip"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
+import { Meter } from "@/components/meter"
+import { Pager } from "@/components/pager"
+import { Section } from "@/components/section"
 import * as fixtures from "@/data/fixtures/catalog"
 import { RecordsLedger } from "@/features/records/ledger"
 import { ledgerSlice } from "@/features/records/ledger-model"
@@ -56,6 +60,37 @@ export default async function DesignLabPage() {
 
       <State label="notice · illustrative data">
         <IllustrativeNotice />
+      </State>
+
+      <State label="components · chip, pager, meter, collapsible section">
+        <div className="space-y-6 p-6">
+          <div className="flex flex-wrap items-center gap-2">
+            <FilterChip href="#" on={false} label="Has source" count={12} />
+            <FilterChip href="#" on={true} label="Verified" count={3} />
+            <FilterChip
+              href="#"
+              on={false}
+              dead
+              title="Nothing to toggle to"
+              label="Installable"
+              count={0}
+            />
+          </div>
+          <Pager page={2} pageCount={5} hrefFor={() => "#"} />
+          <div className="flex items-center gap-3">
+            <Meter fraction={1} className="w-24" />
+            <Meter fraction={0.62} className="w-24" />
+            <Meter fraction={0.13} className="w-24" />
+            <span className="font-mono text-mini text-faint">
+              calibrated rule at 100 / 62 / 13%
+            </span>
+          </div>
+          <Section title="Protocol" summary="5 fields">
+            <p className="text-small text-muted">
+              Collapsible section body — hidden until the count is opened.
+            </p>
+          </Section>
+        </div>
       </State>
 
       <State label="search · exact results, ties, stale, license-unknown, divergence">

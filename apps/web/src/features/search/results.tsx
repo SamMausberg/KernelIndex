@@ -1,8 +1,10 @@
 "use client"
 
 import { Fragment, startTransition, useState } from "react"
+import { FilterChip } from "@/components/chip"
 import { CopyButton } from "@/components/copy-button"
 import { KeyValueList } from "@/components/key-value-list"
+import { Pager } from "@/components/pager"
 import { Link } from "@/components/quiet-link"
 import type { ResultRow, SearchPageModel } from "@/lib/catalog"
 import {
@@ -483,8 +485,6 @@ export function SearchResults({
 
   return (
     <>
-      <div className="scan-line" />
-
       {/* z-30: the suggest popup must paint above the result sections. */}
       <div className="relative z-30 border-b border-border bg-surface">
         <div className="shell animate-fade-in pt-5 pb-4">
@@ -653,35 +653,19 @@ export function SearchResults({
                 {CHIP_FILTERS.map((chip) => {
                   const count = groupsByMode[view].filter(chip.test).length
                   const on = state[chip.key]
-                  const dead = count === 0 && !on
                   return (
-                    <Link
+                    <FilterChip
                       key={chip.key}
-                      href={searchHref(model.query, state, {
-                        [chip.key]: !on,
-                      })}
-                      prefetch={false}
-                      // Toggles with an href fallback: aria-pressed is only
-                      // valid with the button role.
-                      role="button"
-                      aria-pressed={on}
+                      href={searchHref(model.query, state, { [chip.key]: !on })}
+                      on={on}
+                      dead={count === 0 && !on}
+                      label={chip.label}
+                      count={count}
                       onClick={(event) => {
                         event.preventDefault()
-                        if (!dead) apply({ [chip.key]: !on })
+                        apply({ [chip.key]: !on })
                       }}
-                      className={`key text-small hover:no-underline ${
-                        on
-                          ? "key-on"
-                          : dead
-                            ? "pointer-events-none text-ghost"
-                            : "text-subtle hover:text-fg"
-                      }`}
-                    >
-                      {chip.label}{" "}
-                      <span className="font-mono text-mini text-faint">
-                        {count}
-                      </span>
-                    </Link>
+                    />
                   )
                 })}
                 {hidden > 0 && (
@@ -827,47 +811,14 @@ export function SearchResults({
               )}
             </div>
 
-            {pageCount > 1 && (
-              <div className="mt-4 flex items-baseline gap-5 text-small">
-                {page > 1 ? (
-                  <Link
-                    href={searchHref(model.query, state, {
-                      view,
-                      page: page - 1,
-                    })}
-                    prefetch={false}
-                    onClick={(event) => {
-                      event.preventDefault()
-                      apply({ view, page: page - 1 })
-                    }}
-                  >
-                    ← Previous
-                  </Link>
-                ) : (
-                  <span className="text-ghost">← Previous</span>
-                )}
-                <span className="font-mono text-small text-faint">
-                  page {page} of {pageCount}
-                </span>
-                {page < pageCount ? (
-                  <Link
-                    href={searchHref(model.query, state, {
-                      view,
-                      page: page + 1,
-                    })}
-                    prefetch={false}
-                    onClick={(event) => {
-                      event.preventDefault()
-                      apply({ view, page: page + 1 })
-                    }}
-                  >
-                    Next →
-                  </Link>
-                ) : (
-                  <span className="text-ghost">Next →</span>
-                )}
-              </div>
-            )}
+            <Pager
+              page={page}
+              pageCount={pageCount}
+              hrefFor={(target) =>
+                searchHref(model.query, state, { view, page: target })
+              }
+              onNavigate={(target) => apply({ view, page: target })}
+            />
 
             {anyTie && (
               <p className="mt-3.5 text-small text-faint">

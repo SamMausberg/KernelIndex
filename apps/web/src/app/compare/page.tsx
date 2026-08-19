@@ -22,7 +22,6 @@ export default async function ComparePage({
   return (
     <>
       {model.illustrative && <IllustrativeNotice />}
-      <div className="scan-line" />
       <ContextHeader
         title="Compare runs"
         context={

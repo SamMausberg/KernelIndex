@@ -7,7 +7,7 @@ import type { ServingCohortGroup, ServingResultRow } from "@/lib/serving-models"
 import { ParetoScatter } from "./pareto"
 
 const GRID =
-  "grid grid-cols-[34px_minmax(220px,1.4fr)_minmax(160px,1fr)_110px_86px_86px_64px_130px_28px] min-w-[1050px]"
+  "grid grid-cols-[34px_minmax(220px,1.4fr)_minmax(160px,1fr)_110px_86px_86px_64px_28px] min-w-[920px]"
 
 // Render caps (§16 payload budget): the page answers "what leads this
 // cohort"; the deep tail lives in /serving-runs and the API.
@@ -60,9 +60,6 @@ function ResultRow({ row }: { row: ServingResultRow }) {
         <div className="pr-3 text-right font-mono text-small text-muted">
           {row.hardware.total}
         </div>
-        <div className="truncate pr-3 font-mono text-mini text-faint">
-          {row.qualityPolicy}
-        </div>
         <div
           aria-hidden="true"
           className="pr-1 text-right font-mono text-small text-faint transition-transform group-open:rotate-90"
@@ -76,6 +73,8 @@ function ResultRow({ row }: { row: ServingResultRow }) {
           {row.hardware.nodes > 1 && ` × ${row.hardware.nodes} nodes`}
           {" · "}
           {row.harness}
+          {" · "}
+          {row.qualityPolicy}
           {" · Reported evidence · observed "}
           {row.observedAt.slice(0, 10)}
         </p>
@@ -128,14 +127,13 @@ export function ServingCohorts({ groups }: { groups: ServingCohortGroup[] }) {
               <div className="py-2 pr-3 text-right">TTFT p99</div>
               <div className="py-2 pr-3 text-right">TPOT p99</div>
               <div className="py-2 pr-3 text-right">GPUs</div>
-              <div className="py-2">Quality</div>
               <div />
             </div>
             {group.rows.slice(0, ROW_CAP).map((row) => (
               <ResultRow key={row.runId} row={row} />
             ))}
             {group.rows.length === 0 && (
-              <p className="py-6 text-body text-faint">
+              <p className="py-8 text-body text-faint">
                 Nothing in this cohort meets the bounds.
               </p>
             )}

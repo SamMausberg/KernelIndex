@@ -44,7 +44,6 @@ export default async function ServingRunPage({ params }: Props) {
   return (
     <>
       {model.illustrative && <IllustrativeNotice />}
-      <div className="scan-line" />
       <EvidenceOpened kind="serving_run" />
       <ContextHeader
         title={
@@ -126,7 +125,7 @@ export default async function ServingRunPage({ params }: Props) {
           </div>
         </section>
 
-        <div className="grid grid-cols-2 gap-x-11 max-lg:grid-cols-1">
+        <div className="grid grid-cols-2 gap-x-10 max-lg:grid-cols-1">
           <Section id="configuration" title="Launch configuration">
             <KeyValueList
               items={[

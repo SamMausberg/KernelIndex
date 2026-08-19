@@ -44,7 +44,6 @@ export default async function OperationPage({ params }: Props) {
   return (
     <>
       {model.illustrative && <IllustrativeNotice />}
-      <div className="scan-line" />
       <ContextHeader
         title={operation.name}
         meta={

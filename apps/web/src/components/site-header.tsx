@@ -5,16 +5,15 @@ import { useEffect, useState } from "react"
 import { CommandK } from "./command-k"
 import { Link } from "./quiet-link"
 
-// GPUs and Projects yield on narrow screens (search reaches both); the
-// original five keep the mobile header on one uncramped line.
+// Five items (§16.4): the primary surfaces only. Projects and Contribute
+// live in the global footer and the search browse — reachable everywhere,
+// competing for attention nowhere. GPUs yields on narrow screens.
 const NAV = [
   { label: "Search", href: "/search" },
   { label: "Records", href: "/records" },
   { label: "GPUs", href: "/gpus", desktopOnly: true },
-  { label: "Projects", href: "/implementations", desktopOnly: true },
   { label: "Serving", href: "/serving" },
   { label: "Docs", href: "/docs" },
-  { label: "Contribute", href: "/submit" },
 ]
 
 /**
@@ -68,7 +67,7 @@ export function SiteHeader({
       <div className="shell flex h-14 items-center gap-7 max-md:gap-4 max-md:px-4">
         <Link
           href="/"
-          className="font-mono text-lead font-semibold text-fg hover:no-underline"
+          className="font-mono text-lead font-medium text-fg hover:no-underline"
         >
           KernelIndex
         </Link>

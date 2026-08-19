@@ -1,6 +1,7 @@
 /**
- * Static hairline meter (§16.2: light as machining): a recessed track with a
- * proportional fill, painted once and never repainted. Purely supplementary —
+ * The calibrated rule (§16.2: light as machining): a hairline baseline with
+ * end ticks and a proportional fill riding on it — an instrument's scale,
+ * not a progress bar. Painted once, never repainted. Purely supplementary —
  * the adjacent text always states the value — so it stays aria-hidden.
  * Callers set the track width via className.
  */
@@ -15,10 +16,13 @@ export function Meter({
   return (
     <span
       aria-hidden="true"
-      className={`inline-block h-[3px] flex-none bg-line ${className}`}
+      className={`relative inline-block h-[5px] flex-none ${className}`}
     >
+      <span className="absolute inset-x-0 top-1/2 h-px bg-line" />
+      <span className="absolute top-0 left-0 h-full w-px bg-edge" />
+      <span className="absolute top-0 right-0 h-full w-px bg-edge" />
       <span
-        className="block h-full bg-accent-dim"
+        className="absolute top-1/2 left-0 h-[3px] -translate-y-1/2 bg-accent-dim"
         style={{ width: `${pct}%` }}
       />
     </span>

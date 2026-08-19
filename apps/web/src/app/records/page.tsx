@@ -21,7 +21,6 @@ export default async function RecordsPage() {
   return (
     <>
       {model.illustrative && <IllustrativeNotice />}
-      <div className="scan-line" />
       <RecordsLedger initial={slice} />
     </>
   )

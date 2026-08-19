@@ -187,7 +187,7 @@ async function ServingResults({
           )}
         </>
       ) : (
-        <p className="py-10 text-body text-faint">
+        <p className="py-8 text-body text-faint">
           {model.totalRuns === 0
             ? "No serving results yet."
             : "Nothing matches. Loosen the filters or bounds."}
@@ -213,7 +213,6 @@ export default async function ServingPage({
   return (
     <>
       {facets.illustrative && <IllustrativeNotice />}
-      <div className="scan-line" />
       <ContextHeader
         title="Serving"
         context={`${facets.totalRuns} results · ranked only when you pick an objective`}

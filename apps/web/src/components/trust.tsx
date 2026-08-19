@@ -33,6 +33,34 @@ export function EvidenceCell({ row }: { row: TrustRow }) {
 }
 
 /**
+ * The one trust cell for dense rows (§16.7): evidence level, license, and
+ * source state in reading order — the can-I-use-it facts without a second
+ * column. Facts, not warnings (§16.16): unknowns are faint, "source" is the
+ * cobalt cue that code is viewable on-site, the green dot marks only tiers
+ * KernelIndex itself stands behind. The row expansion keeps the full chips.
+ */
+export function TrustCell({ row }: { row: TrustRow }) {
+  const strong = row.evidence === "verified" || row.evidence === "replicated"
+  const license = row.license.concluded ?? row.license.declared
+  return (
+    <div className="truncate pr-3 text-small text-subtle">
+      {strong && <span className="mr-1.5 text-label text-success">●</span>}
+      <span className={strong ? "text-fg" : undefined}>
+        {row.evidence ? (EVIDENCE_LABELS[row.evidence] ?? row.evidence) : "—"}
+      </span>
+      {" · "}
+      {license ?? <span className="text-faint">license unknown</span>}
+      {" · "}
+      {row.sourceAvailable ? (
+        <span className="text-accent">source</span>
+      ) : (
+        <span className="text-faint">no source</span>
+      )}
+    </div>
+  )
+}
+
+/**
  * License and source availability — orthogonal to evidence, and facts, not
  * warnings (§16.16): license unknown is faint, "source" is the cobalt cue
  * that code is viewable on-site. Never amber.

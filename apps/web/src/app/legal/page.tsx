@@ -45,7 +45,6 @@ const SOURCES = [
 export default function LegalPage() {
   return (
     <>
-      <div className="scan-line" />
       <ContextHeader
         title="Legal"
         context="terms · privacy · source licenses · takedown"

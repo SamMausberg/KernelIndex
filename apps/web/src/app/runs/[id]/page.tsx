@@ -10,6 +10,7 @@ import { Section } from "@/components/section"
 import { ReportForm } from "@/features/reports/report-form"
 import { getRunPage } from "@/lib/catalog"
 import {
+  countNoun,
   evidenceLabel,
   formatDateUTC,
   formatPrimary,
@@ -57,7 +58,6 @@ export default async function RunPage({ params }: Props) {
   return (
     <>
       {model.illustrative && <IllustrativeNotice />}
-      <div className="scan-line" />
       <EvidenceOpened kind="run" />
       <ContextHeader
         title={
@@ -188,7 +188,7 @@ export default async function RunPage({ params }: Props) {
           </div>
         </section>
 
-        <div className="grid grid-cols-2 gap-x-11 max-lg:grid-cols-1">
+        <div className="grid grid-cols-2 gap-x-10 max-lg:grid-cols-1">
           <Section id="correctness" title="Correctness">
             {model.correctness ? (
               <KeyValueList
@@ -233,7 +233,16 @@ export default async function RunPage({ params }: Props) {
             )}
           </Section>
 
-          <Section id="workload" title="Workload">
+          <Section
+            id="workload"
+            title="Workload"
+            summary={countNoun(
+              Object.keys(model.workload.axes).length +
+                model.workload.tensors.length +
+                model.workload.tolerance.length,
+              "field",
+            )}
+          >
             <KeyValueList
               items={[
                 ...Object.entries(model.workload.axes).map(([key, value]) => ({
@@ -272,15 +281,27 @@ export default async function RunPage({ params }: Props) {
             )}
           </Section>
 
-          <Section id="protocol" title="Protocol">
+          <Section
+            id="protocol"
+            title="Protocol"
+            summary={countNoun(model.protocol.length, "field")}
+          >
             <KeyValueList items={model.protocol} />
           </Section>
 
-          <Section id="environment" title="Environment">
+          <Section
+            id="environment"
+            title="Environment"
+            summary={countNoun(model.environment.length, "field")}
+          >
             <KeyValueList items={model.environment} />
           </Section>
 
-          <Section id="artifacts" title="Artifacts">
+          <Section
+            id="artifacts"
+            title="Artifacts"
+            summary={countNoun(model.artifacts.length, "artifact")}
+          >
             {model.artifacts.length > 0 ? (
               <KeyValueList
                 items={model.artifacts.map((artifact) => ({

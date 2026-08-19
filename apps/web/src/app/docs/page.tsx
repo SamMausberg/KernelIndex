@@ -38,7 +38,6 @@ const SECTIONS = [
 export default function DocsPage() {
   return (
     <>
-      <div className="scan-line" />
       <ContextHeader
         title="Documentation"
         context="query syntax · comparability · evidence · records"

@@ -11,7 +11,6 @@ export default async function SubmitPage() {
   const user = authConfigured ? await sessionUser(await headers()) : null
   return (
     <>
-      <div className="scan-line" />
       <ContextHeader
         title="Submit evidence"
         context="one YAML document · validated · reviewed before publication"

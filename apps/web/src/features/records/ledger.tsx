@@ -1,15 +1,17 @@
 "use client"
 
 import { startTransition, useEffect, useState } from "react"
+import { FilterChip } from "@/components/chip"
 import { ContextHeader } from "@/components/context-header"
 import { Metric } from "@/components/metric"
+import { Pager } from "@/components/pager"
 // The records ledger island (§16.12): the server renders any deep-linked URL
 // from its precomputed slice (SEO and no-JS unchanged), then the full model
 // arrives once from the CDN-cached /records/data route and every filter,
 // sort, view, and page interaction becomes an instant client transition with
 // the URL kept shareable. Markup is identical to the server-rendered form.
 import { Link } from "@/components/quiet-link"
-import { AvailabilityCell, EvidenceCell } from "@/components/trust"
+import { TrustCell } from "@/components/trust"
 import { formatDateUTC, formatPrimary, formatSolScoreCell } from "@/lib/format"
 import {
   DAY_MS,
@@ -44,7 +46,7 @@ function loadModel(): Promise<LedgerModel | null> {
 }
 
 const CURRENT_GRID =
-  "grid grid-cols-[minmax(280px,1.5fr)_170px_150px_minmax(150px,0.9fr)_156px_92px_minmax(150px,1fr)_92px_28px] min-w-[1254px]"
+  "grid grid-cols-[minmax(260px,1.5fr)_160px_140px_minmax(150px,0.9fr)_120px_minmax(180px,1fr)_92px_28px] min-w-[1130px]"
 
 /** The lead story (§16.12): the newest broken records under the filters —
  * hairline rows in the page's own table idiom, no cards or lifted surfaces.
@@ -167,8 +169,7 @@ function HolderRow({ holder }: { holder: LedgerHolder }) {
         <div className="pr-3 font-mono text-small whitespace-nowrap text-muted">
           {holder.hardware}
         </div>
-        <EvidenceCell row={record} />
-        <AvailabilityCell row={record} />
+        <TrustCell row={record} />
         <div className="font-mono text-mini whitespace-nowrap text-faint">
           {formatDateUTC(holder.since)}
           {isNew && <span className="text-accent"> · new</span>}
@@ -280,7 +281,7 @@ function HolderRow({ holder }: { holder: LedgerHolder }) {
 }
 
 const BROKEN_GRID =
-  "grid grid-cols-[minmax(230px,1.4fr)_200px_minmax(160px,0.9fr)_96px_156px_92px_minmax(150px,1fr)_92px] min-w-[1184px]"
+  "grid grid-cols-[minmax(230px,1.4fr)_200px_minmax(160px,0.9fr)_96px_140px_minmax(180px,1fr)_92px] min-w-[1098px]"
 
 function BrokenRows({ transitions }: { transitions: LedgerEvent[] }) {
   if (transitions.length === 0) {
@@ -336,10 +337,7 @@ function BrokenRows({ transitions }: { transitions: LedgerEvent[] }) {
             {holder.hardware}
           </div>
           <div className="py-3.5">
-            <EvidenceCell row={holder.current} />
-          </div>
-          <div className="py-3.5">
-            <AvailabilityCell row={holder.current} />
+            <TrustCell row={holder.current} />
           </div>
           <div className="py-3.5 font-mono text-mini text-faint">
             {formatDateUTC(event.at)}
@@ -435,49 +433,6 @@ function FilterLink({
   )
 }
 
-function Pager({
-  page,
-  pageCount,
-  filters,
-  navigate,
-}: {
-  page: number
-  pageCount: number
-  filters: RecordsFilters
-  navigate: Navigate
-}) {
-  if (pageCount <= 1) return null
-  return (
-    <div className="mt-4 flex items-baseline gap-5 text-small">
-      {page > 1 ? (
-        <FilterLink
-          filters={filters}
-          patch={{ page: page - 1 }}
-          navigate={navigate}
-        >
-          ← Previous
-        </FilterLink>
-      ) : (
-        <span className="text-ghost">← Previous</span>
-      )}
-      <span className="font-mono text-small text-faint">
-        page {page} of {pageCount}
-      </span>
-      {page < pageCount ? (
-        <FilterLink
-          filters={filters}
-          patch={{ page: page + 1 }}
-          navigate={navigate}
-        >
-          Next →
-        </FilterLink>
-      ) : (
-        <span className="text-ghost">Next →</span>
-      )}
-    </div>
-  )
-}
-
 /**
  * The one control strip shared by all three views: machined filter chips
  * (hardware scope, verified, has-source) and a text filter on the left; the
@@ -554,46 +509,38 @@ function ControlStrip({
             })}
           </div>
         </details>
-        {slice.verifiedCount > 0 || filters.verified ? (
-          <FilterLink
-            filters={filters}
-            patch={{ verified: !filters.verified }}
-            navigate={navigate}
-            className={chip(filters.verified)}
-          >
-            Verified{" "}
-            <span className="font-mono text-mini text-faint">
-              {slice.verifiedCount}
-            </span>
-          </FilterLink>
-        ) : (
-          <span
-            title="No independently verified records yet — every result is source-reported"
-            className="key text-small whitespace-nowrap text-ghost"
-          >
-            Verified <span className="font-mono text-mini">0</span>
-          </span>
-        )}
-        <FilterLink
-          filters={filters}
-          patch={{ source: !filters.source }}
-          navigate={navigate}
-          className={chip(filters.source)}
-        >
-          Has source
-        </FilterLink>
+        <FilterChip
+          href={recordsHref(filters, { verified: !filters.verified })}
+          on={filters.verified}
+          dead={slice.verifiedCount === 0 && !filters.verified}
+          title="No independently verified records yet — every result is source-reported"
+          label="Verified"
+          count={slice.verifiedCount}
+          onClick={(event) => {
+            event.preventDefault()
+            navigate({ verified: !filters.verified })
+          }}
+        />
+        <FilterChip
+          href={recordsHref(filters, { source: !filters.source })}
+          on={filters.source}
+          label="Has source"
+          onClick={(event) => {
+            event.preventDefault()
+            navigate({ source: !filters.source })
+          }}
+        />
         {slice.baselineCount > 0 && (
-          <FilterLink
-            filters={filters}
-            patch={{ baselines: !filters.baselines }}
-            navigate={navigate}
-            className={chip(filters.baselines)}
-          >
-            Unbeaten baselines{" "}
-            <span className="font-mono text-mini text-faint">
-              {slice.baselineCount}
-            </span>
-          </FilterLink>
+          <FilterChip
+            href={recordsHref(filters, { baselines: !filters.baselines })}
+            on={filters.baselines}
+            label="Unbeaten baselines"
+            count={slice.baselineCount}
+            onClick={(event) => {
+              event.preventDefault()
+              navigate({ baselines: !filters.baselines })
+            }}
+          />
         )}
         <form
           action="/records"
@@ -789,8 +736,7 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
                 <div className="py-2">Margin</div>
                 <div className="py-2">Implementation</div>
                 <div className="py-2">Hardware</div>
-                <div className="py-2">Evidence</div>
-                <div className="py-2">Availability</div>
+                <div className="py-2">Trust</div>
                 <div className="py-2">Set</div>
                 <div />
               </div>
@@ -806,8 +752,8 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
             <Pager
               page={slice.filters.page}
               pageCount={slice.holders.pageCount}
-              filters={slice.filters}
-              navigate={navigate}
+              hrefFor={(target) => recordsHref(slice.filters, { page: target })}
+              onNavigate={(target) => navigate({ page: target })}
             />
           </>
         )}
@@ -830,8 +776,8 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
             <Pager
               page={slice.filters.page}
               pageCount={slice.broken.pageCount}
-              filters={slice.filters}
-              navigate={navigate}
+              hrefFor={(target) => recordsHref(slice.filters, { page: target })}
+              onNavigate={(target) => navigate({ page: target })}
             />
           </>
         )}
@@ -852,8 +798,8 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
             <Pager
               page={slice.filters.page}
               pageCount={slice.events.pageCount}
-              filters={slice.filters}
-              navigate={navigate}
+              hrefFor={(target) => recordsHref(slice.filters, { page: target })}
+              onNavigate={(target) => navigate({ page: target })}
             />
           </>
         )}

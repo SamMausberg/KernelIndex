@@ -19,7 +19,6 @@ export default async function GpusPage() {
   return (
     <>
       {model.illustrative && <IllustrativeNotice />}
-      <div className="scan-line" />
       <ContextHeader
         title="GPUs"
         context="coverage per hardware model · records held · freshness"
