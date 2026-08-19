@@ -28,15 +28,20 @@ describe.skipIf(!url)("postgres catalog reads", () => {
     expect(again.counts.operations).toEqual({ inserted: 0, existing: 1 })
   })
 
-  it("getHomePage lists recent published records newest first", async () => {
+  it("getHomePage lists record holders, breaks before firsts", async () => {
     const model = await getHomePage()
     expect(model.latest.length).toBeGreaterThanOrEqual(1)
-    const dates = model.latest.map((row) => row.lastTestedAt ?? "")
-    expect(dates).toEqual([...dates].sort().reverse())
+    // Contested cohorts lead; each band is newest first.
+    const bands = model.latest.map((holder) =>
+      holder.history[0].previousValue !== null ? 0 : 1,
+    )
+    expect(bands).toEqual([...bands].sort())
     const [first] = model.latest
-    expect(first.runId).toBeTruthy()
-    expect(first.operation.slug).toBeTruthy()
-    expect(first.primary?.unit).toBe("ns")
+    expect(first.current.runId).toBeTruthy()
+    expect(first.current.operation.slug).toBeTruthy()
+    expect(first.current.primary).not.toBeNull()
+    // The homepage ships only the current event per holder.
+    expect(first.history.length).toBe(1)
   })
 
   it("getRecordsPage derives per-cohort record history from runs", async () => {

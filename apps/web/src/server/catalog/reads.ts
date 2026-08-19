@@ -33,6 +33,7 @@ import type {
   SearchPageModel,
   SourceRef,
 } from "../../lib/catalog-models.ts"
+import { dtypeLabel } from "../../lib/format.ts"
 import {
   humanizeOperationName,
   implementationDisplayName,
@@ -123,6 +124,7 @@ const runColumns = {
   hasRawEvidence: schema.benchmarkRuns.hasRawEvidence,
   sourceNative: schema.benchmarkRuns.sourceNative,
   environmentSummary: schema.benchmarkRuns.environmentSummary,
+  solScore: schema.benchmarkRuns.solScore,
 }
 const implementationColumns = {
   id: schema.implementations.id,
@@ -139,6 +141,7 @@ const implementationColumns = {
   sourceAvailable: schema.implementations.sourceAvailable,
   installable: schema.implementations.installable,
   licenseExpression: schema.implementations.licenseExpression,
+  role: schema.implementations.role,
 }
 const projectColumns = {
   name: schema.projects.name,
@@ -215,6 +218,8 @@ function rowCaveats(joined: JoinedRun): string[] {
   const caveats: string[] = []
   if (joined.source.kind === "illustrative")
     caveats.push("Illustrative example record")
+  if (joined.implementation.role === "baseline")
+    caveats.push("The source's designated baseline implementation")
   if (!joined.run.reproducedByKernelindex) {
     caveats.push("Reported by source; not independently reproduced")
   }
@@ -261,7 +266,7 @@ function resultRow(
     project: { name: project.name, slug: project.slug },
     revision: implementation.sourceRevision?.slice(0, 7) ?? null,
     operation: opRef(operation),
-    workloadSummary: [workload.dtypes.join("/"), workload.shapeSummary]
+    workloadSummary: [dtypeLabel(workload.dtypes), workload.shapeSummary]
       .filter(Boolean)
       .join(" · "),
     hardware: {
@@ -284,6 +289,8 @@ function resultRow(
                 : null,
           }
         : null,
+    solScore: run.solScore,
+    baseline: implementation.role === "baseline",
     evidence: runEvidence(run),
     match: extras.match ?? "exact",
     mismatches: extras.mismatches ?? [],
@@ -709,55 +716,13 @@ function pageIllustrative(rows: JoinedRun[]): boolean {
   return rows.length > 0 && rows.every((j) => j.source.kind === "illustrative")
 }
 
-/** §16.5: most recent published records across all operations, newest first.
- * The row and stat reads are independent and run together. */
+/** §16.5: the homepage feed leads with signal, not importer publish order —
+ * the newest genuine record breaks (a run displacing a previous record),
+ * then the newest first-of-cohort records, sole-entrant baselines excluded.
+ * Reuses the memoized ledger read; only the stat counts hit new queries. */
 export async function getHomePage(): Promise<HomePageModel> {
-  const rowsQuery = db()
-    .select({
-      run: runColumns,
-      implementation: implementationColumns,
-      project: projectColumns,
-      workload: {
-        id: schema.workloads.id,
-        dtypes: schema.workloads.dtypes,
-        shapeSummary: schema.workloads.shapeSummary,
-      },
-      source: sourceColumns,
-      operation: {
-        name: schema.operations.name,
-        slug: schema.operations.slug,
-      },
-    })
-    .from(schema.benchmarkRuns)
-    .innerJoin(
-      schema.implementations,
-      eq(schema.benchmarkRuns.implementationId, schema.implementations.id),
-    )
-    .innerJoin(
-      schema.projects,
-      eq(schema.implementations.projectId, schema.projects.id),
-    )
-    .innerJoin(
-      schema.workloads,
-      eq(schema.benchmarkRuns.workloadId, schema.workloads.id),
-    )
-    .innerJoin(
-      schema.operations,
-      eq(schema.workloads.operationId, schema.operations.id),
-    )
-    .innerJoin(
-      schema.sources,
-      eq(schema.benchmarkRuns.sourceId, schema.sources.id),
-    )
-    // Homepage lists default to source-backed records (2026-08-16 decision);
-    // the ledger's source toggle reaches the rest.
-    .where(
-      and(eligibleRunFilter(), eq(schema.benchmarkRuns.sourceAvailable, true)),
-    )
-    .orderBy(desc(schema.benchmarkRuns.observedAt))
-    .limit(8)
-  const [rows, [stats]] = await Promise.all([
-    rowsQuery,
+  const [page, [stats]] = await Promise.all([
+    getRecordsPage(),
     db()
       .select({
         operations: sql<number>`count(distinct ${schema.workloads.operationId})::int`,
@@ -771,13 +736,21 @@ export async function getHomePage(): Promise<HomePageModel> {
       )
       .where(eligibleRunFilter()),
   ])
-  return {
-    illustrative: pageIllustrative(rows),
-    latest: rows.map((j) =>
-      resultRow(j, { name: j.operation.name, slug: j.operation.slug }),
+  // Homepage lists default to source-backed records (2026-08-16 decision);
+  // the ledger's source toggle reaches the rest.
+  const holders = page.records.filter(
+    (holder) => holder.current.sourceAvailable,
+  )
+  const latest = [
+    ...holders.filter((holder) => holder.history.length >= 2),
+    ...holders.filter(
+      (holder) => holder.history.length === 1 && !holder.current.baseline,
     ),
-    stats,
-  }
+  ]
+    .slice(0, 8)
+    // The homepage renders only the current event; drop the deep histories.
+    .map((holder) => ({ ...holder, history: holder.history.slice(0, 1) }))
+  return { illustrative: page.illustrative, latest, stats }
 }
 
 /**
@@ -1240,6 +1213,8 @@ function supportedUnmeasuredRows(
         framework: implementation.framework,
         language: implementation.language,
         primary: null,
+        solScore: null,
+        baseline: implementation.role === "baseline",
         evidence: null,
         match: "supported_unobserved" as const,
         mismatches: [],

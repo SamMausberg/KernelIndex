@@ -99,6 +99,12 @@ export type ResultRow = {
   framework: string | null
   language: string | null
   primary: PrimaryMetric | null
+  /** Source-published fraction of the source's speed-of-light estimate
+   * (SOL-ExecBench SOL-Score); headline context, never a KernelIndex claim. */
+  solScore: number | null
+  /** True when the source designates this implementation as its baseline or
+   * reference solution rather than a competing entry (§8.14: source claim). */
+  baseline: boolean
   evidence: EvidenceLevel | null
   match: MatchQuality
   /** Non-empty only for compatible matches. */
@@ -163,10 +169,11 @@ export type OperationIndexEntry = {
   match?: ChooserMatch | null
 }
 
-/** §16.5: homepage read — the most recent published records, newest first. */
+/** §16.5: homepage read — the newest record breaks and first records with
+ * source, contested cohorts first; histories trimmed to the current event. */
 export type HomePageModel = {
   illustrative: boolean
-  latest: ResultRow[]
+  latest: RecordHolder[]
   /** Live corpus counts under the eligibility filter — never hardcoded. */
   stats: { operations: number; runs: number; gpus: number }
 }

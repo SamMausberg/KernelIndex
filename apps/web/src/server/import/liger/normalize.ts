@@ -123,6 +123,9 @@ export const PROVIDERS: Record<
     declared: string
     concluded?: string
     pipPackage?: string
+    /** Eager reference modules are the benchmark's comparison baselines;
+     * torch.compile competes. */
+    role?: "baseline"
   }
 > = {
   liger: {
@@ -159,6 +162,7 @@ export const PROVIDERS: Record<
     language: "python",
     description: "Hugging Face Transformers reference module.",
     declared: "Apache-2.0",
+    role: "baseline",
   },
   torch: {
     projectSlug: "pytorch",
@@ -166,6 +170,7 @@ export const PROVIDERS: Record<
     language: "python",
     description: "PyTorch reference module.",
     declared: "BSD-3-Clause",
+    role: "baseline",
   },
   torch_compile: {
     projectSlug: "pytorch",
@@ -371,6 +376,7 @@ export function implementationFromProvider(
       name: kebab(`liger-bench-${spec.csvName}-${provider}`),
       title: `${spec.title} · ${entry.title}`,
       description: entry.description,
+      labels: entry.role ? { role: entry.role } : undefined,
       sourceRefs: [{ url: LIGER_REPO_URL }],
     },
     spec: {

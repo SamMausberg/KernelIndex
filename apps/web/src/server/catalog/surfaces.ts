@@ -34,11 +34,17 @@ const TIERS: (EvidenceLevel | null)[] = [
 
 const illustrativeOnly = sql<boolean>`bool_and(${schema.sources.kind} = 'illustrative')`
 
+/** A GPU's architecture from its runs, never poisoned by an importer's
+ * 'unknown' placeholder (which sorts above every sm_/gfx_ value in max). */
+const knownArchitecture = sql<
+  string | null
+>`max(${schema.benchmarkRuns.hardwareArchitecture}) filter (where ${schema.benchmarkRuns.hardwareArchitecture} <> 'unknown')`
+
 export async function getHardwareIndex(): Promise<HardwareIndexModel> {
   const rows = await db()
     .select({
       model: schema.benchmarkRuns.hardwareModel,
-      architecture: max(schema.benchmarkRuns.hardwareArchitecture),
+      architecture: knownArchitecture,
       runs: count(),
       operations: sql<number>`count(distinct ${schema.workloads.operationId})::int`,
       lastObservedAt: max(schema.benchmarkRuns.observedAt),
@@ -94,7 +100,7 @@ export async function getHardwarePage(
   const [[stats], families, sourceRows, { records }] = await Promise.all([
     db()
       .select({
-        architecture: max(schema.benchmarkRuns.hardwareArchitecture),
+        architecture: knownArchitecture,
         runs: count(),
         operations: sql<number>`count(distinct ${schema.workloads.operationId})::int`,
         implementations: sql<number>`count(distinct ${schema.benchmarkRuns.implementationId})::int`,

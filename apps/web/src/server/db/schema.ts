@@ -141,6 +141,9 @@ export const implementations = pgTable(
     installKind: text("install_kind"),
     installCommand: text("install_command"),
     licenseDeclared: text("license_declared"),
+    /* 'baseline' when the source designates this implementation as its
+       reference solution (metadata.labels.role); null for competitors. */
+    role: text("role"),
     manifest: jsonb("manifest").notNull(),
     createdAt: createdAt(),
     supersedesId: uuid("supersedes_id").references(
@@ -224,6 +227,9 @@ export const benchmarkRuns = pgTable(
     hasRawEvidence: boolean("has_raw_evidence").notNull().default(false),
     sourceNative: boolean("source_native").notNull().default(false),
     environmentSummary: text("environment_summary"),
+    // Source-published SOL-Score (fraction of the source's speed-of-light
+    // estimate), when the source publishes one; headline context on rows.
+    solScore: numeric("sol_score", { mode: "number" }),
     manifest: jsonb("manifest").notNull(),
     supersedesId: uuid("supersedes_id").references(
       (): AnyPgColumn => benchmarkRuns.id,

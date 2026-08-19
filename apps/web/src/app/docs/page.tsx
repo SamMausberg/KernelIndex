@@ -203,6 +203,13 @@ rmsnorm gpu:B200 dtype:bf16 shape:[2048,4096] framework=pytorch trust:verified`}
             inside one cohort.
           </p>
           <p className="mt-3">
+            Some sources ship their own baseline implementations. A baseline
+            that is the only entry in its cohort is coverage, not a
+            competitive record: the ledger hides these by default and labels
+            them <em>baseline · unbeaten</em> when shown. The default order
+            lists cohorts whose record has actually been displaced first.
+          </p>
+          <p className="mt-3">
             Every run page has <em>Report an issue</em> — no account needed. An
             accepted report retracts or supersedes the record; the history stays
             visible.

@@ -4,6 +4,7 @@
 // suites listed beneath — bounded by its own scroll region.
 import { Link } from "@/components/quiet-link"
 import type { WorkloadOption } from "@/lib/catalog"
+import { dtypeLabel } from "@/lib/format"
 
 const INLINE_LIMIT = 8
 
@@ -92,45 +93,61 @@ export function WorkloadPicker({
   // 92px floors keep the numerals aligned when space is tight.
   const template = `repeat(${columns.length}, minmax(92px, 1fr)) minmax(110px, 1fr)`
 
+  const selected = workloads.find((option) => option.id === selectedId)
   return (
     <div className="mb-3 text-[12.5px]">
-      <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1.5">
-        <span className="text-faint">Workload</span>
-        {constantLine && (
-          <span className="font-mono text-[12px] text-faint">
-            {constantLine}
+      {/* The case sweep collapses behind the selection line: the results
+          table is the page's answer and must not sit under a wall of case
+          numbers (§16.8 hierarchy). */}
+      <details className="group/picker">
+        <summary className="flex cursor-pointer list-none flex-wrap items-baseline gap-x-5 gap-y-1.5 [&::-webkit-details-marker]:hidden">
+          <span className="text-faint">Workload</span>
+          {selected && (
+            <span className="font-mono text-[12px] text-muted">
+              {selected.label}
+            </span>
+          )}
+          {constantLine && (
+            <span className="font-mono text-[12px] text-faint">
+              {constantLine}
+            </span>
+          )}
+          <span className="font-mono text-[12px] text-subtle">
+            {rows.length} cases{" "}
+            <span
+              aria-hidden="true"
+              className="inline-block transition-transform group-open/picker:rotate-90"
+            >
+              ›
+            </span>
           </span>
-        )}
-        <span className="font-mono text-[12px] text-faint">
-          {rows.length} cases
-        </span>
-      </div>
-      <div className="mt-2 w-full rounded-[5px] border border-border">
-        <div className="max-h-[300px] overflow-auto">
-          <div
-            className="sticky top-0 grid border-b border-border-strong bg-surface"
-            style={{ gridTemplateColumns: template }}
-          >
-            {columns.map((name) => (
-              <div
-                key={name}
-                className="px-3.5 py-1.5 text-right font-mono text-[11px] tracking-[0.03em] text-faint uppercase"
-              >
-                {name}
+        </summary>
+        <div className="mt-2 w-full rounded-[5px] border border-border">
+          <div className="max-h-[300px] overflow-auto">
+            <div
+              className="sticky top-0 grid border-b border-border-strong bg-surface"
+              style={{ gridTemplateColumns: template }}
+            >
+              {columns.map((name) => (
+                <div
+                  key={name}
+                  className="px-3.5 py-1.5 text-right font-mono text-[11px] tracking-[0.03em] text-faint uppercase"
+                >
+                  {name}
+                </div>
+              ))}
+              <div className="px-3.5 py-1.5 font-mono text-[11px] tracking-[0.03em] text-faint uppercase">
+                dtype
               </div>
-            ))}
-            <div className="px-3.5 py-1.5 font-mono text-[11px] tracking-[0.03em] text-faint uppercase">
-              dtype
             </div>
-          </div>
-          {rows.map((option) => {
-            const selected = option.id === selectedId
-            return (
+            {rows.map((option) => (
               <Link
                 key={option.id}
                 href={`/operations/${slug}?workload=${option.id}`}
                 className={`grid border-b border-line font-mono text-[12px] transition-colors last:border-b-0 hover:bg-raised hover:no-underline ${
-                  selected ? "text-accent" : "text-subtle hover:text-fg"
+                  option.id === selectedId
+                    ? "text-accent"
+                    : "text-subtle hover:text-fg"
                 }`}
                 style={{ gridTemplateColumns: template }}
               >
@@ -140,18 +157,18 @@ export function WorkloadPicker({
                   </span>
                 ))}
                 <span className="px-3.5 py-[5px]">
-                  {option.dtypes.join("/") || "—"}
+                  {option.dtypes.length > 0 ? dtypeLabel(option.dtypes) : "—"}
                 </span>
               </Link>
-            )
-          })}
-        </div>
-        {rows.length > 12 && (
-          <div className="border-t border-border px-3.5 py-1 font-mono text-[11px] text-faint">
-            scrolls · {rows.length} cases total
+            ))}
           </div>
-        )}
-      </div>
+          {rows.length > 12 && (
+            <div className="border-t border-border px-3.5 py-1 font-mono text-[11px] text-faint">
+              scrolls · {rows.length} cases total
+            </div>
+          )}
+        </div>
+      </details>
       {suites.length > 0 && (
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <span className="mr-1 text-faint">Aggregates</span>

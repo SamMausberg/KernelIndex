@@ -11,7 +11,7 @@ import { Link } from "@/components/quiet-link"
 import { Section } from "@/components/section"
 import { EvidenceCell } from "@/components/trust"
 import { getHardwarePage } from "@/lib/catalog"
-import { formatDateShort, formatDateUTC } from "@/lib/format"
+import { formatDateUTC } from "@/lib/format"
 
 type Props = { params: Promise<{ slug: string }> }
 
@@ -113,7 +113,7 @@ export default async function GpuPage({ params }: Props) {
                   </div>
                   <EvidenceCell row={holder.current} />
                   <div className="text-right font-mono text-[11.5px] text-faint">
-                    {formatDateShort(holder.since)}
+                    {formatDateUTC(holder.since)}
                   </div>
                 </div>
               ))}

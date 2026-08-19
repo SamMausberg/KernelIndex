@@ -3,10 +3,15 @@ import { Metric } from "@/components/metric"
 import { Link } from "@/components/quiet-link"
 import { AvailabilityCell, EvidenceCell, TierChips } from "@/components/trust"
 import type { PrimaryMetric, ResultRow } from "@/lib/catalog"
-import { formatDateShort, formatRelative, humanizeField } from "@/lib/format"
+import {
+  formatDateUTC,
+  formatRelative,
+  formatSolScore,
+  humanizeField,
+} from "@/lib/format"
 
 export const RESULT_GRID =
-  "grid grid-cols-[44px_minmax(200px,1.6fr)_150px_112px_92px_minmax(150px,1fr)_70px_28px] min-w-[875px]"
+  "grid grid-cols-[44px_minmax(200px,1.6fr)_150px_112px_92px_minmax(150px,1fr)_92px_28px] min-w-[897px]"
 
 /** "Apache-2.0 · pip" — license state plus how the build is obtained. */
 export function availabilityText(row: ResultRow) {
@@ -81,8 +86,26 @@ function RelativeCell({
 /** One plain-English line for the expansion: why the row sits where it does
  * plus the caveat that matters. License/source/install state lives in the
  * chips, so those caveats never repeat here. */
-function whyLine(row: ResultRow, tied: boolean): string {
+function whyLine(
+  row: ResultRow,
+  tied: boolean,
+  baselineMetric: PrimaryMetric | null,
+): string {
   const parts: string[] = []
+  if (
+    !row.baseline &&
+    baselineMetric &&
+    row.primary &&
+    row.primary.value > 0 &&
+    row.primary.value !== baselineMetric.value
+  ) {
+    const speedup = baselineMetric.value / row.primary.value
+    parts.push(
+      speedup > 1
+        ? `${speedup.toFixed(2)}× faster than the cohort's baseline.`
+        : `${(1 / speedup).toFixed(2)}× slower than the cohort's baseline.`,
+    )
+  }
   if (row.mismatches.length > 0)
     parts.push(
       `Differs from the request. ${row.mismatches
@@ -116,6 +139,7 @@ export function ResultRowItem({
   compareWith = null,
   tiedWithNext = false,
   relative = false,
+  baselineMetric = null,
 }: {
   row: ResultRow
   best: PrimaryMetric | null
@@ -124,6 +148,9 @@ export function ResultRowItem({
   tiedWithNext?: boolean
   /** True only when every row shares one cohort with `best` (§16.7). */
   relative?: boolean
+  /** The cohort's source-designated baseline, when one is in the group;
+   * non-baseline expansions state the multiple against it. */
+  baselineMetric?: PrimaryMetric | null
 }) {
   const tied = row.tiedWithPrevious || tiedWithNext
   const rank = row.rank === null ? "—" : `${row.rank}${tied ? "=" : ""}`
@@ -146,6 +173,11 @@ export function ResultRowItem({
           >
             {row.implementation.name}
           </Link>
+          {row.baseline && (
+            <span className="ml-2 font-mono text-[10.5px] tracking-[0.05em] text-faint uppercase">
+              baseline
+            </span>
+          )}
           {row.project.name !== row.implementation.name && (
             <span className="ml-2 text-[12px] text-faint">
               {row.project.name}
@@ -160,6 +192,11 @@ export function ResultRowItem({
               row.rank === 1 ? "text-[14.5px]" : "text-[13.5px]"
             } text-fg`}
           />
+          {row.solScore !== null && (
+            <div className="font-mono text-[10.5px] leading-tight text-subtle">
+              {formatSolScore(row.solScore)}
+            </div>
+          )}
         </div>
         <RelativeCell row={row} best={best} relative={relative} />
         <EvidenceCell row={row} />
@@ -169,7 +206,7 @@ export function ResultRowItem({
             row.stale ? "text-warning" : "text-faint"
           }`}
         >
-          {formatDateShort(row.lastTestedAt)}
+          {formatDateUTC(row.lastTestedAt)}
         </div>
         <div
           aria-hidden="true"
@@ -181,7 +218,7 @@ export function ResultRowItem({
 
       <div className="border-t border-line bg-surface py-3.5 pr-4 pl-11 max-md:pl-4">
         <p className="max-w-[96ch] text-[12.5px] text-muted">
-          {whyLine(row, tied)}
+          {whyLine(row, tied, baselineMetric)}
         </p>
         <div className="mt-2.5 flex flex-wrap items-center gap-x-6 gap-y-2">
           <TierChips row={row} />

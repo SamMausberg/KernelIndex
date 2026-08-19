@@ -7,6 +7,7 @@ import type {
   KeyValue,
   TensorBinding,
 } from "../../lib/catalog-models.ts"
+import { dtypeLabel } from "../../lib/format.ts"
 import type {
   BenchmarkProtocolManifest,
   BenchmarkRunManifest,
@@ -174,7 +175,7 @@ export function workloadLabel(
   const axes = Object.entries(workload.spec.axes)
     .map(([name, value]) => `${name} = ${value}`)
     .join(" · ")
-  return [axes, dtypes.join("/")].filter(Boolean).join(" · ")
+  return [axes, dtypeLabel(dtypes)].filter(Boolean).join(" · ")
 }
 
 export function operationAxisSpecs(

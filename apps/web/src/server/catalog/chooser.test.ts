@@ -51,17 +51,25 @@ describe("chooser", () => {
     })
   })
 
-  it("partitions evidence-bearing candidates first, order otherwise stable", () => {
+  it("partitions evidence first, then family and natural name order", () => {
+    const annotate = (matching: number | null) =>
+      matching === null
+        ? null
+        : { matching, withSource: 0, best: null, facetLabel: "" }
     const entries = [
-      { slug: "a", match: { matching: 0 } },
-      { slug: "b", match: { matching: 3 } },
-      { slug: "c", match: { matching: 1 } },
-      { slug: "d", match: null },
+      { name: "RMSNorm h512", family: "rmsnorm", match: annotate(0) },
+      { name: "RMSNorm h1536", family: "rmsnorm", match: annotate(3) },
+      { name: "RMSNorm h128", family: "rmsnorm", match: annotate(1) },
+      { name: "Fused add RMSNorm", family: "norm", match: annotate(2) },
+      { name: "RMSNorm h4096", family: "rmsnorm", match: annotate(null) },
     ]
-    expect(
-      rankChooserMatches(
-        entries as Parameters<typeof rankChooserMatches>[0],
-      ).map((entry) => (entry as { slug: string }).slug),
-    ).toEqual(["b", "c", "a", "d"])
+    expect(rankChooserMatches(entries).map((entry) => entry.name)).toEqual([
+      // h128 sorts before h1536: numeric-aware, never lexicographic.
+      "Fused add RMSNorm",
+      "RMSNorm h128",
+      "RMSNorm h1536",
+      "RMSNorm h512",
+      "RMSNorm h4096",
+    ])
   })
 })

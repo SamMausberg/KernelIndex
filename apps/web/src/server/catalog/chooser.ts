@@ -83,14 +83,21 @@ export function chooserMatch(
   return { matching, withSource, best, facetLabel: facets.label }
 }
 
+const collator = new Intl.Collator(undefined, { numeric: true })
+
 /**
- * Stable partition: operations with matching evidence first, resolver order
- * untouched inside each partition — textual resolution never regresses, the
- * user just stops being sent to operations with nothing for them.
+ * Chooser order: operations with matching evidence first, and inside each
+ * partition grouped by family in natural-numeric name order (h128 before
+ * h512 before h1536) — a scannable list, never raw resolver-score order.
  */
-export function rankChooserMatches<T extends { match?: ChooserMatch | null }>(
-  entries: T[],
-): T[] {
+export function rankChooserMatches<
+  T extends { match?: ChooserMatch | null; family: string; name: string },
+>(entries: T[]): T[] {
   const has = (entry: T) => (entry.match?.matching ?? 0) > 0
-  return [...entries.filter(has), ...entries.filter((entry) => !has(entry))]
+  const byFamilyName = (a: T, b: T) =>
+    collator.compare(a.family, b.family) || collator.compare(a.name, b.name)
+  return [
+    ...entries.filter(has).sort(byFamilyName),
+    ...entries.filter((entry) => !has(entry)).sort(byFamilyName),
+  ]
 }

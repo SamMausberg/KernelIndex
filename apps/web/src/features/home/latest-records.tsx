@@ -1,14 +1,15 @@
 import { Metric } from "@/components/metric"
 import { Link } from "@/components/quiet-link"
 import { AvailabilityCell, EvidenceCell } from "@/components/trust"
-import type { ResultRow } from "@/lib/catalog"
-import { formatDateUTC } from "@/lib/format"
+import type { RecordHolder } from "@/lib/catalog"
+import { formatDateUTC, formatPrimary, formatSolScore } from "@/lib/format"
 
 const GRID =
-  "grid grid-cols-[1.2fr_1.3fr_110px_150px_100px_165px_110px] min-w-[1010px]"
+  "grid grid-cols-[1.2fr_1.2fr_110px_150px_130px_100px_165px_92px] min-w-[1120px]"
 
-/** Homepage table of the most recent published records (§16.5). */
-export function LatestRecords({ rows }: { rows: ResultRow[] }) {
+/** Homepage table of the newest record breaks (§16.5). Each row is a record
+ * holder; the margin column states what the run displaced. */
+export function LatestRecords({ rows }: { rows: RecordHolder[] }) {
   if (rows.length === 0) {
     return (
       <p className="border-t border-edge py-6 text-[13.5px] text-subtle">
@@ -24,15 +25,18 @@ export function LatestRecords({ rows }: { rows: ResultRow[] }) {
         <div className="px-4 py-2.5">Operation / workload</div>
         <div className="px-4 py-2.5">Implementation</div>
         <div className="px-4 py-2.5 text-right">Latency</div>
+        <div className="px-4 py-2.5">Margin</div>
         <div className="px-4 py-2.5">Hardware</div>
         <div className="px-4 py-2.5">Evidence</div>
         <div className="px-4 py-2.5">Availability</div>
         <div className="px-4 py-2.5 text-right">Set</div>
       </div>
-      {rows.map((row) => {
+      {rows.map((holder) => {
+        const row = holder.current
+        const event = holder.history[0]
         return (
           <div
-            key={row.runId ?? row.implementation.slug}
+            key={holder.cohortKey}
             className={`${GRID} relative h-[52px] items-center border-b border-line transition-colors hover:bg-raised`}
           >
             {/* The whole row reaches the record's run dossier; the cell
@@ -52,7 +56,7 @@ export function LatestRecords({ rows }: { rows: ResultRow[] }) {
                 {row.operation.name}
               </Link>
               <span className="ml-2 font-mono text-[11.5px] text-faint">
-                {row.workloadSummary}
+                {holder.workloadSummary}
               </span>
             </div>
             <div className="truncate px-4">
@@ -68,9 +72,27 @@ export function LatestRecords({ rows }: { rows: ResultRow[] }) {
                 primary={row.primary}
                 valueClassName="font-mono text-[13.5px] text-fg"
               />
+              {row.solScore !== null && (
+                <div className="font-mono text-[10.5px] leading-tight text-subtle">
+                  {formatSolScore(row.solScore)}
+                </div>
+              )}
+            </div>
+            <div className="truncate px-4 font-mono text-[12px] whitespace-nowrap">
+              {event?.improvementPct !== null && event?.previousValue ? (
+                <span className="text-subtle">
+                  {event.improvementPct.toFixed(1)}%
+                  <span className="text-faint">
+                    {" "}
+                    · was {formatPrimary(event.previousValue)}
+                  </span>
+                </span>
+              ) : (
+                <span className="text-faint">first</span>
+              )}
             </div>
             <div className="truncate px-4 font-mono text-[12.5px] text-muted">
-              {row.hardware.model}
+              {holder.hardware}
             </div>
             <div className="px-4">
               <EvidenceCell row={row} />
@@ -79,7 +101,7 @@ export function LatestRecords({ rows }: { rows: ResultRow[] }) {
               <AvailabilityCell row={row} />
             </div>
             <div className="px-4 text-right font-mono text-[12px] text-faint">
-              {formatDateUTC(row.lastTestedAt)}
+              {formatDateUTC(holder.since)}
             </div>
           </div>
         )

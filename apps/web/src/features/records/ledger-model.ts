@@ -20,6 +20,8 @@ export type LedgerRow = Pick<
   | "implementation"
   | "project"
   | "primary"
+  | "solScore"
+  | "baseline"
   | "evidence"
   | "sourceAvailable"
   | "installable"
@@ -47,6 +49,8 @@ export function slimModel(model: RecordsPageModel): LedgerModel {
         implementation: holder.current.implementation,
         project: holder.current.project,
         primary: holder.current.primary,
+        solScore: holder.current.solScore,
+        baseline: holder.current.baseline,
         evidence: holder.current.evidence,
         sourceAvailable: holder.current.sourceAvailable,
         installable: holder.current.installable,
@@ -59,13 +63,21 @@ export function slimModel(model: RecordsPageModel): LedgerModel {
 }
 
 export type RecordsView = "current" | "broken" | "history"
-export type RecordsSort = "date" | "improvement" | "leads" | "operation"
+export type RecordsSort =
+  | "contested"
+  | "date"
+  | "improvement"
+  | "leads"
+  | "operation"
 export type RecordsFilters = {
   view: RecordsView
   hardware: string | null
   verified: boolean
   /** Keep only records whose holder has mirrored source (§16.12). */
   source: boolean
+  /** Include sole-entrant source baselines; hidden by default because an
+   * unbeaten baseline is coverage, not a competitive record. */
+  baselines: boolean
   /** Free-text filter over everything a cohort row displays (§16.12). */
   filter: string
   sort: RecordsSort
@@ -85,13 +97,15 @@ export const DEFAULT_FILTERS: RecordsFilters = {
   hardware: null,
   verified: false,
   source: true,
+  baselines: false,
   filter: "",
-  sort: "date",
+  sort: "contested",
   page: 1,
 }
 
 const VIEWS = new Set<RecordsView>(["current", "broken", "history"])
 const SORTS = new Set<RecordsSort>([
+  "contested",
   "date",
   "improvement",
   "leads",
@@ -110,8 +124,9 @@ export function filtersFromParams(params: {
     hardware: params.get("hw") || null,
     verified: params.get("verified") === "1",
     source: params.get("source") !== "0",
+    baselines: params.get("baselines") === "1",
     filter: (params.get("f") ?? "").trim(),
-    sort: sort !== null && SORTS.has(sort) ? sort : "date",
+    sort: sort !== null && SORTS.has(sort) ? sort : "contested",
     page: Number.isNaN(page) ? 1 : page,
   }
 }
@@ -157,8 +172,9 @@ export function recordsHref(
   if (next.verified) params.set("verified", "1")
   // Source-backed is the default state; only widening needs a param.
   if (!next.source) params.set("source", "0")
+  if (next.baselines) params.set("baselines", "1")
   if (next.filter) params.set("f", next.filter)
-  if (next.sort !== "date") params.set("sort", next.sort)
+  if (next.sort !== "contested") params.set("sort", next.sort)
   if (next.page > 1) params.set("page", String(next.page))
   const suffix = params.toString()
   return suffix ? `/records?${suffix}` : "/records"
@@ -210,12 +226,19 @@ export const isVerifiedHolder = (holder: LedgerHolder) =>
   holder.current.evidence === "verified" ||
   holder.current.evidence === "replicated"
 
-/** One filter policy for all three views: nothing is silently ignored. */
+/** A source-designated baseline nobody has displaced: coverage, not a
+ * competitive record — hidden until the baselines filter widens the view. */
+export const isSoleBaseline = (holder: LedgerHolder) =>
+  holder.current.baseline && holder.history.length === 1
+
+/** One filter policy for all three views: nothing is silently ignored — the
+ * control strip states the count each exclusion hides. */
 export function keepHolder(holder: LedgerHolder, filters: RecordsFilters) {
   if (filters.hardware !== null && holder.hardware !== filters.hardware)
     return false
   if (filters.verified && !isVerifiedHolder(holder)) return false
   if (filters.source && !holder.current.sourceAvailable) return false
+  if (!filters.baselines && isSoleBaseline(holder)) return false
   if (filters.filter === "") return true
   const needle = filters.filter.toLowerCase()
   return [
@@ -229,13 +252,24 @@ export function keepHolder(holder: LedgerHolder, filters: RecordsFilters) {
 
 const collator = new Intl.Collator(undefined, { numeric: true })
 
-/** Sorted copy under the ledger's four presentation sorts. */
+/** Sorted copy under the ledger's presentation sorts. */
 export function sortHolders(
   holders: LedgerHolder[],
   sort: RecordsSort,
 ): LedgerHolder[] {
   const sorted = [...holders]
   // "date" keeps the backend order: newest record first.
+  if (sort === "contested") {
+    // Signal first: cohorts whose record was actually displaced, then
+    // sole-entrant firsts, then unbeaten baselines; newest inside each band.
+    const band = (holder: LedgerHolder) =>
+      holder.history.length > 1 ? 0 : holder.current.baseline ? 2 : 1
+    sorted.sort(
+      (a, b) =>
+        band(a) - band(b) ||
+        (a.since < b.since ? 1 : a.since > b.since ? -1 : 0),
+    )
+  }
   if (sort === "operation")
     sorted.sort(
       (a, b) =>
@@ -278,6 +312,12 @@ export type LedgerSlice = {
   /** Current-record count per hardware, shown in the GPU chooser. */
   hardwareCounts: Record<string, number>
   recordsTotal: number
+  /** Sole-entrant baselines under the other filters; the baselines chip
+   * states this count whether they are hidden or shown. */
+  baselineCount: number
+  /** Verified/replicated holders under the other filters; zero renders the
+   * Verified chip as an honest dead control instead of an empty page. */
+  verifiedCount: number
   context: string | undefined
   holders?: { rows: LedgerHolder[]; total: number; pageCount: number }
   /** Lead story for the current view: newest breaks under the filters. */
@@ -313,6 +353,16 @@ export function ledgerSlice(
     hardwareOptions: model.hardwareOptions,
     hardwareCounts,
     recordsTotal: model.records.length,
+    baselineCount: model.records.filter(
+      (holder) =>
+        isSoleBaseline(holder) &&
+        keepHolder(holder, { ...filters, baselines: true, filter: "" }),
+    ).length,
+    verifiedCount: model.records.filter(
+      (holder) =>
+        isVerifiedHolder(holder) &&
+        keepHolder(holder, { ...filters, verified: true, filter: "" }),
+    ).length,
     context,
   }
   const kept = (holder: LedgerHolder) => keepHolder(holder, filters)

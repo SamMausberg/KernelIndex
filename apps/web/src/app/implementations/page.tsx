@@ -7,7 +7,7 @@ import { ContextHeader } from "@/components/context-header"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
 import { Link } from "@/components/quiet-link"
 import { getProjectIndex } from "@/lib/catalog"
-import { evidenceLabel, formatDateShort } from "@/lib/format"
+import { evidenceLabel, formatDateUTC } from "@/lib/format"
 
 export const metadata: Metadata = { title: "Projects" }
 export const revalidate = 300
@@ -74,7 +74,7 @@ export default async function ProjectsPage() {
                 {project.hardware.join(", ")}
               </div>
               <div className="text-right font-mono text-[11.5px] text-faint">
-                {formatDateShort(project.lastObservedAt)}
+                {formatDateUTC(project.lastObservedAt)}
               </div>
             </div>
           ))}

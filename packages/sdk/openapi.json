@@ -303,6 +303,12 @@
                             "uncertainty"
                           ]
                         },
+                        "solScore": {
+                          "type": ["number", "null"]
+                        },
+                        "baseline": {
+                          "type": "boolean"
+                        },
                         "evidence": {
                           "type": ["string", "null"],
                           "enum": [
@@ -392,6 +398,8 @@
                         "framework",
                         "language",
                         "primary",
+                        "solScore",
+                        "baseline",
                         "evidence",
                         "match",
                         "mismatches",
@@ -524,6 +532,12 @@
                             "uncertainty"
                           ]
                         },
+                        "solScore": {
+                          "type": ["number", "null"]
+                        },
+                        "baseline": {
+                          "type": "boolean"
+                        },
                         "evidence": {
                           "type": ["string", "null"],
                           "enum": [
@@ -613,6 +627,8 @@
                         "framework",
                         "language",
                         "primary",
+                        "solScore",
+                        "baseline",
                         "evidence",
                         "match",
                         "mismatches",
@@ -750,6 +766,12 @@
                                   "uncertainty"
                                 ]
                               },
+                              "solScore": {
+                                "type": ["number", "null"]
+                              },
+                              "baseline": {
+                                "type": "boolean"
+                              },
                               "evidence": {
                                 "type": ["string", "null"],
                                 "enum": [
@@ -839,6 +861,8 @@
                               "framework",
                               "language",
                               "primary",
+                              "solScore",
+                              "baseline",
                               "evidence",
                               "match",
                               "mismatches",
@@ -974,6 +998,12 @@
                                   "uncertainty"
                                 ]
                               },
+                              "solScore": {
+                                "type": ["number", "null"]
+                              },
+                              "baseline": {
+                                "type": "boolean"
+                              },
                               "evidence": {
                                 "type": ["string", "null"],
                                 "enum": [
@@ -1063,6 +1093,8 @@
                               "framework",
                               "language",
                               "primary",
+                              "solScore",
+                              "baseline",
                               "evidence",
                               "match",
                               "mismatches",
@@ -1198,6 +1230,12 @@
                                   "uncertainty"
                                 ]
                               },
+                              "solScore": {
+                                "type": ["number", "null"]
+                              },
+                              "baseline": {
+                                "type": "boolean"
+                              },
                               "evidence": {
                                 "type": ["string", "null"],
                                 "enum": [
@@ -1287,6 +1325,8 @@
                               "framework",
                               "language",
                               "primary",
+                              "solScore",
+                              "baseline",
                               "evidence",
                               "match",
                               "mismatches",
@@ -1422,6 +1462,12 @@
                                   "uncertainty"
                                 ]
                               },
+                              "solScore": {
+                                "type": ["number", "null"]
+                              },
+                              "baseline": {
+                                "type": "boolean"
+                              },
                               "evidence": {
                                 "type": ["string", "null"],
                                 "enum": [
@@ -1511,6 +1557,8 @@
                               "framework",
                               "language",
                               "primary",
+                              "solScore",
+                              "baseline",
                               "evidence",
                               "match",
                               "mismatches",
@@ -1983,6 +2031,12 @@
                             "uncertainty"
                           ]
                         },
+                        "solScore": {
+                          "type": ["number", "null"]
+                        },
+                        "baseline": {
+                          "type": "boolean"
+                        },
                         "evidence": {
                           "type": ["string", "null"],
                           "enum": [
@@ -2072,6 +2126,8 @@
                         "framework",
                         "language",
                         "primary",
+                        "solScore",
+                        "baseline",
                         "evidence",
                         "match",
                         "mismatches",
@@ -2204,6 +2260,12 @@
                             "uncertainty"
                           ]
                         },
+                        "solScore": {
+                          "type": ["number", "null"]
+                        },
+                        "baseline": {
+                          "type": "boolean"
+                        },
                         "evidence": {
                           "type": ["string", "null"],
                           "enum": [
@@ -2293,6 +2355,8 @@
                         "framework",
                         "language",
                         "primary",
+                        "solScore",
+                        "baseline",
                         "evidence",
                         "match",
                         "mismatches",
@@ -2430,6 +2494,12 @@
                                   "uncertainty"
                                 ]
                               },
+                              "solScore": {
+                                "type": ["number", "null"]
+                              },
+                              "baseline": {
+                                "type": "boolean"
+                              },
                               "evidence": {
                                 "type": ["string", "null"],
                                 "enum": [
@@ -2519,6 +2589,8 @@
                               "framework",
                               "language",
                               "primary",
+                              "solScore",
+                              "baseline",
                               "evidence",
                               "match",
                               "mismatches",
@@ -2654,6 +2726,12 @@
                                   "uncertainty"
                                 ]
                               },
+                              "solScore": {
+                                "type": ["number", "null"]
+                              },
+                              "baseline": {
+                                "type": "boolean"
+                              },
                               "evidence": {
                                 "type": ["string", "null"],
                                 "enum": [
@@ -2743,6 +2821,8 @@
                               "framework",
                               "language",
                               "primary",
+                              "solScore",
+                              "baseline",
                               "evidence",
                               "match",
                               "mismatches",
@@ -2878,6 +2958,12 @@
                                   "uncertainty"
                                 ]
                               },
+                              "solScore": {
+                                "type": ["number", "null"]
+                              },
+                              "baseline": {
+                                "type": "boolean"
+                              },
                               "evidence": {
                                 "type": ["string", "null"],
                                 "enum": [
@@ -2967,6 +3053,8 @@
                               "framework",
                               "language",
                               "primary",
+                              "solScore",
+                              "baseline",
                               "evidence",
                               "match",
                               "mismatches",
@@ -3102,6 +3190,12 @@
                                   "uncertainty"
                                 ]
                               },
+                              "solScore": {
+                                "type": ["number", "null"]
+                              },
+                              "baseline": {
+                                "type": "boolean"
+                              },
                               "evidence": {
                                 "type": ["string", "null"],
                                 "enum": [
@@ -3191,6 +3285,8 @@
                               "framework",
                               "language",
                               "primary",
+                              "solScore",
+                              "baseline",
                               "evidence",
                               "match",
                               "mismatches",
@@ -3807,6 +3903,12 @@
                               "uncertainty"
                             ]
                           },
+                          "solScore": {
+                            "type": ["number", "null"]
+                          },
+                          "baseline": {
+                            "type": "boolean"
+                          },
                           "evidence": {
                             "type": ["string", "null"],
                             "enum": [
@@ -3896,6 +3998,8 @@
                           "framework",
                           "language",
                           "primary",
+                          "solScore",
+                          "baseline",
                           "evidence",
                           "match",
                           "mismatches",
@@ -4556,6 +4660,12 @@
                               "uncertainty"
                             ]
                           },
+                          "solScore": {
+                            "type": ["number", "null"]
+                          },
+                          "baseline": {
+                            "type": "boolean"
+                          },
                           "evidence": {
                             "type": ["string", "null"],
                             "enum": [
@@ -4645,6 +4755,8 @@
                           "framework",
                           "language",
                           "primary",
+                          "solScore",
+                          "baseline",
                           "evidence",
                           "match",
                           "mismatches",
@@ -5545,6 +5657,12 @@
                                   "uncertainty"
                                 ]
                               },
+                              "solScore": {
+                                "type": ["number", "null"]
+                              },
+                              "baseline": {
+                                "type": "boolean"
+                              },
                               "evidence": {
                                 "type": ["string", "null"],
                                 "enum": [
@@ -5634,6 +5752,8 @@
                               "framework",
                               "language",
                               "primary",
+                              "solScore",
+                              "baseline",
                               "evidence",
                               "match",
                               "mismatches",

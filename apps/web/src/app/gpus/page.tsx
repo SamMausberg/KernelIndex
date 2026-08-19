@@ -6,7 +6,7 @@ import { ContextHeader } from "@/components/context-header"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
 import { Link } from "@/components/quiet-link"
 import { getHardwareIndex } from "@/lib/catalog"
-import { formatDateShort } from "@/lib/format"
+import { formatDateUTC } from "@/lib/format"
 
 export const metadata: Metadata = { title: "GPUs" }
 export const revalidate = 300
@@ -63,7 +63,7 @@ export default async function GpusPage() {
                 {gpu.records.toLocaleString("en-US")}
               </div>
               <div className="text-right font-mono text-[11.5px] text-faint">
-                {formatDateShort(gpu.lastObservedAt)}
+                {formatDateUTC(gpu.lastObservedAt)}
               </div>
             </div>
           ))}

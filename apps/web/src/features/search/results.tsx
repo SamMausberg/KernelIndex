@@ -10,6 +10,7 @@ import {
   formatDateUTC,
   formatPrimary,
   formatPrimaryParts,
+  formatSolScore,
   formatSpread,
 } from "@/lib/format"
 import { meetsTrust, removeToken } from "@/lib/search-query"
@@ -214,11 +215,25 @@ function Recommendation({
     fastest.primary.value < top.primary.value
       ? fastest
       : null
+  // Baseline context (§8.14): an unbeaten source baseline is stated as such,
+  // never presented as a competitive record; rows that beat one say by how
+  // much — the two numbers experts actually think in.
+  const exactBaseline = model.groups.exact.find((row) => row.baseline) ?? null
+  const allBaseline =
+    model.groups.exact.length > 0 && model.groups.exact.every((r) => r.baseline)
+  const vsBaseline =
+    !top.baseline &&
+    exactBaseline?.primary &&
+    top.primary &&
+    top.primary.value > 0 &&
+    exactBaseline.primary.value !== top.primary.value
+      ? exactBaseline.primary.value / top.primary.value
+      : null
   return (
     <section className="grid animate-row-in grid-cols-[minmax(0,1.5fr)_minmax(280px,1fr)] gap-11 border-b border-border py-6 [animation-delay:.02s] max-lg:grid-cols-1">
       <div>
         <div className="font-mono text-[10px] tracking-[0.08em] text-faint uppercase">
-          {answerLabel(top)}
+          {allBaseline ? "Source baseline · unbeaten" : answerLabel(top)}
           {fasterInCohort ? " with source" : ""}
         </div>
         <div className="mt-3 flex flex-wrap items-baseline gap-4">
@@ -237,6 +252,10 @@ function Recommendation({
                 top.primary.statistic === "unspecified"
                   ? null
                   : `${top.primary.statistic}${top.primary.sampleCount ? ` of ${top.primary.sampleCount}` : ""}`,
+                top.solScore !== null ? formatSolScore(top.solScore) : null,
+                vsBaseline !== null
+                  ? `${vsBaseline.toFixed(2)}× vs baseline`
+                  : null,
               ]
                 .filter(Boolean)
                 .join(" · ")}
@@ -747,6 +766,12 @@ export function SearchResults({
                           tiedWithNext={
                             rows[index + 1]?.tiedWithPrevious &&
                             rows[index + 1]?.rank === row.rank
+                          }
+                          baselineMetric={
+                            view === "exact"
+                              ? (model.groups.exact.find((r) => r.baseline)
+                                  ?.primary ?? null)
+                              : null
                           }
                         />
                       </Fragment>

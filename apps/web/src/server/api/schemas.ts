@@ -89,6 +89,8 @@ export const resultRow = z.object({
   framework: z.string().nullable(),
   language: z.string().nullable(),
   primary: primaryMetric.nullable(),
+  solScore: z.number().nullable(),
+  baseline: z.boolean(),
   evidence: evidenceLevel.nullable(),
   match: z.enum(["exact", "compatible", "supported_unobserved", "related"]),
   mismatches: z.array(

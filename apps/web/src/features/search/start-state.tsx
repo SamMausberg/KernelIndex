@@ -1,7 +1,7 @@
 import { Meter } from "@/components/meter"
 import { Link } from "@/components/quiet-link"
 import type { OperationIndexEntry } from "@/lib/catalog"
-import { formatDateShort, formatPrimary } from "@/lib/format"
+import { formatDateUTC, formatPrimary } from "@/lib/format"
 
 /** "38.6 µs" from a chooser best value. */
 const formatLatency = (best: { value: number; unit: string }) =>
@@ -72,7 +72,7 @@ export function OperationList({
   const maxRuns = Math.max(100, ...entries.map((entry) => entry.runs))
   return (
     <div className="overflow-x-auto">
-      <div className="grid min-w-[720px] grid-cols-[minmax(280px,1fr)_150px_190px_74px] text-[11.5px] text-faint">
+      <div className="grid min-w-[738px] grid-cols-[minmax(280px,1fr)_150px_190px_92px] text-[11.5px] text-faint">
         <div className="py-2">Operation</div>
         <div className="py-2">Family</div>
         <div className="py-2 text-right">Published runs</div>
@@ -82,7 +82,7 @@ export function OperationList({
         <Link
           key={entry.slug}
           href={hrefFor(entry)}
-          className={`grid ${entry.match ? "h-[58px]" : "h-[44px]"} min-w-[720px] grid-cols-[minmax(280px,1fr)_150px_190px_74px] items-center border-t border-line transition-colors hover:bg-raised hover:no-underline`}
+          className={`grid ${entry.match ? "h-[58px]" : "h-[44px]"} min-w-[738px] grid-cols-[minmax(280px,1fr)_150px_190px_92px] items-center border-t border-line transition-colors hover:bg-raised hover:no-underline`}
         >
           <span className="min-w-0 pr-4">
             <span className="block truncate text-[13.5px] text-fg">
@@ -127,7 +127,7 @@ export function OperationList({
             </span>
           </span>
           <span className="text-right font-mono text-[11.5px] text-faint">
-            {formatDateShort(entry.lastObservedAt)}
+            {formatDateUTC(entry.lastObservedAt)}
           </span>
         </Link>
       ))}

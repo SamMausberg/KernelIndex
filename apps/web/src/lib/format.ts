@@ -127,12 +127,33 @@ export function formatSourceNativeMetrics(
   return parts.length > 0 ? parts.join(" · ") : null
 }
 
-/** "2026-08-11" from an ISO timestamp; "—" when never tested. */
+/** "2026-08-11" from an ISO timestamp; "—" when never tested. Dense cells
+ * use it too: a year-less "10-21" across a year boundary misleads. */
 export function formatDateUTC(iso: string | null): string {
   return iso ? iso.slice(0, 10) : "—"
 }
 
-/** "08-11" month-day for dense table cells. */
-export function formatDateShort(iso: string | null): string {
-  return iso ? iso.slice(5, 10) : "—"
+/** "62% of SOL" from a source-published SOL-Score fraction (SOL-ExecBench):
+ * the source's own speed-of-light estimate, never a KernelIndex claim. */
+export function formatSolScore(score: number): string {
+  return `${Math.round(score * 100)}% of SOL`
+}
+
+/** Verbose storage dtype names → their element family, display only —
+ * manifests and digests keep the source-declared name. */
+const DTYPE_DISPLAY: Record<string, string> = { float4_e2m1fn_x2: "fp4" }
+
+/**
+ * Workload dtype label: compute dtypes lead; integer/bool index and mask
+ * plumbing shows only when nothing else does (an fp4 GEMM must never read
+ * as "int8" because its scales and indices are integers). Capped for the
+ * dense rows — the run dossier keeps the full per-tensor detail.
+ */
+export function dtypeLabel(dtypes: string[]): string {
+  const display = [...new Set(dtypes.map((d) => DTYPE_DISPLAY[d] ?? d))]
+  const compute = display.filter((d) => !/^(u?int|bool$|index)/.test(d))
+  const lead = compute.length > 0 ? compute : display
+  return lead.length > 3
+    ? `${lead.slice(0, 3).join("/")} +${lead.length - 3}`
+    : lead.join("/")
 }

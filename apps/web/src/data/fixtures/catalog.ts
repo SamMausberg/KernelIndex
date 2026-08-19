@@ -453,6 +453,8 @@ function rowFromRun(r: FxRun): ResultRow {
       sampleCount: r.samples,
       uncertainty: r.ci ? { low: r.ci[0], high: r.ci[1] } : null,
     },
+    solScore: null,
+    baseline: false,
     evidence: r.evidence,
     match: r.match,
     mismatches: r.mismatches ?? [],
@@ -485,6 +487,8 @@ const SUPPORTED_UNMEASURED: ResultRow = {
   framework: null,
   language: "cuda",
   primary: null,
+  solScore: null,
+  baseline: false,
   evidence: null,
   match: "supported_unobserved",
   mismatches: [],
@@ -502,10 +506,14 @@ const SUPPORTED_UNMEASURED: ResultRow = {
 const RANKED = RUNS.filter((r) => r.workloadId === "wl-2048" && r.rank !== null)
 
 export async function getHomePage(): Promise<HomePageModel> {
-  // Homepage lists default to source-backed records (2026-08-16 decision).
-  const latest = RANKED.filter((r) => r.sourceAvailable)
-    .sort((a, b) => b.lastTestedAt.localeCompare(a.lastTestedAt))
-    .map(rowFromRun)
+  // Homepage lists default to source-backed records (2026-08-16 decision);
+  // like the postgres read, rows are record holders trimmed to their
+  // current event, breaks before first records.
+  const { records } = await getRecordsPage()
+  const latest = records
+    .filter((holder) => holder.current.sourceAvailable)
+    .sort((a, b) => b.history.length - a.history.length)
+    .map((holder) => ({ ...holder, history: holder.history.slice(0, 1) }))
   return {
     illustrative: ILLUSTRATIVE,
     latest,

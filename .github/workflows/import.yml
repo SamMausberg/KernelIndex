@@ -35,6 +35,11 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
 
+      # Forward-only migrations are idempotent; applying them here keeps the
+      # production schema current with merged code before importers write.
+      - name: migrate
+        run: pnpm --filter @kernelindex/web db:migrate
+
       # Each source: dry-run → machine gate (no unexpected issues or
       # ambiguities) → publish. A failed gate uploads the report and stops
       # that source without touching the catalog.

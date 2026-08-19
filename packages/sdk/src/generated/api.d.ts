@@ -147,6 +147,8 @@ export interface paths {
                     high: number
                   } | null
                 } | null
+                solScore: number | null
+                baseline: boolean
                 /** @enum {string|null} */
                 evidence:
                   | "verified"
@@ -215,6 +217,8 @@ export interface paths {
                     high: number
                   } | null
                 } | null
+                solScore: number | null
+                baseline: boolean
                 /** @enum {string|null} */
                 evidence:
                   | "verified"
@@ -284,6 +288,8 @@ export interface paths {
                       high: number
                     } | null
                   } | null
+                  solScore: number | null
+                  baseline: boolean
                   /** @enum {string|null} */
                   evidence:
                     | "verified"
@@ -352,6 +358,8 @@ export interface paths {
                       high: number
                     } | null
                   } | null
+                  solScore: number | null
+                  baseline: boolean
                   /** @enum {string|null} */
                   evidence:
                     | "verified"
@@ -420,6 +428,8 @@ export interface paths {
                       high: number
                     } | null
                   } | null
+                  solScore: number | null
+                  baseline: boolean
                   /** @enum {string|null} */
                   evidence:
                     | "verified"
@@ -488,6 +498,8 @@ export interface paths {
                       high: number
                     } | null
                   } | null
+                  solScore: number | null
+                  baseline: boolean
                   /** @enum {string|null} */
                   evidence:
                     | "verified"
@@ -697,6 +709,8 @@ export interface paths {
                     high: number
                   } | null
                 } | null
+                solScore: number | null
+                baseline: boolean
                 /** @enum {string|null} */
                 evidence:
                   | "verified"
@@ -765,6 +779,8 @@ export interface paths {
                     high: number
                   } | null
                 } | null
+                solScore: number | null
+                baseline: boolean
                 /** @enum {string|null} */
                 evidence:
                   | "verified"
@@ -834,6 +850,8 @@ export interface paths {
                       high: number
                     } | null
                   } | null
+                  solScore: number | null
+                  baseline: boolean
                   /** @enum {string|null} */
                   evidence:
                     | "verified"
@@ -902,6 +920,8 @@ export interface paths {
                       high: number
                     } | null
                   } | null
+                  solScore: number | null
+                  baseline: boolean
                   /** @enum {string|null} */
                   evidence:
                     | "verified"
@@ -970,6 +990,8 @@ export interface paths {
                       high: number
                     } | null
                   } | null
+                  solScore: number | null
+                  baseline: boolean
                   /** @enum {string|null} */
                   evidence:
                     | "verified"
@@ -1038,6 +1060,8 @@ export interface paths {
                       high: number
                     } | null
                   } | null
+                  solScore: number | null
+                  baseline: boolean
                   /** @enum {string|null} */
                   evidence:
                     | "verified"
@@ -1263,6 +1287,8 @@ export interface paths {
                     high: number
                   } | null
                 } | null
+                solScore: number | null
+                baseline: boolean
                 /** @enum {string|null} */
                 evidence:
                   | "verified"
@@ -1512,6 +1538,8 @@ export interface paths {
                     high: number
                   } | null
                 } | null
+                solScore: number | null
+                baseline: boolean
                 /** @enum {string|null} */
                 evidence:
                   | "verified"
@@ -1868,6 +1896,8 @@ export interface paths {
                       high: number
                     } | null
                   } | null
+                  solScore: number | null
+                  baseline: boolean
                   /** @enum {string|null} */
                   evidence:
                     | "verified"

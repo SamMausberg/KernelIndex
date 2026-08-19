@@ -84,6 +84,8 @@ export function OperationRecords({
   }
 
   const best = variant.records[0]?.primary ?? null
+  const baselineMetric =
+    variant.records.find((row) => row.baseline)?.primary ?? null
   const overflow = variant.recordsTotal - variant.records.length
 
   return (
@@ -160,6 +162,7 @@ export function OperationRecords({
                   row={row}
                   best={best}
                   relative
+                  baselineMetric={baselineMetric}
                 />
               ))}
             </>

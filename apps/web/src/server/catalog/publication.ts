@@ -435,6 +435,7 @@ export async function publishBundle(
             installCommand:
               manifest.spec.buildVariants?.[0]?.install.command ?? null,
             licenseDeclared: licensing.declared ?? null,
+            role: manifest.metadata.labels?.role ?? null,
             manifest,
           })
           .returning()
@@ -618,6 +619,7 @@ export async function publishBundle(
             manifest.spec.evidence?.rawSamples !== undefined ||
             manifest.spec.evidence?.logs !== undefined,
           sourceNative: manifest.spec.sourceNative !== undefined,
+          solScore: manifest.spec.sourceNative?.metrics?.sol_score ?? null,
           environmentSummary:
             [
               environment.spec.software.cudaToolkit

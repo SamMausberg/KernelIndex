@@ -12,7 +12,7 @@ import {
   SourceDiffView,
 } from "@/features/implementations/source-view"
 import { getImplementationPage } from "@/lib/catalog"
-import { evidenceLabel, formatDateShort, formatDateUTC } from "@/lib/format"
+import { evidenceLabel, formatDateUTC } from "@/lib/format"
 
 // Implementation dossiers change only on importer runs; ISR on first hit.
 export const revalidate = 300
@@ -255,7 +255,7 @@ export default async function ImplementationPage({ params }: Props) {
                       />
                     </div>
                     <div className="font-mono text-[11.5px] text-faint">
-                      {formatDateShort(row.lastTestedAt)}
+                      {formatDateUTC(row.lastTestedAt)}
                     </div>
                     <div className="pr-1 text-right text-[12.5px]">
                       {row.runId && (

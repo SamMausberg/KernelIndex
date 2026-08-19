@@ -10,7 +10,7 @@ import { Metric } from "@/components/metric"
 // the URL kept shareable. Markup is identical to the server-rendered form.
 import { Link } from "@/components/quiet-link"
 import { AvailabilityCell, EvidenceCell } from "@/components/trust"
-import { formatDateShort, formatDateUTC, formatPrimary } from "@/lib/format"
+import { formatDateUTC, formatPrimary, formatSolScore } from "@/lib/format"
 import {
   DAY_MS,
   filtersFromParams,
@@ -44,7 +44,7 @@ function loadModel(): Promise<LedgerModel | null> {
 }
 
 const CURRENT_GRID =
-  "grid grid-cols-[minmax(280px,1.5fr)_170px_150px_minmax(150px,0.9fr)_156px_92px_minmax(150px,1fr)_78px_28px] min-w-[1240px]"
+  "grid grid-cols-[minmax(280px,1.5fr)_170px_150px_minmax(150px,0.9fr)_156px_92px_minmax(150px,1fr)_92px_28px] min-w-[1254px]"
 
 /** The lead story (§16.12): the newest broken records under the filters.
  * Flat hairline cards, no gradient or catch-light; the whole card reaches
@@ -73,7 +73,7 @@ function LatestBreaks({ latest }: { latest: LedgerEvent[] }) {
                 {holder.operation.name}
               </span>
               <span className="font-mono text-[11.5px] whitespace-nowrap text-faint">
-                {formatDateShort(event.at)}
+                {formatDateUTC(event.at)}
               </span>
             </div>
             <div className="mt-1.5 font-mono text-[13px]">
@@ -125,6 +125,11 @@ function HolderRow({ holder }: { holder: LedgerHolder }) {
             spread
             valueClassName="font-mono text-[14px] text-fg"
           />
+          {record.solScore !== null && (
+            <div className="font-mono text-[10.5px] leading-tight text-subtle">
+              {formatSolScore(record.solScore)}
+            </div>
+          )}
         </div>
         <div className="truncate pr-3 font-mono text-[12px] whitespace-nowrap">
           {margin !== null ? (
@@ -137,6 +142,8 @@ function HolderRow({ holder }: { holder: LedgerHolder }) {
                 </span>
               )}
             </span>
+          ) : record.baseline ? (
+            <span className="text-faint">baseline · unbeaten</span>
           ) : (
             <span className="text-faint">first</span>
           )}
@@ -149,6 +156,11 @@ function HolderRow({ holder }: { holder: LedgerHolder }) {
           >
             {record.implementation.name}
           </Link>
+          {record.baseline && (
+            <span className="ml-2 font-mono text-[10.5px] tracking-[0.05em] text-faint uppercase">
+              baseline
+            </span>
+          )}
           {record.project.name !== record.implementation.name && (
             <span className="ml-2 text-[12px] text-faint">
               {record.project.name}
@@ -161,7 +173,7 @@ function HolderRow({ holder }: { holder: LedgerHolder }) {
         <EvidenceCell row={record} />
         <AvailabilityCell row={record} />
         <div className="font-mono text-[11.5px] whitespace-nowrap text-faint">
-          {formatDateShort(holder.since)}
+          {formatDateUTC(holder.since)}
           {isNew && <span className="text-accent"> · new</span>}
         </div>
         <div
@@ -259,7 +271,7 @@ function HolderRow({ holder }: { holder: LedgerHolder }) {
 }
 
 const BROKEN_GRID =
-  "grid grid-cols-[minmax(230px,1.4fr)_200px_minmax(160px,0.9fr)_96px_156px_92px_minmax(150px,1fr)_78px] min-w-[1170px]"
+  "grid grid-cols-[minmax(230px,1.4fr)_200px_minmax(160px,0.9fr)_96px_156px_92px_minmax(150px,1fr)_92px] min-w-[1184px]"
 
 function BrokenRows({ transitions }: { transitions: LedgerEvent[] }) {
   if (transitions.length === 0) {
@@ -321,7 +333,7 @@ function BrokenRows({ transitions }: { transitions: LedgerEvent[] }) {
             <AvailabilityCell row={holder.current} />
           </div>
           <div className="py-3.5 font-mono text-[11.5px] text-faint">
-            {formatDateShort(event.at)}
+            {formatDateUTC(event.at)}
           </div>
         </div>
       ))}
@@ -533,14 +545,26 @@ function ControlStrip({
             })}
           </div>
         </details>
-        <FilterLink
-          filters={filters}
-          patch={{ verified: !filters.verified }}
-          navigate={navigate}
-          className={chip(filters.verified)}
-        >
-          Verified
-        </FilterLink>
+        {slice.verifiedCount > 0 || filters.verified ? (
+          <FilterLink
+            filters={filters}
+            patch={{ verified: !filters.verified }}
+            navigate={navigate}
+            className={chip(filters.verified)}
+          >
+            Verified{" "}
+            <span className="font-mono text-[11px] text-faint">
+              {slice.verifiedCount}
+            </span>
+          </FilterLink>
+        ) : (
+          <span
+            title="No independently verified records yet — every result is source-reported"
+            className="key px-2.5 py-[3px] text-[12px] whitespace-nowrap text-ghost"
+          >
+            Verified <span className="font-mono text-[11px]">0</span>
+          </span>
+        )}
         <FilterLink
           filters={filters}
           patch={{ source: !filters.source }}
@@ -549,6 +573,19 @@ function ControlStrip({
         >
           Has source
         </FilterLink>
+        {slice.baselineCount > 0 && (
+          <FilterLink
+            filters={filters}
+            patch={{ baselines: !filters.baselines }}
+            navigate={navigate}
+            className={chip(filters.baselines)}
+          >
+            Unbeaten baselines{" "}
+            <span className="font-mono text-[11px] text-faint">
+              {slice.baselineCount}
+            </span>
+          </FilterLink>
+        )}
         <form
           action="/records"
           onSubmit={(event) => {
@@ -570,7 +607,10 @@ function ControlStrip({
             <input type="hidden" name="verified" value="1" />
           )}
           {!filters.source && <input type="hidden" name="source" value="0" />}
-          {filters.sort !== "date" && (
+          {filters.baselines && (
+            <input type="hidden" name="baselines" value="1" />
+          )}
+          {filters.sort !== "contested" && (
             <input type="hidden" name="sort" value={filters.sort} />
           )}
           <input
@@ -701,6 +741,7 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
                     <span className="whitespace-nowrap">sorted by</span>
                     {(
                       [
+                        { key: "contested", label: "Contested" },
                         { key: "date", label: "Newest" },
                         { key: "improvement", label: "Largest improvement" },
                         { key: "leads", label: "Most lead changes" },

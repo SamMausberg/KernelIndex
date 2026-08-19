@@ -96,6 +96,12 @@ export function implementationFromFiSolution(input: {
       name: kebab(solution.name),
       title: solution.name,
       description: solution.description ?? undefined,
+      // Upstream ships these as its designated baseline solutions; the role
+      // keeps them from being presented as competing record holders.
+      labels:
+        (solution.author ?? "baseline") === "baseline"
+          ? { role: "baseline" }
+          : undefined,
       authors: solution.author ? [{ name: solution.author }] : undefined,
       sourceRefs: [
         { url: `${DATASET_URL}/blob/${input.revision}/${input.path}` },
