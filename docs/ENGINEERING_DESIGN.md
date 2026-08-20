@@ -1605,6 +1605,13 @@ One publication transaction:
 
 Before a worker exists, the command performs bounded derived recomputation immediately after commit or through a separate explicit maintenance command. Do not introduce Graphile Worker merely to satisfy this sequence.
 
+**Reality note (2026-08-20).** Steps 2–6 are implemented set-based: one
+chunked existence query and one chunked multi-row insert per entity type
+(`catalog/publication.ts`, shared helpers reused by serving publication),
+after per-row awaits made multi-thousand-run bundles take hours over a
+remote link. Contract, ordering, and idempotency are unchanged; a 1,200-run
+wave publishes in seconds.
+
 ### 10.9 Private data and retention
 
 Public reads can initially use a narrowly scoped application role. Enable row-level security before private organizations or private benchmark suites launch.
@@ -2042,6 +2049,16 @@ Later: private organizations, webhooks, runner jobs, paid entitlements
 ```
 
 Do not expose a table-shaped endpoint for every database relation.
+
+**Reality note (2026-08-20).** With the corpus at ~20k records, six
+corpus-enumeration GET routes shipped so agents can page and filter instead
+of guessing slugs: `/runs` (keyset-paged; operation/hardware/source/status/
+since filters), `/operations`, `/hardware`, `/models`, `/coverage`, and
+`/sources` (`server/api/catalog-routes.ts` over `catalog/api-reads.ts`,
+threaded through the SDK, `ki runs|hardware|models`, and the
+`list_runs`/`list_hardware`/`list_models` MCP tools). These are coverage
+listings over the same read seam — kernel and serving stay separate columns,
+never a shared ranking.
 
 ### 13.3 Search and resolver response shape
 

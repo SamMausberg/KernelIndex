@@ -36,9 +36,7 @@ describe.skipIf(!url)("batched publication", () => {
     bundle.implementations = []
     bundle.runs[0].manifest.spec.observedAt = "2026-01-02T00:00:00Z"
     const result = await publishBundle(db(), bundle, { publish: true })
-    expect(
-      result.counts.runs.inserted + result.counts.runs.existing,
-    ).toBe(1)
+    expect(result.counts.runs.inserted + result.counts.runs.existing).toBe(1)
     expect(result.runIds[0]).toBeTruthy()
   })
 })
