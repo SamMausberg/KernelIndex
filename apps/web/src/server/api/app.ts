@@ -21,6 +21,8 @@ import {
 import type { ResultRow, SearchPageModel } from "../../lib/catalog-models.ts"
 import { deployability } from "../policy/deployability.ts"
 import { RANKING_POLICY_VERSION } from "../policy/ranking.ts"
+import { listRoutes } from "./catalog-routes.ts"
+import { CACHE_MEDIUM, CACHE_SHORT, fail, json } from "./http.ts"
 import {
   compareResponse,
   correctionRequest,
@@ -40,32 +42,6 @@ import {
   servingRunDossier,
   servingRunsResponse,
 } from "./schemas.ts"
-
-const CACHE_SHORT = "public, s-maxage=60, stale-while-revalidate=300"
-const CACHE_MEDIUM = "public, s-maxage=300, stale-while-revalidate=86400"
-
-/** RFC 9457 Problem Details thrown as an HTTPException (§13.5). */
-function fail(
-  status: 400 | 401 | 403 | 404 | 422 | 429,
-  code: string,
-  detail: string,
-  headers?: Record<string, string>,
-): never {
-  const body = {
-    type: `https://kernelindex.dev/errors/${code.toLowerCase()}`,
-    title: code.replaceAll("_", " ").toLowerCase(),
-    status,
-    code,
-    detail,
-    requestId: crypto.randomUUID(),
-  }
-  throw new HTTPException(status, {
-    res: new Response(JSON.stringify(body), {
-      status,
-      headers: { "Content-Type": "application/problem+json", ...headers },
-    }),
-  })
-}
 
 const isVerified = (row: ResultRow) =>
   row.evidence === "verified" || row.evidence === "replicated"
@@ -121,20 +97,6 @@ export function composeQuery(request: ResolveKernelRequest): string {
   if (request.policy?.sourceRequired) parts.push("source:true")
   if (request.policy?.installableRequired) parts.push("installable:true")
   return parts.join(" ").trim()
-}
-
-const problemResponses = {
-  404: {
-    description: "Not found",
-    content: { "application/json": { schema: problemDetails } },
-  },
-} as const
-
-function json<S extends z.ZodType>(schema: S, description: string) {
-  return {
-    200: { description, content: { "application/json": { schema } } },
-    ...problemResponses,
-  }
 }
 
 export const api = new OpenAPIHono<{
@@ -636,6 +598,10 @@ api.openapi(
     return c.json(model)
   },
 )
+
+// Corpus enumeration routes (§13.2 at 20k records) live in their own module;
+// mounting after the middleware keeps key/scope checks and CORS applied.
+api.route("/", listRoutes)
 
 api.doc("/openapi.json", OPENAPI_INFO)
 

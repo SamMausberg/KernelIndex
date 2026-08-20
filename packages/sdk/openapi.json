@@ -3556,6 +3556,21 @@
                             "type": "string"
                           }
                         },
+                        "equivalents": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "slug": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["name", "slug"]
+                          }
+                        },
                         "models": {
                           "type": "array",
                           "items": {
@@ -3578,6 +3593,7 @@
                         "name",
                         "family",
                         "aliases",
+                        "equivalents",
                         "models",
                         "semanticDigest",
                         "summary",
@@ -7438,6 +7454,793 @@
                     "lifecycle",
                     "attribution"
                   ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "number"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["type", "title", "status", "code", "requestId"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/runs": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "required": false,
+            "name": "operation",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "required": false,
+            "name": "hardware",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "required": false,
+            "name": "source",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "passed",
+                "incorrect_shape",
+                "incorrect_dtype",
+                "incorrect_numerical",
+                "compile_error",
+                "runtime_error",
+                "timeout",
+                "resource_exceeded",
+                "invalid_reference",
+                "policy_violation",
+                "suspected_reward_hack",
+                "incomplete_evidence",
+                "revoked"
+              ]
+            },
+            "required": false,
+            "name": "status",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "required": false,
+            "name": "since",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "required": false,
+            "name": "cursor",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Published runs, newest observation first, keyset-paginated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "runs": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "digest": {
+                            "type": "string"
+                          },
+                          "operation": {
+                            "type": "string"
+                          },
+                          "implementation": {
+                            "type": "string"
+                          },
+                          "hardware": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "passed",
+                              "incorrect_shape",
+                              "incorrect_dtype",
+                              "incorrect_numerical",
+                              "compile_error",
+                              "runtime_error",
+                              "timeout",
+                              "resource_exceeded",
+                              "invalid_reference",
+                              "policy_violation",
+                              "suspected_reward_hack",
+                              "incomplete_evidence",
+                              "revoked"
+                            ]
+                          },
+                          "primary": {
+                            "type": ["object", "null"],
+                            "properties": {
+                              "metric": {
+                                "type": "string"
+                              },
+                              "unit": {
+                                "type": "string"
+                              },
+                              "statistic": {
+                                "type": "string"
+                              },
+                              "value": {
+                                "type": "number"
+                              },
+                              "sampleCount": {
+                                "type": ["number", "null"]
+                              },
+                              "uncertainty": {
+                                "type": ["object", "null"],
+                                "properties": {
+                                  "low": {
+                                    "type": "number"
+                                  },
+                                  "high": {
+                                    "type": "number"
+                                  }
+                                },
+                                "required": ["low", "high"]
+                              }
+                            },
+                            "required": [
+                              "metric",
+                              "unit",
+                              "statistic",
+                              "value",
+                              "sampleCount",
+                              "uncertainty"
+                            ]
+                          },
+                          "evidence": {
+                            "type": "string",
+                            "enum": [
+                              "verified",
+                              "replicated",
+                              "reproducible",
+                              "reported"
+                            ]
+                          },
+                          "sourceAvailable": {
+                            "type": "boolean"
+                          },
+                          "source": {
+                            "type": "string"
+                          },
+                          "observedAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "digest",
+                          "operation",
+                          "implementation",
+                          "hardware",
+                          "status",
+                          "primary",
+                          "evidence",
+                          "sourceAvailable",
+                          "source",
+                          "observedAt"
+                        ]
+                      }
+                    },
+                    "nextCursor": {
+                      "type": ["string", "null"]
+                    },
+                    "generatedAt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["runs", "nextCursor", "generatedAt"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid cursor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "number"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["type", "title", "status", "code", "requestId"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "number"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["type", "title", "status", "code", "requestId"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/operations": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "required": false,
+            "name": "family",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "required": false,
+            "name": "tag",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Every operation with taxonomy tags, workload count, and eligible run count",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "operations": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "slug": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "family": {
+                            "type": "string"
+                          },
+                          "tags": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "workloads": {
+                            "type": "number"
+                          },
+                          "runs": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "slug",
+                          "name",
+                          "family",
+                          "tags",
+                          "workloads",
+                          "runs"
+                        ]
+                      }
+                    },
+                    "generatedAt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["operations", "generatedAt"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "number"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["type", "title", "status", "code", "requestId"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hardware": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Per-GPU coverage: kernel and serving run counts and operation-family breadth (counts, never a shared ranking)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "hardware": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "slug": {
+                            "type": "string"
+                          },
+                          "model": {
+                            "type": "string"
+                          },
+                          "vendor": {
+                            "type": ["string", "null"]
+                          },
+                          "architecture": {
+                            "type": ["string", "null"]
+                          },
+                          "kernelRuns": {
+                            "type": "number"
+                          },
+                          "servingRuns": {
+                            "type": "number"
+                          },
+                          "operations": {
+                            "type": "number"
+                          },
+                          "families": {
+                            "type": "number"
+                          },
+                          "lastObservedAt": {
+                            "type": ["string", "null"]
+                          }
+                        },
+                        "required": [
+                          "slug",
+                          "model",
+                          "vendor",
+                          "architecture",
+                          "kernelRuns",
+                          "servingRuns",
+                          "operations",
+                          "families",
+                          "lastObservedAt"
+                        ]
+                      }
+                    },
+                    "generatedAt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["hardware", "generatedAt"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "number"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["type", "title", "status", "code", "requestId"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/models": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Model coverage: serving model revisions and kernel-side model: tags, as separate arrays",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "serving": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "slug": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "parameterCount": {
+                            "type": ["number", "null"]
+                          },
+                          "runs": {
+                            "type": "number"
+                          }
+                        },
+                        "required": ["slug", "name", "parameterCount", "runs"]
+                      }
+                    },
+                    "kernel": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "model": {
+                            "type": "string"
+                          },
+                          "operations": {
+                            "type": "number"
+                          }
+                        },
+                        "required": ["model", "operations"]
+                      }
+                    },
+                    "generatedAt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["serving", "kernel", "generatedAt"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "number"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["type", "title", "status", "code", "requestId"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/coverage": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Live per-source corpus counts and the hero family/GPU coverage grid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "illustrative": {
+                      "type": "boolean"
+                    },
+                    "sources": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "slug": {
+                            "type": "string"
+                          },
+                          "kind": {
+                            "type": "string",
+                            "enum": ["kernel", "serving"]
+                          },
+                          "runs": {
+                            "type": "number"
+                          },
+                          "breadth": {
+                            "type": "number"
+                          },
+                          "hardware": {
+                            "type": "number"
+                          },
+                          "lastFetched": {
+                            "type": ["string", "null"]
+                          }
+                        },
+                        "required": [
+                          "slug",
+                          "kind",
+                          "runs",
+                          "breadth",
+                          "hardware",
+                          "lastFetched"
+                        ]
+                      }
+                    },
+                    "hero": {
+                      "type": "object",
+                      "properties": {
+                        "gpus": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "rows": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "family": {
+                                "type": "string"
+                              },
+                              "runs": {
+                                "type": "array",
+                                "items": {
+                                  "type": "number"
+                                }
+                              },
+                              "total": {
+                                "type": "number"
+                              }
+                            },
+                            "required": ["family", "runs", "total"]
+                          }
+                        }
+                      },
+                      "required": ["gpus", "rows"]
+                    }
+                  },
+                  "required": ["illustrative", "sources", "hero"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "number"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["type", "title", "status", "code", "requestId"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sources": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Source provenance: slug, kind, run counts, and last snapshot fetch time",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "sources": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "slug": {
+                            "type": "string"
+                          },
+                          "kind": {
+                            "type": "string",
+                            "enum": ["kernel", "serving"]
+                          },
+                          "runs": {
+                            "type": "number"
+                          },
+                          "breadth": {
+                            "type": "number"
+                          },
+                          "hardware": {
+                            "type": "number"
+                          },
+                          "lastFetched": {
+                            "type": ["string", "null"]
+                          }
+                        },
+                        "required": [
+                          "slug",
+                          "kind",
+                          "runs",
+                          "breadth",
+                          "hardware",
+                          "lastFetched"
+                        ]
+                      }
+                    },
+                    "generatedAt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["sources", "generatedAt"]
                 }
               }
             }

@@ -1190,6 +1190,10 @@ export interface paths {
                 name: string
                 family: string
                 aliases: string[]
+                equivalents: {
+                  name: string
+                  slug: string
+                }[]
                 models: string[]
                 semanticDigest: string
                 summary: string
@@ -2708,6 +2712,462 @@ export interface paths {
                 url: string | null
               }
               manifest?: unknown
+            }
+          }
+        }
+        /** @description Not found */
+        404: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              type: string
+              title: string
+              status: number
+              code: string
+              detail?: string
+              requestId: string
+            }
+          }
+        }
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/runs": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: {
+      parameters: {
+        query?: {
+          operation?: string
+          hardware?: string
+          source?: string
+          status?:
+            | "passed"
+            | "incorrect_shape"
+            | "incorrect_dtype"
+            | "incorrect_numerical"
+            | "compile_error"
+            | "runtime_error"
+            | "timeout"
+            | "resource_exceeded"
+            | "invalid_reference"
+            | "policy_violation"
+            | "suspected_reward_hack"
+            | "incomplete_evidence"
+            | "revoked"
+          since?: string
+          cursor?: string
+          limit?: number
+        }
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Published runs, newest observation first, keyset-paginated */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              runs: {
+                id: string
+                digest: string
+                operation: string
+                implementation: string
+                hardware: string
+                /** @enum {string} */
+                status:
+                  | "passed"
+                  | "incorrect_shape"
+                  | "incorrect_dtype"
+                  | "incorrect_numerical"
+                  | "compile_error"
+                  | "runtime_error"
+                  | "timeout"
+                  | "resource_exceeded"
+                  | "invalid_reference"
+                  | "policy_violation"
+                  | "suspected_reward_hack"
+                  | "incomplete_evidence"
+                  | "revoked"
+                primary: {
+                  metric: string
+                  unit: string
+                  statistic: string
+                  value: number
+                  sampleCount: number | null
+                  uncertainty: {
+                    low: number
+                    high: number
+                  } | null
+                } | null
+                /** @enum {string} */
+                evidence:
+                  | "verified"
+                  | "replicated"
+                  | "reproducible"
+                  | "reported"
+                sourceAvailable: boolean
+                source: string
+                observedAt: string
+              }[]
+              nextCursor: string | null
+              generatedAt: string
+            }
+          }
+        }
+        /** @description Invalid cursor */
+        400: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              type: string
+              title: string
+              status: number
+              code: string
+              detail?: string
+              requestId: string
+            }
+          }
+        }
+        /** @description Not found */
+        404: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              type: string
+              title: string
+              status: number
+              code: string
+              detail?: string
+              requestId: string
+            }
+          }
+        }
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/operations": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: {
+      parameters: {
+        query?: {
+          family?: string
+          tag?: string
+        }
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Every operation with taxonomy tags, workload count, and eligible run count */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              operations: {
+                slug: string
+                name: string
+                family: string
+                tags: string[]
+                workloads: number
+                runs: number
+              }[]
+              generatedAt: string
+            }
+          }
+        }
+        /** @description Not found */
+        404: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              type: string
+              title: string
+              status: number
+              code: string
+              detail?: string
+              requestId: string
+            }
+          }
+        }
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/hardware": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: {
+      parameters: {
+        query?: never
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Per-GPU coverage: kernel and serving run counts and operation-family breadth (counts, never a shared ranking) */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              hardware: {
+                slug: string
+                model: string
+                vendor: string | null
+                architecture: string | null
+                kernelRuns: number
+                servingRuns: number
+                operations: number
+                families: number
+                lastObservedAt: string | null
+              }[]
+              generatedAt: string
+            }
+          }
+        }
+        /** @description Not found */
+        404: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              type: string
+              title: string
+              status: number
+              code: string
+              detail?: string
+              requestId: string
+            }
+          }
+        }
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/models": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: {
+      parameters: {
+        query?: never
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Model coverage: serving model revisions and kernel-side model: tags, as separate arrays */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              serving: {
+                slug: string
+                name: string
+                parameterCount: number | null
+                runs: number
+              }[]
+              kernel: {
+                model: string
+                operations: number
+              }[]
+              generatedAt: string
+            }
+          }
+        }
+        /** @description Not found */
+        404: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              type: string
+              title: string
+              status: number
+              code: string
+              detail?: string
+              requestId: string
+            }
+          }
+        }
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/coverage": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: {
+      parameters: {
+        query?: never
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Live per-source corpus counts and the hero family/GPU coverage grid */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              illustrative: boolean
+              sources: {
+                slug: string
+                /** @enum {string} */
+                kind: "kernel" | "serving"
+                runs: number
+                breadth: number
+                hardware: number
+                lastFetched: string | null
+              }[]
+              hero: {
+                gpus: string[]
+                rows: {
+                  family: string
+                  runs: number[]
+                  total: number
+                }[]
+              }
+            }
+          }
+        }
+        /** @description Not found */
+        404: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              type: string
+              title: string
+              status: number
+              code: string
+              detail?: string
+              requestId: string
+            }
+          }
+        }
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/sources": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: {
+      parameters: {
+        query?: never
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Source provenance: slug, kind, run counts, and last snapshot fetch time */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              sources: {
+                slug: string
+                /** @enum {string} */
+                kind: "kernel" | "serving"
+                runs: number
+                breadth: number
+                hardware: number
+                lastFetched: string | null
+              }[]
+              generatedAt: string
             }
           }
         }

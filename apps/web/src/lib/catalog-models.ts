@@ -640,6 +640,78 @@ export type HardwarePageModel = {
   sources: SourceRef[]
 }
 
+// ---------------------------------------------------------------------------
+// Corpus enumeration models (§13.2 at 20k records): flat, filterable listings
+// agents page through. Database-backed only — see server/catalog/api-reads.ts.
+
+/** One published run in the /runs enumeration: scalar evidence row. */
+export type RunListRow = {
+  id: string
+  digest: string
+  operation: string
+  implementation: string
+  hardware: string
+  status: RunStatus
+  primary: PrimaryMetric | null
+  evidence: EvidenceLevel
+  sourceAvailable: boolean
+  source: string
+  observedAt: string
+}
+
+/** /runs filters; the cursor is the decoded (observedAt, id) keyset bound. */
+export type RunListInput = {
+  operation?: string
+  hardware?: string
+  source?: string
+  status?: RunStatus
+  since?: string
+  cursor?: { observedAt: string; id: string }
+  limit?: number
+}
+
+export type RunListModel = {
+  runs: RunListRow[]
+  nextCursor: string | null
+  generatedAt: string
+}
+
+/** One operation in the /operations enumeration, with taxonomy tags. */
+export type OperationListEntry = {
+  slug: string
+  name: string
+  family: string
+  tags: string[]
+  workloads: number
+  /** Eligible (published, passed, unretracted, unsuperseded) run count. */
+  runs: number
+}
+
+/** Per-GPU corpus coverage: kernel and serving counts never rank together. */
+export type HardwareCoverageEntry = {
+  slug: string
+  model: string
+  vendor: string | null
+  architecture: string | null
+  kernelRuns: number
+  servingRuns: number
+  operations: number
+  families: number
+  lastObservedAt: string | null
+}
+
+/** Model coverage: serving revisions and kernel-side `model:` workload
+ * provenance tags stay separate arrays — the surfaces never mix. */
+export type ModelCoverageModel = {
+  serving: {
+    slug: string
+    name: string
+    parameterCount: number | null
+    runs: number
+  }[]
+  kernel: { model: string; operations: number }[]
+}
+
 /** One software project's standing in the projects index. */
 export type ProjectIndexEntry = {
   slug: string

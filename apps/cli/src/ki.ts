@@ -10,6 +10,7 @@ import {
   type ResolveEnvelope,
   type ResolveKernelRequest,
   type ResolveServingRequest,
+  type RunsQuery,
   type ServingResolveModel,
 } from "@kernelindex/sdk"
 import { digestManifest, validateManifest } from "@kernelindex/sdk/manifest"
@@ -25,6 +26,9 @@ Usage:
   ki show <operation|implementation|run|serving-run> <id-or-slug>
   ki compare run <id> <id> [...]     aligned comparison (2–8 runs)
   ki records [--limit n] [--cursor c]   current record holders, newest first
+  ki runs [filters]                  published runs, newest first (paged)
+  ki hardware                        per-GPU kernel/serving coverage
+  ki models                          serving models + kernel model: tags
   ki serving <runs|configs>          serving corpus listings
   ki export                          immutable catalog export URL
   ki auth status                     API key identity, scopes, and quota
@@ -39,6 +43,10 @@ Flags:
   --quiet          suppress human headers
   --limit <n>      page size for listings
   --cursor <c>     pagination cursor from a previous listing
+
+ki runs filters:
+  --operation <id-or-slug>  --hardware <model>  --source <slug>
+  --status <status>         --since <iso timestamp>
 `
 
 const { values, positionals } = parseArgs({
@@ -53,6 +61,11 @@ const { values, positionals } = parseArgs({
     help: { type: "boolean", default: false },
     limit: { type: "string" },
     cursor: { type: "string" },
+    operation: { type: "string" },
+    hardware: { type: "string" },
+    source: { type: "string" },
+    status: { type: "string" },
+    since: { type: "string" },
   },
 })
 
@@ -259,6 +272,72 @@ async function main(): Promise<number> {
     ])
     if (page.nextCursor && !values.quiet)
       console.log(`next: ki records --cursor ${page.nextCursor}`)
+    return 0
+  }
+
+  if (command === "runs") {
+    const page = await api.runs({
+      ...pageOptions(),
+      operation: values.operation,
+      hardware: values.hardware,
+      source: values.source,
+      // User input; the server 400s an unknown status value.
+      status: values.status as RunsQuery["status"],
+      since: values.since,
+    })
+    if (emit(page, page.runs)) return 0
+    table([
+      ["id", "operation", "implementation", "value", "status", "observed"],
+      ...page.runs.map((run) => [
+        run.id,
+        run.operation,
+        run.implementation,
+        formatPrimary(run.primary),
+        run.status,
+        run.observedAt.slice(0, 10),
+      ]),
+    ])
+    if (page.nextCursor && !values.quiet)
+      console.log(`next: ki runs --cursor ${page.nextCursor}`)
+    return 0
+  }
+
+  if (command === "hardware") {
+    const { hardware } = await api.hardware()
+    if (emit(hardware, hardware)) return 0
+    table([
+      ["model", "vendor", "kernel runs", "serving runs", "families", "last"],
+      ...hardware.map((gpu) => [
+        gpu.model,
+        gpu.vendor ?? "—",
+        String(gpu.kernelRuns),
+        String(gpu.servingRuns),
+        String(gpu.families),
+        gpu.lastObservedAt?.slice(0, 10) ?? "—",
+      ]),
+    ])
+    return 0
+  }
+
+  if (command === "models") {
+    const coverage = await api.models()
+    if (emit(coverage)) return 0
+    if (!values.quiet) console.log("serving models")
+    table([
+      ["model", "params", "runs"],
+      ...coverage.serving.map((model) => [
+        model.slug,
+        model.parameterCount === null
+          ? "—"
+          : `${(model.parameterCount / 1e9).toFixed(1)}B`,
+        String(model.runs),
+      ]),
+    ])
+    if (!values.quiet) console.log("\nkernel model: tags")
+    table([
+      ["model", "operations"],
+      ...coverage.kernel.map((tag) => [tag.model, String(tag.operations)]),
+    ])
     return 0
   }
 
