@@ -84,6 +84,26 @@ const PROJECTS: Record<
         id: "pytorch/pytorch",
       }),
   },
+  "megatron-lm": {
+    slug: "megatron-lm",
+    manifest: () =>
+      project(
+        "megatron-lm",
+        "NVIDIA Megatron-LM",
+        "https://github.com/NVIDIA/Megatron-LM",
+        { kind: "github", id: "NVIDIA/Megatron-LM" },
+      ),
+  },
+  deepspeed: {
+    slug: "deepspeed",
+    manifest: () =>
+      project(
+        "deepspeed",
+        "DeepSpeed",
+        "https://github.com/deepspeedai/DeepSpeed",
+        { kind: "github", id: "deepspeedai/DeepSpeed" },
+      ),
+  },
   transformers: {
     slug: "transformers",
     manifest: () =>
@@ -178,6 +198,56 @@ export const PROVIDERS: Record<
     language: "python",
     description: "PyTorch reference module compiled with torch.compile.",
     declared: "BSD-3-Clause",
+  },
+  liger_in_place: {
+    projectSlug: "liger-kernel",
+    title: "Liger in-place",
+    language: "triton",
+    description: "Liger-Kernel Triton implementation, in-place variant.",
+    declared: "BSD-2-Clause",
+    concluded: "BSD-2-Clause",
+    pipPackage: "liger-kernel",
+  },
+  liger_tiled: {
+    projectSlug: "liger-kernel",
+    title: "Liger tiled",
+    language: "triton",
+    description:
+      "Liger-Kernel MLP under seq-sharded tiled execution (same computation, chunked over the sequence).",
+    declared: "BSD-2-Clause",
+    concluded: "BSD-2-Clause",
+    pipPackage: "liger-kernel",
+  },
+  megatron: {
+    projectSlug: "megatron-lm",
+    title: "Megatron",
+    language: "python",
+    description: "Megatron-Core module for the benchmarked operation.",
+    declared: "BSD-3-Clause",
+  },
+  "megatron-fused": {
+    projectSlug: "megatron-lm",
+    title: "Megatron fused",
+    language: "python",
+    description:
+      "Megatron-Core fused_vocab_parallel_cross_entropy (fused kernel path).",
+    declared: "BSD-3-Clause",
+  },
+  "megatron-unfused": {
+    projectSlug: "megatron-lm",
+    title: "Megatron unfused",
+    language: "python",
+    description:
+      "Megatron-Core vocab_parallel_cross_entropy (unfused reference path).",
+    declared: "BSD-3-Clause",
+    role: "baseline",
+  },
+  deepspeed_tiled: {
+    projectSlug: "deepspeed",
+    title: "DeepSpeed tiled",
+    language: "python",
+    description: "DeepSpeed TiledMLP seq-sharded execution.",
+    declared: "Apache-2.0",
   },
 }
 

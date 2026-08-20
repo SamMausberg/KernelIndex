@@ -2,52 +2,19 @@
 // rows whose tensor semantics were verified against the benchmark script
 // that produced them import; every other kernel or config shape is counted
 // and skipped in the report, never guessed. The CSV spans script eras, so
-// each binder guards on the exact config keys its era wrote.
-import { DTYPES } from "./types.ts"
+// each binder guards on the exact config keys its era wrote. This module
+// holds the first-tranche entries and the merged registry; later tranches
+// live in kernels-extra.ts and kernels-losses.ts.
+import { EXTRA_KERNELS } from "./kernels-extra.ts"
+import { LOSS_KERNELS } from "./kernels-losses.ts"
+import { dtypeOf, eps, int, type LigerKernelSpec } from "./types.ts"
 
-export type LigerBinding = {
-  /** Concrete integer axis bindings for the workload case. */
-  axes: Record<string, number>
-  /** Float dtype token for the signature's "cfg" tensors. */
-  dtype: string
-  scalars?: Record<string, number>
-}
-
-type Cfg = Record<string, unknown>
-
-export type LigerKernelSpec = {
-  csvName: string
-  slug: string
-  family: string
-  title: string
-  description: string
-  /** Signature dims are axis names or literal ints; dtype "cfg" means the
-      workload's float dtype, anything else is a fixed token. */
-  inputs: { name: string; shape: (string | number)[]; dtype: string }[]
-  outputs: { name: string; shape: (string | number)[]; dtype: string }[]
-  /** Derived axes (§9.1 tiny grammar) computed from the bound axes. */
-  derived?: Record<string, string>
-  /** Row config → axes, or null when the config shape is not understood. */
-  bind: (x: number, xName: string, config: Cfg) => LigerBinding | null
-}
-
-const int = (value: unknown): number | null =>
-  typeof value === "number" && Number.isInteger(value) && value > 0
-    ? value
-    : null
-
-const dtypeOf = (value: unknown): string | null =>
-  typeof value === "string" ? (DTYPES[value] ?? null) : null
-
-const eps = (value: unknown): number | null =>
-  typeof value === "number" && Number.isFinite(value) && value > 0
-    ? value
-    : null
+export type { LigerBinding, LigerKernelSpec } from "./types.ts"
 
 /** rows×hidden module benchmarks (rms_norm/layer_norm/softmax era config):
  * cfg {M, dtype[, eps]} with the hidden size swept. */
-function rowsHiddenBinder(withEps: boolean) {
-  return (x: number, xName: string, config: Cfg): LigerBinding | null => {
+function rowsHiddenBinder(withEps: boolean): LigerKernelSpec["bind"] {
+  return (x, xName, config) => {
     const rows = int(config.M)
     const dtype = dtypeOf(config.dtype)
     const epsilon = withEps ? eps(config.eps) : undefined
@@ -270,6 +237,8 @@ export const LIGER_KERNELS: LigerKernelSpec[] = [
     },
   },
 ]
+
+LIGER_KERNELS.push(...EXTRA_KERNELS, ...LOSS_KERNELS)
 
 export const KERNELS_BY_NAME = new Map(
   LIGER_KERNELS.map((kernel) => [kernel.csvName, kernel]),
