@@ -214,6 +214,7 @@ export async function listHardwareCoverage(): Promise<HardwareCoverageEntry[]> {
         model: schema.servingRuns.acceleratorModel,
         vendor: max(schema.servingRuns.acceleratorVendor),
         runs: count(),
+        lastObservedAt: max(schema.servingRuns.observedAt),
       })
       .from(schema.servingRuns)
       .where(eligibleServingRuns())
@@ -221,6 +222,16 @@ export async function listHardwareCoverage(): Promise<HardwareCoverageEntry[]> {
   ])
   const kernelByModel = new Map(kernel.map((row) => [row.model, row]))
   const servingByModel = new Map(serving.map((row) => [row.model, row]))
+  /** Latest observation across both benchmark classes (recency, not rank). */
+  const latestOf = (
+    kernelLast: string | null,
+    servingLast: Date | null,
+  ): string | null => {
+    const servingIso = servingLast?.toISOString() ?? null
+    if (kernelLast === null) return servingIso
+    if (servingIso === null) return kernelLast
+    return servingIso > kernelLast ? servingIso : kernelLast
+  }
   return [
     ...index.gpus.map((gpu) => ({
       slug: gpu.slug,
@@ -231,7 +242,10 @@ export async function listHardwareCoverage(): Promise<HardwareCoverageEntry[]> {
       servingRuns: servingByModel.get(gpu.model)?.runs ?? 0,
       operations: gpu.operations,
       families: kernelByModel.get(gpu.model)?.families ?? 0,
-      lastObservedAt: gpu.lastObservedAt,
+      lastObservedAt: latestOf(
+        gpu.lastObservedAt,
+        servingByModel.get(gpu.model)?.lastObservedAt ?? null,
+      ),
     })),
     ...serving
       .filter((row) => !kernelByModel.has(row.model))
@@ -244,7 +258,7 @@ export async function listHardwareCoverage(): Promise<HardwareCoverageEntry[]> {
         servingRuns: row.runs,
         operations: 0,
         families: 0,
-        lastObservedAt: null,
+        lastObservedAt: latestOf(null, row.lastObservedAt),
       })),
   ]
 }

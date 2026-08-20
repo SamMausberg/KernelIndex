@@ -79,8 +79,13 @@ jobs:
           FI_AUTHORS=baseline,claude-opus-4-1-20250805,gemini-2.5-pro,gpt-5-2025-08-07,gpt-o3
           node scripts/import-flashinfer.ts --authors "$FI_AUTHORS" --dry-run --output /tmp/fi.json
           node -e '
+            // Reviewed orphan references ("… skipped pending review") exclude
+            // their item and publish nothing, so they do not block the wave;
+            // any other ambiguity class (e.g. a slug conflict) fails the gate.
             const r = require("/tmp/fi.json");
-            if (r.issues.length > 0) { console.error("gate failed"); process.exit(1) }'
+            const blocking = r.issues.length +
+              r.ambiguities.filter((a) => !a.endsWith("skipped pending review")).length;
+            if (blocking > 0) { console.error("gate failed:", blocking, "items"); process.exit(1) }'
           node scripts/import-flashinfer.ts --authors "$FI_AUTHORS" --publish
 
       - name: import mlperf
