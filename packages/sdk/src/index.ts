@@ -21,6 +21,15 @@ export type ImplementationDossier = Ok<paths["/implementations/{idOrSlug}"]>
 export type RunDossier = Ok<paths["/runs/{idOrDigest}"]>
 export type ServingRunDossier = Ok<paths["/serving-runs/{id}"]>
 export type RecordsPage = Ok<paths["/records"]>
+export type RunsPage = Ok<paths["/runs"]>
+export type RunsQuery = NonNullable<
+  paths["/runs"]["get"]["parameters"]["query"]
+>
+export type OperationList = Ok<paths["/operations"]>
+export type HardwareCoverage = Ok<paths["/hardware"]>
+export type ModelCoverage = Ok<paths["/models"]>
+export type CoverageModel = Ok<paths["/coverage"]>
+export type SourceList = Ok<paths["/sources"]>
 export type ServingRunsPage = Ok<paths["/serving-runs"]>
 export type ServingConfigurations = Ok<paths["/serving-configurations"]>
 export type KeyIdentity = Ok<paths["/me"]>
@@ -118,6 +127,28 @@ export function client({
       limit?: number
     }): Promise<RecordsPage> {
       return unwrap(await api.GET("/records", { params: { query } }))
+    },
+    /** Corpus enumeration (§13.2): published runs, filterable and paged. */
+    async runs(query?: RunsQuery): Promise<RunsPage> {
+      return unwrap(await api.GET("/runs", { params: { query } }))
+    },
+    async operations(query?: {
+      family?: string
+      tag?: string
+    }): Promise<OperationList> {
+      return unwrap(await api.GET("/operations", { params: { query } }))
+    },
+    async hardware(): Promise<HardwareCoverage> {
+      return unwrap(await api.GET("/hardware", {}))
+    },
+    async models(): Promise<ModelCoverage> {
+      return unwrap(await api.GET("/models", {}))
+    },
+    async coverage(): Promise<CoverageModel> {
+      return unwrap(await api.GET("/coverage", {}))
+    },
+    async sources(): Promise<SourceList> {
+      return unwrap(await api.GET("/sources", {}))
     },
     async resolveServing(
       body: ResolveServingRequest,

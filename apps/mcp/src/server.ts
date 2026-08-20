@@ -5,6 +5,7 @@ import {
   client,
   type ResolveKernelRequest,
   type ResolveServingRequest,
+  type RunsQuery,
 } from "@kernelindex/sdk"
 import {
   digestManifestDocument,
@@ -117,6 +118,45 @@ export function buildServer(): McpServer {
       },
     },
     async ({ cursor, limit }) => json(await api.records({ cursor, limit })),
+  )
+
+  server.registerTool(
+    "list_runs",
+    {
+      description:
+        "Enumerate published benchmark runs, newest first, cursor-paginated; filter by operation (id or slug), hardware model, source slug, run status, or observed-since timestamp.",
+      inputSchema: {
+        operation: z.string().max(200).optional(),
+        hardware: z.string().max(200).optional(),
+        source: z.string().max(200).optional(),
+        status: z.string().max(40).optional(),
+        since: z.string().max(40).optional(),
+        cursor: z.string().max(200).optional(),
+        limit: z.number().int().min(1).max(200).optional(),
+      },
+    },
+    // Status is passed through; the server 400s unknown values.
+    async (query) => json(await api.runs(query as RunsQuery)),
+  )
+
+  server.registerTool(
+    "list_hardware",
+    {
+      description:
+        "Per-GPU corpus coverage: kernel and serving run counts and distinct operation families for every measured accelerator (counts, never a shared ranking).",
+      inputSchema: {},
+    },
+    async () => json(await api.hardware()),
+  )
+
+  server.registerTool(
+    "list_models",
+    {
+      description:
+        "Model coverage: serving model revisions with run counts, and kernel-side model: workload-provenance tags with operation counts — two separate arrays.",
+      inputSchema: {},
+    },
+    async () => json(await api.models()),
   )
 
   server.registerTool(

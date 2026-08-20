@@ -43,7 +43,8 @@ import {
   type ServingCandidate,
 } from "../policy/serving.ts"
 
-const eligibleServingRuns = () =>
+/** Shared SQL eligibility for serving surfaces (also used by api-reads). */
+export const eligibleServingRuns = () =>
   and(
     isNotNull(schema.servingRuns.publishedAt),
     eq(schema.servingRuns.status, "valid"),

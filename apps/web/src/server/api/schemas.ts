@@ -7,13 +7,19 @@ import type {
   AxisSpec,
   CohortContext,
   ComparePageModel,
+  CoveragePageModel,
+  CoverageSource,
+  HardwareCoverageEntry,
   ImplementationPageModel,
   ImplementationSummary,
+  ModelCoverageModel,
   OperationIndexEntry,
+  OperationListEntry,
   OperationPageModel,
   PrimaryMetric,
   RecordHolder,
   ResultRow,
+  RunListRow,
   RunPageModel,
   SourceRef,
   TensorBinding,
@@ -58,7 +64,7 @@ const comparisonProfile = z.enum([
   "reported",
 ])
 
-const runStatus = z.enum([
+export const runStatus = z.enum([
   "passed",
   "incorrect_shape",
   "incorrect_dtype",
@@ -728,6 +734,106 @@ export const servingRunDossier = z.object({
   attribution: z.object({ line: z.string(), url: z.string().nullable() }),
   manifest: z.unknown(),
 }) satisfies z.ZodType<ServingRunPageModel>
+
+// ---------------------------------------------------------------------------
+// Corpus enumeration surfaces (§13.2 at 20k records): flat listings agents
+// filter and page. Same drift gates against the catalog models.
+
+export const runListRow = z.object({
+  id: z.string(),
+  digest: z.string(),
+  operation: z.string(),
+  implementation: z.string(),
+  hardware: z.string(),
+  status: runStatus,
+  primary: primaryMetric.nullable(),
+  evidence: evidenceLevel,
+  sourceAvailable: z.boolean(),
+  source: z.string(),
+  observedAt: z.string(),
+}) satisfies z.ZodType<RunListRow>
+
+export const runsResponse = z.object({
+  runs: z.array(runListRow),
+  nextCursor: z.string().nullable(),
+  generatedAt: z.string(),
+})
+
+export const operationListEntry = z.object({
+  slug: z.string(),
+  name: z.string(),
+  family: z.string(),
+  tags: z.array(z.string()),
+  workloads: z.number(),
+  runs: z.number(),
+}) satisfies z.ZodType<OperationListEntry>
+
+export const operationsResponse = z.object({
+  operations: z.array(operationListEntry),
+  generatedAt: z.string(),
+})
+
+export const hardwareCoverageEntry = z.object({
+  slug: z.string(),
+  model: z.string(),
+  vendor: z.string().nullable(),
+  architecture: z.string().nullable(),
+  kernelRuns: z.number(),
+  servingRuns: z.number(),
+  operations: z.number(),
+  families: z.number(),
+  lastObservedAt: z.string().nullable(),
+}) satisfies z.ZodType<HardwareCoverageEntry>
+
+export const hardwareResponse = z.object({
+  hardware: z.array(hardwareCoverageEntry),
+  generatedAt: z.string(),
+})
+
+const modelCoverage = z.object({
+  serving: z.array(
+    z.object({
+      slug: z.string(),
+      name: z.string(),
+      parameterCount: z.number().nullable(),
+      runs: z.number(),
+    }),
+  ),
+  kernel: z.array(z.object({ model: z.string(), operations: z.number() })),
+}) satisfies z.ZodType<ModelCoverageModel>
+
+export const modelsResponse = modelCoverage.extend({
+  generatedAt: z.string(),
+})
+
+export const coverageSource = z.object({
+  slug: z.string(),
+  kind: z.enum(["kernel", "serving"]),
+  runs: z.number(),
+  breadth: z.number(),
+  hardware: z.number(),
+  lastFetched: z.string().nullable(),
+}) satisfies z.ZodType<CoverageSource>
+
+export const coverageResponse = z.object({
+  illustrative: z.boolean(),
+  sources: z.array(coverageSource),
+  hero: z.object({
+    gpus: z.array(z.string()),
+    rows: z.array(
+      z.object({
+        family: z.string(),
+        runs: z.array(z.number()),
+        total: z.number(),
+      }),
+    ),
+  }),
+}) satisfies z.ZodType<CoveragePageModel>
+
+export const sourcesResponse = z.object({
+  sources: z.array(coverageSource),
+  generatedAt: z.string(),
+})
 
 /** /me introspection response (§13.6); `ki auth status` consumes it. */
 export const meResponse = z.object({

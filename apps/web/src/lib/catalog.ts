@@ -16,6 +16,7 @@ import type {
   OperationPageModel,
   ProjectIndexModel,
   RecordsPageModel,
+  RunListInput,
   RunPageModel,
   SearchInput,
   SearchPageModel,
@@ -265,6 +266,44 @@ export const getProjectIndex = cache(
       return (await reads()).getProjectIndex()
     },
     ["project-index", BACKEND],
+    { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },
+  ),
+)
+
+// Corpus enumeration reads (§13.2 at 20k records): database-backed only —
+// the fixtures backend has no corpus to page — so these bypass the backend
+// switch but keep the same lazy import and cache layers.
+const apiReads = () => import("@/server/catalog/api-reads")
+
+export const listRuns = cache(
+  cached(
+    async (input: RunListInput) => (await apiReads()).listRuns(input),
+    ["runs-list", BACKEND],
+    { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },
+  ),
+)
+
+export const listOperations = cache(
+  cached(
+    async (input: { family?: string; tag?: string }) =>
+      (await apiReads()).listOperations(input),
+    ["operations-list", BACKEND],
+    { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },
+  ),
+)
+
+export const listHardwareCoverage = cache(
+  cached(
+    async () => (await apiReads()).listHardwareCoverage(),
+    ["hardware-coverage", BACKEND],
+    { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },
+  ),
+)
+
+export const listModelCoverage = cache(
+  cached(
+    async () => (await apiReads()).listModelCoverage(),
+    ["model-coverage", BACKEND],
     { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },
   ),
 )
