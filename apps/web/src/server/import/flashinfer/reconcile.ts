@@ -1,7 +1,8 @@
-// Reconciliation (§14.4): FlashInfer definitions, baseline solutions, and
-// baseline traces onto canonical identity. Definitions overlap SOL by
-// design; identical semantics dedupe by digest, while a slug that maps to
-// different semantics becomes a review ambiguity, never an overwrite.
+// Reconciliation (§14.4): FlashInfer definitions, solutions, and traces —
+// baseline and explicitly opted-in llm-generated authors alike — onto
+// canonical identity. Definitions overlap SOL by design; identical semantics
+// dedupe by digest, while a slug that maps to different semantics becomes a
+// review ambiguity, never an overwrite.
 import { eq } from "drizzle-orm"
 import type { DbHandle, ImportBundle } from "../../catalog/publication.ts"
 import * as schema from "../../db/schema.ts"
@@ -165,7 +166,7 @@ export async function reconcileFlashinfer(
       : undefined
     if (!implementationDigest) {
       report.ambiguities.push(
-        `trace for '${trace.definition}' references solution '${trace.solution ?? "none"}' with no discovered baseline; skipped pending review`,
+        `trace for '${trace.definition}' references solution '${trace.solution ?? "none"}' not discovered this run; skipped pending review`,
       )
       continue
     }

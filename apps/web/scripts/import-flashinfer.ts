@@ -1,11 +1,15 @@
-// Explicit FlashInfer-Bench importer command (§14.1–14.2): baseline
-// library/human traces from flashinfer-ai/flashinfer-trace (Apache-2.0),
-// pinned to one dataset revision per run.
+// Explicit FlashInfer-Bench importer command (§14.1–14.2): solutions and
+// traces from flashinfer-ai/flashinfer-trace (Apache-2.0), pinned to one
+// dataset revision per run. Baseline (human/library) authors import by
+// default; model-authored directories must be named via --authors and are
+// labeled llm-generated (docs/source-policy.md).
 //
 //   pnpm --filter @kernelindex/web import:flashinfer -- --dry-run
 //   pnpm --filter @kernelindex/web import:flashinfer -- --limit 20 --publish
+//   pnpm --filter @kernelindex/web import:flashinfer -- --dry-run \
+//     --authors baseline,gpt-o3,gemini-2.5-pro
 //
-// Flags: --dry-run --publish --limit <n> --output <file>
+// Flags: --dry-run --publish --limit <n> --authors <dir,dir,...> --output <file>
 import { writeFileSync } from "node:fs"
 import { parseArgs } from "node:util"
 import { drizzle } from "drizzle-orm/postgres-js"
@@ -22,6 +26,7 @@ const { values } = parseArgs({
     "dry-run": { type: "boolean", default: false },
     publish: { type: "boolean", default: false },
     limit: { type: "string" },
+    authors: { type: "string" },
     output: { type: "string" },
   },
 })
@@ -42,6 +47,10 @@ const database = drizzle(client, { schema })
 try {
   const data = await discoverFlashinfer({
     limit: values.limit !== undefined ? Number(values.limit) : undefined,
+    authors: values.authors
+      ?.split(",")
+      .map((author) => author.trim())
+      .filter(Boolean),
   })
   const { bundle, report } = await reconcileFlashinfer(database, data)
   if (values.publish) {

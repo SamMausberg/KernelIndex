@@ -13,15 +13,17 @@ export const FLASHINFER_SOURCE = {
     attribution: "FlashInfer-Bench (flashinfer-ai/flashinfer-trace)",
     url: "https://huggingface.co/datasets/flashinfer-ai/flashinfer-trace",
     terms:
-      "Apache-2.0: redistribution and display permitted with license notice. Baseline (human/library) traces only; agent-generated traces require explicit author labeling before import.",
+      "Apache-2.0: redistribution and display permitted with license notice. Baseline (human/library) traces import by default; model-generated solutions and traces import only via explicit author selection and carry the llm-generated role with the generating model named.",
     verified: "2026-08-14",
     freshnessDays: 10,
   },
 } as const
 
-/** version 2: accepts upstream "Infinity" error bounds (recorded as no
- * bound) and reviews unknown-definition solutions as ambiguities. */
-export const PARSER = { name: "flashinfer-bench", version: "2" } as const
+/** version 3: author-directory selection — model-authored (LLM) solutions
+ * and traces import on explicit opt-in, labeled role llm-generated. v2
+ * accepted upstream "Infinity" error bounds (recorded as no bound) and
+ * reviewed unknown-definition solutions as ambiguities. */
+export const PARSER = { name: "flashinfer-bench", version: "3" } as const
 
 export const DATASET = "flashinfer-ai/flashinfer-trace"
 export const DATASET_API = `https://huggingface.co/api/datasets/${DATASET}`

@@ -89,6 +89,18 @@ export function implementationFromFiSolution(input: {
   const code = primary && primary.content.length > 0 ? primary.content : null
   const codeDigest = code !== null ? sha256Digest(code) : null
 
+  // Labeling (docs/source-policy.md): the dataset path's author directory is
+  // upstream's curation. Baseline documents keep the designated-baseline
+  // role; model directories are labeled llm-generated with the generating
+  // model, so agent output can never read as a human/library baseline.
+  const authorDir = input.path.split("/")[1]
+  const labels =
+    authorDir === "baseline"
+      ? (solution.author ?? "baseline") === "baseline"
+        ? { role: "baseline" }
+        : undefined
+      : { role: "llm-generated", author: authorDir }
+
   const manifest = parseManifestDocument({
     apiVersion: "kernelindex.dev/v1alpha1",
     kind: "ImplementationRevision",
@@ -96,12 +108,7 @@ export function implementationFromFiSolution(input: {
       name: kebab(solution.name),
       title: solution.name,
       description: solution.description ?? undefined,
-      // Upstream ships these as its designated baseline solutions; the role
-      // keeps them from being presented as competing record holders.
-      labels:
-        (solution.author ?? "baseline") === "baseline"
-          ? { role: "baseline" }
-          : undefined,
+      labels,
       authors: solution.author ? [{ name: solution.author }] : undefined,
       sourceRefs: [
         { url: `${DATASET_URL}/blob/${input.revision}/${input.path}` },
