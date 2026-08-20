@@ -58,7 +58,7 @@ const FACTS: Record<
 const LIMITATIONS = [
   "Nothing here has been rerun by KernelIndex. Every number is shown exactly as its source published it, so no record is Verified yet.",
   "SOL-ExecBench leaderboard rows are suite averages, not per-case traces. They never answer an exact-case request.",
-  "FlashInfer-Bench imports are the library baselines at a pinned revision; LLM-generated traces are excluded.",
+  "FlashInfer-Bench imports are pinned-revision library baselines plus explicitly labeled LLM-generated solutions; the label and generating model ride every such record.",
   "Liger-Kernel rows record no CUDA, driver, or torch version. Environments carry hardware only, and only kernels whose benchmark-script semantics were verified import.",
   "MLPerf serving rows measure one thing: token throughput. The TTFT/TPOT bounds shown are the benchmark's rules, not measurements.",
   "Hardware coverage follows the sources, not a survey. A GPU or kernel missing here says nothing about its speed.",
