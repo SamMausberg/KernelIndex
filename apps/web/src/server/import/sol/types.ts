@@ -107,11 +107,12 @@ export const solSolution = z.looseObject({
 
 /** Upstream serializes IEEE infinity as the string "Infinity" (observed in
  * FlashInfer-Bench gqa_paged baseline traces whose pass criterion is
- * relative-error based). An unbounded error maps to no recorded bound —
- * never a fabricated number. */
+ * relative-error based) and NaN as "NaN" (observed on INCORRECT_NUMERICAL
+ * llm-authored traces). Either maps to no recorded bound — never a
+ * fabricated number; the trace's own status still records the failure. */
 const errorBound = z
-  .union([z.number(), z.literal("Infinity")])
-  .transform((value) => (value === "Infinity" ? null : value))
+  .union([z.number(), z.literal("Infinity"), z.literal("NaN")])
+  .transform((value) => (typeof value === "string" ? null : value))
 
 /** Official Trace document (docs/trace.md): one benchmark run. */
 export const solTrace = z.looseObject({

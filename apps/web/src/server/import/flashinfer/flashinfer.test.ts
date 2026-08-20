@@ -4,9 +4,11 @@
 // gate (idempotent re-import) and the §14.4 ambiguity rules.
 import { readFileSync } from "node:fs"
 import path from "node:path"
+import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 import { publishBundle } from "../../catalog/publication.ts"
 import { db } from "../../db/client.ts"
+import * as schema from "../../db/schema.ts"
 import { specDigest } from "../../identity/digest.ts"
 import { parseDefinition, parseTraces } from "../sol/parse.ts"
 import type { SolDefinition } from "../sol/types.ts"
@@ -26,6 +28,8 @@ const read = (relative: string) =>
 const REVISION = "da915083d4c7c5e61aa3005e3d17ae488e0fc71c"
 const SOLUTION_PATH =
   "solutions/baseline/rmsnorm/fused_add_rmsnorm_h2048/flashinfer_wrapper_74a870.json"
+const LLM_SOLUTION_PATH =
+  "solutions/claude-opus-4-1-20250805/rmsnorm/fused_add_rmsnorm_h2048/claude-opus-4-1_triton_c9eea2.json"
 
 function fixtureData(): {
   definition: SolDefinition
@@ -52,6 +56,16 @@ function fixtureData(): {
   }
 }
 
+/** The opted-in model-authored counterpart to fixtureData (same definition). */
+function llmFixture() {
+  const solution = fiSolution.parse(
+    JSON.parse(read("dataset/llm-solution.json")),
+  )
+  const traces = parseTraces(read("dataset/llm-trace.jsonl"), "fx-llm")
+  expect(traces.issues).toHaveLength(0)
+  return { solution, path: LLM_SOLUTION_PATH, traces: traces.values }
+}
+
 describe("flashinfer parsing", () => {
   it("parses the pinned dataset listing, definition, and baseline traces", () => {
     const info = fiDatasetInfo.parse(JSON.parse(read("dataset/info.json")))
@@ -69,14 +83,15 @@ describe("flashinfer parsing", () => {
     expect(broken.success).toBe(false)
   })
 
-  it("records no bound for upstream 'Infinity' error values", () => {
+  it("records no bound for upstream 'Infinity' and 'NaN' error values", () => {
     const line = JSON.parse(read("dataset/trace.jsonl").split("\n")[0])
     line.evaluation.correctness.max_absolute_error = "Infinity"
+    line.evaluation.correctness.max_relative_error = "NaN"
     const outcome = parseTraces(JSON.stringify(line), "fx")
     expect(outcome.issues).toHaveLength(0)
     const correctness = outcome.values[0].evaluation?.correctness
     expect(correctness?.max_absolute_error).toBeNull()
-    expect(typeof correctness?.max_relative_error).toBe("number")
+    expect(correctness?.max_relative_error).toBeNull()
   })
 })
 
@@ -113,6 +128,51 @@ describe("flashinfer normalization", () => {
       license: "Apache-2.0",
     })
     expect(artifact?.content).toContain("fused_add_rmsnorm")
+  })
+
+  it("keeps the baseline label and digest byte-identical (§22.8)", () => {
+    const { definition, solution } = fixtureData()
+    const implementation = implementationFromFiSolution({
+      solution,
+      definition,
+      operationSpecDigest: `sha256:${"1".repeat(64)}`,
+      revision: REVISION,
+      path: SOLUTION_PATH,
+    })
+    expect(implementation.manifest.metadata.labels).toEqual({
+      role: "baseline",
+    })
+    // Pinned pre-llm-import digest: re-publishing baselines inserts nothing.
+    expect(specDigest(implementation.manifest)).toBe(
+      "sha256:635f4b7b595c62b00c85f9d65a660f8357ecb5bbe06fbfdda8d5d83c3876eacd",
+    )
+  })
+
+  it("labels a model-directory solution llm-generated with its author", () => {
+    const { definition } = fixtureData()
+    const llm = llmFixture()
+    const implementation = implementationFromFiSolution({
+      solution: llm.solution,
+      definition,
+      operationSpecDigest: `sha256:${"1".repeat(64)}`,
+      revision: REVISION,
+      path: llm.path,
+    })
+    expect(implementation.manifest.metadata.labels).toEqual({
+      role: "llm-generated",
+      author: "claude-opus-4-1-20250805",
+    })
+    expect(implementation.manifest.metadata.authors).toEqual([
+      { name: "claude-opus-4-1-20250805" },
+    ])
+    expect(implementation.projectSlug).toBe(
+      "flashinfer-claude-opus-4-1-20250805",
+    )
+    expect(implementation.artifacts?.[0]).toMatchObject({
+      storage: "inline",
+      mediaType: "text/x-python",
+      license: "Apache-2.0",
+    })
   })
 
   it("falls back to a stable unknown-author project", () => {
@@ -175,6 +235,47 @@ describe.skipIf(!url)("flashinfer import pipeline (database)", () => {
     })
   })
 
+  it("imports labeled llm solutions without touching published baselines", async () => {
+    const { data } = fixtureData()
+    const llm = llmFixture()
+    await inRollback(async (tx) => {
+      const first = await reconcileFlashinfer(tx, data)
+      await publishBundle(tx, first.bundle, { publish: true })
+
+      // Re-reconcile with the model author opted in: every baseline object
+      // already exists; only the llm project/implementation/runs are new.
+      const { bundle, report } = await reconcileFlashinfer(tx, {
+        ...data,
+        solutions: [
+          ...data.solutions,
+          { solution: llm.solution, path: llm.path },
+        ],
+        traces: [...data.traces, ...llm.traces],
+      })
+      expect(report.issues).toHaveLength(0)
+      const inserts = report.proposed.filter((o) => o.action === "insert")
+      expect(inserts.map((o) => o.entity)).toEqual([
+        "implementation",
+        "run",
+        "run",
+      ])
+
+      const result = await publishBundle(tx, bundle, { publish: true })
+      expect(result.counts.implementations).toMatchObject({ inserted: 1 })
+      expect(result.counts.runs).toEqual({ inserted: 2, existing: 3 })
+      const [row] = await tx
+        .select({ role: schema.implementations.role })
+        .from(schema.implementations)
+        .where(
+          eq(
+            schema.implementations.slug,
+            "flashinfer-claude-opus-4-1-triton-c9eea2",
+          ),
+        )
+      expect(row.role).toBe("llm-generated")
+    })
+  })
+
   it("flags a slug bound to different semantics as review, not overwrite", async () => {
     const { data } = fixtureData()
     // Same definition name (same slug), drifted constant: different digest.
@@ -208,7 +309,7 @@ describe.skipIf(!url)("flashinfer import pipeline (database)", () => {
       expect(bundle.runs).toHaveLength(0)
       expect(
         report.ambiguities.filter((entry) =>
-          entry.includes("no discovered baseline"),
+          entry.includes("not discovered this run"),
         ),
       ).toHaveLength(3)
     })

@@ -1,7 +1,9 @@
 // Discovery (§14.1): the dataset's pinned revision and file tree from the
-// Hugging Face API, then each definition, baseline solution, and baseline
-// trace file fetched at that immutable revision and snapshotted (§14.3).
-// Baseline directories only — agent-generated traces stay out per policy.
+// Hugging Face API, then each definition, solution, and trace file fetched at
+// that immutable revision and snapshotted (§14.3). Solutions and traces live
+// under per-author directories: `baseline` (human/library) imports by
+// default; model-named directories import only when named explicitly, and
+// normalize labels them llm-generated (docs/source-policy.md).
 import { type FetchedSnapshot, fetchSnapshot } from "../fetch.ts"
 import { type ImportIssue, parseDefinition, parseTraces } from "../sol/parse.ts"
 import type { SolDefinition, SolTrace } from "../sol/types.ts"
@@ -28,6 +30,9 @@ export type FiImportData = {
 export type FiDiscoverOptions = {
   /** Maximum definitions imported this run (§14.2 --limit). */
   limit?: number
+  /** Author directories under solutions/ and traces/ to import. Defaults to
+   * baseline only; model directories must be opted into explicitly. */
+  authors?: string[]
 }
 
 const FETCH_SPACING_MS = 100
@@ -63,6 +68,20 @@ export async function discoverFlashinfer(
   }
   data.revision = info.data.sha
   const files = info.data.siblings.map((sibling) => sibling.rfilename)
+  const authors = new Set(options.authors ?? ["baseline"])
+  // A file belongs to this run when its author directory was requested.
+  const wantedAuthor = (file: string, root: string, extension: string) => {
+    const [head, author] = file.split("/")
+    return head === root && authors.has(author) && file.endsWith(extension)
+  }
+  for (const author of authors) {
+    if (files.some((file) => file.split("/")[1] === author)) continue
+    data.issues.push({
+      locator: listing.locator,
+      item: author,
+      problem: "requested author has no files at this revision",
+    })
+  }
 
   let definitionFiles = files.filter(
     (file) => file.startsWith("definitions/") && file.endsWith(".json"),
@@ -85,8 +104,7 @@ export async function discoverFlashinfer(
   }
 
   for (const file of files) {
-    if (!file.startsWith("solutions/baseline/") || !file.endsWith(".json"))
-      continue
+    if (!wantedAuthor(file, "solutions", ".json")) continue
     const definitionName = file.split("/").at(-2)
     if (!wanted.has(definitionName)) continue
     const snapshot = await fetchSnapshot(raw(data.revision, file))
@@ -107,8 +125,7 @@ export async function discoverFlashinfer(
   }
 
   for (const file of files) {
-    if (!file.startsWith("traces/baseline/") || !file.endsWith(".jsonl"))
-      continue
+    if (!wantedAuthor(file, "traces", ".jsonl")) continue
     const definitionName = file.split("/").at(-1)?.replace(".jsonl", "")
     if (!wanted.has(definitionName)) continue
     try {
