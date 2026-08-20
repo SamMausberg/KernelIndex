@@ -86,18 +86,19 @@ describe.skipIf(!url)("liger import pipeline (database)", () => {
           issues: [],
           driftWarnings: [],
         })
-        // 9 rows: 7 curated speed rows import; fused_moe and the memory row
-        // are counted, never guessed.
+        // 9 rows: 8 curated speed rows import (fused_moe joined the curation
+        // 2026-08-20); the memory row is counted, never guessed.
         expect(report.skipped.memoryRows).toBe(1)
-        expect(report.skipped.uncuratedKernels).toEqual({ fused_moe: 1 })
+        expect(report.skipped.uncuratedKernels).toEqual({})
         expect(report.issues).toHaveLength(0)
         expect(bundle.operations.map((op) => op.slug).sort()).toEqual([
           "liger-embedding",
           "liger-fused-add-rms-norm",
+          "liger-fused-moe",
           "liger-rms-norm",
           "liger-rope",
         ])
-        expect(bundle.runs).toHaveLength(7)
+        expect(bundle.runs).toHaveLength(8)
         // fp32 H100 rows and bf16 A100 rows land in separate cohorts: the
         // workload dtype and the environment digest both differ.
         const workloadTitles = bundle.workloads.map(
@@ -110,10 +111,12 @@ describe.skipIf(!url)("liger import pipeline (database)", () => {
           true,
         )
 
+        // The dev catalog may already hold some of these append-only runs;
+        // what must hold is full coverage, then exact idempotency.
         const first = await publishBundle(tx, bundle, { publish: true })
-        expect(first.counts.runs.inserted).toBe(7)
+        expect(first.counts.runs.inserted + first.counts.runs.existing).toBe(8)
         const again = await publishBundle(tx, bundle, { publish: true })
-        expect(again.counts.runs).toEqual({ inserted: 0, existing: 7 })
+        expect(again.counts.runs).toEqual({ inserted: 0, existing: 8 })
         throw new Rollback("rollback")
       })
       .catch((error) => {
