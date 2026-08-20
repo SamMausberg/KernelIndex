@@ -77,19 +77,25 @@ legalnotices@ the project contact removes the contested records immediately
 
 - HF dataset `flashinfer-ai/flashinfer-trace`, **Apache-2.0** (verified
   2026-08-14). Redistribution fine with license notice. Imported 2026-08-15:
-  **baseline (human/library) solutions and traces only** — the importer
-  reads `solutions/baseline/` and `traces/baseline/` exclusively;
-  agent-generated traces require explicit author labeling before any
-  import. Solution sources are mirrored inline as content-addressed
-  artifacts (Apache-2.0 permits it; enables on-site source display).
+  baseline (human/library) solutions and traces. Extended 2026-08-20 with
+  Sam's sign-off: **model-authored (LLM-generated) solutions and traces
+  import on explicit author-directory opt-in** (`--authors`), labeled
+  `role: llm-generated` with the generating model named on the
+  implementation manifest and the `role` column — they can never read as
+  human/library baselines. Failed traces (upstream `"NaN"` error bounds,
+  status INCORRECT_NUMERICAL) import as failed-run evidence. The `sampling`
+  trace directory has no solutions and stays out. Solution sources are
+  mirrored inline as content-addressed artifacts (Apache-2.0 permits it;
+  enables on-site source display).
   Overlaps SOL definitions (FlashInfer-Bench tag) — identical semantics
   dedupe by canonical digest; slug-vs-digest conflicts surface as review
   ambiguities, never auto-merge on names (§14.4). Every run is fetched at
   one pinned dataset revision. LFS-tracked trace files whose downloads
   redirect off the fetch allowlist are skipped with a review issue.
-- **Parser owner / review.** `import/flashinfer` (parser v2: accepts
-  upstream "Infinity" error bounds as no-bound; unknown-definition solutions
-  review as ambiguities), reviewed 2026-08-16.
+- **Parser owner / review.** `import/flashinfer` (parser v3: author-directory
+  selection with llm-generated labeling; v2 accepted upstream "Infinity"
+  error bounds as no-bound and reviewed unknown-definition solutions as
+  ambiguities), reviewed 2026-08-20.
 
 ## Liger-Kernel (active — `liger-kernel-bench`)
 
@@ -101,9 +107,15 @@ legalnotices@ the project contact removes the contested records immediately
   notes state the caveat.
 - The CSV spans benchmark-script eras. Only kernels whose tensor semantics
   were verified against the producing script import (curated in
-  `apps/web/src/server/import/liger/kernels.ts`); every other kernel or
+  `apps/web/src/server/import/liger/kernels*.ts`); every other kernel or
   config shape is counted and skipped in the import report. Timed passes
   (forward/backward/full) are separate protocols; memory rows are skipped.
+- **Curation completed 2026-08-20:** the remaining 25 kernels were verified
+  against era-exact script revisions (the last commit touching each
+  `benchmark_<kernel>.py` at its rows' timestamps — the 2026-04/05 benchmark
+  refactors changed config semantics, so the current scripts are not
+  authoritative for older rows). Every upstream speed row now binds;
+  megatron_cross_entropy imports TP=1 rows only.
 
 ## Rejected or blocked (reviewed 2026-08-14)
 
@@ -143,11 +155,31 @@ legalnotices@ the project contact removes the contested records immediately
   into kernel leaderboards or reduced to a universal score (§2.2, §22.10).
 - **Load.** Two raw-file fetches per import (one summary per round), pinned
   revisions, weekly at most.
+- **Earlier rounds (reviewed 2026-08-20).** `_v5.0` has the root summary
+  (17,454 rows, ~344 in-scope LLM runs) but the repo has never carried a
+  LICENSE file (GitHub license: null at `0bc17ab3f4b3`; every sibling round
+  is Apache-2.0, so likely an upstream oversight) — blocked until MLCommons
+  adds one; its 27.7 MB summary also exceeds the 8 MB fetch cap and would
+  need a snapshot mode. `_v4.1` (`198fc46799b3`) and `_v4.0`
+  (`343c3d2cb03f`) are Apache-2.0-verified but predate the root
+  `summary_results.json` tooling — importable only via per-submitter result
+  trees, out of scope for the summary importer. If `_v5.0` is admitted
+  later: `llama2-70b-interactive-99/-99.9` are distinct benchmark names,
+  not a Scenario value, and need BENCHMARKS entries mapping to the base
+  Llama-2-70B model.
 - **Parser owner / review.** `import/mlperf` (parser v1), reviewed
   2026-08-16.
 
 ## Serving-domain candidates (Phase 3, §8.16)
-- **InferenceX (SemiAnalysis)** — Apache-2.0 repos, weekly DB dumps as
-  GitHub releases; confirm the dumps' license explicitly before import.
+- **InferenceX (SemiAnalysis)** — reviewed 2026-08-20: weekly Postgres
+  dumps ship as release assets of `SemiAnalysisAI/InferenceX-app`, a
+  **GPL-3.0** repo (only the harness repo `SemiAnalysisAI/InferenceX` is
+  Apache-2.0, and it distributes no dumps). No data license anywhere:
+  release notes carry only restore instructions, no DATA_LICENSE, and
+  READMEs/docs never mention licensing. **Blocked** until SemiAnalysis
+  states a redistribution license for the dumps. Once unblocked, dumps are
+  1.5–3.9 GB pg_restore custom-format and need a local-snapshot path; the
+  metric fit is excellent (per-GPU throughput, median/p99 TTFT, TPOT, E2E
+  latency across TP/concurrency/ISL/OSL sweeps).
 - **vLLM / SGLang HUD data** — right metrics, no sanctioned bulk access and
   no data license today; do not scrape.

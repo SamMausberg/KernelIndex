@@ -32,7 +32,13 @@ const SOURCES = [
     name: "FlashInfer-Bench",
     url: "https://huggingface.co/datasets/flashinfer-ai/flashinfer-trace",
     terms:
-      "Apache-2.0. Baseline solutions and traces only, at a pinned dataset revision.",
+      "Apache-2.0, at a pinned dataset revision. Model-generated solutions are always labeled llm-generated with the generating model named.",
+  },
+  {
+    name: "Liger-Kernel benchmarks",
+    url: "https://github.com/linkedin/Liger-Kernel",
+    terms:
+      "BSD-2-Clause. The committed benchmark CSV, imported only for kernels whose semantics were verified against the producing script.",
   },
   {
     name: "MLPerf™ Inference",
