@@ -15,6 +15,10 @@ const routes = [
   "/docs/api",
   "/submit",
   "/legal",
+  // Island payloads are CDN-cached too; a stale model must not lag the
+  // freshly warmed SSR slice.
+  "/records/data",
+  "/suggest",
 ]
 
 const rev = (html) => html.match(/([0-9a-f]{7})<\//)?.[1] ?? "?"

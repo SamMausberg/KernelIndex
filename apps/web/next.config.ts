@@ -47,6 +47,11 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.join(import.meta.dirname, "../.."),
   },
+  // CDN stale-while-revalidate ceiling: edge regions the post-deploy warm
+  // can't reach may serve the previous deployment's copy; ten minutes bounds
+  // that window instead of the multi-hour default, so users stop seeing
+  // mixed build ids after a deploy.
+  expireTime: 600,
   experimental: {
     // Back/forward navigation reuses the client router cache briefly instead
     // of refetching every dynamic page.
