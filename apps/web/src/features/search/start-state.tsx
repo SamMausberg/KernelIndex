@@ -175,6 +175,11 @@ export function StartState({
   const page = Math.min(Math.max(1, filters.page), pageCount)
   const rows = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
   const totalRuns = operations.reduce((n, entry) => n + entry.runs, 0)
+  // The homepage counts measured operations only; the browse index also
+  // lists indexed-but-unmeasured ones. State both so the two numbers can
+  // never read as a bug.
+  const measured = scoped.filter((entry) => entry.runs > 0).length
+  const awaiting = scoped.length - measured
   const examples = families.slice(0, 2).map((family) => `${family} B200 bf16`)
 
   return (
@@ -206,12 +211,13 @@ export function StartState({
         ))}
       </div>
 
-      <div className="mt-8 flex flex-wrap items-baseline justify-between gap-4 border-b border-border-strong pb-3">
-        <h2 className="text-lead font-medium">Browse the index</h2>
+      <div className="mt-12 flex flex-wrap items-baseline justify-between gap-4 border-b border-border-strong pb-3">
+        <h2 className="text-body font-medium text-muted">Browse the index</h2>
         <div className="flex flex-wrap items-baseline gap-x-4 text-small">
           <span className="text-faint">
-            {scoped.length} operation{scoped.length === 1 ? "" : "s"} ·{" "}
-            {totalRuns} published runs
+            {measured} operation{measured === 1 ? "" : "s"} with runs
+            {awaiting > 0 && ` · ${awaiting} more indexed, awaiting runs`} ·{" "}
+            {totalRuns.toLocaleString("en-US")} kernel runs
           </span>
           <span className="flex items-baseline gap-2.5">
             <span className="text-faint">sorted by</span>
@@ -234,19 +240,49 @@ export function StartState({
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 pt-3 pb-1">
-        {["All families", ...families].map((label) => {
-          const value = label === "All families" ? null : label
-          return (
-            <FilterChip
-              key={label}
-              href={browseHref(filters, { family: value })}
-              on={filters.family === value}
-              label={label}
-            />
-          )
-        })}
-      </div>
+      {/* The taxonomy stays out of the way (§16.5): the major families lead,
+          the long tail sits behind one native disclosure. A selected
+          long-tail family surfaces so its active state is never hidden. */}
+      {(() => {
+        const LEAD = 10
+        const lead = families.slice(0, LEAD)
+        if (filters.family && !lead.includes(filters.family))
+          lead.push(filters.family)
+        const tail = families.filter((family) => !lead.includes(family))
+        return (
+          <div className="flex flex-wrap items-center gap-2 pt-3 pb-1">
+            {["All families", ...lead].map((label) => {
+              const value = label === "All families" ? null : label
+              return (
+                <FilterChip
+                  key={label}
+                  href={browseHref(filters, { family: value })}
+                  on={filters.family === value}
+                  label={label}
+                />
+              )
+            })}
+            {tail.length > 0 && (
+              <details className="group contents">
+                <summary className="key cursor-pointer list-none px-2 py-1 text-small text-faint transition-colors hover:text-fg [&::-webkit-details-marker]:hidden">
+                  <span className="group-open:hidden">
+                    All {families.length} families ›
+                  </span>
+                  <span className="hidden group-open:inline">Fewer ⌄</span>
+                </summary>
+                {tail.map((label) => (
+                  <FilterChip
+                    key={label}
+                    href={browseHref(filters, { family: label })}
+                    on={filters.family === label}
+                    label={label}
+                  />
+                ))}
+              </details>
+            )}
+          </div>
+        )
+      })()}
 
       <OperationList
         entries={rows}
