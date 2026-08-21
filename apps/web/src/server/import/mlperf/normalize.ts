@@ -93,21 +93,30 @@ export function projectFor(submitter: string): {
   }
 }
 
+/** Submitters sometimes leave the Software field as filler; a placeholder
+ * must never become a display name. Identity keeps the raw string. */
+export const softwarePlaceholder = (software: string) =>
+  software.length < 3 ||
+  ["todo", "n/a", "tbd", "-", "none"].includes(software.toLowerCase())
+
 /** The stack identity is the Software string exactly as submitted; the
- * title carries it for display so surfaces never show the kebab slug. */
+ * title carries the display form so surfaces never show the kebab slug. */
 export function stackFor(row: MlperfRow): {
   manifest: ServingStackRevisionManifest
   slug: string
   projectSlug: string
 } {
   const name = row.Software.trim().slice(0, 200)
+  const title = softwarePlaceholder(name)
+    ? `${row.Submitter} submission (software not stated)`
+    : name
   return {
     manifest: manifest("ServingStackRevision", {
       apiVersion: "kernelindex.dev/v1alpha1",
       kind: "ServingStackRevision",
       metadata: {
         name: kebab(`mlperf-stack-${row.Submitter}-${name}`).slice(0, 200),
-        title: name,
+        title,
       },
       spec: {
         project: { name: `${row.Submitter} (MLPerf submitter)` },

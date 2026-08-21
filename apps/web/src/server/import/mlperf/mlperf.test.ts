@@ -89,6 +89,17 @@ describe("mlperf normalization", () => {
     expect(specDigest(untitled)).toBe(specDigest(stack.manifest))
   })
 
+  it("placeholder Software strings fall back to the submitter", () => {
+    const { rows } = classified("summary-v6.0-slice.json")
+    const junk = { ...rows[0], Software: "TODO" }
+    const stack = stackFor(junk)
+    expect(stack.manifest.metadata.title).toBe(
+      `${junk.Submitter} submission (software not stated)`,
+    )
+    // Identity still carries the raw string; only display falls back.
+    expect(stack.manifest.spec.revision.version).toBe("TODO")
+  })
+
   it("declares rules-cited SLOs on Server/Interactive, none on Offline", () => {
     const interactive = workloadFor("llama2-70b-99", "Interactive")
     expect(interactive.manifest.spec.slo).toEqual([
