@@ -33,58 +33,55 @@ export default async function SignInPage({
   if (user !== null) redirect(next)
 
   return (
-    <>
-      <main className="animate-fade-in mx-auto w-full max-w-[400px] px-6 pt-[10vh] pb-24">
-        <h1 className="text-center text-title font-medium">Sign in</h1>
-        <p className="mt-1.5 text-center text-body text-subtle">
-          Reading never needs an account.
-        </p>
+    <main className="animate-fade-in mx-auto w-full max-w-[400px] px-6 pt-[10vh] pb-24">
+      <h1 className="text-center text-title font-medium">Sign in</h1>
+      <p className="mt-1.5 text-center text-body text-subtle">
+        Reading never needs an account.
+      </p>
 
-        {authConfigured ? (
-          <div className="plate mt-8 px-6 py-6">
-            <SignInButton provider="github" next={next} primary />
-            {googleEnabled && (
-              <div className="mt-2.5">
-                <SignInButton provider="google" next={next} />
-              </div>
-            )}
-            <p className="mt-4 text-center text-small leading-relaxed text-subtle">
-              No passwords. Sign out anytime.
-              {googleEnabled && (
-                <>
-                  <br />
-                  Claiming a project needs GitHub.
-                </>
-              )}
-            </p>
-          </div>
-        ) : (
-          <div className="plate mt-8 px-6 py-6">
-            <p className="text-center text-body leading-relaxed text-muted">
-              Sign-in is not set up on this deployment. You can still contribute
-              evidence with a{" "}
-              <a href="https://github.com/SamMausberg/KernelIndex/tree/main/registry/submissions">
-                pull request
-              </a>
-              ; it goes through the same review.
-            </p>
-          </div>
-        )}
-
-        <dl className="mt-10 space-y-2.5 border-t border-border pt-6">
-          {UNLOCKS.map(([term, detail]) => (
-            <div key={term} className="flex gap-3 text-body">
-              <dt className="w-[128px] shrink-0 text-fg">{term}</dt>
-              <dd className="text-subtle">{detail}</dd>
+      {authConfigured ? (
+        <div className="plate mt-8 px-6 py-6">
+          <SignInButton provider="github" next={next} primary />
+          {googleEnabled && (
+            <div className="mt-2.5">
+              <SignInButton provider="google" next={next} />
             </div>
-          ))}
-        </dl>
+          )}
+          <p className="mt-4 text-center text-small leading-relaxed text-subtle">
+            No passwords. Sign out anytime.
+            {googleEnabled && (
+              <>
+                <br />
+                Claiming a project needs GitHub.
+              </>
+            )}
+          </p>
+        </div>
+      ) : (
+        <div className="plate mt-8 px-6 py-6">
+          <p className="text-center text-body leading-relaxed text-muted">
+            Sign-in is not set up on this deployment. You can still contribute
+            evidence with a{" "}
+            <a href="https://github.com/SamMausberg/KernelIndex/tree/main/registry/submissions">
+              pull request
+            </a>
+            ; it goes through the same review.
+          </p>
+        </div>
+      )}
 
-        <p className="mt-8 text-center text-small text-faint">
-          The <Link href="/docs#data">API and CLI</Link> work without an
-          account.
-        </p>
-      </main>
-    </>
+      <dl className="mt-10 space-y-2.5 border-t border-border pt-6">
+        {UNLOCKS.map(([term, detail]) => (
+          <div key={term} className="flex gap-3 text-body">
+            <dt className="w-[128px] shrink-0 text-fg">{term}</dt>
+            <dd className="text-subtle">{detail}</dd>
+          </div>
+        ))}
+      </dl>
+
+      <p className="mt-8 text-center text-small text-faint">
+        The <Link href="/docs#data">API and CLI</Link> work without an account.
+      </p>
+    </main>
   )
 }
