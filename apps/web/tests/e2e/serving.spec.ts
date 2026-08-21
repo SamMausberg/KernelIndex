@@ -11,9 +11,9 @@ test("the default view is the overview; narrowing shows separated cohorts", asyn
   await expect(page.getByText("Example data.", { exact: false })).toBeVisible()
   // No cohort stream before narrowing: one row per model × benchmark.
   await expect(page.getByText("Best tokens/s")).toBeVisible()
-  await expect(page.getByRole("heading", { name: /offline-batch/ })).toHaveCount(
-    0,
-  )
+  await expect(
+    page.getByRole("heading", { name: /offline-batch/ }),
+  ).toHaveCount(0)
 
   await page.goto("/serving?model=aurora-70b")
   // Interactive and Offline are distinct cohort groups, never interleaved;
