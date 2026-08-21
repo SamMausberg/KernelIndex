@@ -113,7 +113,10 @@ export default async function ServingRunPage({ params }: Props) {
                 },
                 { key: "harness", value: model.harness },
                 { key: "quality policy", value: model.cohort.qualityPolicy },
-                { key: "cohort", value: `${model.cohort.key.slice(0, 23)}…` },
+                {
+                  key: "comparison key",
+                  value: `${model.cohort.key.slice(0, 23)}…`,
+                },
               ]}
             />
             <div className="mt-3 flex items-center gap-2.5">

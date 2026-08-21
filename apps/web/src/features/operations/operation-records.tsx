@@ -159,8 +159,8 @@ export function OperationRecords({
             <div className="border-l border-border pl-9 max-lg:border-l-0 max-lg:pl-0">
               <div className="mb-2.5 text-small text-subtle">
                 {variant.cohort.profile === "source_native"
-                  ? "Source-native cohort"
-                  : "Exact cohort"}
+                  ? "Source-native comparison"
+                  : "Exact comparison"}
               </div>
               <KeyValueList
                 items={[
@@ -202,7 +202,8 @@ export function OperationRecords({
         </div>
         {overflow > 0 && (
           <p className="mt-3 text-small text-faint">
-            {overflow} more row{overflow === 1 ? "" : "s"} in this cohort.{" "}
+            {overflow} more row{overflow === 1 ? "" : "s"} in this comparison
+            group.{" "}
             <Link
               href={`/search?q=${encodeURIComponent(`op:${slug}`)}`}
               className="action"

@@ -253,7 +253,7 @@ function HolderRow({ holder }: { holder: LedgerHolder }) {
               prefetch={false}
               className="action"
             >
-              Run dossier →
+              Run detail →
             </Link>
           )}
           <Link

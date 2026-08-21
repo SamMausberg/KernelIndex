@@ -139,8 +139,8 @@ rmsnorm gpu:B200 dtype:bf16 shape:[2048,4096] framework=pytorch trust:verified`}
             Results split into four views that never mix: <em>Exact</em>{" "}
             (matches your request), <em>Compatible</em> (close, with the
             differences listed), <em>Supported</em> (claims support, no
-            measurement), and <em>Other cohorts</em> (measured under a different
-            protocol).
+            measurement), and <em>Other protocols</em> (measured under a
+            different protocol).
           </p>
           <p className="mt-3">
             <em>Recommended</em> puts the strongest evidence first without
@@ -152,10 +152,11 @@ rmsnorm gpu:B200 dtype:bf16 shape:[2048,4096] framework=pytorch trust:verified`}
 
         <Section id="comparability" title="Why comparable?">
           <p>
-            A cohort is a set of runs that measured the same thing the same way:
-            same workload, same protocol, same environment, same correctness
-            bar. Ranks exist only inside a cohort. A matching GPU name or
-            operation name alone proves nothing, so it ranks nothing.
+            A comparison group — a cohort — is a set of runs that measured the
+            same thing the same way: same workload, same protocol, same
+            environment, same correctness bar. Ranks exist only inside a cohort.
+            A matching GPU name or operation name alone proves nothing, so it
+            ranks nothing.
           </p>
         </Section>
 

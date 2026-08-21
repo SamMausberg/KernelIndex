@@ -4,6 +4,7 @@ import type { Metadata } from "next"
 import { after } from "next/server"
 import { Suspense } from "react"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
+import { SkeletonRows } from "@/components/skeleton"
 import {
   type ResultMode,
   type ResultSort,
@@ -103,7 +104,7 @@ export default async function SearchPage({
     <Suspense
       fallback={
         <main className="shell pt-6">
-          <p className="py-4 font-mono text-small text-faint">resolving…</p>
+          <SkeletonRows />
         </main>
       }
     >

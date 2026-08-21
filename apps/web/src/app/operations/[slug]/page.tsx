@@ -12,11 +12,11 @@ import { KeyValueList } from "@/components/key-value-list"
 import { Metric } from "@/components/metric"
 import { Link } from "@/components/quiet-link"
 import { Section } from "@/components/section"
+import { SourcesFooter } from "@/components/sources-footer"
 import { AvailabilityCell, EvidenceCell } from "@/components/trust"
 import { OperationRecords } from "@/features/operations/operation-records"
 import { operationVariant } from "@/features/operations/variant"
 import { getOperationPage } from "@/lib/catalog"
-import { formatDateUTC } from "@/lib/format"
 
 type Props = { params: Promise<{ slug: string }> }
 
@@ -237,35 +237,11 @@ export default async function OperationPage({ params }: Props) {
           )}
         </Section>
 
-        <div className="mt-12 flex flex-wrap items-baseline justify-between gap-5 border-t border-border pt-5 text-small">
-          <span className="text-subtle">
-            {model.sources.length > 0 ? (
-              <>
-                Sources:{" "}
-                {model.sources.map((source, index) => (
-                  <span key={source.name}>
-                    {index > 0 && " · "}
-                    {source.url ? (
-                      <a href={source.url}>{source.name}</a>
-                    ) : (
-                      source.name
-                    )}
-                    {source.observedAt &&
-                      ` (${formatDateUTC(source.observedAt)})`}
-                    {source.license && ` · ${source.license}`}
-                  </span>
-                ))}
-              </>
-            ) : (
-              "No source imports for this operation yet."
-            )}
-          </span>
-          {coverage.lastObservedAt && (
-            <span className="font-mono text-small text-faint">
-              last observed {formatDateUTC(coverage.lastObservedAt)}
-            </span>
-          )}
-        </div>
+        <SourcesFooter
+          sources={model.sources}
+          lastObservedAt={coverage.lastObservedAt}
+          emptyText="No source imports for this operation yet."
+        />
       </main>
     </>
   )

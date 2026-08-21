@@ -10,6 +10,7 @@ import { IllustrativeNotice } from "@/components/illustrative-notice"
 import { Metric } from "@/components/metric"
 import { Link } from "@/components/quiet-link"
 import { Section } from "@/components/section"
+import { SourcesFooter } from "@/components/sources-footer"
 import { EvidenceCell } from "@/components/trust"
 import { MonthlyActivity } from "@/features/hardware/activity"
 import { getHardwarePage } from "@/lib/catalog"
@@ -186,27 +187,10 @@ export default async function GpuPage({ params }: Props) {
           <MonthlyActivity records={model.records} />
         </Section>
 
-        <div className="mt-12 flex flex-wrap items-baseline justify-between gap-5 border-t border-border pt-5 text-small">
-          <span className="text-subtle">
-            Sources:{" "}
-            {model.sources.map((source, index) => (
-              <span key={source.name}>
-                {index > 0 && " · "}
-                {source.url ? (
-                  <a href={source.url}>{source.name}</a>
-                ) : (
-                  source.name
-                )}
-                {source.license && ` · ${source.license}`}
-              </span>
-            ))}
-          </span>
-          {model.stats.lastObservedAt && (
-            <span className="font-mono text-small text-faint">
-              last observed {formatDateUTC(model.stats.lastObservedAt)}
-            </span>
-          )}
-        </div>
+        <SourcesFooter
+          sources={model.sources}
+          lastObservedAt={model.stats.lastObservedAt}
+        />
       </main>
     </>
   )

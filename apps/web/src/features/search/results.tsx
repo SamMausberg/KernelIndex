@@ -79,7 +79,7 @@ const MODES: { key: ResultMode; label: string; note: string | null }[] = [
     key: "reported",
     // "Other cohorts", not "Reported": the view groups source-protocol
     // cohorts, while Reported names an evidence level — one word, one meaning.
-    label: "Other cohorts",
+    label: "Other protocols",
     note: "Measured under a different protocol. Shown as published, never ranked against exact rows.",
   },
 ]
@@ -224,7 +224,7 @@ function Recommendation({
         />
         {fasterInCohort?.primary && (
           <p className="mt-3.5 text-body text-subtle">
-            Fastest overall in this cohort:{" "}
+            Fastest overall in this comparison:{" "}
             <Link
               href={`/implementations/${fasterInCohort.implementation.slug}`}
               className="font-mono text-body"
@@ -255,7 +255,7 @@ function Recommendation({
         )}
         {fasterElsewhere?.primary && (
           <p className="mt-2 text-body text-subtle">
-            A faster result exists outside this cohort:{" "}
+            A faster result exists outside this comparison group:{" "}
             <span className="font-mono text-fg">
               {formatPrimary(fasterElsewhere.primary)}
             </span>
@@ -271,8 +271,8 @@ function Recommendation({
           <div className="flex items-baseline justify-between gap-4 text-small">
             <span className="text-subtle">
               {model.cohort.profile === "source_native"
-                ? "Source-native cohort"
-                : "Exact cohort"}
+                ? "Source-native comparison"
+                : "Exact comparison"}
             </span>
             <Link href="/docs#comparability" className="text-small text-faint">
               Why comparable?
@@ -772,7 +772,7 @@ export function SearchResults({
           {model.cohort && (
             <div className="flex items-center gap-2.5">
               <span className="font-mono text-small text-faint">
-                cohort {model.cohort.comparisonKey.slice(0, 23)}…
+                comparison key {model.cohort.comparisonKey.slice(0, 23)}…
               </span>
               <CopyButton text={model.cohort.comparisonKey} />
             </div>

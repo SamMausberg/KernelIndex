@@ -19,7 +19,7 @@ import { markSeenAction, unwatchAction } from "./seen-action"
 
 /** Shown once, before the account has any keys, watches, or submissions. */
 const FIRST_STEPS = [
-  ["Watch a record", "any operation page has Watch cohort under its record"],
+  ["Watch a record", "any operation page has Watch under its record"],
   ["Create an API key", "raises your /api/v1 quota; scoped and revocable"],
   ["Point an agent here", "MCP and CLI setup lives in the docs"],
 ] as const

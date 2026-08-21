@@ -101,8 +101,8 @@ function whyLine(
     const speedup = baselineMetric.value / row.primary.value
     parts.push(
       speedup > 1
-        ? `${speedup.toFixed(2)}× faster than the cohort's baseline.`
-        : `${(1 / speedup).toFixed(2)}× slower than the cohort's baseline.`,
+        ? `${speedup.toFixed(2)}× faster than the baseline.`
+        : `${(1 / speedup).toFixed(2)}× slower than the baseline.`,
     )
   }
   if (row.mismatches.length > 0)
@@ -229,7 +229,7 @@ export function ResultRowItem({
             )}
             {row.runId && (
               <Link href={`/runs/${row.runId}`} className="action">
-                Run dossier →
+                Run detail →
               </Link>
             )}
             {row.runId && compareWith && compareWith !== row.runId && (

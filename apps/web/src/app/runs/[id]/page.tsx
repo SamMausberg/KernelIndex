@@ -132,10 +132,10 @@ export default async function RunPage({ params }: Props) {
               {model.cohort.eligible ? (
                 <>
                   {model.cohort.rank !== null &&
-                    `Rank ${model.cohort.rank} in its comparison cohort · `}
+                    `Rank ${model.cohort.rank} in its comparison group · `}
                   {model.cohort.profile === "source_native"
-                    ? "source-native cohort"
-                    : "strict exact cohort"}
+                    ? "source-native comparison"
+                    : "strict exact comparison"}
                   {" · observed "}
                   {formatDateUTC(model.run.observedAt)}
                 </>
@@ -164,7 +164,7 @@ export default async function RunPage({ params }: Props) {
                 },
                 { key: "workload", value: model.workload.label },
                 {
-                  key: "cohort",
+                  key: "comparison key",
                   value: `${model.cohort.comparisonKey.slice(0, 23)}…`,
                 },
                 {

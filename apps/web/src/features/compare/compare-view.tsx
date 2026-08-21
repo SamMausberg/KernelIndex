@@ -46,7 +46,7 @@ function RunHeader({ run }: { run: CompareRun }) {
         {strong && <span className="mr-1 text-label text-success">●</span>}
         {evidenceLabel(run.evidence)}
         {" · "}
-        <Link href={`/runs/${run.runId}`}>run dossier</Link>
+        <Link href={`/runs/${run.runId}`}>run detail</Link>
       </div>
       {!run.eligible && (
         <div className="mt-1 text-mini text-warning">

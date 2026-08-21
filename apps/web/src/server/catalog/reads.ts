@@ -2190,7 +2190,7 @@ export async function getComparePage(
     fields: [],
     firstMaterialMismatch: null,
     explanation:
-      "Select two to eight runs to compare. Every result row and run dossier links here.",
+      "Select two to eight runs to compare. Every result row and run detail page links here.",
     missingIds: [],
     policyVersion: RANKING_POLICY_VERSION,
   }

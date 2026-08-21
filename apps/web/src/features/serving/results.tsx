@@ -98,7 +98,7 @@ function ResultRow({ row }: { row: ServingResultRow }) {
             {row.source.externalId && ` · entry ${row.source.externalId}`}
           </span>
           <Link href={`/serving-runs/${row.runId}`} className="ml-4">
-            Run dossier →
+            Run detail →
           </Link>
         </p>
       </div>
@@ -122,7 +122,8 @@ export function ServingCohorts({ groups }: { groups: ServingCohortGroup[] }) {
           <section key={group.cohortKey}>
             <h2 className="text-lead font-medium">{group.description}</h2>
             <p className="mt-0.5 text-small text-faint">
-              Ranked only inside this cohort · {group.rows.length} feasible
+              Ranked only inside this comparison group · {group.rows.length}{" "}
+              feasible
               {group.excluded.length > 0 &&
                 ` · ${group.excluded.length} excluded`}
             </p>
@@ -149,13 +150,14 @@ export function ServingCohorts({ groups }: { groups: ServingCohortGroup[] }) {
               />
               {group.rows.length === 0 && (
                 <p className="py-8 text-body text-faint">
-                  Nothing in this cohort meets the bounds.
+                  Nothing here meets the bounds.
                 </p>
               )}
             </div>
             {cut > 0 && (
               <p className="mt-2 text-small text-faint">
-                {cut} more rows in this cohort — narrow the filters to see them.
+                {cut} more rows in this comparison group — narrow the filters to
+                see them.
               </p>
             )}
             {group.excluded.length > 0 && (

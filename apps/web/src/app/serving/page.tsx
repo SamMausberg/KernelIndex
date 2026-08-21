@@ -13,6 +13,7 @@ import { Suspense } from "react"
 import { ContextHeader } from "@/components/context-header"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
 import { Select } from "@/components/select"
+import { SkeletonRows } from "@/components/skeleton"
 import { ServingCohorts } from "@/features/serving/results"
 import { getServingFacets, resolveServing } from "@/lib/catalog"
 import { countNoun } from "@/lib/format"
@@ -163,8 +164,8 @@ async function ServingResults({
     <>
       <div className="flex flex-wrap items-baseline justify-between gap-x-8 gap-y-1.5 py-4">
         <p className="font-mono text-small text-muted">
-          {countNoun(model.groups.length, "cohort")} · {feasible} feasible ·{" "}
-          {excluded} excluded
+          {countNoun(model.groups.length, "comparison group")} · {feasible}{" "}
+          feasible · {excluded} excluded
         </p>
         <p className="max-w-[68ch] text-small text-faint">
           Only runs with the same model, workload, protocol, hardware, and
@@ -181,8 +182,8 @@ async function ServingResults({
           <ServingCohorts groups={model.groups.slice(0, GROUP_CAP)} />
           {model.groups.length > GROUP_CAP && (
             <p className="mt-8 text-small text-faint">
-              {model.groups.length - GROUP_CAP} more cohorts. Narrow by model,
-              workload, or hardware to see them.
+              {model.groups.length - GROUP_CAP} more comparison groups. Narrow
+              by model, workload, or hardware to see them.
             </p>
           )}
         </>
@@ -339,7 +340,9 @@ export default async function ServingPage({
 
         <Suspense
           fallback={
-            <p className="py-4 font-mono text-small text-faint">resolving…</p>
+            <div className="pt-4">
+              <SkeletonRows />
+            </div>
           }
         >
           <ServingResults
