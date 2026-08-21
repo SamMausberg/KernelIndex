@@ -26,13 +26,13 @@ export function answerLabel(row: ResultRow) {
   return "Fastest reported"
 }
 
-/** The percentage a slower peer trails the cohort leader by; null when the
- * comparison is degenerate (missing metrics, zero, or not actually slower). */
+/** The house ratio notation ("1.07× vs fastest"); null when the comparison
+ * is degenerate (missing metrics, zero, or not actually slower). */
 export function deltaVsFastest(row: ResultRow, fastest: ResultRow) {
   if (!row.primary || !fastest.primary || fastest.primary.value <= 0)
     return null
-  const pct = (row.primary.value / fastest.primary.value - 1) * 100
-  return pct > 0 ? `+${pct.toFixed(pct < 10 ? 1 : 0)}% vs fastest` : null
+  const ratio = row.primary.value / fastest.primary.value
+  return ratio > 1 ? `${ratio.toFixed(2)}× vs fastest` : null
 }
 
 function Slot({
@@ -107,11 +107,19 @@ function Slot({
           </code>
           <CopyButton text={row.install.command} event="install_copied" />
         </div>
+      ) : row.sourceAvailable ? (
+        <p className="mt-4 text-small text-subtle">
+          No package.{" "}
+          <Link
+            href={`/implementations/${row.implementation.slug}#use`}
+            className="text-small"
+          >
+            Vendor the source from the kernel page →
+          </Link>
+        </p>
       ) : (
         <p className="mt-4 text-small text-faint">
-          {row.sourceAvailable
-            ? "No install recipe recorded for this revision."
-            : "No public source for this result."}
+          No public source for this result.
         </p>
       )}
       <div className="mt-3.5 flex flex-wrap gap-x-5 gap-y-1">
@@ -164,7 +172,7 @@ export function AnswerSlots({
   return (
     <div className="grid grid-cols-2 gap-10 max-lg:grid-cols-1">
       <Slot label={label} row={top} vsBaseline={vsBaseline} />
-      <div className="border-l border-border pl-10 max-lg:border-l-0 max-lg:pl-0">
+      <div className="border-l border-border pl-9 max-lg:border-l-0 max-lg:pl-0">
         <Slot
           label="Fastest you can deploy"
           row={deploy}

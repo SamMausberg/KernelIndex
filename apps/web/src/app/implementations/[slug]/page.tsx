@@ -13,6 +13,7 @@ import {
 } from "@/features/implementations/source-view"
 import { getImplementationPage } from "@/lib/catalog"
 import { evidenceLabel, formatDateUTC } from "@/lib/format"
+import { env } from "@/server/env"
 import { deployability } from "@/server/policy/deployability"
 
 // Implementation dossiers change only on importer runs; ISR on first hit.
@@ -124,9 +125,11 @@ export default async function ImplementationPage({ params }: Props) {
               ? `Deployable · ${model.usage.install?.kind}`
               : model.usage.install
                 ? `Installable · ${model.usage.install.kind}`
-                : model.source.available
-                  ? "Source available · no install recipe recorded"
-                  : "Benchmark submission only · no public source"}
+                : model.sourceCode
+                  ? "Vendorable · source mirrored"
+                  : model.source.available
+                    ? "Source available upstream"
+                    : "Benchmark submission only · no public source"}
             <span className="text-subtle">
               {" · "}
               {model.license.concluded ??
@@ -150,6 +153,38 @@ export default async function ImplementationPage({ params }: Props) {
                     text={model.usage.install.command}
                     event="install_copied"
                   />
+                </div>
+              ) : model.sourceCode ? (
+                /* No package exists, but the code does (§8.13): vendoring is
+                   the honest adoption path for most of the corpus. */
+                <div className="max-w-[560px]">
+                  <p className="text-body text-muted">
+                    No package. Vendor the mirrored source:{" "}
+                    {model.sourceCode.content.split("\n").length} lines
+                    {model.sourceCode.license &&
+                      `, ${model.sourceCode.license}`}
+                    {model.source.commit &&
+                      `, pinned at ${model.source.commit.slice(0, 7)}`}
+                    .
+                  </p>
+                  <div className="plate mt-2.5 flex items-center gap-2.5 py-2 pr-2 pl-3">
+                    <span className="min-w-0 flex-1 truncate font-mono text-small text-muted">
+                      {model.sourceCode.fileName ?? "kernel source"}
+                    </span>
+                    <CopyButton
+                      text={model.sourceCode.content}
+                      event="install_copied"
+                    />
+                  </div>
+                  <div className="plate mt-2 flex items-center gap-2.5 py-2 pr-2 pl-3">
+                    <code className="min-w-0 flex-1 truncate font-mono text-small text-muted">
+                      {`curl "${env.SITE_ORIGIN ?? "https://kernelindex.com"}/api/v1/implementations/${model.implementation.slug}?include=source"`}
+                    </code>
+                    <CopyButton
+                      text={`curl "${env.SITE_ORIGIN ?? "https://kernelindex.com"}/api/v1/implementations/${model.implementation.slug}?include=source"`}
+                      event="install_copied"
+                    />
+                  </div>
                 </div>
               ) : (
                 <p className="text-body text-faint">
