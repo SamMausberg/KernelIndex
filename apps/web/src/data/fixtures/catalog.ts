@@ -15,6 +15,8 @@ import type {
   LicenseInfo,
   MatchQuality,
   Mismatch,
+  ModelIndexModel,
+  ModelPageModel,
   OperationIndexEntry,
   OperationPageModel,
   PrimaryMetric,
@@ -27,7 +29,7 @@ import type {
   SearchInput,
   SearchPageModel,
 } from "@/lib/catalog-models"
-import { hardwareSlug } from "@/lib/names"
+import { hardwareSlug, relatedModelTags } from "@/lib/names"
 import {
   describeIntent,
   parseQuery,
@@ -1496,6 +1498,96 @@ export async function getProjectIndex(): Promise<ProjectIndexModel> {
       hardware: [B200.model],
       lastObservedAt: FRESH,
     })),
+  }
+}
+
+// Model surface fixtures (§16.21): both fixture operations carry the
+// illustrative llama-3.1-8b provenance tag (the operation page already
+// states it), so the model page exercises the fastest-vs-deployable split
+// (ionflux vs meridian) and a stated gap (the unmeasured fused operation).
+const FIXTURE_MODEL = "llama-3.1-8b"
+
+export async function getModelIndex(): Promise<ModelIndexModel> {
+  return {
+    illustrative: ILLUSTRATIVE,
+    kernel: [
+      {
+        model: FIXTURE_MODEL,
+        operations: 2,
+        families: 2,
+        runs: eligible().length,
+        gpus: 1,
+        lastObservedAt: FRESH,
+      },
+    ],
+    serving: [
+      {
+        slug: "aurora-70b",
+        name: "Aurora-70B (fictional)",
+        parameterCount: 70_000_000_000,
+        runs: 4,
+      },
+    ],
+  }
+}
+
+export async function getModelPage(
+  slug: string,
+  gpu?: string,
+): Promise<ModelPageModel | null> {
+  const relatedTags = relatedModelTags(slug, [FIXTURE_MODEL])
+  if (slug !== FIXTURE_MODEL) {
+    if (relatedTags.length === 0) return null
+    return {
+      illustrative: ILLUSTRATIVE,
+      model: { slug, relatedTags },
+      resolved: false,
+      stats: { operations: 0, families: 0, runs: 0 },
+      gpus: [],
+      selectedGpu: null,
+      groups: [],
+      gaps: [],
+      serving: null,
+      sources: [],
+    }
+  }
+  const runs = eligible()
+  void gpu // one fixture GPU: any request resolves to the most-measured
+  return {
+    illustrative: ILLUSTRATIVE,
+    model: { slug, relatedTags },
+    resolved: true,
+    stats: { operations: 2, families: 2, runs: runs.length },
+    gpus: [{ model: B200.model, runs: runs.length }],
+    selectedGpu: B200.model,
+    groups: [
+      {
+        family: "rmsnorm",
+        entries: [
+          {
+            operation: { name: "RMSNorm, hidden 4096", slug: "rmsnorm-h4096" },
+            family: "rmsnorm",
+            fastest: rowFromRun(RANKED[0]),
+            deployable: rowFromRun(RANKED[1]),
+            cohort: COHORT_2048,
+            workloadId: "wl-2048",
+            alternatives: RANKED.length - 1,
+          },
+        ],
+      },
+    ],
+    gaps: [
+      {
+        operation: {
+          name: "Fused residual + RMSNorm",
+          slug: "fused-residual-rmsnorm",
+        },
+        family: "fused-residual-rmsnorm",
+        measuredOn: [],
+      },
+    ],
+    serving: null,
+    sources: [FIXTURE_SOURCE_REF],
   }
 }
 

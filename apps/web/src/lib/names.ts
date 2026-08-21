@@ -112,6 +112,19 @@ export function implementationDisplayName(
   return kept.length > 0 ? kept.join(" · ") : slug
 }
 
+/** Model tags in an exact hyphen-boundary prefix relation with the slug —
+ * the only cross-tag association the model surface makes (§16.21); fuzzy
+ * grouping of variants would manufacture equivalence (§2.2). */
+export function relatedModelTags(slug: string, tags: string[]): string[] {
+  return tags
+    .filter(
+      (tag) =>
+        tag !== slug &&
+        (tag.startsWith(`${slug}-`) || slug.startsWith(`${tag}-`)),
+    )
+    .sort()
+}
+
 /** URL slug for a GPU model name: "NVIDIA B200 SXM" → "nvidia-b200-sxm". */
 export function hardwareSlug(model: string): string {
   return model

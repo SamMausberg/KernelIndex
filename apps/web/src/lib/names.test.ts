@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest"
-import { humanizeOperationName, implementationDisplayName } from "./names.ts"
+import {
+  humanizeOperationName,
+  implementationDisplayName,
+  relatedModelTags,
+} from "./names.ts"
 
 describe("humanizeOperationName", () => {
   it("strips numeric prefixes and cases known technical tokens", () => {
@@ -88,5 +92,39 @@ describe("implementationDisplayName", () => {
     expect(implementationDisplayName(null, solOperation, "some-slug")).toBe(
       "some-slug",
     )
+  })
+})
+
+describe("relatedModelTags", () => {
+  const tags = [
+    "qwen3-30b-a3b",
+    "qwen3-30b-a3b-instruct-2507",
+    "qwen3-coder-30b-a3b-instruct",
+    "qwen3-3b",
+    "deepseek-v3",
+  ]
+
+  it("relates only exact hyphen-boundary prefixes, both directions", () => {
+    expect(relatedModelTags("qwen3-30b-a3b", tags)).toEqual([
+      "qwen3-30b-a3b-instruct-2507",
+    ])
+    expect(relatedModelTags("qwen3-30b-a3b-instruct-2507", tags)).toEqual([
+      "qwen3-30b-a3b",
+    ])
+  })
+
+  it("never treats a partial token as a prefix", () => {
+    // "qwen3-3" is a substring of two tags but a prefix of neither model id.
+    expect(relatedModelTags("qwen3-3", tags)).toEqual([])
+  })
+
+  it("excludes the slug itself and sorts", () => {
+    expect(relatedModelTags("deepseek-v3", tags)).toEqual([])
+    expect(relatedModelTags("qwen3", [...tags].reverse())).toEqual([
+      "qwen3-30b-a3b",
+      "qwen3-30b-a3b-instruct-2507",
+      "qwen3-3b",
+      "qwen3-coder-30b-a3b-instruct",
+    ])
   })
 })

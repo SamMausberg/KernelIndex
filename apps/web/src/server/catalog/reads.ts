@@ -90,8 +90,9 @@ import { eligibleServingRuns } from "./serving-reads.ts"
 import { diffSource } from "./source-diff.ts"
 import { computeSweep } from "./sweep.ts"
 
-// Hardware and project index reads live beside this module; the seam
+// Hardware, project, and model reads live beside this module; the seam
 // resolves them through the same import (§27.5).
+export { getModelIndex, getModelPage } from "./model-reads.ts"
 export {
   getHardwareIndex,
   getHardwarePage,
@@ -103,7 +104,9 @@ const UUID_PATTERN =
 
 // Lean projections for ranked surfaces: scalar columns only, never the JSONB
 // manifests, which dominate transfer and parse cost at corpus scale (§16).
-const runColumns = {
+// Exported for the sibling model-reads module, which assembles the same
+// joined-run shape with extra operation columns.
+export const runColumns = {
   id: schema.benchmarkRuns.id,
   observedAt: schema.benchmarkRuns.observedAt,
   publishedAt: schema.benchmarkRuns.publishedAt,
@@ -130,7 +133,7 @@ const runColumns = {
   environmentSummary: schema.benchmarkRuns.environmentSummary,
   solScore: schema.benchmarkRuns.solScore,
 }
-const implementationColumns = {
+export const implementationColumns = {
   id: schema.implementations.id,
   slug: schema.implementations.slug,
   sourceRevision: schema.implementations.sourceRevision,
@@ -147,11 +150,11 @@ const implementationColumns = {
   licenseExpression: schema.implementations.licenseExpression,
   role: schema.implementations.role,
 }
-const projectColumns = {
+export const projectColumns = {
   name: schema.projects.name,
   slug: schema.projects.slug,
 }
-const sourceColumns = {
+export const sourceColumns = {
   slug: schema.sources.slug,
   kind: schema.sources.kind,
   name: schema.sources.name,
@@ -160,7 +163,7 @@ const sourceColumns = {
 type ImplementationRow = typeof schema.implementations.$inferSelect
 type WorkloadRow = typeof schema.workloads.$inferSelect
 
-type JoinedRun = {
+export type JoinedRun = {
   run: Pick<RunRow, keyof typeof runColumns>
   implementation: Pick<ImplementationRow, keyof typeof implementationColumns>
   project: Pick<typeof schema.projects.$inferSelect, "name" | "slug">
@@ -243,7 +246,7 @@ function opRef(operation: { name: string; slug: string }) {
   return { name: humanizeOperationName(operation.name), slug: operation.slug }
 }
 
-function resultRow(
+export function resultRow(
   joined: JoinedRun,
   operation: { name: string; slug: string },
   extras: Partial<
@@ -330,7 +333,7 @@ function operationDtypes(manifest: OperationSpecManifest): string[] {
   ]
 }
 
-function rankInputOf(joined: JoinedRun): RankInput {
+export function rankInputOf(joined: JoinedRun): RankInput {
   return {
     id: joined.run.id,
     value: joined.run.primaryValue as number,
@@ -1553,7 +1556,7 @@ function sourcePolicy(policy: unknown): SourcePolicy {
 
 /** Distinct sources behind a row set, with their attribution link and
  * license from sources.policy — a display condition of the upstream terms. */
-async function sourceRefs(joined: JoinedRun[]): Promise<SourceRef[]> {
+export async function sourceRefs(joined: JoinedRun[]): Promise<SourceRef[]> {
   const bySlug = new Map<string, SourceRef>()
   for (const j of joined) {
     const last = bySlug.get(j.source.slug)

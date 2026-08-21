@@ -23,6 +23,8 @@ const CRITICAL_PAGES = [
   "/runs/run-fx-0001",
   "/gpus",
   "/gpus/nvidia-b200-sxm",
+  "/models",
+  "/models/llama-3.1-8b",
   "/serving",
   "/serving-runs/srv-fx-0002",
   "/docs",

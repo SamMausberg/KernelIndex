@@ -376,6 +376,13 @@ export function SearchResults({
   const alternative = MODES.find(
     (mode) => mode.key !== view && groupsByMode[mode.key].length > 0,
   )
+  // A model: facet names a whole-model question; search resolves one
+  // operation, so the model page (every relevant operation on one GPU) is
+  // offered beside the facet chips. The display carries the kebab slug.
+  const modelSlug =
+    model.facets
+      .find((facet) => facet.display.startsWith("model "))
+      ?.display.slice("model ".length) ?? null
 
   return (
     <>
@@ -418,6 +425,14 @@ export function SearchResults({
                   className="text-mini text-faint transition-colors hover:text-fg"
                 >
                   Clear filters
+                </Link>
+              )}
+              {modelSlug && (
+                <Link
+                  href={`/models/${modelSlug}`}
+                  className="text-mini text-subtle transition-colors hover:text-fg"
+                >
+                  Every operation for this model →
                 </Link>
               )}
             </div>

@@ -12,6 +12,8 @@ import type {
   HardwarePageModel,
   HomePageModel,
   ImplementationPageModel,
+  ModelIndexModel,
+  ModelPageModel,
   OperationIndexEntry,
   OperationPageModel,
   ProjectIndexModel,
@@ -51,6 +53,10 @@ type CatalogReads = {
   getHardwareIndex(): Promise<HardwareIndexModel>
   getHardwarePage(slug: string): Promise<HardwarePageModel | null>
   getProjectIndex(): Promise<ProjectIndexModel>
+  // Model surface (§16.21): kernel model: tags and serving revisions,
+  // never merged.
+  getModelIndex(): Promise<ModelIndexModel>
+  getModelPage(slug: string, gpu?: string): Promise<ModelPageModel | null>
   // Serving (§8.16): a separate resolver surface behind the same seam.
   getServingFacets(): Promise<ServingFacetsModel>
   getServingOverview(): Promise<ServingOverviewModel>
@@ -87,8 +93,8 @@ const cached: typeof unstable_cache = process.env.NEXT_RUNTIME
   : (fn) => fn
 // Bump when a read model changes shape: the deployed data cache outlives a
 // deploy, and an old-shape entry must never deserialize into new readers
-// (v3: ResultRow/RecordHolder gained indexedAt; CoverageSource gained indexed).
-const MODEL_VERSION = "v3"
+// (v4: model surface reads added — ModelIndexModel/ModelPageModel).
+const MODEL_VERSION = "v4"
 // The database identity is part of the namespace too: two local servers on
 // different databases share .next/cache and must never trade entries.
 const BACKEND = `${
@@ -278,6 +284,26 @@ export const getProjectIndex = cache(
       return (await reads()).getProjectIndex()
     },
     ["project-index", BACKEND],
+    { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },
+  ),
+)
+
+export const getModelIndex = cache(
+  cached(
+    async (): Promise<ModelIndexModel> => {
+      return (await reads()).getModelIndex()
+    },
+    ["model-index", BACKEND],
+    { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },
+  ),
+)
+
+export const getModelPage = cache(
+  cached(
+    async (slug: string, gpu?: string): Promise<ModelPageModel | null> => {
+      return (await reads()).getModelPage(slug, gpu)
+    },
+    ["model", BACKEND],
     { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },
   ),
 )

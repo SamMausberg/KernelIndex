@@ -5,6 +5,7 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import {
   getCoveragePage,
+  getModelPage,
   listHardwareCoverage,
   listModelCoverage,
   listOperations,
@@ -14,6 +15,7 @@ import { CACHE_MEDIUM, CACHE_SHORT, fail, json } from "./http.ts"
 import {
   coverageResponse,
   hardwareResponse,
+  modelDossier,
   modelsResponse,
   operationsResponse,
   problemDetails,
@@ -127,6 +129,35 @@ listRoutes.openapi(
     const model = await listModelCoverage()
     c.header("Cache-Control", CACHE_MEDIUM)
     return c.json({ ...model, generatedAt: new Date().toISOString() }, 200)
+  },
+)
+
+listRoutes.openapi(
+  createRoute({
+    method: "get",
+    path: "/models/{slug}",
+    request: {
+      params: z.object({ slug: z.string().max(200) }),
+      query: z.object({ gpu: z.string().max(200).optional() }),
+    },
+    responses: {
+      ...json(
+        modelDossier,
+        "Model dossier: best known per operation on one GPU, gaps, evidence, source links (the web page's model)",
+      ),
+      404: {
+        description: "Unknown model slug",
+        content: { "application/json": { schema: problemDetails } },
+      },
+    },
+  }),
+  async (c) => {
+    const { slug } = c.req.valid("param")
+    const { gpu } = c.req.valid("query")
+    const model = await getModelPage(slug, gpu)
+    if (!model) fail(404, "MODEL_NOT_FOUND", slug)
+    c.header("Cache-Control", CACHE_MEDIUM)
+    return c.json(model, 200)
   },
 )
 

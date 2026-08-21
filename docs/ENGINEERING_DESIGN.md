@@ -2605,6 +2605,13 @@ disagrees, the code is current:
   ratio notation to the implementations table and the answer card's deploy
   delta.
 
+**Reality note (2026-08-21, model surface).** §16.21 is implemented: `/models`
+(coverage table, footer-linked) and `/models/[slug]?gpu=` (best known per
+operation on one GPU, gaps, evidence, source links), reads behind the seam in
+both backends (`MODEL_VERSION` v4), `GET /api/v1/models/{slug}`, the
+`model_resolved` event, and crosslinks from search (`model:` facet),
+operation-page model chips, docs `#views`, and llms.txt.
+
 ### 16.1 Product character
 
 KernelIndex should feel like a serious technical reference built by kernel engineers, not a generic SaaS dashboard, gaming leaderboard, or GPU marketing site.
@@ -3216,7 +3223,42 @@ A new engineer must be able to:
 
 An agent must complete the same journey through API, CLI, or MCP without scraping HTML.
 
-## 17. Controlled GPU verification architecture
+### 16.21 Model surface
+
+The whole-model question — "I serve this model on this GPU; what is the best
+known deployable implementation for each operation it needs, and where are the
+gaps?" — is a first-class view over the existing graph, not a new product.
+
+- **Identity.** Kernel-side model identity is the exact `model:<slug>`
+  operation tag (§8.2, workload provenance declared by sources). Serving model
+  revisions (§8.16) stay a separate list; the two meet only on an exact slug
+  match rendered as a crosslink, never a merged count. There is no fuzzy model
+  grouping: the only cross-tag association is an exact hyphen-boundary prefix
+  relation ("related tags"), which also serves as the chooser when a requested
+  slug has no exact tag.
+- **`/models`** (footer-linked; the header nav stays five items per §16.4) is
+  a coverage table, one row per tag: operations, families, eligible runs,
+  GPUs, last observed — the /gpus idiom. Serving models render as their own
+  section linking into the serving resolver.
+- **`/models/[slug]?gpu=`** is the dossier. GPU selection is a chip row (URL
+  state, most-measured GPU as the default). Per operation, grouped by family,
+  the page resolves the cohort with the most rankable evidence on that GPU
+  under ranking-v1 and states the best deployable entry (deployability-v1 as
+  filter plus reasons, §11.8); a non-deployable fastest is shown and labeled,
+  never hidden, with the fastest-versus-deployable delta in the row's
+  disclosure alongside the cohort statement, the install plate or vendor
+  path, and links to the pinned cohort, source, and run dossier. Coverage
+  gaps are a stated section: zero-run operations (with where they are
+  measured) and measured operations with no deployable entry (§2.3's
+  coverage-gap discovery, made concrete).
+- **Reads** are `getModelIndex()` / `getModelPage(slug, gpu?)` behind the
+  seam (both backends; `server/catalog/model-reads.ts` reuses the joined-run
+  projection, eligibility, and ranking helpers). The dossier is served
+  verbatim at `GET /api/v1/models/{slug}?gpu=` beside the existing list
+  endpoint, and `model_resolved` joins the §20.5 server events. Search
+  crosslinks into the surface whenever a `model:` facet is typed (the
+  resolver itself stays operation-scoped, §12.6); operation-page model chips
+  link back.
 
 ### 17.1 Security boundary
 

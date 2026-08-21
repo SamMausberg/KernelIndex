@@ -6,6 +6,7 @@ import { IllustrativeNotice } from "@/components/illustrative-notice"
 import { Meter } from "@/components/meter"
 import { Pager } from "@/components/pager"
 import * as fixtures from "@/data/fixtures/catalog"
+import { BestKnownTable, GapTable } from "@/features/models/best-known"
 import { RecordsLedger } from "@/features/records/ledger"
 import { ledgerSlice } from "@/features/records/ledger-model"
 import { SearchResults } from "@/features/search/results"
@@ -39,6 +40,12 @@ export default async function DesignLabPage() {
   const emptyQuery = await fixtures.searchCatalog({ query: "" })
   const multiMatch = await fixtures.searchCatalog({ query: "norm" })
   const records = await fixtures.getRecordsPage()
+  const modelPage = await fixtures.getModelPage("llama-3.1-8b")
+  const bestKnown = modelPage?.groups ?? []
+  // The measured-but-undeployable state: the fastest stands, nothing passes.
+  const undeployable = bestKnown[0]
+    ? [{ ...bestKnown[0].entries[0], deployable: null }]
+    : []
   const noFilters = {
     view: undefined,
     verified: false,
@@ -129,6 +136,34 @@ export default async function DesignLabPage() {
 
       <State label="search · empty query start state with suggestions wired">
         <SearchResults model={emptyQuery} filters={noFilters} />
+      </State>
+
+      <State label="model · best known with a fastest-vs-deployable split">
+        <div className="p-6">
+          <BestKnownTable groups={bestKnown} />
+        </div>
+      </State>
+
+      <State label="model · measured but no deployable entry">
+        <div className="p-6">
+          <BestKnownTable
+            groups={
+              bestKnown[0]
+                ? [{ family: bestKnown[0].family, entries: undeployable }]
+                : []
+            }
+          />
+        </div>
+      </State>
+
+      <State label="model · coverage gaps (unmeasured and undeployable)">
+        <div className="p-6">
+          <GapTable
+            gaps={modelPage?.gaps ?? []}
+            undeployable={undeployable}
+            selectedGpu={modelPage?.selectedGpu ?? ""}
+          />
+        </div>
       </State>
 
       <State label="records · current ledger with history and tie">

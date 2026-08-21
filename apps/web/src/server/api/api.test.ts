@@ -113,6 +113,7 @@ describe("api /v1", () => {
         "/operations",
         "/hardware",
         "/models",
+        "/models/{slug}",
         "/coverage",
         "/sources",
       ]),
@@ -246,6 +247,30 @@ describe("api /v1 enumeration", () => {
       expect(tag.model).not.toMatch(/^model:/)
       expect(tag.operations).toBeGreaterThan(0)
     }
+  })
+
+  it("serves the model dossier and 404s an unknown slug", async () => {
+    const response = await get("/models/llama-3.1-8b")
+    expect(response.status).toBe(200)
+    const model = await response.json()
+    expect(model.resolved).toBe(true)
+    expect(model.selectedGpu).toBe("NVIDIA B200 SXM")
+    const entry = model.groups[0].entries[0]
+    // The fixture cohort's fastest is not deployable; the answer states both.
+    expect(entry.fastest.sourceAvailable).toBe(false)
+    expect(entry.deployable.installable).toBe(true)
+    expect(model.gaps[0].operation.slug).toBe("fused-residual-rmsnorm")
+
+    // A hyphen-boundary near miss resolves to the related-tag chooser.
+    const near = await (await get("/models/llama-3.1")).json()
+    expect(near.resolved).toBe(false)
+    expect(near.model.relatedTags).toEqual(["llama-3.1-8b"])
+
+    const missing = await get("/models/no-such-model")
+    expect(missing.status).toBe(404)
+    expect(missing.headers.get("Content-Type")).toContain(
+      "application/problem+json",
+    )
   })
 
   it("exposes the coverage page model", async () => {

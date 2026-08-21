@@ -26,6 +26,7 @@ Claim rules (keep these when quoting results):
 - GET  /search?q=rmsnorm+B200+bf16   ranked cohort with explanations
 - POST /resolve/kernel               exact resolution for a structured workload
 - GET  /operations/{idOrSlug}        semantics, cohorts, records
+- GET  /models/{slug}?gpu=           best known per operation for one model on one GPU, plus gaps
 - GET  /implementations/{idOrSlug}   source, install, license, revisions
 - GET  /runs/{idOrDigest}            immutable evidence dossier
 - GET  /records                      record ledger (cursor-paginated)

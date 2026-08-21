@@ -13,6 +13,7 @@ import type {
   ImplementationPageModel,
   ImplementationSummary,
   ModelCoverageModel,
+  ModelPageModel,
   OperationIndexEntry,
   OperationListEntry,
   OperationPageModel,
@@ -814,6 +815,47 @@ const modelCoverage = z.object({
 export const modelsResponse = modelCoverage.extend({
   generatedAt: z.string(),
 })
+
+/** The model dossier (§16.21): the web page's model, verbatim. */
+export const modelDossier = z.object({
+  illustrative: z.boolean(),
+  model: z.object({ slug: z.string(), relatedTags: z.array(z.string()) }),
+  resolved: z.boolean(),
+  stats: z.object({
+    operations: z.number(),
+    families: z.number(),
+    runs: z.number(),
+  }),
+  gpus: z.array(z.object({ model: z.string(), runs: z.number() })),
+  selectedGpu: z.string().nullable(),
+  groups: z.array(
+    z.object({
+      family: z.string(),
+      entries: z.array(
+        z.object({
+          operation: z.object({ name: z.string(), slug: z.string() }),
+          family: z.string(),
+          fastest: resultRow,
+          deployable: resultRow.nullable(),
+          cohort: cohortContext,
+          workloadId: z.string(),
+          alternatives: z.number(),
+        }),
+      ),
+    }),
+  ),
+  gaps: z.array(
+    z.object({
+      operation: z.object({ name: z.string(), slug: z.string() }),
+      family: z.string(),
+      measuredOn: z.array(z.string()),
+    }),
+  ),
+  serving: z
+    .object({ slug: z.string(), name: z.string(), runs: z.number() })
+    .nullable(),
+  sources: z.array(sourceRef),
+}) satisfies z.ZodType<ModelPageModel>
 
 export const coverageSource = z.object({
   slug: z.string(),

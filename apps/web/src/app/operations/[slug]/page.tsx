@@ -77,13 +77,15 @@ export default async function OperationPage({ params }: Props) {
               </span>
             ))}
             {operation.models.slice(0, 4).map((model_) => (
-              <span
+              <Link
                 key={model_}
-                className="key font-mono text-mini text-subtle"
+                href={`/models/${model_}`}
+                prefetch={false}
+                className="key font-mono text-mini text-subtle no-underline transition-colors hover:text-fg"
               >
                 <span className="mr-1.5 font-sans text-faint">model</span>
                 {model_}
-              </span>
+              </Link>
             ))}
             {operation.models.length > 4 && (
               <span className="text-mini text-faint">

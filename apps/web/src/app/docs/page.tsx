@@ -148,6 +148,19 @@ rmsnorm gpu:B200 dtype:bf16 shape:[2048,4096] framework=pytorch trust:verified`}
             their meaning. No sort ever compares runs from different cohorts by
             speed.
           </p>
+          <p className="mt-3">
+            The <Link href="/models">model view</Link> answers the whole-model
+            question: pick a model and a GPU and read, per relevant operation,
+            the best known deployable implementation, the coverage gaps, and the
+            evidence behind each row. Relevance is workload provenance declared
+            by sources (<span className="font-mono text-small">model:</span>{" "}
+            tags); each row still resolves inside one comparison cohort. The
+            same answer is served at{" "}
+            <span className="font-mono text-small">
+              /api/v1/models/{"{slug}"}?gpu=
+            </span>
+            .
+          </p>
         </Section>
 
         <Section id="comparability" title="Why comparable?">

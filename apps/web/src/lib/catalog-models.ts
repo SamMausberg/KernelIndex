@@ -660,6 +660,78 @@ export type HardwarePageModel = {
 }
 
 // ---------------------------------------------------------------------------
+// Model surface (§16.21): kernel-side `model:` workload provenance as a
+// first-class view. Kernel tags and serving revisions never merge — separate
+// lists, separate counts, exact-slug matching only between them.
+
+/** One kernel-side model tag in the /models index. */
+export type ModelIndexEntry = {
+  model: string
+  operations: number
+  families: number
+  /** Eligible runs across every GPU. */
+  runs: number
+  gpus: number
+  lastObservedAt: string | null
+}
+
+export type ModelIndexModel = {
+  illustrative: boolean
+  kernel: ModelIndexEntry[]
+  serving: ModelCoverageModel["serving"]
+}
+
+/**
+ * One operation's best-known answer on the selected GPU: the fastest entry
+ * of the operation's largest comparison cohort there, and the fastest entry
+ * passing deployability-v1 — the answer card's two-slot semantics per row.
+ */
+export type ModelBestKnown = {
+  operation: { name: string; slug: string }
+  family: string
+  fastest: ResultRow
+  /** Null when no cohort entry passes the deployability policy. */
+  deployable: ResultRow | null
+  cohort: CohortContext
+  /** The cohort's workload, for deep-linking the operation page's island. */
+  workloadId: string
+  /** Ranked cohort entries beyond the fastest. */
+  alternatives: number
+}
+
+/** A stated gap: the operation is relevant to the model but holds no
+ * eligible evidence on the selected GPU (§2.3). */
+export type ModelGap = {
+  operation: { name: string; slug: string }
+  family: string
+  /** GPUs holding eligible evidence; empty means none anywhere. */
+  measuredOn: string[]
+}
+
+export type ModelPageModel = {
+  illustrative: boolean
+  model: {
+    slug: string
+    /** Tags in an exact hyphen-boundary prefix relation with the slug. */
+    relatedTags: string[]
+  }
+  /** False when no operation carries the exact tag: related tags render as
+   * the chooser and every evidence section stays absent. */
+  resolved: boolean
+  stats: { operations: number; families: number; runs: number }
+  /** GPUs with eligible runs across this model's operations, most first. */
+  gpus: { model: string; runs: number }[]
+  selectedGpu: string | null
+  /** Family groups, best-covered first; every entry resolves inside one
+   * comparison cohort on the selected GPU, never across. */
+  groups: { family: string; entries: ModelBestKnown[] }[]
+  gaps: ModelGap[]
+  /** Exact serving revision slug match only; link material, never merged. */
+  serving: { slug: string; name: string; runs: number } | null
+  sources: SourceRef[]
+}
+
+// ---------------------------------------------------------------------------
 // Corpus enumeration models (§13.2 at 20k records): flat, filterable listings
 // agents page through. Database-backed only — see server/catalog/api-reads.ts.
 

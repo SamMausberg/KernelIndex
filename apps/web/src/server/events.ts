@@ -8,7 +8,11 @@ import * as schema from "./db/schema.ts"
 import { env } from "./env.ts"
 
 /** Server-recorded at render time (the pages are per-request dynamic). */
-const SERVER_EVENTS = ["search_submitted", "serving_resolved"] as const
+const SERVER_EVENTS = [
+  "search_submitted",
+  "serving_resolved",
+  "model_resolved",
+] as const
 /** Client-beaconed: these pages are ISR/CDN-cached, so the server never
     sees the view; /e accepts exactly this list. */
 export const BEACON_EVENTS = [

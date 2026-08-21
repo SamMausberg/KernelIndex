@@ -2,6 +2,7 @@ import Link from "next/link"
 import { releaseSha } from "@/server/env"
 
 const LINKS = [
+  { label: "Models", href: "/models" },
   { label: "Projects", href: "/implementations" },
   { label: "Contribute", href: "/submit" },
   { label: "Sources", href: "/docs#sources" },

@@ -10,6 +10,7 @@ const routes = [
   "/records",
   "/serving",
   "/gpus",
+  "/models",
   "/implementations",
   "/docs",
   "/docs/api",
