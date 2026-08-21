@@ -35,7 +35,7 @@ test("homepage search reaches an exact ranked answer with evidence", async ({
   ).toBeVisible()
 
   // Row → run dossier: the permanent evidence citation.
-  await page.getByRole("link", { name: "Run dossier →" }).first().click()
+  await page.getByRole("link", { name: "Run detail →" }).first().click()
   await expect(page).toHaveURL(/\/runs\/run-fx-/)
   await expect(page.getByText("Correctness").first()).toBeVisible()
 })
@@ -51,7 +51,7 @@ test("reported evidence stays separated from the exact cohort", async ({
   page,
 }) => {
   await page.goto("/search?q=rmsnorm")
-  await page.getByRole("link", { name: /^Other cohorts/ }).click()
+  await page.getByRole("link", { name: /^Other protocols/ }).click()
   await expect(
     page.getByText("Measured under a different protocol", {
       exact: false,

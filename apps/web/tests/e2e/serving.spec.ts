@@ -1,14 +1,23 @@
-// Serving resolver journeys (§16.13, §22.10 gate): cohorts never merge,
+// Serving resolver journeys (§16.13, §22.10 gate): the default view is the
+// per-model overview; narrowed requests show cohorts that never merge,
 // ranking exists only under an objective, constraints on unreported metrics
-// exclude with a reason, and the dossier is one click away.
+// exclude with a reason, and the run detail is one click away.
 import { expect, test } from "@playwright/test"
 
-test("resolver shows separated cohorts, ranks, and the Pareto frontier", async ({
+test("the default view is the overview; narrowing shows separated cohorts", async ({
   page,
 }) => {
   await page.goto("/serving")
   await expect(page.getByText("Example data.", { exact: false })).toBeVisible()
-  // Interactive and Offline are distinct cohort groups, never interleaved.
+  // No cohort stream before narrowing: one row per model × benchmark.
+  await expect(page.getByText("Best tokens/s")).toBeVisible()
+  await expect(page.getByRole("heading", { name: /offline-batch/ })).toHaveCount(
+    0,
+  )
+
+  await page.goto("/serving?model=aurora-70b")
+  // Interactive and Offline are distinct cohort groups, never interleaved;
+  // the model heading is not repeated once it is the filter.
   await expect(
     page.getByRole("heading", { name: /interactive-chat-trace/ }),
   ).toBeVisible()
@@ -21,8 +30,7 @@ test("resolver shows separated cohorts, ranks, and the Pareto frontier", async (
     .filter({ hasText: "interactive-chat-trace" })
     .first()
   await expect(interactive.getByText("44,100")).toBeVisible()
-  // The throughput-only candidate collapses the shared axes to one, so no
-  // Pareto figure renders here (honest degradation); no score column exists.
+  // No score column exists, by construction.
   await expect(page.getByText(/score/i)).toHaveCount(0)
 })
 
@@ -48,14 +56,14 @@ test("constraints exclude unreported or unsatisfied candidates with reasons", as
   ).toBeVisible()
 })
 
-test("a result row reaches its serving-run dossier", async ({ page }) => {
-  await page.goto("/serving")
+test("a result row reaches its serving run detail", async ({ page }) => {
+  await page.goto("/serving?model=aurora-70b")
   const row = page
     .locator("details")
     .filter({ hasText: "tp8 · bf16 · latency tuned" })
     .first()
   await row.locator("summary").click()
-  await row.getByRole("link", { name: "Run dossier →" }).click()
+  await row.getByRole("link", { name: "Run detail →" }).click()
   await expect(page).toHaveURL(/\/serving-runs\/srv-fx-/)
   await expect(page.getByText("Measurements", { exact: true })).toBeVisible()
   await expect(page.getByText("quality policy")).toBeVisible()

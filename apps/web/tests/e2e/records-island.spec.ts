@@ -7,14 +7,14 @@ test("ledger interactions update rows and URL without navigation", async ({
   page,
 }) => {
   await page.goto("/records")
-  await expect(page.getByText("Operation / workload")).toBeVisible()
+  await expect(page.getByText("Current record", { exact: true })).toBeVisible()
 
   // The model loads lazily on interaction intent; hovering the ledger is
   // that intent. Wait for the fetch so interactions go client-side.
   const modelLoaded = page.waitForResponse((response) =>
     response.url().includes("/records/data"),
   )
-  await page.getByText("Operation / workload").hover()
+  await page.getByText("Current record", { exact: true }).hover()
   await modelLoaded
   await page.getByRole("link", { name: "Largest improvement" }).click()
   await expect(page).toHaveURL(/sort=improvement/)

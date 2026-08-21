@@ -9,7 +9,7 @@ test("implementation page renders kernel source, diff, and attribution", async (
   await expect(
     page.getByRole("heading", { name: "Kernel source" }),
   ).toBeVisible()
-  await expect(page.getByText("submission.py")).toBeVisible()
+  await expect(page.getByText("submission.py").first()).toBeVisible()
   await expect(page.getByText("custom_kernel").first()).toBeVisible()
   await expect(
     page.getByText("Source code from", { exact: false }),
