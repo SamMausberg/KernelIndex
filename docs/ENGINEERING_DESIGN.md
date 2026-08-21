@@ -2592,7 +2592,18 @@ disagrees, the code is current:
   Placeholder MLPerf Software strings ("TODO", blank) fall back to the
   submitter at import (migration 0019 backfills).
 - **Post-deploy warm** (`apps/web/scripts/warm.mjs`) revalidates the key
-  routes after `vercel --prod`, closing the mixed-build-id ISR window.
+  routes after `vercel --prod`, closing the mixed-build-id ISR window — and
+  since the final refinement, sweeps every sitemap URL so dynamic pages
+  converge too.
+- **Final refinement (same day)**: the family disclosure is a real block
+  with eight leads; Latest breaks derives from indexed-time holder order,
+  one entry per operation (`latestBreaks`, unit-tested); **the vendor path**
+  is the adoption answer for the 3,822 source-mirrored implementations
+  (copy the kernel source, or
+  `curl …/api/v1/implementations/{slug}?include=source`, license and pinned
+  revision stated); best-latency multiples (1.00×, 2.06×) extend the house
+  ratio notation to the implementations table and the answer card's deploy
+  delta.
 
 ### 16.1 Product character
 
