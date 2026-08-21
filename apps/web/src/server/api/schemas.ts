@@ -810,6 +810,7 @@ export const coverageSource = z.object({
   slug: z.string(),
   kind: z.enum(["kernel", "serving"]),
   runs: z.number(),
+  indexed: z.number(),
   breadth: z.number(),
   hardware: z.number(),
   lastFetched: z.string().nullable(),

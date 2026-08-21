@@ -151,8 +151,8 @@ export default async function CoveragePage() {
       <main className="shell animate-fade-in pb-24">
         <Section id="kernel" title="Kernel evidence">
           <p className="mb-4 max-w-[76ch] text-body text-muted">
-            {kernelRuns.toLocaleString("en-US")} published kernel runs, each
-            linked to its workload, protocol, environment, source snapshot, and
+            {kernelRuns.toLocaleString("en-US")} ranked kernel runs, each linked
+            to its workload, protocol, environment, source snapshot, and
             license. Counts update with the weekly imports.
           </p>
           <SourceRows rows={kernel} breadthLabel="Ops" />

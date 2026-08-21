@@ -574,7 +574,10 @@ export type RunPageModel = {
 export type CoverageSource = {
   slug: string
   kind: "kernel" | "serving"
+  /** Eligible runs — the same predicate every ranked surface counts (§11.4). */
   runs: number
+  /** Raw indexed corpus: any published run, failed/superseded included. */
+  indexed: number
   /** Kernel sources: distinct operations. Serving: distinct configurations. */
   breadth: number
   hardware: number
