@@ -240,44 +240,51 @@ export function StartState({
         </div>
       </div>
 
-      {/* The taxonomy stays out of the way (§16.5): the major families lead,
-          the long tail sits behind one native disclosure. A selected
-          long-tail family surfaces so its active state is never hidden. */}
+      {/* The taxonomy stays out of the way (§16.5): eight major families
+          lead, the long tail sits behind one native block disclosure. A
+          selected long-tail family surfaces so its active state is never
+          hidden. */}
       {(() => {
-        const LEAD = 10
+        const LEAD = 8
         const lead = families.slice(0, LEAD)
         if (filters.family && !lead.includes(filters.family))
           lead.push(filters.family)
         const tail = families.filter((family) => !lead.includes(family))
         return (
-          <div className="flex flex-wrap items-center gap-2 pt-3 pb-1">
-            {["All families", ...lead].map((label) => {
-              const value = label === "All families" ? null : label
-              return (
-                <FilterChip
-                  key={label}
-                  href={browseHref(filters, { family: value })}
-                  on={filters.family === value}
-                  label={label}
-                />
-              )
-            })}
-            {tail.length > 0 && (
-              <details className="group contents">
-                <summary className="key cursor-pointer list-none px-2 py-1 text-small text-faint transition-colors hover:text-fg [&::-webkit-details-marker]:hidden">
-                  <span className="group-open:hidden">
-                    All {families.length} families ›
-                  </span>
-                  <span className="hidden group-open:inline">Fewer ⌄</span>
-                </summary>
-                {tail.map((label) => (
+          <div className="pt-3 pb-1">
+            <div className="flex flex-wrap items-center gap-2">
+              {["All families", ...lead].map((label) => {
+                const value = label === "All families" ? null : label
+                return (
                   <FilterChip
                     key={label}
-                    href={browseHref(filters, { family: label })}
-                    on={filters.family === label}
+                    href={browseHref(filters, { family: value })}
+                    on={filters.family === value}
                     label={label}
                   />
-                ))}
+                )
+              })}
+            </div>
+            {tail.length > 0 && (
+              <details className="group mt-2">
+                <summary className="inline-flex cursor-pointer list-none text-small text-faint transition-colors hover:text-fg [&::-webkit-details-marker]:hidden">
+                  <span className="key px-2 py-1 group-open:hidden">
+                    All {families.length} families ›
+                  </span>
+                  <span className="key hidden px-2 py-1 group-open:inline">
+                    Fewer families ⌄
+                  </span>
+                </summary>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  {tail.map((label) => (
+                    <FilterChip
+                      key={label}
+                      href={browseHref(filters, { family: label })}
+                      on={filters.family === label}
+                      label={label}
+                    />
+                  ))}
+                </div>
               </details>
             )}
           </div>
