@@ -209,6 +209,28 @@ export function allRecordEvents(model: LedgerModel): LedgerEvent[] {
   return events
 }
 
+/** The lead story (§16.12): the newest *indexed* record breaks — a fresh
+ * import leads even when its source stamped old observation dates — one per
+ * operation so three sibling cohorts never read as one repeated entry.
+ * Holders arrive in the model's indexed-time backend order. */
+export function latestBreaks(holders: LedgerHolder[]): LedgerEvent[] {
+  const seen = new Set<string>()
+  return holders
+    .filter(
+      (holder) =>
+        holder.history[0] !== undefined &&
+        holder.history[0].previousValue !== null &&
+        !seen.has(holder.operation.slug) &&
+        (seen.add(holder.operation.slug), true),
+    )
+    .slice(0, 3)
+    .map((holder) => ({
+      holder,
+      event: holder.history[0],
+      previous: holder.history[1] ?? null,
+    }))
+}
+
 /** Transitions of the last 30 days, largest improvement first. */
 export function recentlyBroken(events: LedgerEvent[]): LedgerEvent[] {
   return events
@@ -376,11 +398,7 @@ export function ledgerSlice(
       total: holders.length,
       pageCount: page.pageCount,
     }
-    slice.latest = events
-      .filter(
-        ({ holder, event }) => kept(holder) && event.previousValue !== null,
-      )
-      .slice(0, 3)
+    slice.latest = latestBreaks(model.records.filter(kept))
   } else {
     const filtered = events.filter(({ holder }) => kept(holder))
     if (filters.view === "broken") {

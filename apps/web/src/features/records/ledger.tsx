@@ -91,7 +91,7 @@ function LatestBreaks({ latest }: { latest: LedgerEvent[] }) {
               {event.implementation.name} · {holder.hardware}
             </span>
             <span className="text-right font-mono text-mini whitespace-nowrap text-faint">
-              {formatDateUTC(event.at)}
+              indexed {formatDateUTC(holder.indexedAt)}
             </span>
           </div>
         ))}
