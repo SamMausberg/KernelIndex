@@ -59,6 +59,23 @@ export function runEvidence(run: RunEvidenceInput): EvidenceLevel {
   })
 }
 
+const EVIDENCE_ORDER: EvidenceLevel[] = [
+  "reported",
+  "reproducible",
+  "verified",
+  "replicated",
+]
+
+/** The strongest evidence across a revision's runs. Any surface that speaks
+ * for the implementation (not one run) must use this, or its label can
+ * contradict a per-run row — trust surfaces never disagree (§11.4). */
+export function bestEvidence(runs: RunEvidenceInput[]): EvidenceLevel | null {
+  let best = -1
+  for (const run of runs)
+    best = Math.max(best, EVIDENCE_ORDER.indexOf(runEvidence(run)))
+  return best >= 0 ? EVIDENCE_ORDER[best] : null
+}
+
 const skip = (value: unknown): value is undefined | null =>
   value === undefined || value === null
 const kv = (entries: [string, unknown][]): KeyValue[] =>

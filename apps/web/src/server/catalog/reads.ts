@@ -70,6 +70,7 @@ import {
 } from "./match.ts"
 import {
   type AnyWorkloadManifest,
+  bestEvidence,
   environmentKeyValues,
   isStale,
   operationAxisSpecs,
@@ -1590,7 +1591,8 @@ function implementationSummaries(
   operation: { name: string; slug: string },
 ): ImplementationSummary[] {
   return rows.map(({ implementation, project }) => {
-    const best = joined.find((j) => j.implementation.id === implementation.id)
+    const own = joined.filter((j) => j.implementation.id === implementation.id)
+    const best = own[0]
     const manifest = implementation.manifest as ImplementationRevisionManifest
     return {
       slug: implementation.slug,
@@ -1602,7 +1604,8 @@ function implementationSummaries(
       project: { name: project.name, slug: project.slug },
       language: implementation.language,
       framework: implementation.framework,
-      evidence: best ? runEvidence(best.run) : null,
+      // The row speaks for the implementation: strongest run, not fastest.
+      evidence: bestEvidence(own.map((j) => j.run)),
       bestPrimary: best
         ? resultRow(best, { name: "", slug: "" }).primary
         : null,
@@ -1818,7 +1821,9 @@ export async function getImplementationPage(
     resultRow(j, { name: operation.name, slug: operation.slug }),
   )
   const variant = manifest.spec.buildVariants?.[0]
-  const evidence = joined.length > 0 ? runEvidence(joined[0].run) : null
+  // "Best evidence level for this revision" means the strongest run, never
+  // the fastest one — a per-run row elsewhere must never outrank this label.
+  const evidence = bestEvidence(joined.map((j) => j.run))
   // Independent round trips: source refs and the source-code bundle together.
   const [refs, sourceCode] = await Promise.all([
     sourceRefs(joined),
