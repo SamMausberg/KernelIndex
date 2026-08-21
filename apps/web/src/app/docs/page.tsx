@@ -2,8 +2,13 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { ContextHeader } from "@/components/context-header"
 import { Section } from "@/components/section"
+import { LIMITATIONS, SourceTable } from "@/features/trust/sources"
+import { getCoveragePage } from "@/lib/catalog"
+import { servingEnabled } from "@/server/env"
 
 export const metadata: Metadata = { title: "Docs" }
+// Live per-source counts render inside #sources; everything else is prose.
+export const revalidate = 300
 
 const EVIDENCE_LEVELS = [
   [
@@ -35,7 +40,8 @@ const SECTIONS = [
   ["privacy", "Privacy"],
 ] as const
 
-export default function DocsPage() {
+export default async function DocsPage() {
+  const coverage = await getCoveragePage()
   return (
     <>
       <ContextHeader
@@ -315,20 +321,60 @@ curl -L https://kernelindex.com/api/v1/exports/catalog.jsonl.zst
 
         <Section id="sources" title="Sources and licensing">
           <p>
-            Kernel results come from{" "}
-            <a href="https://huggingface.co/datasets/GPUMODE/kernelbot-data">
-              GPU Mode and the KernelBot dataset
+            Every result is imported from a named public source and shown as
+            published. Each source's license and required credit is on{" "}
+            <Link href="/legal">Legal</Link>. Rights holders can have anything
+            removed — contested records come down first, questions after.
+            "Ranked" counts the runs every ranked surface counts; "indexed" is
+            the raw published corpus, failed and superseded runs included.
+          </p>
+          <div className="mt-5">
+            <SourceTable
+              rows={coverage.sources.filter((s) => s.kind === "kernel")}
+              breadthLabel="Ops"
+            />
+          </div>
+          {servingEnabled &&
+            coverage.sources.some((s) => s.kind === "serving") && (
+              <>
+                <p className="mt-6">
+                  Serving results are kept apart from kernel results — the two
+                  are never ranked together. Configs counts distinct launch
+                  configurations.
+                </p>
+                <div className="mt-4">
+                  <SourceTable
+                    rows={coverage.sources.filter((s) => s.kind === "serving")}
+                    breadthLabel="Configs"
+                  />
+                </div>
+              </>
+            )}
+          <h3 className="mt-8 mb-3 text-lead font-medium text-fg">
+            Known limitations
+          </h3>
+          <ul className="list-disc space-y-2.5 pl-5">
+            {LIMITATIONS.map((limitation) => (
+              <li key={limitation.slice(0, 24)}>{limitation}</li>
+            ))}
+          </ul>
+          <h3 className="mt-8 mb-3 text-lead font-medium text-fg">
+            Data quality
+          </h3>
+          <p>
+            A weekly job re-imports every source; anything unexpected stops that
+            source before it writes. An invariant checker then audits the whole
+            catalog. The report lives at{" "}
+            <a href="https://github.com/SamMausberg/KernelIndex/blob/main/registry/reports/source-health.json">
+              registry/reports/source-health.json
             </a>
-            , the NVIDIA SOL-ExecBench public leaderboard, FlashInfer-Bench, and
-            the{" "}
-            <a href="https://github.com/linkedin/Liger-Kernel">Liger-Kernel</a>{" "}
-            benchmark suite. Serving results are official MLPerf™ Inference
-            results, shown unmodified (MLPerf™ is a trademark of MLCommons).
-            Each source's license and required credit is on{" "}
-            <Link href="/legal">Legal</Link>; live counts and limits on{" "}
-            <Link href="/coverage">Coverage</Link>. Rights holders can have
-            anything removed — contested records come down first, questions
-            after.
+            ; versioned catalog exports live under{" "}
+            <a href="https://github.com/SamMausberg/KernelIndex/tree/main/registry/exports">
+              registry/exports
+            </a>
+            . Something wrong? Every run page has a report action. Corrections{" "}
+            <Link href="/docs#records">retract or supersede</Link>, never
+            rewrite.
           </p>
         </Section>
 

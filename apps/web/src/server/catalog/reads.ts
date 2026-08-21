@@ -85,6 +85,7 @@ import {
 } from "./present.ts"
 import { eligibleRunFilter } from "./record-events.ts"
 import { equivalenceGroups, equivalentOperationIds } from "./relations.ts"
+import { eligibleServingRuns } from "./serving-reads.ts"
 import { diffSource } from "./source-diff.ts"
 import { computeSweep } from "./sweep.ts"
 
@@ -739,13 +740,17 @@ function pageIllustrative(rows: JoinedRun[]): boolean {
  * then the newest first-of-cohort records, sole-entrant baselines excluded.
  * Reuses the memoized ledger read; only the stat counts hit new queries. */
 export async function getHomePage(): Promise<HomePageModel> {
-  const [page, [stats]] = await Promise.all([
+  const [page, [stats], [servingStats]] = await Promise.all([
     getRecordsPage(),
     db()
       .select({
         operations: sql<number>`count(distinct ${schema.workloads.operationId})::int`,
         runs: sql<number>`count(*)::int`,
         gpus: sql<number>`count(distinct ${schema.benchmarkRuns.hardwareModel})::int`,
+        // Evidence distribution mirroring policy/trust.ts evidenceLevel;
+        // verified folds in replicated — both mean "rerun independently".
+        verified: sql<number>`count(*) filter (where ${schema.benchmarkRuns.independentReplicationCount} >= 2 or ${schema.benchmarkRuns.reproducedByKernelindex})::int`,
+        reproducible: sql<number>`count(*) filter (where not (${schema.benchmarkRuns.independentReplicationCount} >= 2 or ${schema.benchmarkRuns.reproducedByKernelindex}) and ${schema.benchmarkRuns.sourceAvailable} and ${schema.benchmarkRuns.hasRawEvidence})::int`,
       })
       .from(schema.benchmarkRuns)
       .innerJoin(
@@ -753,6 +758,10 @@ export async function getHomePage(): Promise<HomePageModel> {
         eq(schema.benchmarkRuns.workloadId, schema.workloads.id),
       )
       .where(eligibleRunFilter()),
+    db()
+      .select({ n: sql<number>`count(*)::int` })
+      .from(schema.servingRuns)
+      .where(eligibleServingRuns()),
   ])
   // Homepage lists default to source-backed records (2026-08-16 decision);
   // the ledger's source toggle reaches the rest.
@@ -768,7 +777,21 @@ export async function getHomePage(): Promise<HomePageModel> {
     .slice(0, 8)
     // The homepage renders only the current event; drop the deep histories.
     .map((holder) => ({ ...holder, history: holder.history.slice(0, 1) }))
-  return { illustrative: page.illustrative, latest, stats }
+  return {
+    illustrative: page.illustrative,
+    latest,
+    stats: {
+      operations: stats.operations,
+      runs: stats.runs,
+      gpus: stats.gpus,
+      servingRuns: servingStats?.n ?? 0,
+      evidence: {
+        verified: stats.verified,
+        reproducible: stats.reproducible,
+        reported: stats.runs - stats.verified - stats.reproducible,
+      },
+    },
+  }
 }
 
 /**

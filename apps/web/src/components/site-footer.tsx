@@ -4,7 +4,7 @@ import { releaseSha } from "@/server/env"
 const LINKS = [
   { label: "Projects", href: "/implementations" },
   { label: "Contribute", href: "/submit" },
-  { label: "Coverage", href: "/coverage" },
+  { label: "Sources", href: "/docs#sources" },
   { label: "Methodology", href: "/docs" },
   { label: "Legal", href: "/legal" },
 ] as const

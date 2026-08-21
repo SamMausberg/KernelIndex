@@ -18,7 +18,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...(servingEnabled ? [{ url: `${origin}/serving` }] : []),
     { url: `${origin}/docs` },
     { url: `${origin}/docs/api` },
-    { url: `${origin}/coverage` },
     { url: `${origin}/legal` },
     ...hardware.gpus.map((gpu) => ({
       url: `${origin}/gpus/${gpu.slug}`,

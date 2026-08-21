@@ -27,7 +27,6 @@ const CRITICAL_PAGES = [
   "/serving-runs/srv-fx-0002",
   "/docs",
   "/docs/api",
-  "/coverage",
   "/signin",
 ]
 

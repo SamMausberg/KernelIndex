@@ -46,7 +46,7 @@ Claim rules (keep these when quoting results):
 - Versioned zstd JSONL catalog exports:
   https://github.com/SamMausberg/KernelIndex/tree/main/registry/exports
 - Atom feed of record changes: https://kernelindex.com/records/feed.xml
-- Coverage, freshness, and known limitations: https://kernelindex.com/coverage
+- Sources, freshness, and known limitations: https://kernelindex.com/docs#sources
 - Methodology: https://kernelindex.com/docs
 `
 

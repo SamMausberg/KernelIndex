@@ -2,14 +2,18 @@ import Link from "next/link"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
 import { HeroSearch } from "@/features/home/hero-search"
 import { LatestRecords } from "@/features/home/latest-records"
-import { getHomePage } from "@/lib/catalog"
+import { TrustBlock } from "@/features/trust/sources"
+import { getCoveragePage, getHomePage } from "@/lib/catalog"
 
 // The homepage reads live records; revalidate on a short cycle instead of
 // freezing them into the build (data changes only on importer runs).
 export const revalidate = 300
 
 export default async function Home() {
-  const model = await getHomePage()
+  const [model, coverage] = await Promise.all([
+    getHomePage(),
+    getCoveragePage(),
+  ])
   return (
     <>
       {model.illustrative && <IllustrativeNotice />}
@@ -38,11 +42,13 @@ export default async function Home() {
             </div>
             <p className="mt-5 font-mono text-small text-subtle">
               {model.stats.operations.toLocaleString("en-US")} operations ·{" "}
-              {model.stats.runs.toLocaleString("en-US")} published runs ·{" "}
-              {model.stats.gpus.toLocaleString("en-US")} GPUs ·{" "}
-              <Link href="/coverage" className="text-subtle">
-                coverage →
-              </Link>
+              {model.stats.runs.toLocaleString("en-US")} kernel runs
+              {model.stats.servingRuns > 0 &&
+                ` · ${model.stats.servingRuns.toLocaleString("en-US")} serving results`}{" "}
+              · {model.stats.gpus.toLocaleString("en-US")} GPUs ·{" "}
+              <a href="#trust" className="text-subtle">
+                what's inside →
+              </a>
             </p>
             <p className="mt-1.5 font-mono text-small text-faint">
               for agents:{" "}
@@ -82,6 +88,13 @@ export default async function Home() {
               Evidence levels →
             </Link>
           </p>
+        </section>
+
+        <section id="trust" className="shell pt-14 pb-4">
+          <TrustBlock
+            sources={coverage.sources}
+            evidence={model.stats.evidence}
+          />
         </section>
       </main>
     </>

@@ -111,8 +111,8 @@ export default function LegalPage() {
             ))}
           </dl>
           <p className="mt-4 text-body text-subtle">
-            Live counts and freshness per source are on{" "}
-            <Link href="/coverage">Coverage</Link>.
+            Live counts and freshness per source are in{" "}
+            <Link href="/docs#sources">Sources and licensing</Link>.
           </p>
         </Section>
 

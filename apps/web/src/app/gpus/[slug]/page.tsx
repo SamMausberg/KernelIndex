@@ -11,6 +11,7 @@ import { Metric } from "@/components/metric"
 import { Link } from "@/components/quiet-link"
 import { Section } from "@/components/section"
 import { EvidenceCell } from "@/components/trust"
+import { MonthlyActivity } from "@/features/hardware/activity"
 import { getHardwarePage } from "@/lib/catalog"
 import { formatDateUTC } from "@/lib/format"
 
@@ -140,9 +141,12 @@ export default async function GpuPage({ params }: Props) {
         </Section>
 
         <Section id="coverage" title="Coverage by operation family">
+          {/* Length carries the share (single hue, §16.2 viz tokens); the
+              printed numbers stay the record of fact. */}
           <div className="overflow-x-auto">
-            <div className="grid min-w-[560px] grid-cols-[minmax(200px,1.4fr)_repeat(3,110px)] items-baseline gap-x-4 border-b border-border-strong pb-2 font-mono text-label text-faint uppercase">
+            <div className="grid min-w-[720px] grid-cols-[minmax(180px,1fr)_minmax(160px,1.2fr)_repeat(3,100px)] items-baseline gap-x-4 border-b border-border-strong pb-2 font-mono text-label text-faint uppercase">
               <div>Family</div>
+              <div />
               <div className="text-right">Operations</div>
               <div className="text-right">Runs</div>
               <div className="text-right">With source</div>
@@ -150,10 +154,19 @@ export default async function GpuPage({ params }: Props) {
             {model.families.map((family) => (
               <div
                 key={family.family}
-                className="grid min-w-[560px] grid-cols-[minmax(200px,1.4fr)_repeat(3,110px)] items-baseline gap-x-4 border-b border-line py-2.5"
+                className="grid min-w-[720px] grid-cols-[minmax(180px,1fr)_minmax(160px,1.2fr)_repeat(3,100px)] items-center gap-x-4 border-b border-line py-2.5"
               >
                 <div className="font-mono text-small text-muted">
                   {family.family}
+                </div>
+                <div aria-hidden="true" className="flex items-center">
+                  <span
+                    className="block h-[9px]"
+                    style={{
+                      width: `${Math.max((family.runs / (model.families[0]?.runs || 1)) * 100, 1)}%`,
+                      background: "var(--color-viz-1)",
+                    }}
+                  />
                 </div>
                 <div className="text-right font-mono text-small text-subtle">
                   {family.operations.toLocaleString("en-US")}
@@ -167,6 +180,10 @@ export default async function GpuPage({ params }: Props) {
               </div>
             ))}
           </div>
+        </Section>
+
+        <Section id="activity" title="Record activity">
+          <MonthlyActivity records={model.records} />
         </Section>
 
         <div className="mt-12 flex flex-wrap items-baseline justify-between gap-5 border-t border-border pt-5 text-small">

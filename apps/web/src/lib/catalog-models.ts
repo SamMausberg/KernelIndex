@@ -178,8 +178,16 @@ export type OperationIndexEntry = {
 export type HomePageModel = {
   illustrative: boolean
   latest: RecordHolder[]
-  /** Live corpus counts under the eligibility filter — never hardcoded. */
-  stats: { operations: number; runs: number; gpus: number }
+  /** Live corpus counts under the eligibility filter — never hardcoded.
+   * servingRuns counts the separate serving corpus; the two never share a
+   * headline number. Evidence counts feed the trust block's distribution. */
+  stats: {
+    operations: number
+    runs: number
+    gpus: number
+    servingRuns: number
+    evidence: { verified: number; reproducible: number; reported: number }
+  }
 }
 
 /** One record transition inside a comparison cohort's history. */

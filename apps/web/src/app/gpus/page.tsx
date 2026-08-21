@@ -1,11 +1,13 @@
 // GPU index (§16.4): the hardware axis of the catalog. Live per-model
 // coverage — runs, operations, records — with each model's dossier a row
-// away. Counts follow the same eligibility filter as every ranked surface.
+// away, and the priority family×GPU grid stating gaps as gaps. Counts
+// follow the same eligibility filter as every ranked surface.
 import type { Metadata } from "next"
 import { ContextHeader } from "@/components/context-header"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
 import { Link } from "@/components/quiet-link"
-import { getHardwareIndex } from "@/lib/catalog"
+import { Section } from "@/components/section"
+import { getCoveragePage, getHardwareIndex } from "@/lib/catalog"
 import { formatDateUTC } from "@/lib/format"
 
 export const metadata: Metadata = { title: "GPUs" }
@@ -15,7 +17,10 @@ const GRID =
   "grid grid-cols-[minmax(240px,1.6fr)_130px_repeat(3,110px)_130px] gap-x-6 min-w-[900px]"
 
 export default async function GpusPage() {
-  const model = await getHardwareIndex()
+  const [model, coverage] = await Promise.all([
+    getHardwareIndex(),
+    getCoveragePage(),
+  ])
   return (
     <>
       {model.illustrative && <IllustrativeNotice />}
@@ -70,8 +75,53 @@ export default async function GpusPage() {
         <p className="mt-4 text-small text-faint">
           Coverage follows the imported sources; absence of a GPU here is not
           evidence about its performance.{" "}
-          <Link href="/coverage">Coverage and limitations →</Link>
+          <Link href="/docs#sources">Sources and limitations →</Link>
         </p>
+
+        <Section id="priority" title="Priority coverage">
+          <p className="mb-4 max-w-[76ch] text-body text-muted">
+            The operations an inference engineer asks about first, on the GPUs
+            they ask about first. Ranked runs per cell; a zero is a stated gap,
+            not a claim.
+          </p>
+          <div className="overflow-x-auto">
+            <div className="max-w-[720px] min-w-[560px]">
+              <div className="grid grid-cols-[minmax(180px,1.4fr)_repeat(3,minmax(96px,0.6fr))] items-baseline gap-x-4 border-b border-border-strong pb-2 font-mono text-label text-faint uppercase">
+                <span>Family</span>
+                {coverage.hero.gpus.map((gpu) => (
+                  <span key={gpu} className="text-right">
+                    {gpu.replace("NVIDIA ", "")}
+                  </span>
+                ))}
+                <span className="text-right">All GPUs</span>
+              </div>
+              {coverage.hero.rows.map((row) => (
+                <div
+                  key={row.family}
+                  className="grid grid-cols-[minmax(180px,1.4fr)_repeat(3,minmax(96px,0.6fr))] items-baseline gap-x-4 border-b border-line py-2.5 text-body"
+                >
+                  <Link
+                    href={`/search?q=${encodeURIComponent(row.family)}`}
+                    className="font-mono text-small"
+                  >
+                    {row.family}
+                  </Link>
+                  {row.runs.map((runs, index) => (
+                    <span
+                      key={coverage.hero.gpus[index]}
+                      className={`text-right font-mono text-small ${runs === 0 ? "text-faint" : ""}`}
+                    >
+                      {runs === 0 ? "0 · gap" : runs.toLocaleString("en-US")}
+                    </span>
+                  ))}
+                  <span className="text-right font-mono text-small text-subtle">
+                    {row.total.toLocaleString("en-US")}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Section>
       </main>
     </>
   )

@@ -519,7 +519,13 @@ export async function getHomePage(): Promise<HomePageModel> {
   return {
     illustrative: ILLUSTRATIVE,
     latest,
-    stats: { operations: 2, runs: 10, gpus: 1 },
+    stats: {
+      operations: 2,
+      runs: 10,
+      gpus: 1,
+      servingRuns: 4,
+      evidence: { verified: 2, reproducible: 4, reported: 4 },
+    },
   }
 }
 
