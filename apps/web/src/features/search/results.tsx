@@ -6,18 +6,16 @@ import { CopyButton } from "@/components/copy-button"
 import { KeyValueList } from "@/components/key-value-list"
 import { Pager } from "@/components/pager"
 import { Link } from "@/components/quiet-link"
-import type { ResultRow, SearchPageModel } from "@/lib/catalog"
 import {
-  evidenceLabel,
-  formatDateUTC,
-  formatPrimary,
-  formatPrimaryParts,
-  formatSolScore,
-  formatSpread,
-} from "@/lib/format"
+  AnswerSlots,
+  answerLabel,
+  isDeployable,
+} from "@/features/answer/answer-slots"
+import type { ResultRow, SearchPageModel } from "@/lib/catalog"
+import { formatDateUTC, formatPrimary } from "@/lib/format"
 import { meetsTrust, removeToken } from "@/lib/search-query"
 import { TRUST_TIERS, trustTier } from "@/lib/trust-tier"
-import { deployability, licenseMatches } from "@/server/policy/deployability"
+import { licenseMatches } from "@/server/policy/deployability"
 import { ResultRowItem, ResultTableHead } from "./result-row"
 import { type BrowseFilters, OperationList, StartState } from "./start-state"
 import { SuggestInput } from "./suggest"
@@ -88,14 +86,6 @@ const MODES: { key: ResultMode; label: string; note: string | null }[] = [
 
 const isVerified = (row: ResultRow) =>
   row.evidence === "verified" || row.evidence === "replicated"
-// One policy, one predicate (§11.8): the chips filter on single facts; this
-// combined boolean drives only the hero's deployability note.
-const isDeployable = (row: ResultRow) =>
-  deployability({
-    sourceAvailable: row.sourceAvailable,
-    installable: row.installable,
-    licenseConcluded: row.license.concluded,
-  }).eligible
 
 /** The clickable availability filters (§16.7), each one observable fact. */
 const CHIP_FILTERS: {
@@ -130,13 +120,6 @@ function searchHref(
   if (next.installable) params.set("installable", "1")
   if (next.page > 1) params.set("page", String(next.page))
   return `/search?${params.toString()}`
-}
-
-/** Answer heading tracks the evidence actually present — never upgraded. */
-function answerLabel(row: ResultRow) {
-  if (isVerified(row)) return "Fastest verified"
-  if (row.evidence === "reproducible") return "Fastest reproducible"
-  return "Fastest reported"
 }
 
 /** The workload context line (§16.4): quiet, technical, shown once. */
@@ -193,9 +176,9 @@ function Recommendation({
    * is still stated (§12), just marked as source-less. */
   hiddenFaster?: ResultRow | null
 }) {
-  const deployableAlternative = isDeployable(top)
+  const deployable = isDeployable(top)
     ? null
-    : model.groups.exact.find(isDeployable)
+    : (model.groups.exact.find(isDeployable) ?? null)
   const fasterElsewhere = [
     ...model.groups.reported,
     ...model.groups.compatible,
@@ -228,91 +211,17 @@ function Recommendation({
       ? exactBaseline.primary.value / top.primary.value
       : null
   return (
-    <section className="grid animate-row-in grid-cols-[minmax(0,1.5fr)_minmax(280px,1fr)] gap-10 border-b border-border py-6 [animation-delay:.02s] max-lg:grid-cols-1">
+    <section className="grid animate-row-in grid-cols-[minmax(0,2.2fr)_minmax(260px,1fr)] gap-10 border-b border-border py-6 [animation-delay:.02s] max-lg:grid-cols-1">
       <div>
-        <div className="font-mono text-label text-faint uppercase">
-          {allBaseline ? "Source baseline · unbeaten" : answerLabel(top)}
-          {fasterInCohort ? " with source" : ""}
-        </div>
-        <div className="mt-3 flex flex-wrap items-baseline gap-4">
-          <span className="font-mono text-readout font-medium">
-            {top.primary ? formatPrimaryParts(top.primary).value : "—"}
-            {top.primary && (
-              <span className="ml-1.5 text-title font-normal text-subtle">
-                {formatPrimaryParts(top.primary).unit}
-              </span>
-            )}
-          </span>
-          {top.primary && (
-            <span className="font-mono text-body text-subtle">
-              {[
-                formatSpread(top.primary),
-                top.primary.statistic === "unspecified"
-                  ? null
-                  : `${top.primary.statistic}${top.primary.sampleCount ? ` of ${top.primary.sampleCount}` : ""}`,
-                top.solScore !== null ? formatSolScore(top.solScore) : null,
-                vsBaseline !== null
-                  ? `${vsBaseline.toFixed(2)}× vs baseline`
-                  : null,
-              ]
-                .filter(Boolean)
-                .join(" · ")}
-            </span>
-          )}
-        </div>
-        <div className="mt-3">
-          <Link
-            href={`/implementations/${top.implementation.slug}`}
-            className="text-lead font-medium"
-          >
-            {top.implementation.name}
-          </Link>
-          <span className="ml-2.5 text-body text-subtle">
-            {[
-              top.project.name === top.implementation.name
-                ? null
-                : top.project.name,
-              top.license.concluded ??
-                top.license.declared ??
-                "License unknown",
-              top.language,
-            ]
-              .filter(Boolean)
-              .join(" · ")}
-          </span>
-        </div>
-        <p className="mt-2 max-w-[64ch] text-body text-muted">
-          {evidenceLabel(top.evidence)} evidence · last observed{" "}
-          {formatDateUTC(top.lastTestedAt)}.
-          {top.caveats.length > 0 ? ` ${top.caveats.join(". ")}.` : ""}
-        </p>
-        {top.install ? (
-          <div className="plate mt-4 flex max-w-[520px] items-center gap-2.5 py-2 pr-2 pl-3">
-            <code className="min-w-0 flex-1 truncate font-mono text-small text-muted">
-              {top.install.command}
-            </code>
-            <CopyButton text={top.install.command} event="install_copied" />
-          </div>
-        ) : (
-          <p className="mt-4 text-small text-faint">
-            No install recipe recorded for this revision.
-          </p>
-        )}
-        <div className="mt-3.5 flex flex-wrap gap-x-5 gap-y-1">
-          {top.sourceAvailable && (
-            <Link
-              href={`/implementations/${top.implementation.slug}#code`}
-              className="action"
-            >
-              View source →
-            </Link>
-          )}
-          {top.runId && (
-            <Link href={`/runs/${top.runId}`} className="action">
-              Run dossier →
-            </Link>
-          )}
-        </div>
+        <AnswerSlots
+          top={top}
+          topLabel={
+            (allBaseline ? "Source baseline · unbeaten" : answerLabel(top)) +
+            (fasterInCohort ? " with source" : "")
+          }
+          deploy={deployable}
+          vsBaseline={vsBaseline}
+        />
         {fasterInCohort?.primary && (
           <p className="mt-3.5 text-body text-subtle">
             Fastest overall in this cohort:{" "}
@@ -328,21 +237,6 @@ function Recommendation({
             </span>{" "}
             · {TRUST_TIERS[rowTier(fasterInCohort)].toLowerCase()} · row #
             {fasterInCohort.rank ?? "—"}
-          </p>
-        )}
-        {deployableAlternative?.primary && (
-          <p className="mt-2 text-body text-subtle">
-            Fastest deployable:{" "}
-            <Link
-              href={`/implementations/${deployableAlternative.implementation.slug}`}
-              className="font-mono text-body"
-            >
-              {deployableAlternative.implementation.name}
-            </Link>{" "}
-            at{" "}
-            <span className="font-mono text-fg">
-              {formatPrimary(deployableAlternative.primary)}
-            </span>
           </p>
         )}
         {hiddenFaster?.primary && (

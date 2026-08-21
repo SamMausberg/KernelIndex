@@ -5,6 +5,7 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { ContextHeader } from "@/components/context-header"
+import { ExpandRows } from "@/components/expand-rows"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
 import { Metric } from "@/components/metric"
 import { Link } from "@/components/quiet-link"
@@ -78,44 +79,48 @@ export default async function GpuPage({ params }: Props) {
                 <div>Evidence</div>
                 <div className="text-right">Since</div>
               </div>
-              {records.map((holder) => (
-                <div
-                  key={holder.cohortKey}
-                  className={`${RECORD_GRID} border-b border-line py-3 transition-colors hover:bg-raised`}
-                >
-                  <div className="min-w-0 truncate">
-                    <Link
-                      href={`/operations/${holder.operation.slug}`}
-                      prefetch={false}
-                      className="text-body"
-                    >
-                      {holder.operation.name}
-                    </Link>
-                    <span className="ml-2 font-mono text-mini text-faint">
-                      {holder.workloadSummary}
-                    </span>
+              <ExpandRows
+                cap={12}
+                noun="records"
+                rows={records.map((holder) => (
+                  <div
+                    key={holder.cohortKey}
+                    className={`${RECORD_GRID} border-b border-line py-3 transition-colors hover:bg-raised`}
+                  >
+                    <div className="min-w-0 truncate">
+                      <Link
+                        href={`/operations/${holder.operation.slug}`}
+                        prefetch={false}
+                        className="text-body"
+                      >
+                        {holder.operation.name}
+                      </Link>
+                      <span className="ml-2 font-mono text-mini text-faint">
+                        {holder.workloadSummary}
+                      </span>
+                    </div>
+                    <div className="pr-3.5 text-right whitespace-nowrap">
+                      <Metric
+                        primary={holder.current.primary}
+                        valueClassName="font-mono text-body text-fg"
+                      />
+                    </div>
+                    <div className="min-w-0 truncate">
+                      <Link
+                        href={`/implementations/${holder.current.implementation.slug}`}
+                        prefetch={false}
+                        className="text-small"
+                      >
+                        {holder.current.implementation.name}
+                      </Link>
+                    </div>
+                    <EvidenceCell row={holder.current} />
+                    <div className="text-right font-mono text-mini text-faint">
+                      {formatDateUTC(holder.since)}
+                    </div>
                   </div>
-                  <div className="pr-3.5 text-right whitespace-nowrap">
-                    <Metric
-                      primary={holder.current.primary}
-                      valueClassName="font-mono text-body text-fg"
-                    />
-                  </div>
-                  <div className="min-w-0 truncate">
-                    <Link
-                      href={`/implementations/${holder.current.implementation.slug}`}
-                      prefetch={false}
-                      className="text-small"
-                    >
-                      {holder.current.implementation.name}
-                    </Link>
-                  </div>
-                  <EvidenceCell row={holder.current} />
-                  <div className="text-right font-mono text-mini text-faint">
-                    {formatDateUTC(holder.since)}
-                  </div>
-                </div>
-              ))}
+                ))}
+              />
             </div>
           ) : (
             <p className="py-2 text-body text-faint">

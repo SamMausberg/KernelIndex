@@ -4,6 +4,7 @@ import { startTransition, useEffect, useState } from "react"
 import { KeyValueList } from "@/components/key-value-list"
 import { Link } from "@/components/quiet-link"
 import { Section } from "@/components/section"
+import { AnswerSlots, isDeployable } from "@/features/answer/answer-slots"
 import { ResultRowItem, ResultTableHead } from "@/features/search/result-row"
 import type { WorkloadOption } from "@/lib/catalog"
 import { formatDateUTC } from "@/lib/format"
@@ -87,9 +88,36 @@ export function OperationRecords({
   const baselineMetric =
     variant.records.find((row) => row.baseline)?.primary ?? null
   const overflow = variant.recordsTotal - variant.records.length
+  // The answer before the machinery (§16.6): the cohort leader — a leading
+  // unbeaten baseline is stated as such, never skipped for a slower entry —
+  // and, when it differs, the fastest row passing deployability (§11.8).
+  const top = variant.records[0]
+  const deploy =
+    top && !isDeployable(top)
+      ? (variant.records.find(isDeployable) ?? null)
+      : null
+  const vsBaseline =
+    top &&
+    !top.baseline &&
+    baselineMetric &&
+    top.primary &&
+    top.primary.value > 0 &&
+    baselineMetric.value !== top.primary.value
+      ? baselineMetric.value / top.primary.value
+      : null
 
   return (
     <div onClickCapture={onClickCapture}>
+      {top && (
+        <div className="animate-row-in border-b border-border pb-6">
+          <AnswerSlots
+            top={top}
+            topLabel={top.baseline ? "Source baseline · unbeaten" : undefined}
+            deploy={deploy}
+            vsBaseline={vsBaseline}
+          />
+        </div>
+      )}
       <Section id="records" title="Current records">
         {/* The sweep table stays compact; the cohort panel uses the rest
             of the width instead of leaving it empty. */}

@@ -6,6 +6,7 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { ContextHeader } from "@/components/context-header"
 import { CopyButton } from "@/components/copy-button"
+import { ExpandRows } from "@/components/expand-rows"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
 import { KeyValueList } from "@/components/key-value-list"
 import { Metric } from "@/components/metric"
@@ -141,44 +142,48 @@ export default async function OperationPage({ params }: Props) {
             {/* Slugs can repeat when an implementation appears once per
                 revision or evidence source; the list is server-rendered and
                 never reordered, so the index is a safe disambiguator. */}
-            {model.implementations.map((impl, index) => (
-              <div
-                // biome-ignore lint/suspicious/noArrayIndexKey: static read-only rows
-                key={`${impl.slug}-${index}`}
-                className="grid min-w-[940px] grid-cols-[minmax(240px,1.6fr)_150px_150px_92px_minmax(150px,1fr)] items-center border-b border-line transition-colors hover:bg-raised"
-              >
-                <div className="min-w-0 truncate py-3 pr-3">
-                  <Link
-                    href={`/implementations/${impl.slug}`}
-                    className="text-body"
-                  >
-                    {impl.name}
-                  </Link>
-                  {impl.project.name !== impl.name && (
-                    <span className="ml-2 text-small text-faint">
-                      {impl.project.name}
-                    </span>
-                  )}
+            <ExpandRows
+              cap={8}
+              noun="implementations"
+              rows={model.implementations.map((impl, index) => (
+                <div
+                  // biome-ignore lint/suspicious/noArrayIndexKey: static read-only rows
+                  key={`${impl.slug}-${index}`}
+                  className="grid min-w-[940px] grid-cols-[minmax(240px,1.6fr)_150px_150px_92px_minmax(150px,1fr)] items-center border-b border-line transition-colors hover:bg-raised"
+                >
+                  <div className="min-w-0 truncate py-3 pr-3">
+                    <Link
+                      href={`/implementations/${impl.slug}`}
+                      className="text-body"
+                    >
+                      {impl.name}
+                    </Link>
+                    {impl.project.name !== impl.name && (
+                      <span className="ml-2 text-small text-faint">
+                        {impl.project.name}
+                      </span>
+                    )}
+                  </div>
+                  <div className="py-3 font-mono text-small text-subtle">
+                    {[impl.language, impl.framework]
+                      .filter(Boolean)
+                      .join(" · ") || "—"}
+                  </div>
+                  <div className="py-3 pr-3.5 text-right whitespace-nowrap">
+                    <Metric
+                      primary={impl.bestPrimary}
+                      valueClassName="font-mono text-body text-fg"
+                    />
+                  </div>
+                  <div className="py-3">
+                    <EvidenceCell row={impl} />
+                  </div>
+                  <div className="py-3">
+                    <AvailabilityCell row={impl} />
+                  </div>
                 </div>
-                <div className="py-3 font-mono text-small text-subtle">
-                  {[impl.language, impl.framework]
-                    .filter(Boolean)
-                    .join(" · ") || "—"}
-                </div>
-                <div className="py-3 pr-3.5 text-right whitespace-nowrap">
-                  <Metric
-                    primary={impl.bestPrimary}
-                    valueClassName="font-mono text-body text-fg"
-                  />
-                </div>
-                <div className="py-3">
-                  <EvidenceCell row={impl} />
-                </div>
-                <div className="py-3">
-                  <AvailabilityCell row={impl} />
-                </div>
-              </div>
-            ))}
+              ))}
+            />
           </div>
         </Section>
 

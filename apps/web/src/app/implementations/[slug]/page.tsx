@@ -13,6 +13,7 @@ import {
 } from "@/features/implementations/source-view"
 import { getImplementationPage } from "@/lib/catalog"
 import { evidenceLabel, formatDateUTC } from "@/lib/format"
+import { deployability } from "@/server/policy/deployability"
 
 // Implementation dossiers change only on importer runs; ISR on first hit.
 export const revalidate = 300
@@ -49,6 +50,14 @@ export default async function ImplementationPage({ params }: Props) {
     ...model.support.hardware,
     ...model.support.architectures,
   ].join(" / ")
+  // What it was actually measured on — declared support is a claim, this is
+  // evidence (§11.8): distinct GPUs from the eligible runs on this revision.
+  const testedOn = [...new Set(model.bestResults.map((r) => r.hardware.model))]
+  const deployable = deployability({
+    sourceAvailable: model.source.available,
+    installable: model.usage.install !== null,
+    licenseConcluded: model.license.concluded,
+  }).eligible
 
   return (
     <>
@@ -111,11 +120,13 @@ export default async function ImplementationPage({ params }: Props) {
           {/* The deployability verdict first (§16.7): can this be used, in
               one neutral line, before any evidence or provenance. */}
           <p className="mb-4 text-body text-fg">
-            {model.usage.install
-              ? `Installable · ${model.usage.install.kind}`
-              : model.source.available
-                ? "Source available · no install recipe recorded"
-                : "Benchmark submission only · no public source"}
+            {deployable
+              ? `Deployable · ${model.usage.install?.kind}`
+              : model.usage.install
+                ? `Installable · ${model.usage.install.kind}`
+                : model.source.available
+                  ? "Source available · no install recipe recorded"
+                  : "Benchmark submission only · no public source"}
             <span className="text-subtle">
               {" · "}
               {model.license.concluded ??
@@ -162,6 +173,16 @@ export default async function ImplementationPage({ params }: Props) {
                         .filter(Boolean)
                         .join(" · "),
                     },
+                    // The pinned revision the evidence applies to — the
+                    // install above yields exactly this code, not "latest".
+                    ...(model.source.commit
+                      ? [
+                          {
+                            key: "revision",
+                            value: model.source.commit.slice(0, 12),
+                          },
+                        ]
+                      : []),
                     ...(model.interface.symbol
                       ? [{ key: "symbol", value: model.interface.symbol }]
                       : []),
@@ -180,8 +201,11 @@ export default async function ImplementationPage({ params }: Props) {
               <div className="mb-2.5 text-small text-subtle">Compatibility</div>
               <KeyValueList
                 items={[
+                  ...(testedOn.length > 0
+                    ? [{ key: "measured on", value: testedOn.join(", ") }]
+                    : []),
                   {
-                    key: "hardware",
+                    key: "declared hardware",
                     value: model.support.hardware.join(", ") || "declared only",
                   },
                   {
