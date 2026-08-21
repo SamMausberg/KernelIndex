@@ -215,7 +215,9 @@ export default async function ServingPage({
       {facets.illustrative && <IllustrativeNotice />}
       <ContextHeader
         title="Serving"
-        context={`${facets.totalRuns} results · ranked only when you pick an objective`}
+        // Single-source provenance stated plainly; revisit when a second
+        // serving source lands.
+        context={`${facets.totalRuns} results · all from MLPerf Inference, shown as published · ranked only when you pick an objective`}
       />
       <main className="shell animate-fade-in pb-24">
         <form
@@ -298,24 +300,35 @@ export default async function ServingPage({
             </Field>
           </ConsoleGroup>
           <div aria-hidden="true" className="w-px bg-border" />
-          <ConsoleGroup label="SLO bounds">
-            <Field label="TTFT p99 ≤">
-              <UnitInput
-                name="ttft"
-                ariaLabel="TTFT p99 bound (ms)"
-                defaultValue={params.ttft}
-                placeholder="450"
-              />
-            </Field>
-            <Field label="TPOT p99 ≤">
-              <UnitInput
-                name="tpot"
-                ariaLabel="TPOT p99 bound (ms)"
-                defaultValue={params.tpot}
-                placeholder="40"
-              />
-            </Field>
-          </ConsoleGroup>
+          {/* Latency bounds are the power move, not the entry point: the
+              disclosure keeps the console leading with model + hardware.
+              It opens whenever a bound is set so active state stays visible. */}
+          <details
+            open={Boolean(params.ttft || params.tpot)}
+            className="group self-end"
+          >
+            <summary className="flex h-8 cursor-pointer list-none items-center font-mono text-label text-faint uppercase transition-colors hover:text-fg [&::-webkit-details-marker]:hidden">
+              Latency bounds ›
+            </summary>
+            <div className="mt-2.5 flex flex-wrap items-end gap-x-4 gap-y-3">
+              <Field label="TTFT p99 ≤">
+                <UnitInput
+                  name="ttft"
+                  ariaLabel="TTFT p99 bound (ms)"
+                  defaultValue={params.ttft}
+                  placeholder="450"
+                />
+              </Field>
+              <Field label="TPOT p99 ≤">
+                <UnitInput
+                  name="tpot"
+                  ariaLabel="TPOT p99 bound (ms)"
+                  defaultValue={params.tpot}
+                  placeholder="40"
+                />
+              </Field>
+            </div>
+          </details>
           <button
             type="submit"
             className="key-primary h-8 cursor-pointer self-end px-5 text-small"

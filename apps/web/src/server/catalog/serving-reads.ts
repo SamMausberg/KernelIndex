@@ -344,11 +344,13 @@ export function buildCohortGroup(
         constraint,
         state: outcome.state,
         satisfied: outcome.state === "unknown" ? null : outcome.satisfied,
+        // A declared bound is the benchmark's rule, never a measurement —
+        // the two must read differently everywhere (§16.13).
         detail:
           outcome.state === "measured"
             ? `measured ${outcome.observed}`
             : outcome.state === "declared"
-              ? `harness enforces ≤ ${outcome.bound}`
+              ? `benchmark constraint ≤ ${outcome.bound}, not measured`
               : "not reported",
       }),
     )

@@ -1,7 +1,8 @@
-// Serving results (§16.13): feasible configurations first, grouped by
-// cohort with the identity line above them, then the per-cohort Pareto
-// view. Every row states TTFT/TPOT/throughput/error rate as a value or
-// "not reported" — and there is no score column by construction.
+// Serving results (§16.13): per cohort, the Pareto view is the primary
+// object — the frontier chart leads, frontier rows follow, dominated rows
+// collapse behind a disclosure. Every row states TTFT/TPOT/throughput as a
+// value or "not reported" — and there is no score column by construction.
+import { ExpandRows } from "@/components/expand-rows"
 import { Link } from "@/components/quiet-link"
 import type { ServingCohortGroup, ServingResultRow } from "@/lib/serving-models"
 import { ParetoScatter } from "./pareto"
@@ -28,9 +29,9 @@ function metric(
     : `${found.value.toLocaleString("en-US")}`
 }
 
-/** A measured value, or an explicit quiet "n/r" (not reported) marker. */
+/** A measured value, or a quiet explicit "not reported" marker. */
 function cell(value: string | null) {
-  return value ?? <span className="text-mini text-faint">n/r</span>
+  return value ?? <span className="text-mini text-faint">not reported</span>
 }
 
 function ResultRow({ row }: { row: ServingResultRow }) {
@@ -108,71 +109,81 @@ function ResultRow({ row }: { row: ServingResultRow }) {
 export function ServingCohorts({ groups }: { groups: ServingCohortGroup[] }) {
   return (
     <div className="space-y-10">
-      {groups.map((group) => (
-        <section key={group.cohortKey}>
-          <h2 className="text-lead font-medium">{group.description}</h2>
-          <p className="mt-0.5 text-small text-faint">
-            Ranked only inside this cohort · {group.rows.length} feasible
-            {group.excluded.length > 0 &&
-              ` · ${group.excluded.length} excluded`}
-          </p>
-          <div className="mt-3 overflow-x-auto">
-            <div
-              className={`${GRID} border-b border-border-strong font-mono text-label text-faint uppercase`}
-            >
-              <div className="py-2">#</div>
-              <div className="py-2">Configuration</div>
-              <div className="py-2">Stack</div>
-              <div className="py-2 pr-3 text-right">tokens/s</div>
-              <div className="py-2 pr-3 text-right">TTFT p99</div>
-              <div className="py-2 pr-3 text-right">TPOT p99</div>
-              <div className="py-2 pr-3 text-right">GPUs</div>
-              <div />
+      {groups.map((group) => {
+        // Frontier rows lead the table; dominated rows collapse. The cap
+        // applies to the dominated tail, never to the frontier itself.
+        const frontier = group.rows.filter((row) => row.onFrontier)
+        const dominated = group.rows
+          .filter((row) => !row.onFrontier)
+          .slice(0, ROW_CAP)
+        const ordered = [...frontier, ...dominated]
+        const cut = group.rows.length - ordered.length
+        return (
+          <section key={group.cohortKey}>
+            <h2 className="text-lead font-medium">{group.description}</h2>
+            <p className="mt-0.5 text-small text-faint">
+              Ranked only inside this cohort · {group.rows.length} feasible
+              {group.excluded.length > 0 &&
+                ` · ${group.excluded.length} excluded`}
+            </p>
+            <ParetoScatter rows={group.rows} sharedAxes={group.sharedAxes} />
+            <div className="mt-3 overflow-x-auto">
+              <div
+                className={`${GRID} border-b border-border-strong font-mono text-label text-faint uppercase`}
+              >
+                <div className="py-2">#</div>
+                <div className="py-2">Configuration</div>
+                <div className="py-2">Stack</div>
+                <div className="py-2 pr-3 text-right">tokens/s</div>
+                <div className="py-2 pr-3 text-right">TTFT p99</div>
+                <div className="py-2 pr-3 text-right">TPOT p99</div>
+                <div className="py-2 pr-3 text-right">GPUs</div>
+                <div />
+              </div>
+              <ExpandRows
+                cap={Math.max(frontier.length, 8)}
+                noun="configurations"
+                rows={ordered.map((row) => (
+                  <ResultRow key={row.runId} row={row} />
+                ))}
+              />
+              {group.rows.length === 0 && (
+                <p className="py-8 text-body text-faint">
+                  Nothing in this cohort meets the bounds.
+                </p>
+              )}
             </div>
-            {group.rows.slice(0, ROW_CAP).map((row) => (
-              <ResultRow key={row.runId} row={row} />
-            ))}
-            {group.rows.length === 0 && (
-              <p className="py-8 text-body text-faint">
-                Nothing in this cohort meets the bounds.
+            {cut > 0 && (
+              <p className="mt-2 text-small text-faint">
+                {cut} more rows in this cohort — narrow the filters to see them.
               </p>
             )}
-          </div>
-          {group.rows.length > ROW_CAP && (
-            <p className="mt-2 text-small text-faint">
-              {group.rows.length - ROW_CAP} more rows in this cohort — narrow
-              the filters to see them.
-            </p>
-          )}
-          <ParetoScatter
-            rows={group.rows.slice(0, ROW_CAP)}
-            sharedAxes={group.sharedAxes}
-          />
-          {group.excluded.length > 0 && (
-            <details className="mt-3">
-              <summary className="cursor-pointer list-none text-small text-subtle [&::-webkit-details-marker]:hidden">
-                {group.excluded.length} excluded — bound not met, or the metric
-                wasn't reported ›
-              </summary>
-              <div className="mt-2 space-y-1">
-                {group.excluded.slice(0, EXCLUDED_CAP).map((entry) => (
-                  <p
-                    key={entry.runId}
-                    className="font-mono text-mini text-faint"
-                  >
-                    {entry.configuration} · {entry.reasons.join(", ")}
-                  </p>
-                ))}
-                {group.excluded.length > EXCLUDED_CAP && (
-                  <p className="text-mini text-faint">
-                    +{group.excluded.length - EXCLUDED_CAP} more
-                  </p>
-                )}
-              </div>
-            </details>
-          )}
-        </section>
-      ))}
+            {group.excluded.length > 0 && (
+              <details className="mt-3">
+                <summary className="cursor-pointer list-none text-small text-subtle [&::-webkit-details-marker]:hidden">
+                  {group.excluded.length} excluded — bound not met, or the
+                  metric wasn't reported ›
+                </summary>
+                <div className="mt-2 space-y-1">
+                  {group.excluded.slice(0, EXCLUDED_CAP).map((entry) => (
+                    <p
+                      key={entry.runId}
+                      className="font-mono text-mini text-faint"
+                    >
+                      {entry.configuration} · {entry.reasons.join(", ")}
+                    </p>
+                  ))}
+                  {group.excluded.length > EXCLUDED_CAP && (
+                    <p className="text-mini text-faint">
+                      +{group.excluded.length - EXCLUDED_CAP} more
+                    </p>
+                  )}
+                </div>
+              </details>
+            )}
+          </section>
+        )
+      })}
     </div>
   )
 }

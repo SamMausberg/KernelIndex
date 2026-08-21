@@ -211,7 +211,7 @@ function group(
           outcome.state === "measured"
             ? `measured ${outcome.observed}`
             : outcome.state === "declared"
-              ? `harness enforces ≤ ${outcome.bound}`
+              ? `benchmark constraint ≤ ${outcome.bound}, not measured`
               : "not reported",
       })),
     )
