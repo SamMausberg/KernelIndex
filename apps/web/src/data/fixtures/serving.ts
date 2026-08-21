@@ -7,6 +7,7 @@ import type {
   ServingConfigurationSummary,
   ServingConstraintView,
   ServingFacetsModel,
+  ServingOverviewModel,
   ServingResolveInput,
   ServingResolveModel,
   ServingResultRow,
@@ -254,10 +255,50 @@ function group(
       `8× ${HW}`,
       "exact_model",
     ].join(" · "),
+    identity: {
+      model: MODEL.name,
+      workload: workloadOf(first),
+      scenario: first.scenario,
+      topology: `8× ${HW}`,
+      quality: "exact_model",
+    },
     rows,
     excluded,
     sharedAxes,
   }
+}
+
+/** Overview twin: one row per fixture workload, best throughput leading. */
+export async function getServingOverview(): Promise<ServingOverviewModel> {
+  const throughput = (run: FxServingRun) =>
+    run.measurements.find((m) => m.metric === "output_token_throughput_tps")
+      ?.value ?? null
+  const rows = (["Interactive", "Offline"] as const).map((scenario) => {
+    const runs = ALL.filter((run) => run.scenario === scenario)
+    const best = runs
+      .filter((run) => throughput(run) !== null)
+      .sort((a, b) => (throughput(b) ?? 0) - (throughput(a) ?? 0))[0]
+    return {
+      model: MODEL,
+      workload: {
+        slug: workloadOf(runs[0]),
+        name: workloadOf(runs[0]).replaceAll("-", " "),
+      },
+      scenario,
+      runs: runs.length,
+      configurations: new Set(runs.map((run) => run.configuration)).size,
+      best: best
+        ? {
+            runId: best.id,
+            throughput: throughput(best) as number,
+            stack: best.stack,
+            hardware: HW,
+            totalAccelerators: 8,
+          }
+        : null,
+    }
+  })
+  return { illustrative: true, rows }
 }
 
 export async function getServingFacets(): Promise<ServingFacetsModel> {

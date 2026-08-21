@@ -24,6 +24,7 @@ import type {
 import type {
   ServingConfigurationSummary,
   ServingFacetsModel,
+  ServingOverviewModel,
   ServingResolveInput,
   ServingResolveModel,
   ServingRunPageModel,
@@ -52,6 +53,7 @@ type CatalogReads = {
   getProjectIndex(): Promise<ProjectIndexModel>
   // Serving (§8.16): a separate resolver surface behind the same seam.
   getServingFacets(): Promise<ServingFacetsModel>
+  getServingOverview(): Promise<ServingOverviewModel>
   resolveServing(input: ServingResolveInput): Promise<ServingResolveModel>
   getServingRunPage(id: string): Promise<ServingRunPageModel | null>
   listServingRuns(input: {
@@ -186,6 +188,16 @@ export const getServingFacets = cache(
       return (await reads()).getServingFacets()
     },
     ["serving-facets", BACKEND],
+    { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },
+  ),
+)
+
+export const getServingOverview = cache(
+  cached(
+    async (): Promise<ServingOverviewModel> => {
+      return (await reads()).getServingOverview()
+    },
+    ["serving-overview", BACKEND],
     { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },
   ),
 )

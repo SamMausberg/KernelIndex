@@ -376,6 +376,13 @@ export const servingResolveResponse = z.object({
     z.object({
       cohortKey: z.string(),
       description: z.string(),
+      identity: z.object({
+        model: z.string(),
+        workload: z.string(),
+        scenario: z.string(),
+        topology: z.string(),
+        quality: z.string(),
+      }),
       rows: z.array(servingResultRow),
       excluded: z.array(
         z.object({

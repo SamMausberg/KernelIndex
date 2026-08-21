@@ -64,10 +64,41 @@ export type ServingCohortGroup = {
   cohortKey: string
   /** The seven §11.1 identity parts as one readable line. */
   description: string
+  /** The same identity structured for surface headers, so pages can lead
+   * with what the reader filtered away and demote the rest. */
+  identity: {
+    model: string
+    workload: string
+    scenario: string
+    topology: string
+    quality: string
+  }
   rows: ServingResultRow[]
   excluded: { runId: string; configuration: string; reasons: string[] }[]
   /** Metric·statistic axes shared by every row (the Pareto axes). */
   sharedAxes: string[]
+}
+
+/** §16.13 default view: one row per model × workload with the best reported
+ * throughput configuration; the cohort stream renders only after narrowing. */
+export type ServingOverviewRow = {
+  model: { slug: string; name: string }
+  workload: { slug: string; name: string }
+  scenario: string
+  runs: number
+  configurations: number
+  best: {
+    runId: string
+    throughput: number
+    stack: string
+    hardware: string
+    totalAccelerators: number
+  } | null
+}
+
+export type ServingOverviewModel = {
+  illustrative: boolean
+  rows: ServingOverviewRow[]
 }
 
 /** Filter-independent facet lists + totals: the resolver form renders from

@@ -14,8 +14,13 @@ import { ContextHeader } from "@/components/context-header"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
 import { Select } from "@/components/select"
 import { SkeletonRows } from "@/components/skeleton"
+import { ServingOverview } from "@/features/serving/overview"
 import { ServingCohorts } from "@/features/serving/results"
-import { getServingFacets, resolveServing } from "@/lib/catalog"
+import {
+  getServingFacets,
+  getServingOverview,
+  resolveServing,
+} from "@/lib/catalog"
 import { countNoun } from "@/lib/format"
 import type {
   ServingResolveInput,
@@ -141,9 +146,11 @@ function UnitInput({
 async function ServingResults({
   resolved,
   requested,
+  hideModel,
 }: {
   resolved: Promise<ServingResolveModel>
   requested: boolean
+  hideModel: boolean
 }) {
   const model = await resolved
   const feasible = model.groups.reduce((n, group) => n + group.rows.length, 0)
@@ -176,10 +183,13 @@ async function ServingResults({
 
       {model.groups.length > 0 ? (
         <>
-          {/* Cohorts are deliberately granular (§11.1); an unfiltered view
-              caps the page and asks for narrowing instead of rendering
-              hundreds of tables. */}
-          <ServingCohorts groups={model.groups.slice(0, GROUP_CAP)} />
+          {/* Cohorts are deliberately granular (§11.1); the capped stream
+              renders only for a narrowed request — the default view is the
+              overview table. */}
+          <ServingCohorts
+            groups={model.groups.slice(0, GROUP_CAP)}
+            hideModel={hideModel}
+          />
           {model.groups.length > GROUP_CAP && (
             <p className="mt-8 text-small text-faint">
               {model.groups.length - GROUP_CAP} more comparison groups. Narrow
@@ -205,11 +215,25 @@ export default async function ServingPage({
 }) {
   if (!servingEnabled) notFound()
   const params = await searchParams
-  const resolved = resolveServing(inputOf(params))
+  // Unfiltered, the corpus is hundreds of tiny comparison groups; the
+  // default view is the overview table, and the resolver runs only once the
+  // reader narrows by scope or bounds.
+  const narrowed = Boolean(
+    params.model ||
+      params.workload ||
+      params.hw ||
+      params.gpus ||
+      params.ttft ||
+      params.tpot,
+  )
+  const resolved = narrowed ? resolveServing(inputOf(params)) : null
   // An early rejection (before the Suspense subtree awaits) must not become
   // an unhandled rejection; ServingResults still receives it on await.
-  resolved.catch(() => {})
-  const facets = await getServingFacets()
+  resolved?.catch(() => {})
+  const [facets, overview] = await Promise.all([
+    getServingFacets(),
+    narrowed ? null : getServingOverview(),
+  ])
 
   return (
     <>
@@ -338,18 +362,32 @@ export default async function ServingPage({
           </button>
         </form>
 
-        <Suspense
-          fallback={
-            <div className="pt-4">
-              <SkeletonRows />
+        {narrowed && resolved ? (
+          <Suspense
+            fallback={
+              <div className="pt-4">
+                <SkeletonRows />
+              </div>
+            }
+          >
+            <ServingResults
+              resolved={resolved}
+              requested
+              hideModel={Boolean(params.model)}
+            />
+          </Suspense>
+        ) : (
+          <section className="pt-5">
+            <p className="max-w-[72ch] text-small text-faint">
+              Best reported throughput per model and scenario. Open a row for
+              every configuration, the Pareto frontier, and exclusions; add
+              latency bounds above to resolve against your own limits.
+            </p>
+            <div className="mt-4">
+              <ServingOverview rows={overview?.rows ?? []} />
             </div>
-          }
-        >
-          <ServingResults
-            resolved={resolved}
-            requested={Object.keys(params).length > 0}
-          />
-        </Suspense>
+          </section>
+        )}
       </main>
     </>
   )

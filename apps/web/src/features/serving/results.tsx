@@ -106,7 +106,15 @@ function ResultRow({ row }: { row: ServingResultRow }) {
   )
 }
 
-export function ServingCohorts({ groups }: { groups: ServingCohortGroup[] }) {
+export function ServingCohorts({
+  groups,
+  hideModel = false,
+}: {
+  groups: ServingCohortGroup[]
+  /** The model is in the reader's filter already; repeating it per group
+   * is the noise the structured header exists to remove. */
+  hideModel?: boolean
+}) {
   return (
     <div className="space-y-10">
       {groups.map((group) => {
@@ -120,7 +128,18 @@ export function ServingCohorts({ groups }: { groups: ServingCohortGroup[] }) {
         const cut = group.rows.length - ordered.length
         return (
           <section key={group.cohortKey}>
-            <h2 className="text-lead font-medium">{group.description}</h2>
+            <h2 className="text-lead font-medium">
+              {[
+                hideModel ? null : group.identity.model,
+                group.identity.workload,
+                group.identity.scenario,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </h2>
+            <p className="mt-0.5 font-mono text-mini text-faint">
+              {group.identity.topology} · {group.identity.quality}
+            </p>
             <p className="mt-0.5 text-small text-faint">
               Ranked only inside this comparison group · {group.rows.length}{" "}
               feasible

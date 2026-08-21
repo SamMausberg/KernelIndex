@@ -21,6 +21,7 @@ import type {
   ServingConfigurationSummary,
   ServingConstraintView,
   ServingFacetsModel,
+  ServingOverviewModel,
   ServingResolveInput,
   ServingResolveModel,
   ServingResultRow,
@@ -398,12 +399,98 @@ export function buildCohortGroup(
     return Number(b.onFrontier) - Number(a.onFrontier)
   })
 
+  const first = cohortRows[0]
   return {
     cohortKey,
-    description: cohortDescription(cohortRows[0]),
+    description: cohortDescription(first),
+    identity: {
+      model: first.model.name,
+      workload: first.workload.name,
+      scenario: first.run.scenario,
+      topology: `${first.run.acceleratorCount}× ${first.run.acceleratorModel}${
+        first.run.nodeCount > 1 ? ` × ${first.run.nodeCount} nodes` : ""
+      }`,
+      quality: first.run.qualityPolicy,
+    },
     rows: resultRows,
     excluded,
     sharedAxes,
+  }
+}
+
+/** §16.13 default view: the corpus summarized to one row per model ×
+ * workload — runs, distinct configurations, and the best reported-throughput
+ * configuration — so the unfiltered page answers instead of streaming
+ * hundreds of tiny comparison groups. */
+export async function getServingOverview(): Promise<ServingOverviewModel> {
+  const rows = (await db().execute(sql`
+    with eligible as (
+      select r.id, r.scenario, r.accelerator_model, r.total_accelerators,
+        r.configuration_id, m.slug model_slug, m.name model_name,
+        w.slug workload_slug, w.name workload_name
+      from serving_runs r
+      join model_revisions m on m.id = r.model_revision_id
+      join serving_workloads w on w.id = r.workload_id
+      where r.published_at is not null and r.status = 'valid'
+        and r.retracted_at is null
+    ), best as (
+      select distinct on (e.model_slug, e.workload_slug)
+        e.model_slug, e.workload_slug, e.id run_id,
+        s.value::float8 throughput, st.name stack,
+        e.accelerator_model, e.total_accelerators
+      from eligible e
+      join serving_measurements s on s.run_id = e.id
+        and s.metric = 'output_token_throughput_tps'
+        and s.statistic = 'reported'
+      join serving_configurations c on c.id = e.configuration_id
+      join serving_stack_revisions st on st.id = c.stack_revision_id
+      order by e.model_slug, e.workload_slug, s.value desc
+    )
+    select e.model_slug, max(e.model_name) model_name, e.workload_slug,
+      max(e.workload_name) workload_name, max(e.scenario) scenario,
+      count(*)::int runs,
+      count(distinct e.configuration_id)::int configurations,
+      max(b.run_id::text) run_id, max(b.throughput) throughput,
+      max(b.stack) stack, max(b.accelerator_model) best_hardware,
+      max(b.total_accelerators) best_accelerators
+    from eligible e
+    left join best b on b.model_slug = e.model_slug
+      and b.workload_slug = e.workload_slug
+    group by e.model_slug, e.workload_slug
+    order by sum(count(*)) over (partition by e.model_slug) desc,
+      max(e.model_name), max(e.workload_name)`)) as {
+    model_slug: string
+    model_name: string
+    workload_slug: string
+    workload_name: string
+    scenario: string
+    runs: number
+    configurations: number
+    run_id: string | null
+    throughput: number | null
+    stack: string | null
+    best_hardware: string | null
+    best_accelerators: number | null
+  }[]
+  return {
+    illustrative: false,
+    rows: rows.map((row) => ({
+      model: { slug: row.model_slug, name: row.model_name },
+      workload: { slug: row.workload_slug, name: row.workload_name },
+      scenario: row.scenario,
+      runs: Number(row.runs),
+      configurations: Number(row.configurations),
+      best:
+        row.run_id !== null && row.throughput !== null
+          ? {
+              runId: row.run_id,
+              throughput: Number(row.throughput),
+              stack: row.stack ?? "",
+              hardware: row.best_hardware ?? "",
+              totalAccelerators: Number(row.best_accelerators ?? 0),
+            }
+          : null,
+    })),
   }
 }
 
