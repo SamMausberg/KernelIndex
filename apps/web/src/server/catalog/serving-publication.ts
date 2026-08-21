@@ -173,7 +173,12 @@ export async function publishServingBundle(
                   .id,
                 slug,
                 stackDigest: digest,
-                name: manifest.spec.revision.version ?? manifest.metadata.name,
+                // Display preference: a stated title, else the revision
+                // string — the kebab manifest name is a last resort only.
+                name:
+                  manifest.metadata.title ??
+                  manifest.spec.revision.version ??
+                  manifest.metadata.name,
                 version: manifest.spec.revision.version ?? null,
                 schemaVersion: API_VERSION,
                 manifest,

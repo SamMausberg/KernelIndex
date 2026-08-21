@@ -93,7 +93,8 @@ export function projectFor(submitter: string): {
   }
 }
 
-/** The stack identity is the Software string exactly as submitted. */
+/** The stack identity is the Software string exactly as submitted; the
+ * title carries it for display so surfaces never show the kebab slug. */
 export function stackFor(row: MlperfRow): {
   manifest: ServingStackRevisionManifest
   slug: string
@@ -106,6 +107,7 @@ export function stackFor(row: MlperfRow): {
       kind: "ServingStackRevision",
       metadata: {
         name: kebab(`mlperf-stack-${row.Submitter}-${name}`).slice(0, 200),
+        title: name,
       },
       spec: {
         project: { name: `${row.Submitter} (MLPerf submitter)` },

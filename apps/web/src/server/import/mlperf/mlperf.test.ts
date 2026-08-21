@@ -8,7 +8,13 @@ import { publishServingBundle } from "../../catalog/serving-publication.ts"
 import { db } from "../../db/client.ts"
 import { specDigest } from "../../identity/digest.ts"
 import { classifyRow, type MlperfImportData } from "./discover.ts"
-import { acceleratorOf, modelSlugOf, runFor, workloadFor } from "./normalize.ts"
+import {
+  acceleratorOf,
+  modelSlugOf,
+  runFor,
+  stackFor,
+  workloadFor,
+} from "./normalize.ts"
 import { reconcileMlperf } from "./reconcile.ts"
 import type { MlperfRow } from "./types.ts"
 import { ROUNDS } from "./types.ts"
@@ -71,6 +77,16 @@ describe("mlperf normalization", () => {
       model: "AMD Instinct MI355X 288GB HBM3e",
     })
     expect(acceleratorOf("NVIDIA B200-SXM-180GB").vendor).toBe("nvidia")
+  })
+
+  it("titles the stack with the submitted Software string, never the slug", () => {
+    const { rows } = classified("summary-v6.0-slice.json")
+    const stack = stackFor(rows[0])
+    expect(stack.manifest.metadata.title).toBe(rows[0].Software.trim())
+    // The identity digest excludes metadata, so titles never fork the corpus.
+    const untitled = structuredClone(stack.manifest)
+    untitled.metadata = { name: untitled.metadata.name }
+    expect(specDigest(untitled)).toBe(specDigest(stack.manifest))
   })
 
   it("declares rules-cited SLOs on Server/Interactive, none on Offline", () => {

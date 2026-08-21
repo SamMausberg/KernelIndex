@@ -105,6 +105,13 @@ const sourceUrl = (policy: unknown): string | null =>
     ? String((policy as { url: unknown }).url)
     : null
 
+/** "vLLM 0.9" — the version is appended only when the name doesn't already
+ * state it (MLPerf Software strings are both name and version). */
+const stackLabel = (stack: { name: string; version: string | null }) =>
+  stack.version && stack.version !== stack.name
+    ? `${stack.name} ${stack.version}`
+    : stack.name
+
 function cohortDescription(row: JoinedServingRun): string {
   const { run, model, workload } = row
   const nodes = run.nodeCount > 1 ? ` × ${run.nodeCount} nodes` : ""
@@ -128,7 +135,7 @@ function resultRow(
     rank: null,
     onFrontier: false,
     model: { name: row.model.name, slug: row.model.slug },
-    stack: [row.stack.name, row.stack.version].filter(Boolean).join(" "),
+    stack: stackLabel(row.stack),
     configuration: row.configuration.summary,
     dtype: row.configuration.dtype,
     qualityPolicy: row.run.qualityPolicy,
@@ -522,7 +529,7 @@ export async function listServingRuns(input: {
     runs: page.map((row) => ({
       id: row.run.id,
       model: row.model.name,
-      stack: [row.stack.name, row.stack.version].filter(Boolean).join(" "),
+      stack: stackLabel(row.stack),
       configuration: row.configuration.summary,
       scenario: row.run.scenario,
       hardware: row.run.acceleratorModel,
