@@ -2574,6 +2574,26 @@ disagrees, the code is current:
   cohort), "Run detail", "Other protocols", "not reported"; loading states are
   static skeleton rows, never text spinners.
 
+**Reality note (2026-08-21, density pass).** A same-day follow-up:
+
+- **The record staircase is the house signature** for performance results:
+  `RecordSpark` (`features/records/timeline.tsx`) draws each cohort's record
+  history as a row-scale stepped descent in ledger, homepage, and GPU record
+  rows. Ledger rows carry two visual levels — record value, margin,
+  implementation, and the spark dominate; workload, hardware, trust, and
+  indexed date recede into one meta line.
+- **Search starts calm**: ten lead family chips with the tail behind a native
+  disclosure; the browse header states measured vs indexed-awaiting-runs
+  operation counts so it can never read as disagreeing with the homepage.
+- **Serving defaults to an overview** (`getServingOverview`): one row per
+  model × benchmark with the best reported-throughput configuration; the
+  capped cohort stream renders only after narrowing, with structured headers
+  (`ServingCohortGroup.identity`) instead of a repeated dot-joined line.
+  Placeholder MLPerf Software strings ("TODO", blank) fall back to the
+  submitter at import (migration 0019 backfills).
+- **Post-deploy warm** (`apps/web/scripts/warm.mjs`) revalidates the key
+  routes after `vercel --prod`, closing the mixed-build-id ISR window.
+
 ### 16.1 Product character
 
 KernelIndex should feel like a serious technical reference built by kernel engineers, not a generic SaaS dashboard, gaming leaderboard, or GPU marketing site.
