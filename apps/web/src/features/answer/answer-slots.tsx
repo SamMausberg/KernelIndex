@@ -54,7 +54,13 @@ function Slot({
           ? null
           : `${row.primary.statistic}${row.primary.sampleCount ? ` of ${row.primary.sampleCount}` : ""}`,
         row.solScore !== null ? formatSolScore(row.solScore) : null,
-        vsBaseline != null ? `${vsBaseline.toFixed(2)}× vs baseline` : null,
+        // Prose ratios always state the direction (§16.7 wording); bare
+        // multiples belong to ranking cells only.
+        vsBaseline == null
+          ? null
+          : vsBaseline >= 1
+            ? `${vsBaseline.toFixed(2)}× faster than baseline`
+            : `${(1 / vsBaseline).toFixed(2)}× slower than baseline`,
         delta,
       ]
         .filter(Boolean)
