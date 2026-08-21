@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { ContextHeader } from "@/components/context-header"
 import { CopyButton } from "@/components/copy-button"
+import { ExpandRows } from "@/components/expand-rows"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
 import { KeyValueList } from "@/components/key-value-list"
 import { Metric } from "@/components/metric"
@@ -269,7 +270,20 @@ export default async function ImplementationPage({ params }: Props) {
         <Section id="performance" title="Benchmark evidence">
           {/* Purpose-built rows: this page IS the implementation, so each
               row states the workload it was measured on — never its own
-              name, rank, or a self-comparison. */}
+              name, rank, or a self-comparison. The full sweep collapses so
+              Source and Kernel source stay within reach (§16.7). */}
+          {model.bestResults.length > 0 && (
+            <p className="mb-3 text-small text-subtle">
+              {model.bestResults.length} measurement
+              {model.bestResults.length === 1 ? "" : "s"} across{" "}
+              {new Set(model.bestResults.map((r) => r.hardware.model)).size} GPU
+              {new Set(model.bestResults.map((r) => r.hardware.model)).size ===
+              1
+                ? ""
+                : "s"}
+              , fastest first.
+            </p>
+          )}
           <div className="overflow-x-auto">
             {model.bestResults.length > 0 ? (
               <div className="min-w-[780px]">
@@ -282,42 +296,46 @@ export default async function ImplementationPage({ params }: Props) {
                   <div className="py-2">Observed</div>
                   <div />
                 </div>
-                {model.bestResults.map((row) => (
-                  <div
-                    key={row.runId ?? row.workloadSummary}
-                    className={`${EVIDENCE_GRID} h-12 items-center border-b border-line transition-colors hover:bg-raised`}
-                  >
-                    <div className="min-w-0 truncate pr-3">
-                      <Link
-                        href={`/operations/${row.operation.slug}`}
-                        className="text-body text-fg hover:text-accent-bright"
-                      >
-                        {row.operation.name}
-                      </Link>
-                      <span className="ml-2 font-mono text-mini text-faint">
-                        {row.workloadSummary}
-                      </span>
+                <ExpandRows
+                  cap={10}
+                  noun="measurements"
+                  rows={model.bestResults.map((row) => (
+                    <div
+                      key={row.runId ?? row.workloadSummary}
+                      className={`${EVIDENCE_GRID} row-cv h-12 items-center border-b border-line transition-colors hover:bg-raised`}
+                    >
+                      <div className="min-w-0 truncate pr-3">
+                        <Link
+                          href={`/operations/${row.operation.slug}`}
+                          className="text-body text-fg hover:text-accent-bright"
+                        >
+                          {row.operation.name}
+                        </Link>
+                        <span className="ml-2 font-mono text-mini text-faint">
+                          {row.workloadSummary}
+                        </span>
+                      </div>
+                      <div className="truncate pr-3 font-mono text-small text-muted">
+                        {row.hardware.model}
+                      </div>
+                      <div className="pr-3.5 text-right whitespace-nowrap">
+                        <Metric
+                          primary={row.primary}
+                          spread
+                          valueClassName="font-mono text-body text-fg"
+                        />
+                      </div>
+                      <div className="font-mono text-mini text-faint">
+                        {formatDateUTC(row.lastTestedAt)}
+                      </div>
+                      <div className="pr-1 text-right text-small">
+                        {row.runId && (
+                          <Link href={`/runs/${row.runId}`}>Run →</Link>
+                        )}
+                      </div>
                     </div>
-                    <div className="truncate pr-3 font-mono text-small text-muted">
-                      {row.hardware.model}
-                    </div>
-                    <div className="pr-3.5 text-right whitespace-nowrap">
-                      <Metric
-                        primary={row.primary}
-                        spread
-                        valueClassName="font-mono text-body text-fg"
-                      />
-                    </div>
-                    <div className="font-mono text-mini text-faint">
-                      {formatDateUTC(row.lastTestedAt)}
-                    </div>
-                    <div className="pr-1 text-right text-small">
-                      {row.runId && (
-                        <Link href={`/runs/${row.runId}`}>Run →</Link>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                />
               </div>
             ) : (
               <p className="py-6 text-body text-faint">
