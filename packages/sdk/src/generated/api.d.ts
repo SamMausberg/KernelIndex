@@ -176,6 +176,7 @@ export interface paths {
                   concluded: string | null
                 }
                 lastTestedAt: string | null
+                indexedAt: string | null
                 stale: boolean
                 disputed: boolean
                 caveats: string[]
@@ -246,6 +247,7 @@ export interface paths {
                   concluded: string | null
                 }
                 lastTestedAt: string | null
+                indexedAt: string | null
                 stale: boolean
                 disputed: boolean
                 caveats: string[]
@@ -317,6 +319,7 @@ export interface paths {
                     concluded: string | null
                   }
                   lastTestedAt: string | null
+                  indexedAt: string | null
                   stale: boolean
                   disputed: boolean
                   caveats: string[]
@@ -387,6 +390,7 @@ export interface paths {
                     concluded: string | null
                   }
                   lastTestedAt: string | null
+                  indexedAt: string | null
                   stale: boolean
                   disputed: boolean
                   caveats: string[]
@@ -457,6 +461,7 @@ export interface paths {
                     concluded: string | null
                   }
                   lastTestedAt: string | null
+                  indexedAt: string | null
                   stale: boolean
                   disputed: boolean
                   caveats: string[]
@@ -527,6 +532,7 @@ export interface paths {
                     concluded: string | null
                   }
                   lastTestedAt: string | null
+                  indexedAt: string | null
                   stale: boolean
                   disputed: boolean
                   caveats: string[]
@@ -738,6 +744,7 @@ export interface paths {
                   concluded: string | null
                 }
                 lastTestedAt: string | null
+                indexedAt: string | null
                 stale: boolean
                 disputed: boolean
                 caveats: string[]
@@ -808,6 +815,7 @@ export interface paths {
                   concluded: string | null
                 }
                 lastTestedAt: string | null
+                indexedAt: string | null
                 stale: boolean
                 disputed: boolean
                 caveats: string[]
@@ -879,6 +887,7 @@ export interface paths {
                     concluded: string | null
                   }
                   lastTestedAt: string | null
+                  indexedAt: string | null
                   stale: boolean
                   disputed: boolean
                   caveats: string[]
@@ -949,6 +958,7 @@ export interface paths {
                     concluded: string | null
                   }
                   lastTestedAt: string | null
+                  indexedAt: string | null
                   stale: boolean
                   disputed: boolean
                   caveats: string[]
@@ -1019,6 +1029,7 @@ export interface paths {
                     concluded: string | null
                   }
                   lastTestedAt: string | null
+                  indexedAt: string | null
                   stale: boolean
                   disputed: boolean
                   caveats: string[]
@@ -1089,6 +1100,7 @@ export interface paths {
                     concluded: string | null
                   }
                   lastTestedAt: string | null
+                  indexedAt: string | null
                   stale: boolean
                   disputed: boolean
                   caveats: string[]
@@ -1320,6 +1332,7 @@ export interface paths {
                   concluded: string | null
                 }
                 lastTestedAt: string | null
+                indexedAt: string | null
                 stale: boolean
                 disputed: boolean
                 caveats: string[]
@@ -1571,6 +1584,7 @@ export interface paths {
                   concluded: string | null
                 }
                 lastTestedAt: string | null
+                indexedAt: string | null
                 stale: boolean
                 disputed: boolean
                 caveats: string[]
@@ -1929,11 +1943,13 @@ export interface paths {
                     concluded: string | null
                   }
                   lastTestedAt: string | null
+                  indexedAt: string | null
                   stale: boolean
                   disputed: boolean
                   caveats: string[]
                 }
                 since: string
+                indexedAt: string
                 history: {
                   at: string
                   runId: string
@@ -2423,6 +2439,13 @@ export interface paths {
               groups: {
                 cohortKey: string
                 description: string
+                identity: {
+                  model: string
+                  workload: string
+                  scenario: string
+                  topology: string
+                  quality: string
+                }
                 rows: {
                   runId: string
                   rank: number | null
@@ -3094,6 +3117,7 @@ export interface paths {
                 /** @enum {string} */
                 kind: "kernel" | "serving"
                 runs: number
+                indexed: number
                 breadth: number
                 hardware: number
                 lastFetched: string | null
@@ -3163,6 +3187,7 @@ export interface paths {
                 /** @enum {string} */
                 kind: "kernel" | "serving"
                 runs: number
+                indexed: number
                 breadth: number
                 hardware: number
                 lastFetched: string | null

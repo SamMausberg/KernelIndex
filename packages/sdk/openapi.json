@@ -373,6 +373,9 @@
                         "lastTestedAt": {
                           "type": ["string", "null"]
                         },
+                        "indexedAt": {
+                          "type": ["string", "null"]
+                        },
                         "stale": {
                           "type": "boolean"
                         },
@@ -409,6 +412,7 @@
                         "installable",
                         "license",
                         "lastTestedAt",
+                        "indexedAt",
                         "stale",
                         "disputed",
                         "caveats"
@@ -602,6 +606,9 @@
                         "lastTestedAt": {
                           "type": ["string", "null"]
                         },
+                        "indexedAt": {
+                          "type": ["string", "null"]
+                        },
                         "stale": {
                           "type": "boolean"
                         },
@@ -638,6 +645,7 @@
                         "installable",
                         "license",
                         "lastTestedAt",
+                        "indexedAt",
                         "stale",
                         "disputed",
                         "caveats"
@@ -836,6 +844,9 @@
                               "lastTestedAt": {
                                 "type": ["string", "null"]
                               },
+                              "indexedAt": {
+                                "type": ["string", "null"]
+                              },
                               "stale": {
                                 "type": "boolean"
                               },
@@ -872,6 +883,7 @@
                               "installable",
                               "license",
                               "lastTestedAt",
+                              "indexedAt",
                               "stale",
                               "disputed",
                               "caveats"
@@ -1068,6 +1080,9 @@
                               "lastTestedAt": {
                                 "type": ["string", "null"]
                               },
+                              "indexedAt": {
+                                "type": ["string", "null"]
+                              },
                               "stale": {
                                 "type": "boolean"
                               },
@@ -1104,6 +1119,7 @@
                               "installable",
                               "license",
                               "lastTestedAt",
+                              "indexedAt",
                               "stale",
                               "disputed",
                               "caveats"
@@ -1300,6 +1316,9 @@
                               "lastTestedAt": {
                                 "type": ["string", "null"]
                               },
+                              "indexedAt": {
+                                "type": ["string", "null"]
+                              },
                               "stale": {
                                 "type": "boolean"
                               },
@@ -1336,6 +1355,7 @@
                               "installable",
                               "license",
                               "lastTestedAt",
+                              "indexedAt",
                               "stale",
                               "disputed",
                               "caveats"
@@ -1532,6 +1552,9 @@
                               "lastTestedAt": {
                                 "type": ["string", "null"]
                               },
+                              "indexedAt": {
+                                "type": ["string", "null"]
+                              },
                               "stale": {
                                 "type": "boolean"
                               },
@@ -1568,6 +1591,7 @@
                               "installable",
                               "license",
                               "lastTestedAt",
+                              "indexedAt",
                               "stale",
                               "disputed",
                               "caveats"
@@ -2101,6 +2125,9 @@
                         "lastTestedAt": {
                           "type": ["string", "null"]
                         },
+                        "indexedAt": {
+                          "type": ["string", "null"]
+                        },
                         "stale": {
                           "type": "boolean"
                         },
@@ -2137,6 +2164,7 @@
                         "installable",
                         "license",
                         "lastTestedAt",
+                        "indexedAt",
                         "stale",
                         "disputed",
                         "caveats"
@@ -2330,6 +2358,9 @@
                         "lastTestedAt": {
                           "type": ["string", "null"]
                         },
+                        "indexedAt": {
+                          "type": ["string", "null"]
+                        },
                         "stale": {
                           "type": "boolean"
                         },
@@ -2366,6 +2397,7 @@
                         "installable",
                         "license",
                         "lastTestedAt",
+                        "indexedAt",
                         "stale",
                         "disputed",
                         "caveats"
@@ -2564,6 +2596,9 @@
                               "lastTestedAt": {
                                 "type": ["string", "null"]
                               },
+                              "indexedAt": {
+                                "type": ["string", "null"]
+                              },
                               "stale": {
                                 "type": "boolean"
                               },
@@ -2600,6 +2635,7 @@
                               "installable",
                               "license",
                               "lastTestedAt",
+                              "indexedAt",
                               "stale",
                               "disputed",
                               "caveats"
@@ -2796,6 +2832,9 @@
                               "lastTestedAt": {
                                 "type": ["string", "null"]
                               },
+                              "indexedAt": {
+                                "type": ["string", "null"]
+                              },
                               "stale": {
                                 "type": "boolean"
                               },
@@ -2832,6 +2871,7 @@
                               "installable",
                               "license",
                               "lastTestedAt",
+                              "indexedAt",
                               "stale",
                               "disputed",
                               "caveats"
@@ -3028,6 +3068,9 @@
                               "lastTestedAt": {
                                 "type": ["string", "null"]
                               },
+                              "indexedAt": {
+                                "type": ["string", "null"]
+                              },
                               "stale": {
                                 "type": "boolean"
                               },
@@ -3064,6 +3107,7 @@
                               "installable",
                               "license",
                               "lastTestedAt",
+                              "indexedAt",
                               "stale",
                               "disputed",
                               "caveats"
@@ -3260,6 +3304,9 @@
                               "lastTestedAt": {
                                 "type": ["string", "null"]
                               },
+                              "indexedAt": {
+                                "type": ["string", "null"]
+                              },
                               "stale": {
                                 "type": "boolean"
                               },
@@ -3296,6 +3343,7 @@
                               "installable",
                               "license",
                               "lastTestedAt",
+                              "indexedAt",
                               "stale",
                               "disputed",
                               "caveats"
@@ -3989,6 +4037,9 @@
                           "lastTestedAt": {
                             "type": ["string", "null"]
                           },
+                          "indexedAt": {
+                            "type": ["string", "null"]
+                          },
                           "stale": {
                             "type": "boolean"
                           },
@@ -4025,6 +4076,7 @@
                           "installable",
                           "license",
                           "lastTestedAt",
+                          "indexedAt",
                           "stale",
                           "disputed",
                           "caveats"
@@ -4746,6 +4798,9 @@
                           "lastTestedAt": {
                             "type": ["string", "null"]
                           },
+                          "indexedAt": {
+                            "type": ["string", "null"]
+                          },
                           "stale": {
                             "type": "boolean"
                           },
@@ -4782,6 +4837,7 @@
                           "installable",
                           "license",
                           "lastTestedAt",
+                          "indexedAt",
                           "stale",
                           "disputed",
                           "caveats"
@@ -5743,6 +5799,9 @@
                               "lastTestedAt": {
                                 "type": ["string", "null"]
                               },
+                              "indexedAt": {
+                                "type": ["string", "null"]
+                              },
                               "stale": {
                                 "type": "boolean"
                               },
@@ -5779,12 +5838,16 @@
                               "installable",
                               "license",
                               "lastTestedAt",
+                              "indexedAt",
                               "stale",
                               "disputed",
                               "caveats"
                             ]
                           },
                           "since": {
+                            "type": "string"
+                          },
+                          "indexedAt": {
                             "type": "string"
                           },
                           "history": {
@@ -5913,6 +5976,7 @@
                           "environmentSummary",
                           "current",
                           "since",
+                          "indexedAt",
                           "history"
                         ]
                       }
@@ -6750,6 +6814,33 @@
                           "description": {
                             "type": "string"
                           },
+                          "identity": {
+                            "type": "object",
+                            "properties": {
+                              "model": {
+                                "type": "string"
+                              },
+                              "workload": {
+                                "type": "string"
+                              },
+                              "scenario": {
+                                "type": "string"
+                              },
+                              "topology": {
+                                "type": "string"
+                              },
+                              "quality": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "model",
+                              "workload",
+                              "scenario",
+                              "topology",
+                              "quality"
+                            ]
+                          },
                           "rows": {
                             "type": "array",
                             "items": {
@@ -6950,6 +7041,7 @@
                         "required": [
                           "cohortKey",
                           "description",
+                          "identity",
                           "rows",
                           "excluded",
                           "sharedAxes"
@@ -8098,6 +8190,9 @@
                           "runs": {
                             "type": "number"
                           },
+                          "indexed": {
+                            "type": "number"
+                          },
                           "breadth": {
                             "type": "number"
                           },
@@ -8112,6 +8207,7 @@
                           "slug",
                           "kind",
                           "runs",
+                          "indexed",
                           "breadth",
                           "hardware",
                           "lastFetched"
@@ -8216,6 +8312,9 @@
                           "runs": {
                             "type": "number"
                           },
+                          "indexed": {
+                            "type": "number"
+                          },
                           "breadth": {
                             "type": "number"
                           },
@@ -8230,6 +8329,7 @@
                           "slug",
                           "kind",
                           "runs",
+                          "indexed",
                           "breadth",
                           "hardware",
                           "lastFetched"

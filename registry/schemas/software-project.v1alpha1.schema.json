@@ -82,6 +82,10 @@
           "type": "string",
           "maxLength": 200
         },
+        "kind": {
+          "type": "string",
+          "enum": ["library", "individual", "vendor"]
+        },
         "repository": {
           "type": "string",
           "maxLength": 2000
