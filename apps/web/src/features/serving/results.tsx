@@ -156,15 +156,15 @@ export function ServingCohorts({ groups }: { groups: ServingCohortGroup[] }) {
             </div>
             {cut > 0 && (
               <p className="mt-2 text-small text-faint">
-                {cut} more rows in this comparison group — narrow the filters to
+                {cut} more rows in this comparison group. Narrow the filters to
                 see them.
               </p>
             )}
             {group.excluded.length > 0 && (
               <details className="mt-3">
                 <summary className="cursor-pointer list-none text-small text-subtle [&::-webkit-details-marker]:hidden">
-                  {group.excluded.length} excluded — bound not met, or the
-                  metric wasn't reported ›
+                  {group.excluded.length} excluded: bound not met, or the metric
+                  wasn't reported ›
                 </summary>
                 <div className="mt-2 space-y-1">
                   {group.excluded.slice(0, EXCLUDED_CAP).map((entry) => (

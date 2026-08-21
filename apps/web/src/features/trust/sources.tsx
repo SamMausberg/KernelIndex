@@ -193,7 +193,7 @@ export function TrustBlock({
       </div>
       <div>
         <div className="border-b border-border-strong pb-2 font-mono text-label text-faint uppercase">
-          Evidence, honestly
+          Evidence levels
         </div>
         {total > 0 && (
           <>
@@ -223,9 +223,9 @@ export function TrustBlock({
           </>
         )}
         <p className="mt-3.5 max-w-[52ch] text-small text-muted">
-          Every result is imported from its source and shown as published —
-          KernelIndex has not independently rerun any of them yet. Verified
-          means verified; today nothing is.{" "}
+          Every result is imported from its source and shown as published.
+          KernelIndex has not independently rerun any of them, so no result is
+          Verified yet.{" "}
           <Link href="/docs#sources" className="text-small">
             Sources and limitations →
           </Link>

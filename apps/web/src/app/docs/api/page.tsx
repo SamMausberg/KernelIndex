@@ -62,8 +62,8 @@ export default function ApiReferencePage() {
           <Link href="/account">/account</Link> raises the quota. Contract:{" "}
           <a href="/api/v1/openapi.json" className="font-mono text-small">
             /api/v1/openapi.json
-          </a>{" "}
-          — the SDK, <span className="font-mono">ki</span> CLI, and MCP server
+          </a>
+          ; the SDK, <span className="font-mono">ki</span> CLI, and MCP server
           are generated from it. <Link href="/docs#agents">Agents</Link> has the
           one-paste setup.
         </p>
@@ -112,7 +112,7 @@ export default function ApiReferencePage() {
         <p className="mt-10 border-t border-line pt-5 text-small text-faint">
           Errors are problem+json with a stable{" "}
           <span className="font-mono">code</span>. Responses carry stable IDs,
-          digests, and the ranking policy version — the same answers the web
+          digests, and the ranking policy version: the same answers the web
           pages show.
         </p>
       </main>

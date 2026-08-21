@@ -205,7 +205,7 @@ export default async function AccountPage() {
             <span className="font-mono text-small">
               Authorization: Bearer ki_…
             </span>
-            . Reads need no key — a key raises your quota. The secret shows once
+            . Reads need no key; a key raises your quota. The secret shows once
             and is stored as a hash.
           </p>
           {keys.map((key) => (

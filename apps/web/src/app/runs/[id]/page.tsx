@@ -36,7 +36,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!model) notFound()
   return {
     title: `Run ${model.run.id.slice(0, 8)}`,
-    description: `Immutable benchmark evidence: ${model.implementation.name} on ${model.operation.name} (${model.workload.label}) — protocol, environment, correctness, and source snapshot.`,
+    description: `Immutable benchmark evidence: ${model.implementation.name} on ${model.operation.name} (${model.workload.label}): protocol, environment, correctness, and source snapshot.`,
   }
 }
 
@@ -311,7 +311,7 @@ export default async function RunPage({ params }: Props) {
           </span>
           <CopyButton
             text={[
-              `${model.implementation.name} — ${model.operation.name}, ${model.workload.label}.`,
+              `${model.implementation.name} · ${model.operation.name}, ${model.workload.label}.`,
               `${formatPrimary(model.primary)} (${model.primary.statistic}).`,
               `Reported by ${model.provenance.source.name}.`,
               `KernelIndex run ${model.run.id}, ${model.run.digest}.`,

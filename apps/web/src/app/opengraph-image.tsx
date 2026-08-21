@@ -4,7 +4,7 @@
 // the twitter:image via the metadata route convention.
 import { ImageResponse } from "next/og"
 
-export const alt = "KernelIndex — the public performance index for GPU software"
+export const alt = "KernelIndex: the public performance index for GPU software"
 export const size = { width: 1200, height: 630 }
 export const contentType = "image/png"
 

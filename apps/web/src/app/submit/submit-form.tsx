@@ -111,7 +111,7 @@ export function SubmitForm({
           ))}
           <p className="mt-3 text-small text-faint">
             {state.report.valid
-              ? "Valid. A reviewer still checks comparability and identity — valid never promises a rank."
+              ? "Valid. A reviewer still checks comparability and identity; valid never promises a rank."
               : "Fix the issues above and validate again."}
           </p>
         </div>

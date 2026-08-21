@@ -38,7 +38,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const hardware = model.support.hardware.join(", ")
   return {
     title: model.implementation.name,
-    description: `${model.implementation.name} — GPU kernel implementation from ${model.project.name}: install, license, supported hardware${hardware ? ` (${hardware})` : ""}, and benchmark evidence.`,
+    description: `${model.implementation.name}: GPU kernel implementation from ${model.project.name} with install, license, supported hardware${hardware ? ` (${hardware})` : ""}, and benchmark evidence.`,
   }
 }
 

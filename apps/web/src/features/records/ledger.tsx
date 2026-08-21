@@ -514,7 +514,7 @@ function ControlStrip({
           href={recordsHref(filters, { verified: !filters.verified })}
           on={filters.verified}
           dead={slice.verifiedCount === 0 && !filters.verified}
-          title="No independently verified records yet — every result is source-reported"
+          title="No independently verified records yet: every result is source-reported"
           label="Verified"
           count={slice.verifiedCount}
           onClick={(event) => {

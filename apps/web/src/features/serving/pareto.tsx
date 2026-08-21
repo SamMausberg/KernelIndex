@@ -125,7 +125,7 @@ export function ParetoScatter({
         </text>
       </svg>
       <figcaption className="mt-1 text-mini text-faint">
-        Blue points are the best trade-offs — nothing beats them on both axes.
+        Blue points are the best trade-offs; nothing beats them on both axes.
         Gray points are beaten by one of the blue ones.
       </figcaption>
     </figure>

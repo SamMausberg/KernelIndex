@@ -2538,6 +2538,42 @@ Bounties can later attach to an exact canonical workload and acceptance protocol
 
 ## 16. Product UX and information architecture
 
+**Reality note (2026-08-21, product pass).** A design-and-policy pass landed
+answer-first surfaces and consolidated the public map; where this section
+disagrees, the code is current:
+
+- **One eligibility predicate per benchmark class** backs every public count
+  (`eligibleRunFilter` / `eligibleServingRuns`); the raw published corpus
+  appears only as a separately labeled "indexed" figure. Kernel and serving
+  counts are always stated separately.
+- **"Latest" ranks by indexed time.** `ResultRow`/`RecordHolder` carry
+  `indexedAt` (publish time); the ledger backend order, the homepage feed, the
+  "new" marker, and the Atom feed rank by it. Record *history* stays
+  observation-ordered (§11.10 unchanged).
+- **Answer slots (§16.6/§16.7).** Resolved search and the operation records
+  island lead with a two-slot answer: fastest known, and — when it differs —
+  the fastest row passing §11.8 deployability, with the delta and install
+  command. Kernel pages state the deployability verdict, pinned revision, and
+  the GPUs actually measured (distinct from declared support).
+- **The Coverage page is gone.** Its content redistributed: homepage trust
+  block (per-source counts/freshness + evidence-distribution bar + zero-reruns
+  statement), priority family×GPU grid on `/gpus`, full source table and
+  limitations in docs `#sources`; `/coverage` permanently redirects there.
+  GPU pages gained family-composition bars and a record-activity month strip.
+- **`projects.kind` (library | individual | vendor)** is declared in the
+  SoftwareProject manifest by each importer and backfilled by convention
+  (migration 0017); the projects surface groups Libraries apart from
+  Competition authors. MLPerf stacks display the submitted Software string via
+  `metadata.title` (migration 0018 backfills names; identity digests exclude
+  metadata).
+- **Serving (§16.13) is Pareto-first**: the frontier chart leads each cohort,
+  frontier rows precede a collapsed dominated tail, declared bounds read
+  "benchmark constraint ≤ X, not measured", and the latency-bounds console is
+  a secondary disclosure.
+- **Plain language on surfaces**: "comparison group" (docs bridge it to
+  cohort), "Run detail", "Other protocols", "not reported"; loading states are
+  static skeleton rows, never text spinners.
+
 ### 16.1 Product character
 
 KernelIndex should feel like a serious technical reference built by kernel engineers, not a generic SaaS dashboard, gaming leaderboard, or GPU marketing site.

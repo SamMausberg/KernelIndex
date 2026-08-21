@@ -31,7 +31,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!model) notFound()
   return {
     title: `Serving run ${model.run.id.slice(0, 8)}`,
-    description: `LLM serving benchmark evidence: ${model.model.name} on ${model.stack.name} — configuration, workload, protocol, and metrics as published.`,
+    description: `LLM serving benchmark evidence: ${model.model.name} on ${model.stack.name}: configuration, workload, protocol, and metrics as published.`,
   }
 }
 
@@ -182,7 +182,7 @@ export default async function ServingRunPage({ params }: Props) {
           </span>
           <CopyButton
             text={[
-              `${model.configuration.summary} — ${model.model.name}, ${model.workload.name}.`,
+              `${model.configuration.summary} · ${model.model.name}, ${model.workload.name}.`,
               ...(model.measurements[0]
                 ? [
                     `${model.measurements[0].value.toLocaleString("en-US")} ${model.measurements[0].unit} (${model.measurements[0].metric}, ${model.measurements[0].statistic}).`,

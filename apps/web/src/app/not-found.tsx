@@ -9,7 +9,7 @@ export default function NotFound() {
       </h1>
       <p className="mt-3 max-w-[52ch] text-body text-muted">
         This ID may have been superseded, or never existed. Evidence is never
-        deleted — if a run lived here, its successor links back to it.
+        deleted; if a run lived here, its successor links back to it.
       </p>
       <div className="mt-6 flex gap-5 text-body">
         <Link href="/search">Search the index</Link>

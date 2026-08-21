@@ -116,7 +116,7 @@ export default async function OperationPage({ params }: Props) {
                 </Link>
               </span>
             ))}{" "}
-            — reviewed as the same computation; every definition's cohorts are
+            · reviewed as the same computation; every definition's cohorts are
             shown here, ranked separately.
           </p>
         )}

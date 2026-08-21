@@ -67,7 +67,7 @@ export default async function Home() {
               <a href="/llms.txt" className="text-faint">
                 llms.txt
               </a>{" "}
-              — the same resolver, never scraped HTML
+              · the same resolver, never scraped HTML
             </p>
           </div>
         </section>
@@ -82,7 +82,7 @@ export default async function Home() {
           </div>
           <LatestRecords rows={model.latest} />
           <p className="mt-3 text-small text-faint">
-            Results are shown exactly as their source published them — not rerun
+            Results are shown exactly as their source published them, not rerun
             here.{" "}
             <Link href="/docs#evidence" className="text-faint">
               Evidence levels →

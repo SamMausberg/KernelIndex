@@ -6,7 +6,7 @@ export function IllustrativeNotice() {
   return (
     <div className="border-b border-border bg-surface">
       <p className="shell py-2 text-small text-warning">
-        Example data. Every number on this page is fictional — not benchmark
+        Example data. Every number on this page is fictional, not benchmark
         evidence.
       </p>
     </div>

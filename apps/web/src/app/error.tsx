@@ -16,8 +16,8 @@ export default function ErrorBoundary({
         This page failed to render.
       </h1>
       <p className="mt-3 max-w-[52ch] text-body text-muted">
-        Nothing was lost — published evidence can't change. Try again, or go
-        back to search.
+        Nothing was lost: published evidence can't change. Try again, or go back
+        to search.
         {error.digest && (
           <span className="mt-2 block font-mono text-small text-faint">
             reference {error.digest}

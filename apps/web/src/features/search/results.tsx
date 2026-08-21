@@ -609,7 +609,7 @@ export function SearchResults({
                     view === "supported" ? "supportedUnmeasured" : view
                   ]
                 return cut > 0
-                  ? ` ${cut} more rows past the cap — narrow the workload to see them.`
+                  ? ` ${cut} more rows past the cap. Narrow the workload to see them.`
                   : null
               })()}
             </p>
@@ -731,7 +731,7 @@ export function SearchResults({
 
             {anyTie && (
               <p className="mt-3.5 text-small text-faint">
-                N= means tied — too close to call.{" "}
+                N= means tied: too close to call.{" "}
                 <Link href="/docs#ranking">How ranking works →</Link>
               </p>
             )}

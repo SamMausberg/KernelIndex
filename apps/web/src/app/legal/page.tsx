@@ -60,7 +60,7 @@ export default function LegalPage() {
           <p>
             KernelIndex is a free public index of GPU performance evidence. The
             numbers are third-party claims, preserved as published. They are
-            provided as-is, with no warranty, and are not advice — verify before
+            provided as-is, with no warranty, and are not advice; verify before
             you rely on one.
           </p>
           <p className="mt-3">
@@ -85,7 +85,7 @@ export default function LegalPage() {
             happened, a result was opened. No cookies for tracking, no IDs, no
             IP addresses, no query text. Counters are deleted after 90 days.
             Vercel, the hosting provider, additionally counts page views for us
-            (Web Analytics) — cookieless and aggregate, with no persistent
+            (Web Analytics): cookieless and aggregate, with no persistent
             visitor ID. Issue reports store only what you type, and contact
             details are optional.
           </p>

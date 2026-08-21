@@ -17,7 +17,7 @@ const EVIDENCE_LEVELS = [
   ],
   [
     "Reproducible",
-    "Everything needed to rerun it — code, revision, workload, protocol, environment, raw evidence — is present.",
+    "Everything needed to rerun it (code, revision, workload, protocol, environment, raw evidence) is present.",
   ],
   ["Verified", "A KernelIndex-controlled runner reran it and it passed."],
   ["Replicated", "Two independent KernelIndex runners reproduced it."],
@@ -102,7 +102,7 @@ export default async function DocsPage() {
             An index of GPU kernel benchmark results. You describe a workload;
             it returns the fastest known implementations, with code, license,
             environment, and evidence for every number. Results are compared
-            only when they measured the same thing the same way — never by name.
+            only when they measured the same thing the same way, never by name.
           </p>
         </Section>
 
@@ -152,7 +152,7 @@ rmsnorm gpu:B200 dtype:bf16 shape:[2048,4096] framework=pytorch trust:verified`}
 
         <Section id="comparability" title="Why comparable?">
           <p>
-            A comparison group — a cohort — is a set of runs that measured the
+            A comparison group (a cohort) is a set of runs that measured the
             same thing the same way: same workload, same protocol, same
             environment, same correctness bar. Ranks exist only inside a cohort.
             A matching GPU name or operation name alone proves nothing, so it
@@ -164,8 +164,8 @@ rmsnorm gpu:B200 dtype:bf16 shape:[2048,4096] framework=pytorch trust:verified`}
           <p>
             Inside a cohort, runs are ordered by latency under the frozen{" "}
             <span className="font-mono text-body">ranking-v1</span> policy. Two
-            runs too close to call — overlapping confidence intervals — share a
-            rank, shown as <span className="font-mono text-body">N=</span>.
+            runs too close to call, with overlapping confidence intervals, share
+            a rank, shown as <span className="font-mono text-body">N=</span>.
             Every exclusion carries a reason code, like{" "}
             <span className="font-mono text-small">RETRACTED</span> or{" "}
             <span className="font-mono text-small">MISSING_PRIMARY_METRIC</span>
@@ -186,7 +186,7 @@ rmsnorm gpu:B200 dtype:bf16 shape:[2048,4096] framework=pytorch trust:verified`}
             ))}
           </div>
           <p className="mt-3">
-            Levels are derived from stored facts — a submitter can't pick one.
+            Levels are derived from stored facts; a submitter can't pick one.
             Whether you can actually use a kernel (license, install, hardware)
             is a separate fact: the fastest result and the fastest one you can
             deploy are often different rows.
@@ -210,7 +210,7 @@ rmsnorm gpu:B200 dtype:bf16 shape:[2048,4096] framework=pytorch trust:verified`}
             cohorts whose record has actually been displaced first.
           </p>
           <p className="mt-3">
-            Every run page has <em>Report an issue</em> — no account needed. An
+            Every run page has <em>Report an issue</em>; no account needed. An
             accepted report retracts or supersedes the record; the history stays
             visible.
           </p>
@@ -255,7 +255,7 @@ curl -L https://kernelindex.com/api/v1/exports/catalog.jsonl.zst
           <p className="mt-4">
             <strong className="font-medium text-fg">API keys.</strong> Reads
             need no key. A key from <Link href="/account">your account</Link>{" "}
-            raises the daily quota — send it as{" "}
+            raises the daily quota; send it as{" "}
             <span className="font-mono text-small">
               Authorization: Bearer ki_…
             </span>{" "}
@@ -266,16 +266,16 @@ curl -L https://kernelindex.com/api/v1/exports/catalog.jsonl.zst
           </p>
           <p className="mt-3">
             <strong className="font-medium text-fg">MCP.</strong> Agents can use
-            MCP instead of REST — the setup is under{" "}
-            <a href="#agents">Agents</a>. Same answers, same caveats.
+            MCP instead of REST; the setup is under <a href="#agents">Agents</a>
+            . Same answers, same caveats.
           </p>
         </Section>
 
         <Section id="agents" title="Agents">
           <p>
-            Point an agent at <a href="/llms.txt">/llms.txt</a> — one page
-            saying what this index can claim, and every machine surface.
-            One-paste MCP setup from a repository checkout:
+            Point an agent at <a href="/llms.txt">/llms.txt</a>: one page saying
+            what this index can claim, and every machine surface. One-paste MCP
+            setup from a repository checkout:
           </p>
           <pre className="plate mt-4 overflow-x-auto px-4 py-3 font-mono text-small leading-relaxed text-muted">
             {`{
@@ -292,7 +292,7 @@ curl -L https://kernelindex.com/api/v1/exports/catalog.jsonl.zst
           <p className="mt-4">
             REST, the CLI, MCP, the bulk export, and the{" "}
             <a href="/records/feed.xml">Atom feed</a> all return the same
-            answers as these pages — machines never get a weaker explanation.
+            answers as these pages; machines never get a weaker explanation.
           </p>
         </Section>
 
@@ -300,7 +300,7 @@ curl -L https://kernelindex.com/api/v1/exports/catalog.jsonl.zst
           <p>
             <Link href="/serving">Serving</Link> covers whole LLM deployments,
             not single kernels, so it has its own tables and its own comparisons
-            — there is no universal serving score. Results compare only when
+            ; there is no universal serving score. Results compare only when
             model, workload, protocol, hardware, and quality bar all match.
           </p>
           <p className="mt-3">
@@ -325,7 +325,7 @@ curl -L https://kernelindex.com/api/v1/exports/catalog.jsonl.zst
             Every result is imported from a named public source and shown as
             published. Each source's license and required credit is on{" "}
             <Link href="/legal">Legal</Link>. Rights holders can have anything
-            removed — contested records come down first, questions after.
+            removed; contested records come down first, questions after.
             "Ranked" counts the runs every ranked surface counts; "indexed" is
             the raw published corpus, failed and superseded runs included.
           </p>
@@ -339,7 +339,7 @@ curl -L https://kernelindex.com/api/v1/exports/catalog.jsonl.zst
             coverage.sources.some((s) => s.kind === "serving") && (
               <>
                 <p className="mt-6">
-                  Serving results are kept apart from kernel results — the two
+                  Serving results are kept apart from kernel results; the two
                   are never ranked together. Configs counts distinct launch
                   configurations.
                 </p>
@@ -406,7 +406,7 @@ curl -L https://kernelindex.com/api/v1/exports/catalog.jsonl.zst
 
         <Section id="privacy" title="Privacy">
           <p>
-            A few first-party counters — a search happened, a result was opened.
+            A few first-party counters: a search happened, a result was opened.
             No cookies, no IDs, no IP addresses, never the query text. Counters
             are deleted after 90 days. Hosting adds cookieless, aggregate
             page-view counts (Vercel Web Analytics), with no persistent visitor

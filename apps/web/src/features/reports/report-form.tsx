@@ -89,7 +89,7 @@ export function ReportForm({
         </div>
         <p className="text-small leading-relaxed text-faint">
           A maintainer reviews every report. If accepted, the record is
-          retracted or superseded — its history stays visible.
+          retracted or superseded; its history stays visible.
         </p>
       </form>
     </details>
