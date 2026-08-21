@@ -13,6 +13,7 @@ import { Pager } from "@/components/pager"
 import { Link } from "@/components/quiet-link"
 import { TrustCell } from "@/components/trust"
 import { formatDateUTC, formatPrimary, formatSolScoreCell } from "@/lib/format"
+import { TRUST_TIERS, trustTier } from "@/lib/trust-tier"
 import {
   DAY_MS,
   filtersFromParams,
@@ -25,7 +26,7 @@ import {
   type RecordsView,
   recordsHref,
 } from "./ledger-model"
-import { RecordTimeline } from "./timeline"
+import { RecordSpark, RecordTimeline } from "./timeline"
 
 const VIEWS: { key: RecordsView; label: string }[] = [
   { key: "current", label: "Current records" },
@@ -46,7 +47,7 @@ function loadModel(): Promise<LedgerModel | null> {
 }
 
 const CURRENT_GRID =
-  "grid grid-cols-[minmax(260px,1.5fr)_160px_140px_minmax(150px,0.9fr)_120px_minmax(180px,1fr)_92px_28px] min-w-[1130px]"
+  "grid grid-cols-[minmax(240px,1.4fr)_92px_170px_170px_minmax(200px,1fr)_28px] min-w-[960px]"
 
 /** The lead story (§16.12): the newest broken records under the filters —
  * hairline rows in the page's own table idiom, no cards or lifted surfaces.
@@ -109,77 +110,90 @@ function HolderRow({ holder }: { holder: LedgerHolder }) {
   const timeline = holder.history.slice(0, 6)
   const earlier = holder.history.length - timeline.length
   return (
-    <details className="group row-cv border-b border-line">
-      <summary
-        className={`${CURRENT_GRID} h-12 cursor-pointer list-none items-center transition-colors hover:bg-raised [&::-webkit-details-marker]:hidden`}
-      >
-        <div className="min-w-0 truncate pr-3">
-          <span className="text-body text-fg">{holder.operation.name}</span>
-          <span className="ml-2 font-mono text-mini text-faint">
-            {holder.workloadSummary}
-          </span>
-        </div>
-        <div className="min-w-0 overflow-hidden pr-4 text-right whitespace-nowrap">
-          <Metric
-            primary={record.primary}
-            spread
-            secondary={
-              record.solScore !== null
-                ? formatSolScoreCell(record.solScore)
-                : null
-            }
-            valueClassName="font-mono text-body text-fg"
-          />
-        </div>
-        <div className="truncate pr-3 font-mono text-small whitespace-nowrap">
-          {margin !== null ? (
-            <span className="text-subtle">
-              {margin.toFixed(1)}%
-              {holder.history[0]?.previousValue && (
-                <span className="text-faint">
-                  {" "}
-                  · was {formatPrimary(holder.history[0].previousValue)}
-                </span>
-              )}
-            </span>
-          ) : record.baseline ? (
-            <span className="text-faint">baseline · unbeaten</span>
-          ) : (
-            <span className="text-faint">first</span>
-          )}
-        </div>
-        <div className="min-w-0 truncate pr-3">
-          <Link
-            href={`/implementations/${record.implementation.slug}`}
-            prefetch={false}
-            className="text-body"
+    <details
+      className="group row-cv border-b border-line"
+      style={{ "--row-h": "58px" } as React.CSSProperties}
+    >
+      {/* Two visual levels (§16.12): the record, its margin, its holder, and
+          the staircase dominate; workload, hardware, trust, and date recede
+          into one quiet meta line. The full facts stay in the expansion. */}
+      <summary className="cursor-pointer list-none py-2 transition-colors hover:bg-raised [&::-webkit-details-marker]:hidden">
+        <div className={`${CURRENT_GRID} items-baseline`}>
+          <div className="min-w-0 truncate pr-3 text-body text-fg">
+            {holder.operation.name}
+          </div>
+          <div className="self-center pr-3">
+            <RecordSpark history={holder.history} />
+          </div>
+          <div className="min-w-0 overflow-hidden pr-4 text-right whitespace-nowrap">
+            <Metric
+              primary={record.primary}
+              spread
+              secondary={
+                record.solScore !== null
+                  ? formatSolScoreCell(record.solScore)
+                  : null
+              }
+              valueClassName="font-mono text-lead font-medium text-fg"
+            />
+          </div>
+          <div className="truncate pr-3 font-mono text-small whitespace-nowrap">
+            {margin !== null ? (
+              <span className="text-subtle">
+                −{margin.toFixed(1)}%
+                {holder.history[0]?.previousValue && (
+                  <span className="text-faint">
+                    {" "}
+                    · was {formatPrimary(holder.history[0].previousValue)}
+                  </span>
+                )}
+              </span>
+            ) : record.baseline ? (
+              <span className="text-faint">baseline · unbeaten</span>
+            ) : (
+              <span className="text-faint">first</span>
+            )}
+          </div>
+          <div className="min-w-0 truncate pr-3">
+            <Link
+              href={`/implementations/${record.implementation.slug}`}
+              prefetch={false}
+              className="text-body font-medium"
+            >
+              {record.implementation.name}
+            </Link>
+            {record.baseline && (
+              <span className="ml-2 font-mono text-label text-faint uppercase">
+                baseline
+              </span>
+            )}
+          </div>
+          <div
+            aria-hidden="true"
+            className="pr-1 text-right font-mono text-small text-faint transition-transform group-open:rotate-90"
           >
-            {record.implementation.name}
-          </Link>
-          {record.baseline && (
-            <span className="ml-2 font-mono text-label text-faint uppercase">
-              baseline
-            </span>
-          )}
-          {record.project.name !== record.implementation.name && (
-            <span className="ml-2 text-small text-faint">
-              {record.project.name}
-            </span>
-          )}
+            ›
+          </div>
         </div>
-        <div className="pr-3 font-mono text-small whitespace-nowrap text-muted">
-          {holder.hardware}
-        </div>
-        <TrustCell row={record} />
-        <div className="font-mono text-mini whitespace-nowrap text-faint">
-          {formatDateUTC(holder.indexedAt)}
+        <div className="mt-1 min-w-[960px] truncate font-mono text-mini text-faint">
+          {[
+            holder.workloadSummary,
+            holder.hardware,
+            TRUST_TIERS[
+              trustTier({
+                evidence: record.evidence,
+                sourceAvailable: record.sourceAvailable,
+                license: record.license.concluded ?? record.license.declared,
+              })
+            ].toLowerCase(),
+            record.project.name !== record.implementation.name
+              ? record.project.name
+              : null,
+            `indexed ${formatDateUTC(holder.indexedAt)}`,
+          ]
+            .filter(Boolean)
+            .join(" · ")}
           {isNew && <span className="text-accent"> · new</span>}
-        </div>
-        <div
-          aria-hidden="true"
-          className="pr-1 text-right font-mono text-small text-faint transition-transform group-open:rotate-90"
-        >
-          ›
         </div>
       </summary>
       <div className="border-t border-line bg-surface pb-4">
@@ -732,13 +746,11 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
               <div
                 className={`${CURRENT_GRID} border-b border-border-strong font-mono text-label text-faint uppercase`}
               >
-                <div className="py-2">Operation / workload</div>
+                <div className="py-2">Operation</div>
+                <div className="py-2">History</div>
                 <div className="py-2 pr-4 text-right">Current record</div>
                 <div className="py-2">Margin</div>
                 <div className="py-2">Implementation</div>
-                <div className="py-2">Hardware</div>
-                <div className="py-2">Trust</div>
-                <div className="py-2">Indexed</div>
                 <div />
               </div>
               {slice.holders.rows.map((holder) => (

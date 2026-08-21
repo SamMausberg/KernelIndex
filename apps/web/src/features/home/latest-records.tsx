@@ -36,7 +36,7 @@ export function LatestRecords({ rows }: { rows: RecordHolder[] }) {
         return (
           <div
             key={holder.cohortKey}
-            className={`${GRID} relative h-12 items-center border-b border-line transition-colors hover:bg-raised`}
+            className={`${GRID} relative h-14 items-center border-b border-line transition-colors hover:bg-raised`}
           >
             {/* The whole row reaches the record's run dossier; the cell
                 links sit above it (no nested anchors). */}
@@ -61,7 +61,7 @@ export function LatestRecords({ rows }: { rows: RecordHolder[] }) {
             <div className="truncate px-4">
               <Link
                 href={`/implementations/${row.implementation.slug}`}
-                className="relative z-10 text-body"
+                className="relative z-10 text-body font-medium"
               >
                 {row.implementation.name}
               </Link>
@@ -74,7 +74,7 @@ export function LatestRecords({ rows }: { rows: RecordHolder[] }) {
                     ? formatSolScoreCell(row.solScore)
                     : null
                 }
-                valueClassName="font-mono text-body text-fg"
+                valueClassName="font-mono text-lead font-medium text-fg"
               />
             </div>
             <div className="truncate px-4 font-mono text-small whitespace-nowrap">

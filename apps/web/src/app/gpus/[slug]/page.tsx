@@ -13,6 +13,7 @@ import { Section } from "@/components/section"
 import { SourcesFooter } from "@/components/sources-footer"
 import { EvidenceCell } from "@/components/trust"
 import { MonthlyActivity } from "@/features/hardware/activity"
+import { RecordSpark } from "@/features/records/timeline"
 import { getHardwarePage } from "@/lib/catalog"
 import { formatDateUTC } from "@/lib/format"
 
@@ -37,7 +38,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 const RECORD_GRID =
-  "grid grid-cols-[minmax(240px,1.5fr)_150px_minmax(180px,1.2fr)_92px_96px] items-center gap-x-4 min-w-[860px]"
+  "grid grid-cols-[minmax(240px,1.5fr)_92px_150px_minmax(180px,1.2fr)_92px_96px] items-center gap-x-4 min-w-[940px]"
 const RECORD_LIMIT = 40
 
 export default async function GpuPage({ params }: Props) {
@@ -76,6 +77,7 @@ export default async function GpuPage({ params }: Props) {
                 className={`${RECORD_GRID} border-b border-border-strong pb-2 font-mono text-label text-faint uppercase`}
               >
                 <div>Operation · workload</div>
+                <div>History</div>
                 <div className="pr-3.5 text-right">Record</div>
                 <div>Implementation</div>
                 <div>Evidence</div>
@@ -100,6 +102,9 @@ export default async function GpuPage({ params }: Props) {
                       <span className="ml-2 font-mono text-mini text-faint">
                         {holder.workloadSummary}
                       </span>
+                    </div>
+                    <div>
+                      <RecordSpark history={holder.history} />
                     </div>
                     <div className="pr-3.5 text-right whitespace-nowrap">
                       <Metric
