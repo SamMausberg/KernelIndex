@@ -126,7 +126,7 @@ function project(
     apiVersion: "kernelindex.dev/v1alpha1",
     kind: "SoftwareProject",
     metadata: { name },
-    spec: { name: display, repository, host },
+    spec: { name: display, kind: "library", repository, host },
   })
   if (manifest.kind !== "SoftwareProject") throw new Error("unreachable")
   return manifest

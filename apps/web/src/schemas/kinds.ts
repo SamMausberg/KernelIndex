@@ -172,6 +172,10 @@ const workloadSuiteBody = z.strictObject({
 
 const softwareProjectBody = z.strictObject({
   name: z.string().max(200),
+  /** Taxonomy species: a real software project, a competition author, or a
+   * benchmark submitter. Omitted (older manifests, submissions) publishes
+   * as 'library'; review can restate it. */
+  kind: z.enum(["library", "individual", "vendor"]).optional(),
   repository: httpsUrl.optional(),
   homepage: httpsUrl.optional(),
   host: z

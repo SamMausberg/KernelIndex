@@ -1470,6 +1470,7 @@ export async function getProjectIndex(): Promise<ProjectIndexModel> {
     projects: [...bySlug.entries()].map(([slug, entry]) => ({
       slug,
       name: entry.name,
+      kind: "library" as const,
       repositoryUrl: null,
       implementations: new Set(entry.runs.map((r) => r.impl.slug)).size,
       runs: entry.runs.length,

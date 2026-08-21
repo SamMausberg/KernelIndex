@@ -281,6 +281,7 @@ export function projectForUser(
     metadata: { name: slug },
     spec: {
       name: userName?.trim() || `KernelBot user ${userId}`,
+      kind: "individual",
       host: { kind: "other", id: `gpumode-kernelbot/user/${userId}` },
     },
   })

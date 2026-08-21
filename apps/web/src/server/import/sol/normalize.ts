@@ -389,6 +389,7 @@ export function projectForUser(username: string): {
     metadata: { name: `sol-user-${kebab(username)}` },
     spec: {
       name: username,
+      kind: "individual",
       host: { kind: "other", id: `sol-execbench/user/${username}` },
     },
   })
@@ -837,6 +838,7 @@ export function solExecbenchProject(repository: string): {
     metadata: { name: "nvidia-sol-execbench", title: "NVIDIA SOL-ExecBench" },
     spec: {
       name: "NVIDIA SOL-ExecBench",
+      kind: "library",
       repository,
       host: { kind: "github", id: "nvidia/sol-execbench" },
     },

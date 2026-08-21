@@ -7,6 +7,7 @@ import type {
   EvidenceLevel,
   HardwareIndexModel,
   HardwarePageModel,
+  ProjectIndexEntry,
   ProjectIndexModel,
   SourceRef,
 } from "../../lib/catalog-models.ts"
@@ -184,6 +185,7 @@ export async function getProjectIndex(): Promise<ProjectIndexModel> {
     .select({
       slug: schema.projects.slug,
       name: schema.projects.name,
+      kind: schema.projects.kind,
       repositoryUrl: max(schema.projects.canonicalUrl),
       implementations: sql<number>`count(distinct ${schema.benchmarkRuns.implementationId})::int`,
       runs: count(),
@@ -226,6 +228,7 @@ export async function getProjectIndex(): Promise<ProjectIndexModel> {
     projects: rows.map((row) => ({
       slug: row.slug,
       name: row.name,
+      kind: row.kind as ProjectIndexEntry["kind"],
       repositoryUrl: row.repositoryUrl,
       implementations: row.implementations,
       runs: row.runs,

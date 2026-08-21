@@ -727,6 +727,9 @@ export type ModelCoverageModel = {
 export type ProjectIndexEntry = {
   slug: string
   name: string
+  /** Taxonomy species (§8.6): real libraries, competition authors, and
+   * benchmark submitters render as separate groups, never one mixed list. */
+  kind: "library" | "individual" | "vendor"
   repositoryUrl: string | null
   implementations: number
   runs: number

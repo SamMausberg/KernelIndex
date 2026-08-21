@@ -135,6 +135,11 @@ export const projects = pgTable(
     normalizedName: text("normalized_name").notNull(),
     canonicalUrl: text("canonical_url"),
     licenseExpression: text("license_expression"),
+    /** Taxonomy species (§8.6): 'library' (a real software project),
+     * 'individual' (a competition author), or 'vendor' (a benchmark
+     * submitter). Importers declare it in the project manifest; the
+     * projects surface groups by it instead of mixing all three. */
+    kind: text("kind").notNull().default("library"),
     manifest: jsonb("manifest").notNull(),
     createdAt: createdAt(),
   },

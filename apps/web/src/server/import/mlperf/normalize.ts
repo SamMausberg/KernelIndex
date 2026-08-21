@@ -85,6 +85,7 @@ export function projectFor(submitter: string): {
       metadata: { name: slug },
       spec: {
         name: `${submitter} (MLPerf submitter)`,
+        kind: "vendor",
         repository: MLPERF_SOURCE.policy.url,
       },
     }) as SoftwareProjectManifest,

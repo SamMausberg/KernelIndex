@@ -120,6 +120,13 @@
       "when": 1787154789088,
       "tag": "0016_operation-relations",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1787328448667,
+      "tag": "0017_project-kind",
+      "breakpoints": true
     }
   ]
 }

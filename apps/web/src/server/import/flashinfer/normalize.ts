@@ -56,6 +56,9 @@ export function projectForAuthor(author: string | null): {
     metadata: { name: slug },
     spec: {
       name: label === "baseline" ? "FlashInfer-Bench baselines" : label,
+      // Wrapper solutions carry an author identity; the baseline set is the
+      // benchmark's own reference code.
+      kind: label === "baseline" ? "library" : "individual",
       repository: DATASET_URL,
       host: { kind: "huggingface", id: "flashinfer-ai/flashinfer-trace" },
     },

@@ -303,6 +303,7 @@ export async function resolveProjects(
               normalizedName: manifest.spec.name.toLowerCase(),
               canonicalUrl:
                 manifest.spec.repository ?? manifest.spec.homepage ?? null,
+              kind: manifest.spec.kind ?? "library",
               manifest,
             })),
           )
