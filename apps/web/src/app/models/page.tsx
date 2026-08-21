@@ -9,7 +9,8 @@ import { IllustrativeNotice } from "@/components/illustrative-notice"
 import { Link } from "@/components/quiet-link"
 import { Section } from "@/components/section"
 import { getModelIndex } from "@/lib/catalog"
-import { formatDateUTC } from "@/lib/format"
+import { countNoun, formatDateUTC } from "@/lib/format"
+import { servingEnabled } from "@/server/env"
 
 export const metadata: Metadata = {
   title: "Models",
@@ -42,8 +43,9 @@ export default async function ModelsPage() {
         context="operation coverage per model · workload provenance declared by sources"
         meta={
           <span>
-            {model.kernel.length} models with kernel evidence ·{" "}
-            {model.serving.length} serving models
+            {countNoun(model.kernel.length, "model")} with kernel evidence
+            {servingEnabled &&
+              ` · ${countNoun(model.serving.length, "serving model")}`}
           </span>
         }
       />
@@ -114,7 +116,7 @@ export default async function ModelsPage() {
           <Link href="/docs#sources">Sources and limitations →</Link>
         </p>
 
-        {model.serving.length > 0 && (
+        {servingEnabled && model.serving.length > 0 && (
           <Section id="serving" title="Serving models">
             <p className="mb-4 max-w-[76ch] text-body text-muted">
               End-to-end serving evidence is a separate corpus with its own

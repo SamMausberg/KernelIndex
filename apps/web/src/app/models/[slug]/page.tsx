@@ -14,6 +14,8 @@ import { Section } from "@/components/section"
 import { SourcesFooter } from "@/components/sources-footer"
 import { BestKnownTable, GapTable } from "@/features/models/best-known"
 import { getModelPage } from "@/lib/catalog"
+import { countNoun } from "@/lib/format"
+import { servingEnabled } from "@/server/env"
 import { recordEvent } from "@/server/events"
 
 type Props = {
@@ -86,7 +88,7 @@ export default async function ModelPage({ params, searchParams }: Props) {
             {model.model.relatedTags.length > 0 && (
               <RelatedTags tags={model.model.relatedTags} />
             )}
-            {model.serving && (
+            {servingEnabled && model.serving && (
               <p className="text-small text-subtle">
                 Serving evidence exists for this model ·{" "}
                 {model.serving.runs.toLocaleString("en-US")} runs.{" "}
@@ -114,8 +116,9 @@ export default async function ModelPage({ params, searchParams }: Props) {
         context="best known per operation on the selected GPU · workload provenance declared by sources"
         meta={
           <span>
-            {model.stats.operations.toLocaleString("en-US")} operations ·{" "}
-            {model.stats.families.toLocaleString("en-US")} families ·{" "}
+            {countNoun(model.stats.operations, "operation")} ·{" "}
+            {model.stats.families}{" "}
+            {model.stats.families === 1 ? "family" : "families"} ·{" "}
             {model.stats.runs.toLocaleString("en-US")} eligible runs
           </span>
         }
@@ -139,7 +142,7 @@ export default async function ModelPage({ params, searchParams }: Props) {
       </ContextHeader>
 
       <main className="shell animate-fade-in pb-24">
-        {gpu !== undefined &&
+        {Boolean(gpu) &&
           model.selectedGpu !== null &&
           gpu !== model.selectedGpu && (
             <p className="pt-4 text-small text-faint">
@@ -181,7 +184,7 @@ export default async function ModelPage({ params, searchParams }: Props) {
           </Section>
         )}
 
-        {model.serving && (
+        {servingEnabled && model.serving && (
           <Section id="serving" title="Serving">
             <p className="max-w-[76ch] text-body text-muted">
               End-to-end serving evidence exists for this model ·{" "}

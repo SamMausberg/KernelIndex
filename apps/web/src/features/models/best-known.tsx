@@ -68,6 +68,13 @@ function expansionLine(entry: ModelBestKnown): string {
 
 function EntryRow({ entry }: { entry: ModelBestKnown }) {
   const shown = entry.deployable ?? entry.fastest
+  // When the deployable pick trails a faster non-deployable entry, the
+  // collapsed row states the multiple too — the expansion is not the only
+  // place the gap is visible (§2.2: no unqualified bests).
+  const delta =
+    entry.deployable !== null && entry.deployable.runId !== entry.fastest.runId
+      ? deltaVsFastest(entry.deployable, entry.fastest)
+      : null
   const operationHref = `/operations/${entry.operation.slug}?workload=${entry.workloadId}&cohort=${encodeURIComponent(entry.cohort.comparisonKey)}`
   return (
     <details className="group row-cv border-b border-line">
@@ -97,11 +104,18 @@ function EntryRow({ entry }: { entry: ModelBestKnown }) {
               not deployable
             </span>
           ) : (
-            shown.project.name !== shown.implementation.name && (
-              <span className="ml-2 text-small text-faint">
-                {shown.project.name}
-              </span>
-            )
+            <>
+              {delta && (
+                <span className="ml-2 font-mono text-mini text-faint">
+                  {delta}
+                </span>
+              )}
+              {shown.project.name !== shown.implementation.name && (
+                <span className="ml-2 text-small text-faint">
+                  {shown.project.name}
+                </span>
+              )}
+            </>
           )}
         </div>
         <div className="pr-3.5 text-right whitespace-nowrap">
