@@ -28,7 +28,7 @@ export function LatestRecords({ rows }: { rows: RecordHolder[] }) {
         <div className="px-4 py-2.5">Margin</div>
         <div className="px-4 py-2.5">Hardware</div>
         <div className="px-4 py-2.5">Trust</div>
-        <div className="px-4 py-2.5 text-right">Set</div>
+        <div className="px-4 py-2.5 text-right">Indexed</div>
       </div>
       {rows.map((holder) => {
         const row = holder.current
@@ -97,7 +97,7 @@ export function LatestRecords({ rows }: { rows: RecordHolder[] }) {
               <TrustCell row={row} />
             </div>
             <div className="px-4 text-right font-mono text-small text-faint">
-              {formatDateUTC(holder.since)}
+              {formatDateUTC(holder.indexedAt)}
             </div>
           </div>
         )

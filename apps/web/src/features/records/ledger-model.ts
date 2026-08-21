@@ -258,16 +258,17 @@ export function sortHolders(
   sort: RecordsSort,
 ): LedgerHolder[] {
   const sorted = [...holders]
-  // "date" keeps the backend order: newest record first.
+  // "date" keeps the backend order: newest indexed first (§16.5).
   if (sort === "contested") {
     // Signal first: cohorts whose record was actually displaced, then
-    // sole-entrant firsts, then unbeaten baselines; newest inside each band.
+    // sole-entrant firsts, then unbeaten baselines; newest indexed inside
+    // each band.
     const band = (holder: LedgerHolder) =>
       holder.history.length > 1 ? 0 : holder.current.baseline ? 2 : 1
     sorted.sort(
       (a, b) =>
         band(a) - band(b) ||
-        (a.since < b.since ? 1 : a.since > b.since ? -1 : 0),
+        (a.indexedAt < b.indexedAt ? 1 : a.indexedAt > b.indexedAt ? -1 : 0),
     )
   }
   if (sort === "operation")
@@ -287,7 +288,7 @@ export function sortHolders(
     sorted.sort(
       (a, b) =>
         b.history.length - a.history.length ||
-        (a.since < b.since ? 1 : a.since > b.since ? -1 : 0),
+        (a.indexedAt < b.indexedAt ? 1 : a.indexedAt > b.indexedAt ? -1 : 0),
     )
   return sorted
 }

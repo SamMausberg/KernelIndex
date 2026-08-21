@@ -51,9 +51,10 @@ ${items.join("\n")}
 async function latestRecordEvents(): Promise<FeedEntry[]> {
   const { db } = await import("@/server/db/client")
   const schema = await import("@/server/db/schema")
-  return db()
+  const rows = await db()
     .select({
       at: schema.recordEvents.at,
+      publishedAt: schema.benchmarkRuns.publishedAt,
       cause: schema.recordEvents.cause,
       runId: schema.recordEvents.runId,
       operation: { name: schema.operations.name, slug: schema.operations.slug },
@@ -78,8 +79,17 @@ async function latestRecordEvents(): Promise<FeedEntry[]> {
       schema.operations,
       eq(schema.workloads.operationId, schema.operations.id),
     )
-    .orderBy(desc(schema.recordEvents.at))
+    // Subscribers follow what the index learned, so entries rank and date
+    // by publish time — a fresh import of old observations still leads.
+    .orderBy(
+      desc(schema.benchmarkRuns.publishedAt),
+      desc(schema.recordEvents.at),
+    )
     .limit(50)
+  return rows.map(({ publishedAt, ...entry }) => ({
+    ...entry,
+    at: publishedAt ?? entry.at,
+  }))
 }
 
 export async function GET(): Promise<Response> {

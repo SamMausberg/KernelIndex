@@ -104,6 +104,7 @@ const UUID_PATTERN =
 const runColumns = {
   id: schema.benchmarkRuns.id,
   observedAt: schema.benchmarkRuns.observedAt,
+  publishedAt: schema.benchmarkRuns.publishedAt,
   comparisonKey: schema.benchmarkRuns.comparisonKey,
   protocolKey: schema.benchmarkRuns.protocolKey,
   environmentKey: schema.benchmarkRuns.environmentKey,
@@ -309,6 +310,7 @@ function resultRow(
       concluded: implementation.licenseExpression,
     },
     lastTestedAt: run.observedAt.toISOString(),
+    indexedAt: run.publishedAt?.toISOString() ?? null,
     stale: isStale(run.observedAt),
     disputed: false,
     caveats: [...rowCaveats(joined), ...(extras.caveats ?? [])],
@@ -890,12 +892,20 @@ async function readRecordsPage(): Promise<RecordsPageModel> {
       environmentSummary: previous.run.environmentSummary ?? "",
       current: holderRow,
       since: events[0].at,
+      // Eligible ⇒ published; observedAt only satisfies the nullable type.
+      indexedAt: (
+        previous.run.publishedAt ?? previous.run.observedAt
+      ).toISOString(),
       history: events,
     })
   }
 
-  // ISO-8601 strings order lexicographically; plain comparison beats collation.
-  records.sort((a, b) => (a.since < b.since ? 1 : a.since > b.since ? -1 : 0))
+  // Newest indexed first (§16.5): a fresh import leads even when the source
+  // stamped it with old observation dates. ISO-8601 strings order
+  // lexicographically; plain comparison beats collation.
+  records.sort((a, b) =>
+    a.indexedAt < b.indexedAt ? 1 : a.indexedAt > b.indexedAt ? -1 : 0,
+  )
   return {
     illustrative: pageIllustrative(holderRows),
     hardwareOptions: [...new Set(records.map((holder) => holder.hardware))],
@@ -1298,6 +1308,7 @@ function supportedUnmeasuredRows(
           concluded: implementation.licenseExpression,
         },
         lastTestedAt: null,
+        indexedAt: null,
         stale: false,
         disputed: false,
         caveats: ["Declared support only; no measurement for this workload"],

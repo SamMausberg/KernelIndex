@@ -101,7 +101,8 @@ function LatestBreaks({ latest }: { latest: LedgerEvent[] }) {
 
 function HolderRow({ holder }: { holder: LedgerHolder }) {
   const record = holder.current
-  const isNew = Date.now() - new Date(holder.since).getTime() < 14 * DAY_MS
+  // "New" means newly indexed, not newly observed by the source (§16.5).
+  const isNew = Date.now() - new Date(holder.indexedAt).getTime() < 14 * DAY_MS
   const margin = holder.history[0].improvementPct
   // The full timeline lives in the Record history view; rendering it for
   // every collapsed row made the page's payload (§16.12 payload budget).
@@ -171,7 +172,7 @@ function HolderRow({ holder }: { holder: LedgerHolder }) {
         </div>
         <TrustCell row={record} />
         <div className="font-mono text-mini whitespace-nowrap text-faint">
-          {formatDateUTC(holder.since)}
+          {formatDateUTC(holder.indexedAt)}
           {isNew && <span className="text-accent"> · new</span>}
         </div>
         <div
@@ -217,7 +218,7 @@ function HolderRow({ holder }: { holder: LedgerHolder }) {
             </Link>
             <span className="text-faint">
               {index === 0
-                ? `current · since ${formatDateUTC(event.at)}`
+                ? `current · observed ${formatDateUTC(event.at)}`
                 : `record ${formatDateUTC(event.at)} → ${formatDateUTC(holder.history[index - 1].at)}`}
               {event.improvementPct !== null &&
                 ` · ${event.improvementPct.toFixed(1)}% faster`}
@@ -737,7 +738,7 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
                 <div className="py-2">Implementation</div>
                 <div className="py-2">Hardware</div>
                 <div className="py-2">Trust</div>
-                <div className="py-2">Set</div>
+                <div className="py-2">Indexed</div>
                 <div />
               </div>
               {slice.holders.rows.map((holder) => (

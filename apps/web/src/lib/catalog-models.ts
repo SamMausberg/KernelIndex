@@ -116,6 +116,10 @@ export type ResultRow = {
   installable: boolean
   license: LicenseInfo
   lastTestedAt: string | null
+  /** When KernelIndex indexed the run — "latest" surfaces rank by this,
+   * while lastTestedAt stays the source's observation time (§16.5). Null
+   * only for supported-but-unmeasured rows. */
+  indexedAt: string | null
   stale: boolean
   disputed: boolean
   caveats: string[]
@@ -198,7 +202,11 @@ export type RecordHolder = {
   /** Short environment/protocol line, e.g. "CUDA 13.1 · torch 2.9 · sol/v1". */
   environmentSummary: string
   current: ResultRow
+  /** When the current record was set (source observation time). */
   since: string
+  /** When the index published the current record run; the ledger's backend
+   * order — a fresh import surfaces even when its source timestamps are old. */
+  indexedAt: string
   /** Newest first; the first entry is the current record. */
   history: RecordEvent[]
 }

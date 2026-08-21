@@ -464,6 +464,7 @@ function rowFromRun(r: FxRun): ResultRow {
     installable: r.installable,
     license: r.license,
     lastTestedAt: r.lastTestedAt,
+    indexedAt: r.lastTestedAt,
     stale: r.stale ?? false,
     disputed: r.disputed !== undefined,
     caveats: r.caveats ?? [],
@@ -498,6 +499,7 @@ const SUPPORTED_UNMEASURED: ResultRow = {
   installable: true,
   license: APACHE,
   lastTestedAt: null,
+  indexedAt: null,
   stale: false,
   disputed: false,
   caveats: ["Declared support only; no measurement for this exact workload"],
@@ -550,6 +552,7 @@ export async function getRecordsPage(): Promise<RecordsPageModel> {
     environmentSummary: "CUDA 13.1 · PyTorch 2.9.0 · ki-fixed-clock v1",
     current: rowFromRun(run("run-fx-0001")),
     since: FRESH,
+    indexedAt: FRESH,
     history: [
       {
         at: FRESH,
@@ -585,6 +588,7 @@ export async function getRecordsPage(): Promise<RecordsPageModel> {
     environmentSummary: "CUDA 13.1 · PyTorch 2.9.0 · ki-fixed-clock v1",
     current: rowFromRun(run("run-fx-0005")),
     since: FRESH,
+    indexedAt: FRESH,
     history: [
       {
         at: FRESH,

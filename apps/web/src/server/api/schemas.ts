@@ -112,6 +112,7 @@ export const resultRow = z.object({
   installable: z.boolean(),
   license: licenseInfo,
   lastTestedAt: z.string().nullable(),
+  indexedAt: z.string().nullable(),
   stale: z.boolean(),
   disputed: z.boolean(),
   caveats: z.array(z.string()),
@@ -169,6 +170,7 @@ export const recordHolder = z.object({
   environmentSummary: z.string(),
   current: resultRow,
   since: z.string(),
+  indexedAt: z.string(),
   history: z.array(recordEvent),
 }) satisfies z.ZodType<RecordHolder>
 
