@@ -132,7 +132,14 @@ export function ServingCohorts({
               {[
                 hideModel ? null : group.identity.model,
                 group.identity.workload,
-                group.identity.scenario,
+                // Scenarios are stored lowercase, and MLPerf workload names
+                // already end with theirs — append only when it adds a fact.
+                group.identity.workload
+                  .toLowerCase()
+                  .includes(group.identity.scenario.toLowerCase())
+                  ? null
+                  : group.identity.scenario.charAt(0).toUpperCase() +
+                    group.identity.scenario.slice(1),
               ]
                 .filter(Boolean)
                 .join(" · ")}

@@ -33,9 +33,13 @@ export function ServingOverview({ rows }: { rows: ServingOverviewRow[] }) {
             {row.workload.name}
           </span>
           <span className="pr-2 text-right font-mono text-lead font-medium">
-            {row.best
-              ? Math.round(row.best.throughput).toLocaleString("en-US")
-              : "…"}
+            {row.best ? (
+              Math.round(row.best.throughput).toLocaleString("en-US")
+            ) : (
+              <span className="text-mini font-normal text-faint">
+                not reported
+              </span>
+            )}
           </span>
           <span className="min-w-0 truncate font-mono text-small text-muted">
             {row.best?.stack}
