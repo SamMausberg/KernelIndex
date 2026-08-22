@@ -22,6 +22,7 @@ import type {
   HomePageModel,
   ImplementationPageModel,
   ImplementationSummary,
+  NearestCase,
   OperationIndexEntry,
   OperationPageModel,
   PrimaryMetric,
@@ -64,6 +65,8 @@ import {
   rankChooserMatches,
 } from "./chooser.ts"
 import {
+  bracketCases,
+  bracketQuery,
   caseHasShape,
   intentMismatches,
   type MatchTarget,
@@ -357,6 +360,25 @@ export function rankInputOf(joined: JoinedRun): RankInput {
   }
 }
 
+/** The matchable facts of one run (§12.5), with the operation's declared
+ * dtypes standing in when the workload row carries none. */
+function matchTarget(
+  j: OperationJoinedRun,
+  manifestById: Map<string, AnyWorkloadManifest>,
+  opDtypes: string[],
+): MatchTarget {
+  return {
+    hardwareModel: j.run.hardwareModel,
+    hardwareArchitecture: j.run.hardwareArchitecture,
+    cudaMajor: j.run.cudaMajor,
+    framework: j.implementation.framework,
+    language: j.implementation.language,
+    workload: manifestById.get(j.workload.id) as AnyWorkloadManifest,
+    workloadDtypes: j.workload.dtypes.length > 0 ? j.workload.dtypes : opDtypes,
+    workloadLayouts: j.workload.layoutKeys,
+  }
+}
+
 /**
  * Group one operation's runs for a selected workload (§16.6, §11.1): the
  * largest same-key comparison cohort is the candidate table; requests that
@@ -435,16 +457,8 @@ function groupRuns(
   const selectedManifest = manifestById.get(selectedWorkloadId)
 
   const opDtypes = operationDtypes(operationManifest)
-  const target = (j: OperationJoinedRun): MatchTarget => ({
-    hardwareModel: j.run.hardwareModel,
-    hardwareArchitecture: j.run.hardwareArchitecture,
-    cudaMajor: j.run.cudaMajor,
-    framework: j.implementation.framework,
-    language: j.implementation.language,
-    workload: manifestById.get(j.workload.id) as AnyWorkloadManifest,
-    workloadDtypes: j.workload.dtypes.length > 0 ? j.workload.dtypes : opDtypes,
-    workloadLayouts: j.workload.layoutKeys,
-  })
+  const target = (j: OperationJoinedRun) =>
+    matchTarget(j, manifestById, opDtypes)
 
   const compatible: ResultRow[] = []
   const rankable: OperationJoinedRun[] = []
@@ -725,24 +739,11 @@ function dominates(hits: { score: number }[]): boolean {
  */
 function selectWorkloadId(
   intent: SearchIntent,
-  workloadRows: (typeof schema.workloads.$inferSelect)[],
+  workloadRows: WorkloadRow[],
   joined: JoinedRun[],
 ): string | null {
-  const bindsCase = intent.shape !== null || Object.keys(intent.axes).length > 0
-  if (bindsCase) {
-    const matches = workloadRows.filter((row) => {
-      const manifest = row.manifest as AnyWorkloadManifest
-      if (manifest.kind !== "WorkloadCase") return false
-      if (intent.shape !== null && !caseHasShape(manifest, intent.shape))
-        return false
-      if (
-        !Object.entries(intent.axes).every(
-          ([axis, value]) => manifest.spec.axes[axis] === value,
-        )
-      )
-        return false
-      return intent.dtypes.every((dtype) => row.dtypes.includes(dtype))
-    })
+  if (bindsCase(intent)) {
+    const matches = workloadRows.filter((row) => caseMatches(intent, row))
     const measured = matches.find((row) =>
       joined.some((j) => j.workload.id === row.id),
     )
@@ -753,6 +754,107 @@ function selectWorkloadId(
     joined,
     workloadRows.map((row) => row.id),
   )
+}
+
+/** Shapes and axis bindings bind an exact case (§12.5). */
+const bindsCase = (intent: SearchIntent) =>
+  intent.shape !== null || Object.keys(intent.axes).length > 0
+
+/** Does this workload answer the request's case binding exactly? */
+function caseMatches(intent: SearchIntent, row: WorkloadRow): boolean {
+  const manifest = row.manifest as AnyWorkloadManifest
+  if (manifest.kind !== "WorkloadCase") return false
+  if (intent.shape !== null && !caseHasShape(manifest, intent.shape))
+    return false
+  if (
+    !Object.entries(intent.axes).every(
+      ([axis, value]) => manifest.spec.axes[axis] === value,
+    )
+  )
+    return false
+  return intent.dtypes.every((dtype) => row.dtypes.includes(dtype))
+}
+
+/**
+ * §12.5 bracketing. The request bound a case nobody measured: the measured
+ * cases on either side of it along the one axis that differs, each with its
+ * fastest eligible run under the request's remaining facets (GPU, dtype,
+ * framework still apply; only the case binding is lifted). A side without
+ * such a run is dropped; both dropped means no claim at all.
+ */
+function nearestCases(
+  query: string,
+  intent: SearchIntent,
+  workloadRows: WorkloadRow[],
+  joined: OperationJoinedRun[],
+  manifestById: Map<string, AnyWorkloadManifest>,
+  operation: { name: string; slug: string },
+  operationManifest: OperationSpecManifest,
+): SearchPageModel["nearest"] {
+  const bracket = bracketCases(
+    intent,
+    workloadRows.flatMap((row) => {
+      const manifest = manifestById.get(row.id)
+      if (manifest?.kind !== "WorkloadCase") return []
+      return [
+        {
+          id: row.id,
+          axes: manifest.spec.axes,
+          shape: Object.values(manifest.spec.tensors)[0]?.shape ?? null,
+          dtypes: row.dtypes,
+        },
+      ]
+    }),
+  )
+  if (bracket === null) return null
+  const facets: SearchIntent = { ...intent, axes: {}, shape: null }
+  const opDtypes = operationDtypes(operationManifest)
+  const dtypesById = new Map(workloadRows.map((row) => [row.id, row.dtypes]))
+  const side = (
+    entry: { id: string; value: number } | null,
+  ): NearestCase | null => {
+    if (entry === null) return null
+    // Joined rows arrive fastest first, so the first measured one leads.
+    const runs = joined.filter(
+      (j) =>
+        j.workload.id === entry.id &&
+        intentMismatches(facets, matchTarget(j, manifestById, opDtypes))
+          .length === 0,
+    )
+    if (runs.length === 0) return null
+    const head = runs.find((j) => j.run.primaryValue !== null)
+    const primary = head ? primaryOf(head.run) : null
+    return {
+      workloadId: entry.id,
+      label: workloadLabel(
+        manifestById.get(entry.id) as AnyWorkloadManifest,
+        dtypesById.get(entry.id) ?? [],
+      ),
+      value: entry.value,
+      runs: runs.length,
+      head:
+        head && primary
+          ? {
+              runId: head.run.id,
+              implementation: {
+                name: implementationDisplayName(
+                  head.implementation.title ?? undefined,
+                  operation,
+                  head.implementation.slug,
+                ),
+                slug: head.implementation.slug,
+              },
+              primary,
+            }
+          : null,
+      cohortKey: head?.run.comparisonKey ?? null,
+      query: bracketQuery(query, bracket, entry.value),
+    }
+  }
+  const below = side(bracket.below)
+  const above = side(bracket.above)
+  if (below === null && above === null) return null
+  return { axis: bracket.axis, requested: bracket.requested, below, above }
 }
 
 /** Pick the workload with the most runs as the default selection. */
@@ -1116,6 +1218,7 @@ export async function searchCatalog(
     overflow: NO_OVERFLOW,
     related: [],
     sources: [],
+    nearest: null,
   }
   if (query === "") {
     return { ...base, browse: await getOperationIndex(), noResult: null }
@@ -1243,6 +1346,19 @@ export async function searchCatalog(
         input.cohort,
       )
     : { ...EMPTY_GROUPS, cohort: null, cohortOptions: [], headRunId: null }
+  // The request bound a case nobody measured: bracket it (§12.5).
+  const nearest =
+    bindsCase(intent) && !workloadRows.some((row) => caseMatches(intent, row))
+      ? nearestCases(
+          query,
+          intent,
+          workloadRows,
+          joined,
+          manifestById,
+          { name: operation.name, slug: operation.slug },
+          operation.manifest as OperationSpecManifest,
+        )
+      : null
   // Independent round trips: cohort facts and source refs together.
   const [, sources] = await Promise.all([
     fillCohortFacts(groups),
@@ -1298,6 +1414,7 @@ export async function searchCatalog(
     related: relatedItems,
     sources,
     noResult: null,
+    nearest,
   }
 }
 

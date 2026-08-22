@@ -147,6 +147,22 @@ export type CohortContext = {
  * (URL state, never query text); absent, the largest cohort leads. */
 export type SearchInput = { query: string; cohort?: string }
 
+/** One measured case beside an unmeasured request (§12.5 bracketing). */
+export type NearestCase = {
+  workloadId: string
+  label: string
+  /** The case's value on the bracketing axis. */
+  value: number
+  /** Eligible runs on this case under the request's other facets. */
+  runs: number
+  /** The fastest of them; null when none carries a primary metric. */
+  head: CohortOption["head"]
+  /** The head run's cohort, for the operation-page deep link. */
+  cohortKey: string | null
+  /** The request rewritten to this case: lands on exact resolution. */
+  query: string
+}
+
 /** One measured environment cohort for the selected workload (§16.8): a
  * selectable option that also states the cohort's best known entry. */
 export type CohortOption = {
@@ -311,6 +327,15 @@ export type SearchPageModel = {
     guidance: string
     /** Clickable rewrites: display label plus the query it submits. */
     suggestions: { label: string; query: string }[]
+  } | null
+  /** When the request binds a case nobody measured: the measured cases on
+   * either side of it along the one axis that differs (§12.5). Null when
+   * an exact case exists or when no single axis explains the difference. */
+  nearest: {
+    axis: string
+    requested: number
+    below: NearestCase | null
+    above: NearestCase | null
   } | null
 }
 

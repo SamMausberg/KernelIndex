@@ -4,7 +4,9 @@ import type { ResultRow } from "@/lib/catalog"
 import {
   evidenceLabel,
   formatDateUTC,
+  formatPrimary,
   formatPrimaryParts,
+  formatRelative,
   formatSolScore,
   formatSpread,
 } from "@/lib/format"
@@ -186,5 +188,54 @@ export function AnswerSlots({
         />
       </div>
     </div>
+  )
+}
+
+/** The fastest ranked row per language inside one cohort (§16.6), in rank
+ * order; empty unless at least two languages compete. Rows unknown to any
+ * language never count. */
+export function byLanguage(rows: ResultRow[]): [string, ResultRow][] {
+  const first = new Map<string, ResultRow>()
+  for (const row of rows) {
+    const language = row.language
+    if (row.rank === null || !language || language === "unknown") continue
+    if (!first.has(language)) first.set(language, row)
+  }
+  return first.size >= 2 ? [...first] : []
+}
+
+/** One quiet line under the answer: "triton · name · 41.2 µs · 1.12×",
+ * multiples against the cohort leader, which reads #1. */
+export function ByLanguage({ rows }: { rows: ResultRow[] }) {
+  const entries = byLanguage(rows)
+  if (entries.length === 0) return null
+  const leader = entries[0][1]
+  return (
+    <p className="mt-4 flex flex-wrap items-baseline gap-x-5 gap-y-1">
+      <span className="font-mono text-label text-faint uppercase">
+        Fastest by language
+      </span>
+      {entries.map(([language, row]) => (
+        <span key={language} className="font-mono text-small text-subtle">
+          {language} ·{" "}
+          <Link
+            href={`/implementations/${row.implementation.slug}`}
+            className="text-small"
+          >
+            {row.implementation.name}
+          </Link>
+          {row.primary && (
+            <>
+              {" · "}
+              <span className="text-fg">{formatPrimary(row.primary)}</span>
+              {" · "}
+              {row.runId === leader.runId
+                ? "#1"
+                : formatRelative(row.primary, leader.primary)}
+            </>
+          )}
+        </span>
+      ))}
+    </p>
   )
 }

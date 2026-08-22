@@ -35,6 +35,8 @@ import {
   projectDossier,
   type ResolveKernelRequest,
   recordsResponse,
+  resolveBatchResponse,
+  resolveKernelBatchRequest,
   resolveKernelRequest,
   resolveResponse,
   resolveServingRequest,
@@ -76,6 +78,7 @@ function resolveEnvelope(model: SearchPageModel) {
     groups: model.groups,
     overflow: model.overflow,
     matches: model.matches,
+    nearest: model.nearest,
     sources: model.sources,
     generatedAt: new Date().toISOString(),
   }
@@ -247,6 +250,36 @@ api.openapi(
     const request = c.req.valid("json")
     const model = await searchCatalog({ query: composeQuery(request) })
     return c.json(resolveEnvelope(model))
+  },
+)
+
+// Many workloads in one call (an agent planning every operation of a model):
+// the same cached resolution per request, bounded to twenty (§13.7).
+api.openapi(
+  createRoute({
+    method: "post",
+    path: "/resolve/kernel/batch",
+    request: {
+      body: {
+        content: { "application/json": { schema: resolveKernelBatchRequest } },
+      },
+    },
+    responses: json(
+      resolveBatchResponse,
+      "One resolver decision per request, in request order",
+    ),
+  }),
+  async (c) => {
+    const { requests } = c.req.valid("json")
+    const models = await Promise.all(
+      requests.map((request) =>
+        searchCatalog({ query: composeQuery(request) }),
+      ),
+    )
+    return c.json({
+      results: models.map(resolveEnvelope),
+      generatedAt: new Date().toISOString(),
+    })
   },
 )
 

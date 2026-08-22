@@ -126,6 +126,12 @@ export function ServingCohorts({
           .slice(0, ROW_CAP)
         const ordered = [...frontier, ...dominated]
         const cut = group.rows.length - ordered.length
+        // Latency bounds only ever apply to runs that report the metric
+        // (§16.13 honesty): state the coverage before anyone bounds on it.
+        const total = group.rows.length + group.excluded.length
+        const ttftReported = group.rows.filter(
+          (row) => metric(row, "ttft_ms", "p99") !== null,
+        ).length
         return (
           <section key={group.cohortKey}>
             <h2 className="text-lead font-medium">
@@ -152,6 +158,7 @@ export function ServingCohorts({
               feasible
               {group.excluded.length > 0 &&
                 ` · ${group.excluded.length} excluded`}
+              {` · TTFT p99 reported for ${ttftReported} of ${total}`}
             </p>
             <ParetoScatter rows={group.rows} sharedAxes={group.sharedAxes} />
             <div className="mt-3 overflow-x-auto">

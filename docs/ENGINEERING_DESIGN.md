@@ -2667,6 +2667,38 @@ direction:
   the account page lists claimed projects instead of hosting the form.
   Audit actions: `claim_auto_accepted`, `claim_submitted`.
 
+**Reality note (2026-08-22, resolver answers more of the question).** A
+reads-only pass on the places the resolver went quiet:
+
+- **Bracketing (§12.5).** A request that binds a case nobody measured
+  (`tokens=3000`, `[3000,4096]`) no longer ends in an empty Exact view:
+  `SearchPageModel.nearest` names the measured cases on either side of the
+  request along the one axis that differs (`bracketCases` in
+  `server/catalog/match.ts`; never across two differences), each with its
+  fastest eligible run under the request's other facets and a rewritten
+  query that lands on exact resolution. Rendered as two hairline rows above
+  the view bar (`features/search/nearest.tsx`); rides the resolve envelope,
+  `ki search`, and the `search_submitted` event (`nearestReturned`).
+  `MODEL_VERSION` v6.
+- **Fastest by language** inside the cohort, one line under the answer
+  slots on search and the operation island (`ByLanguage`): the first ranked
+  row per language with its multiple against the leader. Derived from the
+  rows already on the page; languages unknown to the row never count.
+- **Open Graph cards per dossier** (`features/og/card.tsx`, one renderer
+  shared with the site card): run, operation, implementation, and project
+  links show the number they are about, the rank, and the facts that
+  qualify it, on the matte canvas with the calibrated rule as the only
+  graphic.
+- **Batch resolve**: `POST /api/v1/resolve/kernel/batch` (1–20 structured
+  requests, one envelope each, in order) for agents planning every
+  operation of a model; SDK `resolveKernels`, `ki resolve kernel` over a
+  list manifest, MCP `resolve_kernels`.
+- Compare gains an "add a run id" well (plain GET; the URL stays the state)
+  and CSV beside Markdown/JSON; the operation island states the priority
+  GPUs the selected workload was never measured on (`lib/priority.ts`
+  holds the hero lists the coverage read uses); serving cohorts state "TTFT
+  p99 reported for N of M" before anyone bounds on it.
+
 ### 16.1 Product character
 
 KernelIndex should feel like a serious technical reference built by kernel engineers, not a generic SaaS dashboard, gaming leaderboard, or GPU marketing site.

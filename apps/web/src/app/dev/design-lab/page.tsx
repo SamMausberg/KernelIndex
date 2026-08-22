@@ -39,6 +39,9 @@ export default async function DesignLabPage() {
   const noResult = await fixtures.searchCatalog({ query: "unknown-op" })
   const emptyQuery = await fixtures.searchCatalog({ query: "" })
   const multiMatch = await fixtures.searchCatalog({ query: "norm" })
+  const unmeasured = await fixtures.searchCatalog({
+    query: "rmsnorm B200 bf16 tokens=3000",
+  })
   const records = await fixtures.getRecordsPage()
   const modelPage = await fixtures.getModelPage("llama-3.1-8b")
   const bestKnown = modelPage?.groups ?? []
@@ -128,6 +131,10 @@ export default async function DesignLabPage() {
 
       <State label="search · multi-match operation chooser">
         <SearchResults model={multiMatch} filters={noFilters} />
+      </State>
+
+      <State label="search · unmeasured case bracketed by its measured neighbours">
+        <SearchResults model={unmeasured} filters={noFilters} />
       </State>
 
       <State label="search · no matching operation">

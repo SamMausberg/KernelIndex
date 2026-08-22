@@ -13,6 +13,11 @@ const BASE = "https://kernelindex.com/api/v1"
 /** Example bodies for the POST routes, kept beside the reference. */
 const EXAMPLE_BODIES: Record<string, string> = {
   "/resolve/kernel": `{"operation": {"name": "rmsnorm"}, "environment": {"hardwareProduct": "B200", "dtype": "bf16"}}`,
+  "/resolve/kernel/batch": `{"requests": [
+    {"operation": {"name": "rmsnorm", "axes": {"tokens": 2048}},
+     "environment": {"hardwareProduct": "B200", "dtype": "bf16"}},
+    {"operation": {"name": "gemm"}, "environment": {"hardwareProduct": "B200"}}
+  ]}`,
   "/compare": `{"runs": ["<run-id>", "<run-id>"]}`,
   "/resolve/serving": `{"model": "llama2-70b-99", "objective": {"direction": "maximize", "metric": "output_token_throughput_tps"}}`,
   "/corrections": `{"action": "retract", "runId": "<run-id>", "reason": "…"}`,
@@ -33,6 +38,7 @@ const EXAMPLE_RESPONSES: Record<string, string> = {
                       "rank": …, "cohortSize": …, "install": { "kind": "pip", "command": "…" }, "evidence": "reported", … },
   "groups": { "exact": [ … ], "compatible": [ … ], "supportedUnmeasured": [ … ], "reported": [ … ] },
   "overflow": { "exact": 0, "compatible": 0, "supportedUnmeasured": 0, "reported": 0 },
+  "nearest": null,
   "sources": [ { "name": "…", "observedAt": "…" } ],
   "generatedAt": "…"
 }`,

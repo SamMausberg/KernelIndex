@@ -48,7 +48,14 @@ export type EventSummary = {
   counts: { event: string; total: number }[]
   /** §20.4 north star over recorded searches: parseable requests that
       returned at least one exact, evidence-backed row. */
-  searches: { total: number; parseErrors: number; zero: number; exact: number }
+  searches: {
+    total: number
+    parseErrors: number
+    zero: number
+    exact: number
+    /** Unmeasured case answered with its bracketing cases (§12.5). */
+    nearest: number
+  }
 }
 
 /** Aggregates for the /admin metrics panel. */
@@ -74,6 +81,9 @@ export async function eventSummary(days: number): Promise<EventSummary> {
         exact: count(
           sql`case when facets->>'exactReturned' = 'true' then 1 end`,
         ),
+        nearest: count(
+          sql`case when facets->>'nearestReturned' = 'true' then 1 end`,
+        ),
       })
       .from(schema.productEvents)
       .where(sql`${since} and event = 'search_submitted'`),
@@ -81,6 +91,12 @@ export async function eventSummary(days: number): Promise<EventSummary> {
   return {
     days,
     counts,
-    searches: searches ?? { total: 0, parseErrors: 0, zero: 0, exact: 0 },
+    searches: searches ?? {
+      total: 0,
+      parseErrors: 0,
+      zero: 0,
+      exact: 0,
+      nearest: 0,
+    },
   }
 }

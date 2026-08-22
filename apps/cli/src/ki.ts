@@ -22,6 +22,7 @@ const HELP = `ki — KernelIndex command line
 Usage:
   ki search <query…>                 resolver decision for a text query
   ki resolve kernel --manifest <p>   resolver decision for a structured request
+                                     (a list of requests resolves in one call)
   ki resolve serving --manifest <p>  serving resolution: objective or Pareto
   ki show <operation|implementation|run|serving-run> <id-or-slug>
   ki compare run <id> <id> [...]     aligned comparison (2–8 runs)
@@ -139,6 +140,22 @@ function printEnvelope(envelope: ResolveEnvelope) {
   if (cut > 0 && !values.quiet) {
     console.log(`${cut} rows past the payload cap not shown`)
   }
+  // §12.5 bracketing: an unmeasured case states its measured neighbours.
+  if (envelope.groups.exact.length === 0 && envelope.nearest) {
+    const { axis, requested, below, above } = envelope.nearest
+    console.log(`not measured at ${axis} = ${requested}; nearest measured:`)
+    table(
+      [below, above]
+        .filter((side) => side !== null)
+        .map((side) => [
+          `${axis} = ${side.value}`,
+          formatPrimary(side.head?.primary ?? null),
+          side.head?.implementation.name ?? "no ranked run",
+          `${side.runs} runs`,
+          `ki search ${JSON.stringify(side.query)}`,
+        ]),
+    )
+  }
 }
 
 /** Serving output (§13.8): per-cohort tables, frontier marked, no score. */
@@ -214,6 +231,16 @@ async function main(): Promise<number> {
       const model = await api.resolveServing(request as ResolveServingRequest)
       if (emit(model, model.groups)) return 0
       printServing(model)
+      return 0
+    }
+    // A list resolves every request in one call (agents planning a model).
+    if (Array.isArray(request)) {
+      const batch = await api.resolveKernels(request as ResolveKernelRequest[])
+      if (emit(batch, batch.results)) return 0
+      batch.results.forEach((envelope, index) => {
+        if (index > 0) console.log("")
+        printEnvelope(envelope)
+      })
       return 0
     }
     const envelope = await api.resolveKernel(request as ResolveKernelRequest)

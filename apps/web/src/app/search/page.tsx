@@ -46,6 +46,7 @@ async function Results({ params }: { params: Params }) {
         parseError: model.queryIssues.length > 0,
         zeroResult: model.noResult !== null,
         exactReturned: model.groups.exact.length > 0,
+        nearestReturned: model.nearest !== null,
         resolvedOperation: model.operation !== null,
       }),
     )

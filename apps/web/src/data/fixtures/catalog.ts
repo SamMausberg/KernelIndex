@@ -17,6 +17,7 @@ import type {
   Mismatch,
   ModelIndexModel,
   ModelPageModel,
+  NearestCase,
   OperationIndexEntry,
   OperationPageModel,
   PrimaryMetric,
@@ -43,6 +44,11 @@ import {
   chooserMatch,
   rankChooserMatches,
 } from "@/server/catalog/chooser"
+import {
+  type Bracket,
+  bracketCases,
+  bracketQuery,
+} from "@/server/catalog/match"
 import { computeSweep } from "@/server/catalog/sweep"
 import { RANKING_POLICY_VERSION, rankCohort } from "@/server/policy/ranking"
 
@@ -761,10 +767,11 @@ export async function searchCatalog(
                 },
               ],
             },
+      nearest: null,
     }
   }
 
-  return {
+  const resolved: SearchPageModel = {
     illustrative: ILLUSTRATIVE,
     query,
     interpretedQuery: describeIntent(intent, "RMSNorm, hidden 4096"),
@@ -798,6 +805,82 @@ export async function searchCatalog(
     ],
     sources: [FIXTURE_SOURCE_REF],
     noResult: null,
+    nearest: null,
+  }
+
+  // A case binding off the fixture workloads: the bracketed state (§12.5),
+  // the same way the PostgreSQL read derives it.
+  const cases = Object.values(WORKLOADS).map((w) => ({
+    id: w.id,
+    axes: { ...w.axes },
+    shape: [w.axes.tokens, w.axes.hidden],
+    dtypes: ["bf16"],
+  }))
+  const bindsCase = intent.shape !== null || Object.keys(intent.axes).length > 0
+  const measured = cases.some(
+    (entry) =>
+      (intent.shape === null ||
+        entry.shape.every((dim, index) => dim === intent.shape?.[index])) &&
+      Object.entries(intent.axes).every(
+        ([axis, value]) =>
+          (entry.axes as Record<string, number>)[axis] === value,
+      ),
+  )
+  if (!bindsCase || measured) return resolved
+  const bracket = bracketCases(intent, cases)
+  const side = (
+    entry: { id: string; value: number } | null,
+  ): NearestCase | null => {
+    if (entry === null) return null
+    const runs = RUNS.filter(
+      (r) =>
+        r.workloadId === entry.id &&
+        r.status === "passed" &&
+        !r.retracted &&
+        !r.supersededById &&
+        !r.disputed,
+    ).sort((a, b) => a.latencyNs - b.latencyNs)
+    const head = runs[0]
+    return {
+      workloadId: entry.id,
+      label: WORKLOADS[entry.id as WorkloadId].label,
+      value: entry.value,
+      runs: runs.length,
+      head: head
+        ? {
+            runId: head.id,
+            implementation: { name: head.impl.name, slug: head.impl.slug },
+            primary: rowFromRun(head).primary as PrimaryMetric,
+          }
+        : null,
+      cohortKey: digest(`cohort:rmsnorm-h4096:tokens-${entry.value}`),
+      query: bracketQuery(query, bracket as Bracket, entry.value),
+    }
+  }
+  const requested = String(bracket?.requested ?? intent.axes.tokens ?? "")
+  return {
+    ...resolved,
+    groups: {
+      exact: [],
+      compatible: RANKED.map((r) => ({
+        ...rowFromRun(r),
+        match: "compatible" as const,
+        rank: null,
+        cohortSize: null,
+        mismatches: [{ field: "axes.tokens", requested, observed: "2048" }],
+      })),
+      supportedUnmeasured: [SUPPORTED_UNMEASURED],
+      reported: [],
+    },
+    nearest:
+      bracket === null
+        ? null
+        : {
+            axis: bracket.axis,
+            requested: bracket.requested,
+            below: side(bracket.below),
+            above: side(bracket.above),
+          },
   }
 }
 

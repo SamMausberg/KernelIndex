@@ -34,3 +34,18 @@ test("the empty compare state explains how to select runs", async ({
     page.getByText("Select two to eight runs to compare", { exact: false }),
   ).toBeVisible()
 })
+
+test("a run can be added by id and the comparison exports CSV", async ({
+  page,
+}) => {
+  await page.goto("/compare?run=run-fx-0002&run=run-fx-0003")
+  await expect(page.getByText(/^CSV\b/)).toBeVisible()
+  const add = page.getByRole("textbox", { name: "Add a run" })
+  await add.fill("run-fx-0009")
+  await add.press("Enter")
+  await expect(page).toHaveURL(
+    /run=run-fx-0002&run=run-fx-0003&run=run-fx-0009/,
+  )
+  // Dense ranks: the tied pair shares #1, the added run ranks #2.
+  await expect(page.getByText("#2", { exact: true })).toBeVisible()
+})

@@ -14,6 +14,7 @@ type Ok<P, M extends string = "get"> = M extends keyof P
   : never
 
 export type ResolveEnvelope = Ok<paths["/search"]>
+export type ResolveBatch = Ok<paths["/resolve/kernel/batch"], "post">
 export type CompareModel = Ok<paths["/compare"], "post">
 export type ServingResolveModel = Ok<paths["/resolve/serving"], "post">
 export type OperationDossier = Ok<paths["/operations/{idOrSlug}"]>
@@ -88,6 +89,14 @@ export function client({
     },
     async resolveKernel(body: ResolveKernelRequest): Promise<ResolveEnvelope> {
       return unwrap(await api.POST("/resolve/kernel", { body }))
+    },
+    /** Up to twenty requests resolved in one call, results in order. */
+    async resolveKernels(
+      requests: ResolveKernelRequest[],
+    ): Promise<ResolveBatch> {
+      return unwrap(
+        await api.POST("/resolve/kernel/batch", { body: { requests } }),
+      )
     },
     async getOperation(
       idOrSlug: string,

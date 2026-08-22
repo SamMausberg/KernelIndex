@@ -10,6 +10,7 @@ import { Link } from "@/components/quiet-link"
 import {
   AnswerSlots,
   answerLabel,
+  ByLanguage,
   isDeployable,
 } from "@/features/answer/answer-slots"
 import type { ResultRow, SearchPageModel } from "@/lib/catalog"
@@ -17,6 +18,7 @@ import { formatDateUTC, formatPrimary } from "@/lib/format"
 import { meetsTrust, removeToken } from "@/lib/search-query"
 import { TRUST_TIERS, trustTier } from "@/lib/trust-tier"
 import { licenseMatches } from "@/server/policy/deployability"
+import { NearestMeasured } from "./nearest"
 import { ResultRowItem, ResultTableHead } from "./result-row"
 import { type BrowseFilters, OperationList, StartState } from "./start-state"
 import { SuggestInput } from "./suggest"
@@ -176,6 +178,7 @@ function TierDivider({ label, count }: { label: string; count: number }) {
 function Recommendation({
   top,
   fastest,
+  kept,
   model,
   hiddenFaster = null,
 }: {
@@ -183,6 +186,8 @@ function Recommendation({
   /** The cohort's pure-latency leader; differs from `top` when a stronger
    * tier surfaced first (§12: the faster number is stated, never hidden). */
   fastest: ResultRow | null
+  /** The exact rows under the active filters, in cohort rank order. */
+  kept: ResultRow[]
   model: SearchPageModel
   /** Cohort leader hidden by the default source filter: the faster number
    * is still stated (§12), just marked as source-less. */
@@ -234,6 +239,7 @@ function Recommendation({
           deploy={deployable}
           vsBaseline={vsBaseline}
         />
+        <ByLanguage rows={kept} />
         {fasterInCohort?.primary && (
           <p className="mt-3.5 text-body text-subtle">
             Fastest overall in this comparison:{" "}
@@ -561,10 +567,17 @@ export function SearchResults({
           </section>
         ) : (
           <>
+            {model.nearest && model.operation && exactKept.length === 0 && (
+              <NearestMeasured
+                nearest={model.nearest}
+                operationSlug={model.operation.slug}
+              />
+            )}
             {top && (
               <Recommendation
                 top={top}
                 fastest={fastest}
+                kept={exactKept}
                 model={model}
                 hiddenFaster={hiddenBySourceFilter}
               />

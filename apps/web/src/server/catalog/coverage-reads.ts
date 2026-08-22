@@ -5,26 +5,11 @@
 // including failed/superseded) rides along as its own labeled number.
 import { and, desc, eq, inArray, isNotNull, sql } from "drizzle-orm"
 import type { CoveragePageModel, CoverageSource } from "@/lib/catalog-models"
+import { HERO_FAMILIES, HERO_GPUS } from "@/lib/priority"
 import { db } from "../db/client.ts"
 import * as schema from "../db/schema.ts"
 import { eligibleRunFilter } from "./record-events.ts"
 import { eligibleServingRuns } from "./serving-reads.ts"
-
-/** The workloads an inference engineer asks about first, on the GPUs they
- * ask about first. Editorial priority order; a zero cell is a stated gap. */
-const HERO_GPUS = ["NVIDIA H100", "NVIDIA B200"]
-const HERO_FAMILIES = [
-  "gqa-paged-attention",
-  "gqa-ragged-attention",
-  "mla-paged-attention",
-  "gemm",
-  "moe",
-  "rmsnorm",
-  "layernorm",
-  "softmax",
-  "rope",
-  "mlp",
-]
 
 /* postgres.js hands raw-SQL timestamps back as strings. */
 const lastFetched = sql<string | Date | null>`(

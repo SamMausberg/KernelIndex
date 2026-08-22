@@ -130,7 +130,9 @@ rmsnorm gpu:B200 dtype:bf16 shape:[2048,4096] framework=pytorch trust:verified`}
             <span className="font-mono text-small">tokens=2048</span>. Workload
             and hardware filters decide what counts as an exact match; trust and
             license filters only hide rows. A typo in a filter gets a correction
-            hint, not a silent guess.
+            hint, not a silent guess. A shape or axis value nobody measured is
+            answered with the measured cases on either side of it, each ranked
+            only inside its own cohort.
           </p>
         </Section>
 
@@ -255,6 +257,13 @@ curl -X POST https://kernelindex.com/api/v1/resolve/kernel \\
   -H 'Content-Type: application/json' \\
   -d '{"operation":{"name":"rmsnorm","axes":{"tokens":2048}},
        "environment":{"hardwareProduct":"B200","dtype":"bf16"}}'
+
+# many workloads in one call (an agent planning every operation of a model):
+curl -X POST https://kernelindex.com/api/v1/resolve/kernel/batch \\
+  -H 'Content-Type: application/json' \\
+  -d '{"requests":[
+        {"operation":{"name":"rmsnorm"},"environment":{"hardwareProduct":"B200"}},
+        {"operation":{"name":"gemm"},"environment":{"hardwareProduct":"B200"}}]}'
 
 # evidence dossiers (same models as the pages):
 curl https://kernelindex.com/api/v1/runs/<id-or-digest>
