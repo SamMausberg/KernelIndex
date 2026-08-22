@@ -97,6 +97,7 @@ import { computeSweep } from "./sweep.ts"
 
 // Hardware, project, and model reads live beside this module; the seam
 // resolves them through the same import (§27.5).
+export { getChallenges } from "./challenge-reads.ts"
 export { getFeed } from "./feed-reads.ts"
 export { getModelIndex, getModelPage } from "./model-reads.ts"
 export {

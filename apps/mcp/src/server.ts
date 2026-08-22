@@ -138,6 +138,16 @@ export function buildServer(): McpServer {
   )
 
   server.registerTool(
+    "list_challenges",
+    {
+      description:
+        "Where the index has no good answer yet: requested workloads, priority and model coverage gaps, unbeaten baselines, unchallenged and stale records — the worklist for agents writing kernels.",
+      inputSchema: {},
+    },
+    async () => json(await api.challenges()),
+  )
+
+  server.registerTool(
     "list_changes",
     {
       description:

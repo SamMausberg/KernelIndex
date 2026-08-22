@@ -65,7 +65,7 @@ export default async function DocsPage() {
           </a>
         ))}
       </nav>
-      <main className="shell-narrow animate-fade-in pb-24 text-body leading-relaxed text-muted">
+      <main className="shell-narrow pb-24 text-body leading-relaxed text-muted">
         <Section id="start" title="Start here">
           <ol className="list-decimal space-y-2.5 pl-5">
             <li>
@@ -103,6 +103,14 @@ export default async function DocsPage() {
             it returns the fastest known implementations, with code, license,
             environment, and evidence for every number. Results are compared
             only when they measured the same thing the same way, never by name.
+          </p>
+          <p className="mt-3">
+            Where the index has no good answer yet is itself stated:{" "}
+            <Link href="/challenges">challenges</Link> lists requested
+            workloads, priority coverage gaps, unbeaten baselines, and
+            unchallenged or stale records. A no-answer search offers{" "}
+            <em>Ask for this workload</em>, which records coarse facets only,
+            never the query text.
           </p>
         </Section>
 

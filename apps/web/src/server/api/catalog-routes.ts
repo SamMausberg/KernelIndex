@@ -4,6 +4,7 @@
 // key middleware, CORS, and Problem-Details error handling apply.
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import {
+  getChallenges,
   getCoveragePage,
   getFeed,
   getModelPage,
@@ -14,6 +15,7 @@ import {
 } from "../../lib/catalog.ts"
 import { CACHE_MEDIUM, CACHE_SHORT, fail, json } from "./http.ts"
 import {
+  challengesResponse,
   coverageResponse,
   feedResponse,
   hardwareResponse,
@@ -77,6 +79,24 @@ listRoutes.openapi(
     if (cursor === null) fail(400, "INVALID_CURSOR", raw ?? "")
     c.header("Cache-Control", CACHE_SHORT)
     return c.json(await listRuns({ ...filters, cursor }), 200)
+  },
+)
+
+// Challenges (§2.3): where the index has no good answer yet — the worklist
+// for contributors and agents writing kernels.
+listRoutes.openapi(
+  createRoute({
+    method: "get",
+    path: "/challenges",
+    responses: json(
+      challengesResponse,
+      "Requested workloads, priority and model gaps, unbeaten baselines, unchallenged and stale records; every row points at the cohort or search where the answer would go",
+    ),
+  }),
+  async (c) => {
+    const model = await getChallenges()
+    c.header("Cache-Control", CACHE_MEDIUM)
+    return c.json({ ...model, generatedAt: new Date().toISOString() }, 200)
   },
 )
 

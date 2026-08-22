@@ -28,6 +28,7 @@ Usage:
   ki compare run <id> <id> [...]     aligned comparison (2–8 runs)
   ki records [--limit n] [--cursor c]   current record holders, newest first
   ki changes [--since <iso>]         what the index learned, newest first
+  ki challenges                      where the index has no good answer yet
   ki runs [filters]                  published runs, newest first (paged)
   ki hardware                        per-GPU kernel/serving coverage
   ki models                          serving models + kernel model: tags
@@ -318,6 +319,21 @@ async function main(): Promise<number> {
             : entry.kind === "correction"
               ? `${entry.implementation.name} on ${entry.operation.name} ${entry.action}${entry.reason ? `: ${entry.reason}` : ""}`
               : `${entry.project.name} claimed by ${entry.by}`,
+      ]),
+    )
+    return 0
+  }
+
+  if (command === "challenges") {
+    const model = await api.challenges()
+    if (emit(model, model.challenges)) return 0
+    table(
+      model.challenges.map((challenge) => [
+        challenge.kind,
+        challenge.operation?.name ?? challenge.family ?? "",
+        challenge.hardware ?? "",
+        challenge.count > 0 ? `${challenge.count}x` : (challenge.since ?? ""),
+        challenge.detail,
       ]),
     )
     return 0

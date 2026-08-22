@@ -30,7 +30,7 @@ export default async function GpusPage() {
         context="coverage per hardware model · records held · freshness"
         meta={<ApiLink path="/hardware" />}
       />
-      <main className="shell animate-fade-in pt-7 pb-24">
+      <main className="shell pt-7 pb-24">
         <div className="overflow-x-auto">
           <div
             className={`${GRID} items-baseline border-b border-border-strong pb-3 font-mono text-label text-faint uppercase`}
@@ -111,9 +111,19 @@ export default async function GpusPage() {
                   {row.runs.map((runs, index) => (
                     <span
                       key={coverage.hero.gpus[index]}
-                      className={`text-right font-mono text-small ${runs === 0 ? "text-faint" : ""}`}
+                      className="text-right font-mono text-small"
                     >
-                      {runs === 0 ? "0 · gap" : runs.toLocaleString("en-US")}
+                      {runs === 0 ? (
+                        <Link
+                          href="/challenges#gap"
+                          prefetch={false}
+                          className="text-small text-faint"
+                        >
+                          0 · gap
+                        </Link>
+                      ) : (
+                        runs.toLocaleString("en-US")
+                      )}
                     </span>
                   ))}
                   <span className="text-right font-mono text-small text-subtle">

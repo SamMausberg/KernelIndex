@@ -39,6 +39,8 @@ Claim rules (keep these when quoting results):
 - GET  /records                      record ledger (cursor-paginated)
 - GET  /feed?since=<iso>             what changed: record breaks, imports,
                                      corrections, accepted claims (30 days)
+- GET  /challenges                   where the index has no good answer yet:
+                                     the worklist for agents writing kernels
 - POST /compare                      up to 8 runs, winner only inside one cohort
 - POST /resolve/serving              objective + constraints -> feasible + Pareto
 - GET  /serving-runs, /serving-configurations

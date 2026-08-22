@@ -6,6 +6,8 @@ import { z } from "@hono/zod-openapi"
 import type {
   Attestation,
   AxisSpec,
+  Challenge,
+  ChallengesModel,
   CohortContext,
   CohortOption,
   ComparePageModel,
@@ -351,6 +353,30 @@ export const feedResponse = z.object({
   days: z.array(z.object({ date: z.string(), entries: z.array(feedEntry) })),
   generatedAt: z.string(),
 }) satisfies z.ZodType<FeedModel & { generatedAt: string }>
+
+export const challenge = z.object({
+  kind: z.enum([
+    "requested",
+    "gap",
+    "model_gap",
+    "unbeaten_baseline",
+    "unchallenged",
+    "stale",
+  ]),
+  operation: z.object({ name: z.string(), slug: z.string() }).nullable(),
+  family: z.string().nullable(),
+  hardware: z.string().nullable(),
+  detail: z.string(),
+  since: z.string().nullable(),
+  count: z.number(),
+  href: z.string(),
+}) satisfies z.ZodType<Challenge>
+
+export const challengesResponse = z.object({
+  illustrative: z.boolean(),
+  challenges: z.array(challenge),
+  generatedAt: z.string(),
+}) satisfies z.ZodType<ChallengesModel & { generatedAt: string }>
 
 export const recordsResponse = z.object({
   records: z.array(recordHolder),

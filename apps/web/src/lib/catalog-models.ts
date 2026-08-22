@@ -326,6 +326,39 @@ export type FeedModel = {
   days: { date: string; entries: FeedEntry[] }[]
 }
 
+// ---------------------------------------------------------------------------
+// Challenges (§2.3 coverage-gap discovery): one row per thing the index has
+// no good answer for yet. Facts, not warnings; three facts and two actions.
+
+export type ChallengeKind =
+  | "requested"
+  | "gap"
+  | "model_gap"
+  | "unbeaten_baseline"
+  | "unchallenged"
+  | "stale"
+
+export type Challenge = {
+  kind: ChallengeKind
+  /** The operation in question, or null for a family-level gap. */
+  operation: { name: string; slug: string } | null
+  family: string | null
+  hardware: string | null
+  /** One line stating the gap in words (the workload, the baseline, …). */
+  detail: string
+  /** Since when the gap has stood; null when not a dated fact. */
+  since: string | null
+  /** Requests recorded for this workload class (requested rows); 0 else. */
+  count: number
+  /** Where to look: the cohort, the operation page, or a search. */
+  href: string
+}
+
+export type ChallengesModel = {
+  illustrative: boolean
+  challenges: Challenge[]
+}
+
 /** One recognized facet rendered as an editable token (§16.6). */
 export type SearchFacetToken = {
   token: string

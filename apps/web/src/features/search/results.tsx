@@ -20,6 +20,7 @@ import { meetsTrust, removeToken } from "@/lib/search-query"
 import { TRUST_TIERS, trustTier } from "@/lib/trust-tier"
 import { licenseMatches } from "@/server/policy/deployability"
 import { NearestMeasured } from "./nearest"
+import { RequestWorkload } from "./request-button"
 import { ResultRowItem, ResultTableHead } from "./result-row"
 import { type BrowseFilters, OperationList, StartState } from "./start-state"
 import { SuggestInput } from "./suggest"
@@ -229,7 +230,7 @@ function Recommendation({
       ? exactBaseline.primary.value / top.primary.value
       : null
   return (
-    <section className="grid animate-row-in grid-cols-[minmax(0,2.2fr)_minmax(260px,1fr)] gap-10 border-b border-border py-6 [animation-delay:.02s] max-lg:grid-cols-1">
+    <section className="grid grid-cols-[minmax(0,2.2fr)_minmax(260px,1fr)] gap-10 border-b border-border py-6 max-lg:grid-cols-1">
       <div>
         <AnswerSlots
           top={top}
@@ -407,7 +408,7 @@ export function SearchResults({
     <>
       {/* z-30: the suggest popup must paint above the result sections. */}
       <div className="relative z-30 border-b border-border bg-surface">
-        <div className="shell animate-fade-in pt-4 pb-3.5">
+        <div className="shell pt-4 pb-3.5">
           <SearchField query={model.query} />
           {(model.facets.length > 0 || model.queryIssues.length > 0) && (
             <div className="mt-2.5 flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
@@ -527,7 +528,7 @@ export function SearchResults({
             filters={browse ?? { sort: "indexed", family: null, page: 1 }}
           />
         ) : model.matches ? (
-          <section className="animate-row-in pt-6">
+          <section className="pt-6">
             <div className="flex flex-wrap items-baseline justify-between gap-4 border-b border-border-strong pb-3">
               <h1 className="text-lead font-medium">
                 {model.matches.length} operations match
@@ -574,6 +575,14 @@ export function SearchResults({
                 operationSlug={model.operation.slug}
               />
             )}
+            {model.operation && model.groups.exact.length === 0 && (
+              <div className="border-b border-border py-4">
+                <RequestWorkload
+                  operation={model.operation.slug}
+                  query={model.query}
+                />
+              </div>
+            )}
             {top && (
               <Recommendation
                 top={top}
@@ -584,7 +593,7 @@ export function SearchResults({
               />
             )}
 
-            <div className="mt-7 flex flex-wrap items-baseline gap-x-6 gap-y-2 border-b border-border-strong animate-row-in [animation-delay:.08s]">
+            <div className="mt-7 flex flex-wrap items-baseline gap-x-6 gap-y-2 border-b border-border-strong">
               {MODES.map((mode) => {
                 const total = groupsByMode[mode.key].length
                 const selected = mode.key === view
@@ -686,7 +695,7 @@ export function SearchResults({
               })()}
             </p>
 
-            <div className="mt-1 animate-row-in overflow-x-auto [animation-delay:.12s]">
+            <div className="mt-1 overflow-x-auto">
               {rows.length > 0 ? (
                 <>
                   <ResultTableHead
@@ -809,7 +818,7 @@ export function SearchResults({
             )}
 
             {model.related.length > 0 && (
-              <section className="mt-12 animate-row-in [animation-delay:.16s]">
+              <section className="mt-12">
                 <h2 className="text-body font-medium text-muted">Related</h2>
                 <div className="mt-2.5 flex flex-wrap gap-x-7 gap-y-2.5">
                   {model.related.map((item) => (

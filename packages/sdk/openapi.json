@@ -11738,6 +11738,121 @@
         }
       }
     },
+    "/challenges": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Requested workloads, priority and model gaps, unbeaten baselines, unchallenged and stale records; every row points at the cohort or search where the answer would go",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "illustrative": {
+                      "type": "boolean"
+                    },
+                    "challenges": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "requested",
+                              "gap",
+                              "model_gap",
+                              "unbeaten_baseline",
+                              "unchallenged",
+                              "stale"
+                            ]
+                          },
+                          "operation": {
+                            "type": ["object", "null"],
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "slug": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["name", "slug"]
+                          },
+                          "family": {
+                            "type": ["string", "null"]
+                          },
+                          "hardware": {
+                            "type": ["string", "null"]
+                          },
+                          "detail": {
+                            "type": "string"
+                          },
+                          "since": {
+                            "type": ["string", "null"]
+                          },
+                          "count": {
+                            "type": "number"
+                          },
+                          "href": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "operation",
+                          "family",
+                          "hardware",
+                          "detail",
+                          "since",
+                          "count",
+                          "href"
+                        ]
+                      }
+                    },
+                    "generatedAt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["illustrative", "challenges", "generatedAt"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "number"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["type", "title", "status", "code", "requestId"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/feed": {
       "get": {
         "parameters": [

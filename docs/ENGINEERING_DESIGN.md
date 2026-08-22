@@ -2732,6 +2732,29 @@ implementation page's evidence rows count them; `POST
 /runs/{id}/attestations` takes them from a `submissions:write` API key. They
 never change the evidence level (§8.14) and every surface says so.
 
+**Reality note (2026-08-22, challenges and complete paint).** §2.3's
+coverage-gap discovery is a surface, and the entrance motion is gone:
+
+- **`/challenges`** (`server/catalog/challenge-reads.ts`, footer-linked)
+  states where the index has no good answer yet, grouped by kind: requested
+  workloads (from the `workload_requested` product event — coarse facets
+  only: operation slug, GPU, dtype, axis bindings bucketed to powers of
+  two; recorded by "Ask for this workload" on the no-answer search state),
+  priority family×GPU zero cells, model-tagged operations missing a
+  priority GPU, unbeaten source baselines, single-entry cohorts, and stale
+  records. Three facts and two actions per row; every row points at the
+  cohort or search where the answer would go. Served at
+  `GET /api/v1/challenges`, `ki challenges`, MCP `list_challenges`; the
+  /gpus zero cells, model-page gaps, and the operation island's
+  not-measured line link in.
+- **Pages paint complete (founder feedback).** The one-shot entrance
+  animations (`animate-row-in`/`animate-fade-in` and their stagger delays)
+  read as a half-loaded page and were removed everywhere; the motion
+  tokens remain for hover, focus, disclosure, and copy confirmation only.
+  `next/font` display switched to `optional` so text never repaints when
+  the webfont lands. The browse family chips expand in place into one
+  wrapped row instead of opening a detached block below the leads.
+
 ### 16.1 Product character
 
 KernelIndex should feel like a serious technical reference built by kernel engineers, not a generic SaaS dashboard, gaming leaderboard, or GPU marketing site.

@@ -12,6 +12,8 @@ const SERVER_EVENTS = [
   "search_submitted",
   "serving_resolved",
   "model_resolved",
+  /** §2.3 demand: coarse facets of an unanswered request, never text. */
+  "workload_requested",
 ] as const
 /** Client-beaconed: these pages are ISR/CDN-cached, so the server never
     sees the view; /e accepts exactly this list. */
@@ -25,7 +27,10 @@ type ProductEvent =
   | (typeof SERVER_EVENTS)[number]
   | (typeof BEACON_EVENTS)[number]
 
-export type EventFacets = Record<string, string | number | boolean>
+export type EventFacets = Record<
+  string,
+  string | number | boolean | Record<string, number>
+>
 
 /** Inserts one event row; swallows every failure. Fixture-backed
  * deployments (previews, e2e) have no event store and no-op. */

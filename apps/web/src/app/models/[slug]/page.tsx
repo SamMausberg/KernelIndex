@@ -80,7 +80,7 @@ export default async function ModelPage({ params, searchParams }: Props) {
           title={<span className="font-mono">{slug}</span>}
           context="no operation carries this model tag"
         />
-        <main className="shell animate-fade-in pt-7 pb-24">
+        <main className="shell pt-7 pb-24">
           <p className="max-w-[76ch] text-body text-muted">
             No indexed operation declares workload provenance for{" "}
             <span className="font-mono">model:{slug}</span>. Model tags are
@@ -159,7 +159,7 @@ export default async function ModelPage({ params, searchParams }: Props) {
         )}
       </ContextHeader>
 
-      <main className="shell animate-fade-in pb-24">
+      <main className="shell pb-24">
         {Boolean(gpu) &&
           model.selectedGpu !== null &&
           gpu !== model.selectedGpu && (
@@ -197,7 +197,8 @@ export default async function ModelPage({ params, searchParams }: Props) {
             />
             <p className="mt-3 text-small text-faint">
               A gap is a stated absence of eligible evidence, not a claim about
-              performance. <Link href="/submit">Contribute evidence →</Link>
+              performance. <Link href="/challenges">Challenges →</Link>{" "}
+              <Link href="/submit">Contribute evidence →</Link>
             </p>
           </Section>
         )}

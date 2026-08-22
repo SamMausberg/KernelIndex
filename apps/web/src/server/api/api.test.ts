@@ -85,6 +85,18 @@ describe("api /v1", () => {
     expect((await measured.json()).nearest).toBeNull()
   })
 
+  it("serves the challenges board", async () => {
+    const response = await get("/challenges")
+    expect(response.status).toBe(200)
+    const model = await response.json()
+    const kinds = model.challenges.map((c: { kind: string }) => c.kind)
+    expect(kinds).toContain("requested")
+    expect(kinds).toContain("gap")
+    expect(
+      model.challenges.every((c: { href: string }) => c.href.startsWith("/")),
+    ).toBe(true)
+  })
+
   it("serves the change feed grouped by day and honors since", async () => {
     const response = await get("/feed")
     expect(response.status).toBe(200)

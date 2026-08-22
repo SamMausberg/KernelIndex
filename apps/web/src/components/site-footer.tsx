@@ -5,6 +5,7 @@ const LINKS = [
   { label: "Feed", href: "/feed" },
   { label: "Models", href: "/models" },
   { label: "Projects", href: "/projects" },
+  { label: "Challenges", href: "/challenges" },
   { label: "Contribute", href: "/submit" },
   { label: "Sources", href: "/docs#sources" },
   { label: "Methodology", href: "/docs" },
