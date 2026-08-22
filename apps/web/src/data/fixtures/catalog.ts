@@ -462,6 +462,7 @@ function rowFromRun(r: FxRun): ResultRow {
     mismatches: r.mismatches ?? [],
     rank: r.rank,
     tiedWithPrevious: r.tied ?? false,
+    cohortSize: r.rank === null ? null : RANKED.length,
     sourceAvailable: r.sourceAvailable,
     installable: r.installable,
     license: r.license,
@@ -497,6 +498,7 @@ const SUPPORTED_UNMEASURED: ResultRow = {
   mismatches: [],
   rank: null,
   tiedWithPrevious: false,
+  cohortSize: null,
   sourceAvailable: true,
   installable: true,
   license: APACHE,
@@ -508,6 +510,20 @@ const SUPPORTED_UNMEASURED: ResultRow = {
 }
 
 const RANKED = RUNS.filter((r) => r.workloadId === "wl-2048" && r.rank !== null)
+
+/** The one fixture environment cohort, stating its #1 (the B200 cohort). */
+const COHORT_OPTIONS_2048 = [
+  {
+    key: COHORT_2048.comparisonKey,
+    label: B200.model,
+    runs: RANKED.length,
+    head: {
+      runId: RANKED[0].id,
+      implementation: { name: RANKED[0].impl.name, slug: RANKED[0].impl.slug },
+      primary: rowFromRun(RANKED[0]).primary as PrimaryMetric,
+    },
+  },
+]
 
 export async function getHomePage(): Promise<HomePageModel> {
   // Homepage lists default to source-backed records (2026-08-16 decision);
@@ -555,6 +571,7 @@ export async function getRecordsPage(): Promise<RecordsPageModel> {
   const holder2048: RecordHolder = {
     cohortKey: COHORT_2048.comparisonKey,
     operation: { name: "RMSNorm, hidden 4096", slug: "rmsnorm-h4096" },
+    workloadId: "wl-2048",
     workloadSummary: WORKLOADS["wl-2048"].summary,
     hardware: B200.model,
     environmentSummary: "CUDA 13.1 · PyTorch 2.9.0 · ki-fixed-clock v1",
@@ -591,6 +608,7 @@ export async function getRecordsPage(): Promise<RecordsPageModel> {
   const holder1024: RecordHolder = {
     cohortKey: digest("cohort:rmsnorm-h4096:tokens-1024"),
     operation: { name: "RMSNorm, hidden 4096", slug: "rmsnorm-h4096" },
+    workloadId: "wl-1024",
     workloadSummary: WORKLOADS["wl-1024"].summary,
     hardware: B200.model,
     environmentSummary: "CUDA 13.1 · PyTorch 2.9.0 · ki-fixed-clock v1",
@@ -716,6 +734,7 @@ export async function searchCatalog(
       browse: empty ? await getOperationIndex() : null,
       matches: ambiguous ? await annotatedMatches(intent) : null,
       cohort: null,
+      cohortOptions: [],
       groups: {
         exact: [],
         compatible: [],
@@ -753,6 +772,7 @@ export async function searchCatalog(
     browse: null,
     matches: null,
     cohort: COHORT_2048,
+    cohortOptions: COHORT_OPTIONS_2048,
     groups: {
       exact: RANKED.map(rowFromRun),
       compatible: RUNS.filter((r) => r.match === "compatible").map(rowFromRun),
@@ -876,7 +896,7 @@ export async function getOperationPage(
       toleranceSummary: w.toleranceSummary,
     })),
     selectedWorkloadId: selected,
-    cohortOptions: [],
+    cohortOptions: selected === "wl-2048" ? COHORT_OPTIONS_2048 : [],
     cohort: selected === "wl-2048" ? COHORT_2048 : null,
     records,
     sweep,
@@ -1001,6 +1021,7 @@ const IMPLEMENTATIONS: Record<string, ImplementationPageModel> = {
       evidence: "verified",
       summary: "Fastest deployable result in the illustrative RMSNorm cohort",
     },
+    standing: { records: 1 },
     bestResults: [rowFromRun(RUNS[1]), rowFromRun(RUNS[4])],
     limitations: ["hidden dimension fixed at 4096", "bf16 only"],
     provenance: {
@@ -1053,6 +1074,7 @@ const IMPLEMENTATIONS: Record<string, ImplementationPageModel> = {
       summary:
         "Fastest verified result in the illustrative cohort, but not deployable: no public source and unknown license",
     },
+    standing: { records: 1 },
     bestResults: [rowFromRun(RUNS[0])],
     limitations: ["No public source", "License unknown", "No install recipe"],
     provenance: {
@@ -1130,6 +1152,7 @@ function runPage(r: FxRun): RunPageModel {
       rank: r.rank,
       eligible: (r.ineligibleReasons ?? []).length === 0,
       ineligibleReasons: r.ineligibleReasons ?? [],
+      headRunId: r.workloadId === "wl-2048" ? RANKED[0].id : null,
     },
     implementation: {
       name: r.impl.name,

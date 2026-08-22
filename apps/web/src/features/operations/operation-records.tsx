@@ -1,13 +1,14 @@
 "use client"
 
 import { startTransition, useEffect, useState } from "react"
+import { ExpandRows } from "@/components/expand-rows"
 import { KeyValueList } from "@/components/key-value-list"
 import { Link } from "@/components/quiet-link"
 import { Section } from "@/components/section"
 import { AnswerSlots, isDeployable } from "@/features/answer/answer-slots"
 import { ResultRowItem, ResultTableHead } from "@/features/search/result-row"
 import type { WorkloadOption } from "@/lib/catalog"
-import { formatDateUTC } from "@/lib/format"
+import { formatDateUTC, formatPrimary } from "@/lib/format"
 import { SweepChart } from "./sweep"
 import type { OperationVariant } from "./variant"
 import { WatchButton } from "./watch-button"
@@ -38,18 +39,30 @@ function loadVariant(slug: string, search: URLSearchParams) {
   return promise
 }
 
+const ENV_GRID =
+  "grid grid-cols-[minmax(150px,1.2fr)_110px_minmax(150px,1fr)_48px] items-baseline gap-x-4"
+
 export function OperationRecords({
   slug,
+  operationName,
   workloads,
   lastObservedAt,
   initial,
 }: {
   slug: string
+  operationName: string
   workloads: WorkloadOption[]
   lastObservedAt: string | null
   initial: OperationVariant
 }) {
   const [variant, setVariant] = useState(initial)
+  const cohortHref = (key: string) =>
+    `/operations/${slug}?${new URLSearchParams({
+      ...(variant.selectedWorkloadId
+        ? { workload: variant.selectedWorkloadId }
+        : {}),
+      cohort: key,
+    }).toString()}`
 
   const swap = (search: URLSearchParams) => {
     loadVariant(slug, search).then((loaded) => {
@@ -128,30 +141,52 @@ export function OperationRecords({
               selectedId={variant.selectedWorkloadId}
               slug={slug}
             />
+            {/* The environment chooser states what each cohort holds (§16.8
+                coverage made positive): its best known run, not only a
+                label. The selected row reads as the current cohort. */}
             {variant.cohortOptions.length > 1 && (
-              <div className="flex flex-wrap items-center gap-2 text-small">
-                <span className="mr-1 text-faint">Hardware</span>
-                {variant.cohortOptions.map((option) => (
-                  <Link
-                    key={option.key}
-                    href={`/operations/${slug}?${new URLSearchParams({
-                      ...(variant.selectedWorkloadId
-                        ? { workload: variant.selectedWorkloadId }
-                        : {}),
-                      cohort: option.key,
-                    }).toString()}`}
-                    className={`key font-mono text-small whitespace-nowrap no-underline ${
+              <div className="text-small">
+                <div
+                  className={`${ENV_GRID} border-b border-border-strong pb-1.5 font-mono text-label text-faint uppercase`}
+                >
+                  <span>Hardware</span>
+                  <span className="text-right">Best known</span>
+                  <span>Implementation</span>
+                  <span className="text-right">Runs</span>
+                </div>
+                <ExpandRows
+                  cap={6}
+                  noun="environments"
+                  rows={variant.cohortOptions.map((option) => {
+                    const selected =
                       option.key === variant.cohort?.comparisonKey
-                        ? "key-on"
-                        : "text-subtle hover:text-fg"
-                    }`}
-                  >
-                    {option.label}
-                    <span className="ml-1.5 text-mini text-faint">
-                      {option.runs}
-                    </span>
-                  </Link>
-                ))}
+                    return (
+                      <Link
+                        key={option.key}
+                        href={cohortHref(option.key)}
+                        aria-current={selected ? "true" : undefined}
+                        className={`${ENV_GRID} border-b border-line py-1.5 no-underline transition-colors hover:bg-raised ${
+                          selected ? "text-fg" : "text-subtle"
+                        }`}
+                      >
+                        <span className="truncate font-mono">
+                          {option.label}
+                        </span>
+                        <span className="text-right font-mono">
+                          {option.head
+                            ? formatPrimary(option.head.primary)
+                            : "—"}
+                        </span>
+                        <span className="truncate">
+                          {option.head?.implementation.name ?? "no ranked run"}
+                        </span>
+                        <span className="text-right font-mono text-faint">
+                          {option.runs}
+                        </span>
+                      </Link>
+                    )
+                  })}
+                />
               </div>
             )}
           </div>
@@ -176,6 +211,13 @@ export function OperationRecords({
                     : []),
                 ]}
               />
+              <Link
+                href={`/records?view=history&f=${encodeURIComponent(operationName)}`}
+                prefetch={false}
+                className="mt-2.5 inline-block text-small"
+              >
+                Record history →
+              </Link>
               <WatchButton comparisonKey={variant.cohort.comparisonKey} />
             </div>
           )}

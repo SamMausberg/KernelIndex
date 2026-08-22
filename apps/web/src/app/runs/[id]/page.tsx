@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import { ApiLink } from "@/components/api-link"
 import { EvidenceOpened } from "@/components/beacon"
 import { ContextHeader } from "@/components/context-header"
 import { CopyButton } from "@/components/copy-button"
@@ -45,6 +46,10 @@ export default async function RunPage({ params }: Props) {
   const model = await getRunPage(id)
   if (!model) notFound()
   const passed = model.run.status === "passed"
+  // The exact cohort this run ranks in, as the operation island's URL: the
+  // dossier is never a dead end toward its comparison (§16.10).
+  const cohortHref = `/operations/${model.operation.slug}?workload=${model.workload.id}&cohort=${encodeURIComponent(model.cohort.comparisonKey)}`
+  const head = model.cohort.headRunId
   const lifecycleNotes = [
     model.lifecycle.retracted &&
       `Retracted ${formatDateUTC(model.lifecycle.retracted.at)}: ${model.lifecycle.retracted.reason}`,
@@ -86,6 +91,7 @@ export default async function RunPage({ params }: Props) {
               {model.run.status.replaceAll("_", " ")}
             </span>
             <span>{evidenceLabel(model.evidence)} evidence</span>
+            <ApiLink path={`/runs/${model.run.id}`} />
           </>
         }
       />
@@ -131,8 +137,14 @@ export default async function RunPage({ params }: Props) {
             <p className="mt-3 text-body text-muted">
               {model.cohort.eligible ? (
                 <>
-                  {model.cohort.rank !== null &&
-                    `Rank ${model.cohort.rank} in its comparison group · `}
+                  {model.cohort.rank !== null && (
+                    <>
+                      <Link href={cohortHref}>
+                        Rank {model.cohort.rank} in its comparison group
+                      </Link>
+                      {" · "}
+                    </>
+                  )}
                   {model.cohort.profile === "source_native"
                     ? "source-native comparison"
                     : "strict exact comparison"}
@@ -146,6 +158,16 @@ export default async function RunPage({ params }: Props) {
                 </>
               )}
             </p>
+            {head !== null && head !== model.run.id && (
+              <p className="mt-2 text-small">
+                <Link
+                  href={`/compare?run=${head}&run=${model.run.id}`}
+                  className="action"
+                >
+                  Compare with #1 →
+                </Link>
+              </p>
+            )}
             {model.sourceNativeMetrics && (
               <p className="mt-3 font-mono text-small text-subtle">
                 {formatSourceNativeMetrics(model.sourceNativeMetrics)}
@@ -338,7 +360,7 @@ export default async function RunPage({ params }: Props) {
             {model.provenance.source.license &&
               ` · ${model.provenance.source.license}`}
           </span>
-          <Link href={`/operations/${model.operation.slug}`}>
+          <Link href={cohortHref}>
             All results for {model.operation.name} →
           </Link>
         </div>

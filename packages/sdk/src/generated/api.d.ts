@@ -72,6 +72,7 @@ export interface paths {
       parameters: {
         query?: {
           q?: string
+          cohort?: string
         }
         header?: never
         path?: never
@@ -110,6 +111,29 @@ export interface paths {
                   value: string
                 }[]
               } | null
+              cohortOptions: {
+                key: string
+                label: string
+                runs: number
+                head: {
+                  runId: string
+                  implementation: {
+                    name: string
+                    slug: string
+                  }
+                  primary: {
+                    metric: string
+                    unit: string
+                    statistic: string
+                    value: number
+                    sampleCount: number | null
+                    uncertainty: {
+                      low: number
+                      high: number
+                    } | null
+                  }
+                } | null
+              }[]
               bestVerified: {
                 runId: string | null
                 implementation: {
@@ -169,6 +193,7 @@ export interface paths {
                 }[]
                 rank: number | null
                 tiedWithPrevious: boolean
+                cohortSize: number | null
                 sourceAvailable: boolean
                 installable: boolean
                 license: {
@@ -240,6 +265,7 @@ export interface paths {
                 }[]
                 rank: number | null
                 tiedWithPrevious: boolean
+                cohortSize: number | null
                 sourceAvailable: boolean
                 installable: boolean
                 license: {
@@ -312,6 +338,7 @@ export interface paths {
                   }[]
                   rank: number | null
                   tiedWithPrevious: boolean
+                  cohortSize: number | null
                   sourceAvailable: boolean
                   installable: boolean
                   license: {
@@ -383,6 +410,7 @@ export interface paths {
                   }[]
                   rank: number | null
                   tiedWithPrevious: boolean
+                  cohortSize: number | null
                   sourceAvailable: boolean
                   installable: boolean
                   license: {
@@ -454,6 +482,7 @@ export interface paths {
                   }[]
                   rank: number | null
                   tiedWithPrevious: boolean
+                  cohortSize: number | null
                   sourceAvailable: boolean
                   installable: boolean
                   license: {
@@ -525,6 +554,7 @@ export interface paths {
                   }[]
                   rank: number | null
                   tiedWithPrevious: boolean
+                  cohortSize: number | null
                   sourceAvailable: boolean
                   installable: boolean
                   license: {
@@ -678,6 +708,29 @@ export interface paths {
                   value: string
                 }[]
               } | null
+              cohortOptions: {
+                key: string
+                label: string
+                runs: number
+                head: {
+                  runId: string
+                  implementation: {
+                    name: string
+                    slug: string
+                  }
+                  primary: {
+                    metric: string
+                    unit: string
+                    statistic: string
+                    value: number
+                    sampleCount: number | null
+                    uncertainty: {
+                      low: number
+                      high: number
+                    } | null
+                  }
+                } | null
+              }[]
               bestVerified: {
                 runId: string | null
                 implementation: {
@@ -737,6 +790,7 @@ export interface paths {
                 }[]
                 rank: number | null
                 tiedWithPrevious: boolean
+                cohortSize: number | null
                 sourceAvailable: boolean
                 installable: boolean
                 license: {
@@ -808,6 +862,7 @@ export interface paths {
                 }[]
                 rank: number | null
                 tiedWithPrevious: boolean
+                cohortSize: number | null
                 sourceAvailable: boolean
                 installable: boolean
                 license: {
@@ -880,6 +935,7 @@ export interface paths {
                   }[]
                   rank: number | null
                   tiedWithPrevious: boolean
+                  cohortSize: number | null
                   sourceAvailable: boolean
                   installable: boolean
                   license: {
@@ -951,6 +1007,7 @@ export interface paths {
                   }[]
                   rank: number | null
                   tiedWithPrevious: boolean
+                  cohortSize: number | null
                   sourceAvailable: boolean
                   installable: boolean
                   license: {
@@ -1022,6 +1079,7 @@ export interface paths {
                   }[]
                   rank: number | null
                   tiedWithPrevious: boolean
+                  cohortSize: number | null
                   sourceAvailable: boolean
                   installable: boolean
                   license: {
@@ -1093,6 +1151,7 @@ export interface paths {
                   }[]
                   rank: number | null
                   tiedWithPrevious: boolean
+                  cohortSize: number | null
                   sourceAvailable: boolean
                   installable: boolean
                   license: {
@@ -1250,6 +1309,24 @@ export interface paths {
                 key: string
                 label: string
                 runs: number
+                head: {
+                  runId: string
+                  implementation: {
+                    name: string
+                    slug: string
+                  }
+                  primary: {
+                    metric: string
+                    unit: string
+                    statistic: string
+                    value: number
+                    sampleCount: number | null
+                    uncertainty: {
+                      low: number
+                      high: number
+                    } | null
+                  }
+                } | null
               }[]
               cohort: {
                 comparisonKey: string
@@ -1325,6 +1402,7 @@ export interface paths {
                 }[]
                 rank: number | null
                 tiedWithPrevious: boolean
+                cohortSize: number | null
                 sourceAvailable: boolean
                 installable: boolean
                 license: {
@@ -1518,6 +1596,9 @@ export interface paths {
                   | null
                 summary: string
               }
+              standing: {
+                records: number
+              }
               bestResults: {
                 runId: string | null
                 implementation: {
@@ -1577,6 +1658,7 @@ export interface paths {
                 }[]
                 rank: number | null
                 tiedWithPrevious: boolean
+                cohortSize: number | null
                 sourceAvailable: boolean
                 installable: boolean
                 license: {
@@ -1738,6 +1820,7 @@ export interface paths {
                 rank: number | null
                 eligible: boolean
                 ineligibleReasons: string[]
+                headRunId: string | null
               }
               implementation: {
                 name: string
@@ -1874,6 +1957,7 @@ export interface paths {
                   name: string
                   slug: string
                 }
+                workloadId: string
                 workloadSummary: string
                 hardware: string
                 environmentSummary: string
@@ -1936,6 +2020,7 @@ export interface paths {
                   }[]
                   rank: number | null
                   tiedWithPrevious: boolean
+                  cohortSize: number | null
                   sourceAvailable: boolean
                   installable: boolean
                   license: {
@@ -3063,6 +3148,270 @@ export interface paths {
           }
         }
         /** @description Not found */
+        404: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              type: string
+              title: string
+              status: number
+              code: string
+              detail?: string
+              requestId: string
+            }
+          }
+        }
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/models/{slug}": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: {
+      parameters: {
+        query?: {
+          gpu?: string
+        }
+        header?: never
+        path: {
+          slug: string
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Model dossier: best known per operation on one GPU, gaps, evidence, source links (the web page's model) */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              illustrative: boolean
+              model: {
+                slug: string
+                relatedTags: string[]
+              }
+              resolved: boolean
+              stats: {
+                operations: number
+                families: number
+                runs: number
+              }
+              gpus: {
+                model: string
+                runs: number
+              }[]
+              selectedGpu: string | null
+              groups: {
+                family: string
+                entries: {
+                  operation: {
+                    name: string
+                    slug: string
+                  }
+                  family: string
+                  fastest: {
+                    runId: string | null
+                    implementation: {
+                      name: string
+                      slug: string
+                    }
+                    install: {
+                      kind: string
+                      command: string
+                    } | null
+                    project: {
+                      name: string
+                      slug: string
+                    }
+                    revision: string | null
+                    operation: {
+                      name: string
+                      slug: string
+                    }
+                    workloadSummary: string
+                    hardware: {
+                      model: string
+                      architecture: string | null
+                    }
+                    framework: string | null
+                    language: string | null
+                    primary: {
+                      metric: string
+                      unit: string
+                      statistic: string
+                      value: number
+                      sampleCount: number | null
+                      uncertainty: {
+                        low: number
+                        high: number
+                      } | null
+                    } | null
+                    solScore: number | null
+                    baseline: boolean
+                    /** @enum {string|null} */
+                    evidence:
+                      | "verified"
+                      | "replicated"
+                      | "reproducible"
+                      | "reported"
+                      | null
+                    /** @enum {string} */
+                    match:
+                      | "exact"
+                      | "compatible"
+                      | "supported_unobserved"
+                      | "related"
+                    mismatches: {
+                      field: string
+                      requested: string
+                      observed: string
+                    }[]
+                    rank: number | null
+                    tiedWithPrevious: boolean
+                    cohortSize: number | null
+                    sourceAvailable: boolean
+                    installable: boolean
+                    license: {
+                      declared: string | null
+                      concluded: string | null
+                    }
+                    lastTestedAt: string | null
+                    indexedAt: string | null
+                    stale: boolean
+                    disputed: boolean
+                    caveats: string[]
+                  }
+                  deployable: {
+                    runId: string | null
+                    implementation: {
+                      name: string
+                      slug: string
+                    }
+                    install: {
+                      kind: string
+                      command: string
+                    } | null
+                    project: {
+                      name: string
+                      slug: string
+                    }
+                    revision: string | null
+                    operation: {
+                      name: string
+                      slug: string
+                    }
+                    workloadSummary: string
+                    hardware: {
+                      model: string
+                      architecture: string | null
+                    }
+                    framework: string | null
+                    language: string | null
+                    primary: {
+                      metric: string
+                      unit: string
+                      statistic: string
+                      value: number
+                      sampleCount: number | null
+                      uncertainty: {
+                        low: number
+                        high: number
+                      } | null
+                    } | null
+                    solScore: number | null
+                    baseline: boolean
+                    /** @enum {string|null} */
+                    evidence:
+                      | "verified"
+                      | "replicated"
+                      | "reproducible"
+                      | "reported"
+                      | null
+                    /** @enum {string} */
+                    match:
+                      | "exact"
+                      | "compatible"
+                      | "supported_unobserved"
+                      | "related"
+                    mismatches: {
+                      field: string
+                      requested: string
+                      observed: string
+                    }[]
+                    rank: number | null
+                    tiedWithPrevious: boolean
+                    cohortSize: number | null
+                    sourceAvailable: boolean
+                    installable: boolean
+                    license: {
+                      declared: string | null
+                      concluded: string | null
+                    }
+                    lastTestedAt: string | null
+                    indexedAt: string | null
+                    stale: boolean
+                    disputed: boolean
+                    caveats: string[]
+                  } | null
+                  cohort: {
+                    comparisonKey: string
+                    /** @enum {string} */
+                    profile:
+                      | "source_native"
+                      | "strict_exact"
+                      | "controlled_equivalent"
+                      | "compatible_workload"
+                      | "reported"
+                    description: string
+                    facts: {
+                      key: string
+                      value: string
+                    }[]
+                  }
+                  workloadId: string
+                  alternatives: number
+                }[]
+              }[]
+              gaps: {
+                operation: {
+                  name: string
+                  slug: string
+                }
+                family: string
+                measuredOn: string[]
+              }[]
+              serving: {
+                slug: string
+                name: string
+                runs: number
+              } | null
+              sources: {
+                name: string
+                kind: string
+                url: string | null
+                license: string | null
+                externalId: string | null
+                observedAt: string | null
+              }[]
+            }
+          }
+        }
+        /** @description Unknown model slug */
         404: {
           headers: {
             [name: string]: unknown

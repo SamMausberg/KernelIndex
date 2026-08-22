@@ -3,6 +3,7 @@
 // with separate counts; they never share a ranking (§8.16). Each kernel row
 // opens the model's dossier: best known per operation on a chosen GPU.
 import type { Metadata } from "next"
+import { ApiLink } from "@/components/api-link"
 import { ContextHeader } from "@/components/context-header"
 import { ExpandRows } from "@/components/expand-rows"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
@@ -42,11 +43,14 @@ export default async function ModelsPage() {
         title="Models"
         context="operation coverage per model · workload provenance declared by sources"
         meta={
-          <span>
-            {countNoun(model.kernel.length, "model")} with kernel evidence
-            {servingEnabled &&
-              ` · ${countNoun(model.serving.length, "serving model")}`}
-          </span>
+          <>
+            <span>
+              {countNoun(model.kernel.length, "model")} with kernel evidence
+              {servingEnabled &&
+                ` · ${countNoun(model.serving.length, "serving model")}`}
+            </span>
+            <ApiLink path="/models" />
+          </>
         }
       />
       <main className="shell animate-fade-in pt-7 pb-24">

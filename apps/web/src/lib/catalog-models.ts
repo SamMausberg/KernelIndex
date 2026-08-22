@@ -112,6 +112,9 @@ export type ResultRow = {
   /** Shared on statistical ties; null when the row is unranked. */
   rank: number | null
   tiedWithPrevious: boolean
+  /** Rankable entries in the row's comparison cohort ("#3 of 12"); null
+   * whenever the row is unranked. */
+  cohortSize: number | null
   sourceAvailable: boolean
   installable: boolean
   license: LicenseInfo
@@ -140,7 +143,23 @@ export type CohortContext = {
   facts: KeyValue[]
 }
 
-export type SearchInput = { query: string }
+/** `cohort` pins the comparison cohort shown for the resolved operation
+ * (URL state, never query text); absent, the largest cohort leads. */
+export type SearchInput = { query: string; cohort?: string }
+
+/** One measured environment cohort for the selected workload (§16.8): a
+ * selectable option that also states the cohort's best known entry. */
+export type CohortOption = {
+  key: string
+  label: string
+  runs: number
+  /** The cohort's fastest rankable run; null when nothing there ranks. */
+  head: {
+    runId: string
+    implementation: { name: string; slug: string }
+    primary: PrimaryMetric
+  } | null
+}
 
 /**
  * One operation in the compact corpus index that powers search suggestions
@@ -205,6 +224,8 @@ export type RecordEvent = {
 export type RecordHolder = {
   cohortKey: string
   operation: { name: string; slug: string }
+  /** The cohort's workload, for deep-linking the operation page's island. */
+  workloadId: string
   workloadSummary: string
   hardware: string
   /** Short environment/protocol line, e.g. "CUDA 13.1 · torch 2.9 · sol/v1". */
@@ -266,6 +287,9 @@ export type SearchPageModel = {
    */
   matches: OperationIndexEntry[] | null
   cohort: CohortContext | null
+  /** Every measured cohort for the resolved workload; `cohort` is one of
+   * them. Empty unless one operation resolved. */
+  cohortOptions: CohortOption[]
   groups: {
     exact: ResultRow[]
     compatible: ResultRow[]
@@ -431,7 +455,7 @@ export type OperationPageModel = {
   selectedWorkloadId: string | null
   /** Hardware/environment cohorts measured for the selected workload; the
       records table shows one at a time. */
-  cohortOptions: { key: string; label: string; runs: number }[]
+  cohortOptions: CohortOption[]
   cohort: CohortContext | null
   /** Current records for the selected workload. */
   records: ResultRow[]
@@ -486,6 +510,10 @@ export type ImplementationPageModel = {
   }
   license: LicenseInfo & { evidencePath: string | null }
   trust: { evidence: EvidenceLevel | null; summary: string }
+  /** Current records this revision holds across its cohorts (§16.9: the
+   * page answers "is this competitive", not only "can I use it"). */
+  standing: { records: number }
+  /** Fastest first; each row carries its rank inside its own cohort. */
   bestResults: ResultRow[]
   limitations: string[]
   provenance: {
@@ -539,6 +567,8 @@ export type RunPageModel = {
     rank: number | null
     eligible: boolean
     ineligibleReasons: string[]
+    /** The cohort's #1 run under ranking-v1; null when nothing ranks. */
+    headRunId: string | null
   }
   implementation: { name: string; slug: string; revision: string | null }
   project: { name: string; slug: string }

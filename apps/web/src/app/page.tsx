@@ -3,17 +3,40 @@ import { IllustrativeNotice } from "@/components/illustrative-notice"
 import { HeroSearch } from "@/features/home/hero-search"
 import { LatestRecords } from "@/features/home/latest-records"
 import { TrustBlock } from "@/features/trust/sources"
-import { getCoveragePage, getHomePage } from "@/lib/catalog"
+import { getCoveragePage, getHomePage, getModelIndex } from "@/lib/catalog"
 
 // The homepage reads live records; revalidate on a short cycle instead of
 // freezing them into the build (data changes only on importer runs).
 export const revalidate = 300
 
 export default async function Home() {
-  const [model, coverage] = await Promise.all([
+  const [model, coverage, models] = await Promise.all([
     getHomePage(),
     getCoveragePage(),
+    getModelIndex(),
   ])
+  // Real example queries (§16.5): the two newest record operations and the
+  // most-measured model tag, each a query that resolves today. Nothing is
+  // invented when the corpus is empty.
+  const operations = [
+    ...new Map(
+      model.latest.map((holder) => [
+        holder.operation.slug,
+        holder.operation.name,
+      ]),
+    ),
+  ].slice(0, 2)
+  const examples = [
+    ...operations.map(([slug, name]) => ({ label: name, query: `op:${slug}` })),
+    ...(models.kernel[0]
+      ? [
+          {
+            label: `model:${models.kernel[0].model}`,
+            query: `model:${models.kernel[0].model}`,
+          },
+        ]
+      : []),
+  ]
   return (
     <>
       {model.illustrative && <IllustrativeNotice />}
@@ -40,6 +63,20 @@ export default async function Home() {
                 Query syntax
               </Link>
             </div>
+            {examples.length > 0 && (
+              <p className="mt-2 flex max-w-[620px] flex-wrap items-baseline gap-x-4 gap-y-1 text-small">
+                <span className="text-faint">Try</span>
+                {examples.map((example) => (
+                  <Link
+                    key={example.query}
+                    href={`/search?q=${encodeURIComponent(example.query)}`}
+                    className="font-mono text-small text-subtle"
+                  >
+                    {example.label}
+                  </Link>
+                ))}
+              </p>
+            )}
             <p className="mt-5 font-mono text-small text-subtle">
               {model.stats.operations.toLocaleString("en-US")} operations ·{" "}
               {model.stats.runs.toLocaleString("en-US")} kernel runs

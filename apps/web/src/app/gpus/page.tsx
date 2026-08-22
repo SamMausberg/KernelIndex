@@ -3,6 +3,7 @@
 // away, and the priority family×GPU grid stating gaps as gaps. Counts
 // follow the same eligibility filter as every ranked surface.
 import type { Metadata } from "next"
+import { ApiLink } from "@/components/api-link"
 import { ContextHeader } from "@/components/context-header"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
 import { Link } from "@/components/quiet-link"
@@ -27,6 +28,7 @@ export default async function GpusPage() {
       <ContextHeader
         title="GPUs"
         context="coverage per hardware model · records held · freshness"
+        meta={<ApiLink path="/hardware" />}
       />
       <main className="shell animate-fade-in pt-7 pb-24">
         <div className="overflow-x-auto">

@@ -93,8 +93,9 @@ const cached: typeof unstable_cache = process.env.NEXT_RUNTIME
   : (fn) => fn
 // Bump when a read model changes shape: the deployed data cache outlives a
 // deploy, and an old-shape entry must never deserialize into new readers
-// (v4: model surface reads added — ModelIndexModel/ModelPageModel).
-const MODEL_VERSION = "v4"
+// (v5: cohortSize on rows, cohort heads, run headRunId, holder workloadId,
+// implementation standing).
+const MODEL_VERSION = "v5"
 // The database identity is part of the namespace too: two local servers on
 // different databases share .next/cache and must never trade entries.
 const BACKEND = `${

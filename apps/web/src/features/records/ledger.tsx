@@ -1,6 +1,7 @@
 "use client"
 
 import { startTransition, useEffect, useState } from "react"
+import { ApiLink } from "@/components/api-link"
 import { FilterChip } from "@/components/chip"
 import { ContextHeader } from "@/components/context-header"
 import { Metric } from "@/components/metric"
@@ -270,12 +271,14 @@ function HolderRow({ holder }: { holder: LedgerHolder }) {
               Run detail →
             </Link>
           )}
+          {/* The record's exact cohort on the operation page (§16.12), not
+              the operation's default workload. */}
           <Link
-            href={`/operations/${holder.operation.slug}`}
+            href={`/operations/${holder.operation.slug}?workload=${holder.workloadId}&cohort=${encodeURIComponent(holder.cohortKey)}`}
             prefetch={false}
             className="action"
           >
-            Operation →
+            Cohort on the operation page →
           </Link>
           {record.runId && holder.history.length >= 2 && (
             <Link
@@ -691,6 +694,7 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
           >
             Feed
           </a>,
+          <ApiLink key="api" path="/records" />,
         ]}
       />
 

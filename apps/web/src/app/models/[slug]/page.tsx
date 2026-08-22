@@ -6,6 +6,7 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { after } from "next/server"
+import { ApiLink } from "@/components/api-link"
 import { FilterChip } from "@/components/chip"
 import { ContextHeader } from "@/components/context-header"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
@@ -115,12 +116,21 @@ export default async function ModelPage({ params, searchParams }: Props) {
         title={<span className="font-mono">{slug}</span>}
         context="best known per operation on the selected GPU · workload provenance declared by sources"
         meta={
-          <span>
-            {countNoun(model.stats.operations, "operation")} ·{" "}
-            {model.stats.families}{" "}
-            {model.stats.families === 1 ? "family" : "families"} ·{" "}
-            {model.stats.runs.toLocaleString("en-US")} eligible runs
-          </span>
+          <>
+            <span>
+              {countNoun(model.stats.operations, "operation")} ·{" "}
+              {model.stats.families}{" "}
+              {model.stats.families === 1 ? "family" : "families"} ·{" "}
+              {model.stats.runs.toLocaleString("en-US")} eligible runs
+            </span>
+            <ApiLink
+              path={`/models/${slug}${
+                model.selectedGpu
+                  ? `?gpu=${encodeURIComponent(model.selectedGpu)}`
+                  : ""
+              }`}
+            />
+          </>
         }
       >
         {model.gpus.length > 0 && (

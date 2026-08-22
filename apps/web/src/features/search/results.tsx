@@ -1,6 +1,7 @@
 "use client"
 
 import { Fragment, startTransition, useState } from "react"
+import { ApiLink } from "@/components/api-link"
 import { FilterChip } from "@/components/chip"
 import { CopyButton } from "@/components/copy-button"
 import { KeyValueList } from "@/components/key-value-list"
@@ -23,6 +24,9 @@ import { SuggestInput } from "./suggest"
 export type ResultMode = "exact" | "compatible" | "supported" | "reported"
 export type ResultSort = "recommended" | "newest"
 export type SearchFilters = {
+  /** The pinned comparison cohort; a server-side selection, never toggled
+   * client-side, so it rides every href unchanged. */
+  cohort?: string
   view?: ResultMode
   sort?: ResultSort
   verified: boolean
@@ -111,6 +115,7 @@ function searchHref(
   // Any change other than paging restarts at page 1.
   const next = { ...filters, page: patch.page ?? 1, ...patch }
   const params = new URLSearchParams({ q: query })
+  if (next.cohort) params.set("cohort", next.cohort)
   if (next.view && next.view !== "exact") params.set("view", next.view)
   if (next.sort && next.sort !== "recommended") params.set("sort", next.sort)
   if (next.verified) params.set("verified", "1")
@@ -120,6 +125,13 @@ function searchHref(
   if (next.installable) params.set("installable", "1")
   if (next.page > 1) params.set("page", String(next.page))
   return `/search?${params.toString()}`
+}
+
+/** The API twin of the current search, including the pinned cohort. */
+function apiPath(query: string, cohort: string | undefined) {
+  const params = new URLSearchParams({ q: query })
+  if (cohort) params.set("cohort", cohort)
+  return `/api/v1/search?${params.toString()}`
 }
 
 /** The workload context line (§16.4): quiet, technical, shown once. */
@@ -465,6 +477,37 @@ export function SearchResults({
               <div className="mt-1 font-mono text-small text-subtle">
                 {contextLine(model)}
               </div>
+              {/* Every measured cohort for this workload, one chip each
+                  (§16.6): switching hardware is a link, never a syntax
+                  lesson. The selection is URL state (`cohort`), so the
+                  page re-resolves server-side. */}
+              {model.cohortOptions.length > 1 && (
+                <div className="mt-2.5 flex flex-wrap items-center gap-2 text-small">
+                  <span className="mr-1 text-faint">Hardware</span>
+                  {model.cohortOptions.map((option) => {
+                    const on = option.key === model.cohort?.comparisonKey
+                    return (
+                      <Link
+                        key={option.key}
+                        href={searchHref(model.query, state, {
+                          cohort: option.key,
+                        })}
+                        prefetch={false}
+                        className={`key font-mono text-small whitespace-nowrap no-underline ${
+                          on ? "key-on" : "text-subtle hover:text-fg"
+                        }`}
+                      >
+                        {option.label}
+                        <span
+                          className={`ml-1.5 text-mini ${on ? "text-subtle" : "text-faint"}`}
+                        >
+                          {option.runs}
+                        </span>
+                      </Link>
+                    )
+                  })}
+                </div>
+              )}
             </>
           )}
         </div>
@@ -784,14 +827,35 @@ export function SearchResults({
               ? "Missing a kernel here? Evidence submissions open with the contribution beta."
               : "Ranked only against runs that measured the same thing."}
           </p>
-          {model.cohort && (
-            <div className="flex items-center gap-2.5">
-              <span className="font-mono text-small text-faint">
-                comparison key {model.cohort.comparisonKey.slice(0, 23)}…
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            {model.cohort && (
+              <span className="flex items-center gap-2.5">
+                <span className="font-mono text-small text-faint">
+                  comparison key {model.cohort.comparisonKey.slice(0, 23)}…
+                </span>
+                <CopyButton text={model.cohort.comparisonKey} />
               </span>
-              <CopyButton text={model.cohort.comparisonKey} />
-            </div>
-          )}
+            )}
+            {/* The same request as a machine call (§16.6 "copy API
+                request"): the resolver, never scraped HTML. */}
+            {model.operation && (
+              <>
+                <span className="flex items-center gap-1.5 font-mono text-small text-faint">
+                  curl
+                  <CopyButton
+                    text={`curl "https://kernelindex.com${apiPath(model.query, state.cohort)}"`}
+                  />
+                </span>
+                <span className="flex items-center gap-1.5 font-mono text-small text-faint">
+                  ki
+                  <CopyButton
+                    text={`ki search ${JSON.stringify(model.query)} --json`}
+                  />
+                </span>
+                <ApiLink path={apiPath(model.query, state.cohort).slice(7)} />
+              </>
+            )}
+          </div>
         </div>
         {model.sources.length > 0 && (
           <p className="mt-2 font-mono text-mini text-faint">

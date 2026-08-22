@@ -108,6 +108,15 @@
             "required": false,
             "name": "q",
             "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "required": false,
+            "name": "cohort",
+            "in": "query"
           }
         ],
         "responses": {
@@ -184,6 +193,85 @@
                         "description",
                         "facts"
                       ]
+                    },
+                    "cohortOptions": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "key": {
+                            "type": "string"
+                          },
+                          "label": {
+                            "type": "string"
+                          },
+                          "runs": {
+                            "type": "number"
+                          },
+                          "head": {
+                            "type": ["object", "null"],
+                            "properties": {
+                              "runId": {
+                                "type": "string"
+                              },
+                              "implementation": {
+                                "type": "object",
+                                "properties": {
+                                  "name": {
+                                    "type": "string"
+                                  },
+                                  "slug": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": ["name", "slug"]
+                              },
+                              "primary": {
+                                "type": "object",
+                                "properties": {
+                                  "metric": {
+                                    "type": "string"
+                                  },
+                                  "unit": {
+                                    "type": "string"
+                                  },
+                                  "statistic": {
+                                    "type": "string"
+                                  },
+                                  "value": {
+                                    "type": "number"
+                                  },
+                                  "sampleCount": {
+                                    "type": ["number", "null"]
+                                  },
+                                  "uncertainty": {
+                                    "type": ["object", "null"],
+                                    "properties": {
+                                      "low": {
+                                        "type": "number"
+                                      },
+                                      "high": {
+                                        "type": "number"
+                                      }
+                                    },
+                                    "required": ["low", "high"]
+                                  }
+                                },
+                                "required": [
+                                  "metric",
+                                  "unit",
+                                  "statistic",
+                                  "value",
+                                  "sampleCount",
+                                  "uncertainty"
+                                ]
+                              }
+                            },
+                            "required": ["runId", "implementation", "primary"]
+                          }
+                        },
+                        "required": ["key", "label", "runs", "head"]
+                      }
                     },
                     "bestVerified": {
                       "type": ["object", "null"],
@@ -352,6 +440,9 @@
                         "tiedWithPrevious": {
                           "type": "boolean"
                         },
+                        "cohortSize": {
+                          "type": ["number", "null"]
+                        },
                         "sourceAvailable": {
                           "type": "boolean"
                         },
@@ -408,6 +499,7 @@
                         "mismatches",
                         "rank",
                         "tiedWithPrevious",
+                        "cohortSize",
                         "sourceAvailable",
                         "installable",
                         "license",
@@ -585,6 +677,9 @@
                         "tiedWithPrevious": {
                           "type": "boolean"
                         },
+                        "cohortSize": {
+                          "type": ["number", "null"]
+                        },
                         "sourceAvailable": {
                           "type": "boolean"
                         },
@@ -641,6 +736,7 @@
                         "mismatches",
                         "rank",
                         "tiedWithPrevious",
+                        "cohortSize",
                         "sourceAvailable",
                         "installable",
                         "license",
@@ -823,6 +919,9 @@
                               "tiedWithPrevious": {
                                 "type": "boolean"
                               },
+                              "cohortSize": {
+                                "type": ["number", "null"]
+                              },
                               "sourceAvailable": {
                                 "type": "boolean"
                               },
@@ -879,6 +978,7 @@
                               "mismatches",
                               "rank",
                               "tiedWithPrevious",
+                              "cohortSize",
                               "sourceAvailable",
                               "installable",
                               "license",
@@ -1059,6 +1159,9 @@
                               "tiedWithPrevious": {
                                 "type": "boolean"
                               },
+                              "cohortSize": {
+                                "type": ["number", "null"]
+                              },
                               "sourceAvailable": {
                                 "type": "boolean"
                               },
@@ -1115,6 +1218,7 @@
                               "mismatches",
                               "rank",
                               "tiedWithPrevious",
+                              "cohortSize",
                               "sourceAvailable",
                               "installable",
                               "license",
@@ -1295,6 +1399,9 @@
                               "tiedWithPrevious": {
                                 "type": "boolean"
                               },
+                              "cohortSize": {
+                                "type": ["number", "null"]
+                              },
                               "sourceAvailable": {
                                 "type": "boolean"
                               },
@@ -1351,6 +1458,7 @@
                               "mismatches",
                               "rank",
                               "tiedWithPrevious",
+                              "cohortSize",
                               "sourceAvailable",
                               "installable",
                               "license",
@@ -1531,6 +1639,9 @@
                               "tiedWithPrevious": {
                                 "type": "boolean"
                               },
+                              "cohortSize": {
+                                "type": ["number", "null"]
+                              },
                               "sourceAvailable": {
                                 "type": "boolean"
                               },
@@ -1587,6 +1698,7 @@
                               "mismatches",
                               "rank",
                               "tiedWithPrevious",
+                              "cohortSize",
                               "sourceAvailable",
                               "installable",
                               "license",
@@ -1743,6 +1855,7 @@
                     "operation",
                     "policyVersion",
                     "cohort",
+                    "cohortOptions",
                     "bestVerified",
                     "bestDeployable",
                     "groups",
@@ -1937,6 +2050,85 @@
                         "facts"
                       ]
                     },
+                    "cohortOptions": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "key": {
+                            "type": "string"
+                          },
+                          "label": {
+                            "type": "string"
+                          },
+                          "runs": {
+                            "type": "number"
+                          },
+                          "head": {
+                            "type": ["object", "null"],
+                            "properties": {
+                              "runId": {
+                                "type": "string"
+                              },
+                              "implementation": {
+                                "type": "object",
+                                "properties": {
+                                  "name": {
+                                    "type": "string"
+                                  },
+                                  "slug": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": ["name", "slug"]
+                              },
+                              "primary": {
+                                "type": "object",
+                                "properties": {
+                                  "metric": {
+                                    "type": "string"
+                                  },
+                                  "unit": {
+                                    "type": "string"
+                                  },
+                                  "statistic": {
+                                    "type": "string"
+                                  },
+                                  "value": {
+                                    "type": "number"
+                                  },
+                                  "sampleCount": {
+                                    "type": ["number", "null"]
+                                  },
+                                  "uncertainty": {
+                                    "type": ["object", "null"],
+                                    "properties": {
+                                      "low": {
+                                        "type": "number"
+                                      },
+                                      "high": {
+                                        "type": "number"
+                                      }
+                                    },
+                                    "required": ["low", "high"]
+                                  }
+                                },
+                                "required": [
+                                  "metric",
+                                  "unit",
+                                  "statistic",
+                                  "value",
+                                  "sampleCount",
+                                  "uncertainty"
+                                ]
+                              }
+                            },
+                            "required": ["runId", "implementation", "primary"]
+                          }
+                        },
+                        "required": ["key", "label", "runs", "head"]
+                      }
+                    },
                     "bestVerified": {
                       "type": ["object", "null"],
                       "properties": {
@@ -2104,6 +2296,9 @@
                         "tiedWithPrevious": {
                           "type": "boolean"
                         },
+                        "cohortSize": {
+                          "type": ["number", "null"]
+                        },
                         "sourceAvailable": {
                           "type": "boolean"
                         },
@@ -2160,6 +2355,7 @@
                         "mismatches",
                         "rank",
                         "tiedWithPrevious",
+                        "cohortSize",
                         "sourceAvailable",
                         "installable",
                         "license",
@@ -2337,6 +2533,9 @@
                         "tiedWithPrevious": {
                           "type": "boolean"
                         },
+                        "cohortSize": {
+                          "type": ["number", "null"]
+                        },
                         "sourceAvailable": {
                           "type": "boolean"
                         },
@@ -2393,6 +2592,7 @@
                         "mismatches",
                         "rank",
                         "tiedWithPrevious",
+                        "cohortSize",
                         "sourceAvailable",
                         "installable",
                         "license",
@@ -2575,6 +2775,9 @@
                               "tiedWithPrevious": {
                                 "type": "boolean"
                               },
+                              "cohortSize": {
+                                "type": ["number", "null"]
+                              },
                               "sourceAvailable": {
                                 "type": "boolean"
                               },
@@ -2631,6 +2834,7 @@
                               "mismatches",
                               "rank",
                               "tiedWithPrevious",
+                              "cohortSize",
                               "sourceAvailable",
                               "installable",
                               "license",
@@ -2811,6 +3015,9 @@
                               "tiedWithPrevious": {
                                 "type": "boolean"
                               },
+                              "cohortSize": {
+                                "type": ["number", "null"]
+                              },
                               "sourceAvailable": {
                                 "type": "boolean"
                               },
@@ -2867,6 +3074,7 @@
                               "mismatches",
                               "rank",
                               "tiedWithPrevious",
+                              "cohortSize",
                               "sourceAvailable",
                               "installable",
                               "license",
@@ -3047,6 +3255,9 @@
                               "tiedWithPrevious": {
                                 "type": "boolean"
                               },
+                              "cohortSize": {
+                                "type": ["number", "null"]
+                              },
                               "sourceAvailable": {
                                 "type": "boolean"
                               },
@@ -3103,6 +3314,7 @@
                               "mismatches",
                               "rank",
                               "tiedWithPrevious",
+                              "cohortSize",
                               "sourceAvailable",
                               "installable",
                               "license",
@@ -3283,6 +3495,9 @@
                               "tiedWithPrevious": {
                                 "type": "boolean"
                               },
+                              "cohortSize": {
+                                "type": ["number", "null"]
+                              },
                               "sourceAvailable": {
                                 "type": "boolean"
                               },
@@ -3339,6 +3554,7 @@
                               "mismatches",
                               "rank",
                               "tiedWithPrevious",
+                              "cohortSize",
                               "sourceAvailable",
                               "installable",
                               "license",
@@ -3495,6 +3711,7 @@
                     "operation",
                     "policyVersion",
                     "cohort",
+                    "cohortOptions",
                     "bestVerified",
                     "bestDeployable",
                     "groups",
@@ -3800,9 +4017,70 @@
                           },
                           "runs": {
                             "type": "number"
+                          },
+                          "head": {
+                            "type": ["object", "null"],
+                            "properties": {
+                              "runId": {
+                                "type": "string"
+                              },
+                              "implementation": {
+                                "type": "object",
+                                "properties": {
+                                  "name": {
+                                    "type": "string"
+                                  },
+                                  "slug": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": ["name", "slug"]
+                              },
+                              "primary": {
+                                "type": "object",
+                                "properties": {
+                                  "metric": {
+                                    "type": "string"
+                                  },
+                                  "unit": {
+                                    "type": "string"
+                                  },
+                                  "statistic": {
+                                    "type": "string"
+                                  },
+                                  "value": {
+                                    "type": "number"
+                                  },
+                                  "sampleCount": {
+                                    "type": ["number", "null"]
+                                  },
+                                  "uncertainty": {
+                                    "type": ["object", "null"],
+                                    "properties": {
+                                      "low": {
+                                        "type": "number"
+                                      },
+                                      "high": {
+                                        "type": "number"
+                                      }
+                                    },
+                                    "required": ["low", "high"]
+                                  }
+                                },
+                                "required": [
+                                  "metric",
+                                  "unit",
+                                  "statistic",
+                                  "value",
+                                  "sampleCount",
+                                  "uncertainty"
+                                ]
+                              }
+                            },
+                            "required": ["runId", "implementation", "primary"]
                           }
                         },
-                        "required": ["key", "label", "runs"]
+                        "required": ["key", "label", "runs", "head"]
                       }
                     },
                     "cohort": {
@@ -4016,6 +4294,9 @@
                           "tiedWithPrevious": {
                             "type": "boolean"
                           },
+                          "cohortSize": {
+                            "type": ["number", "null"]
+                          },
                           "sourceAvailable": {
                             "type": "boolean"
                           },
@@ -4072,6 +4353,7 @@
                           "mismatches",
                           "rank",
                           "tiedWithPrevious",
+                          "cohortSize",
                           "sourceAvailable",
                           "installable",
                           "license",
@@ -4608,6 +4890,15 @@
                       },
                       "required": ["evidence", "summary"]
                     },
+                    "standing": {
+                      "type": "object",
+                      "properties": {
+                        "records": {
+                          "type": "number"
+                        }
+                      },
+                      "required": ["records"]
+                    },
                     "bestResults": {
                       "type": "array",
                       "items": {
@@ -4777,6 +5068,9 @@
                           "tiedWithPrevious": {
                             "type": "boolean"
                           },
+                          "cohortSize": {
+                            "type": ["number", "null"]
+                          },
                           "sourceAvailable": {
                             "type": "boolean"
                           },
@@ -4833,6 +5127,7 @@
                           "mismatches",
                           "rank",
                           "tiedWithPrevious",
+                          "cohortSize",
                           "sourceAvailable",
                           "installable",
                           "license",
@@ -4971,6 +5266,7 @@
                     "source",
                     "license",
                     "trust",
+                    "standing",
                     "bestResults",
                     "limitations",
                     "provenance",
@@ -5204,6 +5500,9 @@
                           "items": {
                             "type": "string"
                           }
+                        },
+                        "headRunId": {
+                          "type": ["string", "null"]
                         }
                       },
                       "required": [
@@ -5211,7 +5510,8 @@
                         "profile",
                         "rank",
                         "eligible",
-                        "ineligibleReasons"
+                        "ineligibleReasons",
+                        "headRunId"
                       ]
                     },
                     "implementation": {
@@ -5602,6 +5902,9 @@
                             },
                             "required": ["name", "slug"]
                           },
+                          "workloadId": {
+                            "type": "string"
+                          },
                           "workloadSummary": {
                             "type": "string"
                           },
@@ -5778,6 +6081,9 @@
                               "tiedWithPrevious": {
                                 "type": "boolean"
                               },
+                              "cohortSize": {
+                                "type": ["number", "null"]
+                              },
                               "sourceAvailable": {
                                 "type": "boolean"
                               },
@@ -5834,6 +6140,7 @@
                               "mismatches",
                               "rank",
                               "tiedWithPrevious",
+                              "cohortSize",
                               "sourceAvailable",
                               "installable",
                               "license",
@@ -5971,6 +6278,7 @@
                         "required": [
                           "cohortKey",
                           "operation",
+                          "workloadId",
                           "workloadSummary",
                           "hardware",
                           "environmentSummary",
@@ -8130,6 +8438,794 @@
           },
           "404": {
             "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "number"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["type", "title", "status", "code", "requestId"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/models/{slug}": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "required": true,
+            "name": "slug",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "required": false,
+            "name": "gpu",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Model dossier: best known per operation on one GPU, gaps, evidence, source links (the web page's model)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "illustrative": {
+                      "type": "boolean"
+                    },
+                    "model": {
+                      "type": "object",
+                      "properties": {
+                        "slug": {
+                          "type": "string"
+                        },
+                        "relatedTags": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": ["slug", "relatedTags"]
+                    },
+                    "resolved": {
+                      "type": "boolean"
+                    },
+                    "stats": {
+                      "type": "object",
+                      "properties": {
+                        "operations": {
+                          "type": "number"
+                        },
+                        "families": {
+                          "type": "number"
+                        },
+                        "runs": {
+                          "type": "number"
+                        }
+                      },
+                      "required": ["operations", "families", "runs"]
+                    },
+                    "gpus": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "model": {
+                            "type": "string"
+                          },
+                          "runs": {
+                            "type": "number"
+                          }
+                        },
+                        "required": ["model", "runs"]
+                      }
+                    },
+                    "selectedGpu": {
+                      "type": ["string", "null"]
+                    },
+                    "groups": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "family": {
+                            "type": "string"
+                          },
+                          "entries": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "operation": {
+                                  "type": "object",
+                                  "properties": {
+                                    "name": {
+                                      "type": "string"
+                                    },
+                                    "slug": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": ["name", "slug"]
+                                },
+                                "family": {
+                                  "type": "string"
+                                },
+                                "fastest": {
+                                  "type": "object",
+                                  "properties": {
+                                    "runId": {
+                                      "type": ["string", "null"]
+                                    },
+                                    "implementation": {
+                                      "type": "object",
+                                      "properties": {
+                                        "name": {
+                                          "type": "string"
+                                        },
+                                        "slug": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "required": ["name", "slug"]
+                                    },
+                                    "install": {
+                                      "type": ["object", "null"],
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string"
+                                        },
+                                        "command": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "required": ["kind", "command"]
+                                    },
+                                    "project": {
+                                      "type": "object",
+                                      "properties": {
+                                        "name": {
+                                          "type": "string"
+                                        },
+                                        "slug": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "required": ["name", "slug"]
+                                    },
+                                    "revision": {
+                                      "type": ["string", "null"]
+                                    },
+                                    "operation": {
+                                      "type": "object",
+                                      "properties": {
+                                        "name": {
+                                          "type": "string"
+                                        },
+                                        "slug": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "required": ["name", "slug"]
+                                    },
+                                    "workloadSummary": {
+                                      "type": "string"
+                                    },
+                                    "hardware": {
+                                      "type": "object",
+                                      "properties": {
+                                        "model": {
+                                          "type": "string"
+                                        },
+                                        "architecture": {
+                                          "type": ["string", "null"]
+                                        }
+                                      },
+                                      "required": ["model", "architecture"]
+                                    },
+                                    "framework": {
+                                      "type": ["string", "null"]
+                                    },
+                                    "language": {
+                                      "type": ["string", "null"]
+                                    },
+                                    "primary": {
+                                      "type": ["object", "null"],
+                                      "properties": {
+                                        "metric": {
+                                          "type": "string"
+                                        },
+                                        "unit": {
+                                          "type": "string"
+                                        },
+                                        "statistic": {
+                                          "type": "string"
+                                        },
+                                        "value": {
+                                          "type": "number"
+                                        },
+                                        "sampleCount": {
+                                          "type": ["number", "null"]
+                                        },
+                                        "uncertainty": {
+                                          "type": ["object", "null"],
+                                          "properties": {
+                                            "low": {
+                                              "type": "number"
+                                            },
+                                            "high": {
+                                              "type": "number"
+                                            }
+                                          },
+                                          "required": ["low", "high"]
+                                        }
+                                      },
+                                      "required": [
+                                        "metric",
+                                        "unit",
+                                        "statistic",
+                                        "value",
+                                        "sampleCount",
+                                        "uncertainty"
+                                      ]
+                                    },
+                                    "solScore": {
+                                      "type": ["number", "null"]
+                                    },
+                                    "baseline": {
+                                      "type": "boolean"
+                                    },
+                                    "evidence": {
+                                      "type": ["string", "null"],
+                                      "enum": [
+                                        "verified",
+                                        "replicated",
+                                        "reproducible",
+                                        "reported",
+                                        null
+                                      ]
+                                    },
+                                    "match": {
+                                      "type": "string",
+                                      "enum": [
+                                        "exact",
+                                        "compatible",
+                                        "supported_unobserved",
+                                        "related"
+                                      ]
+                                    },
+                                    "mismatches": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "object",
+                                        "properties": {
+                                          "field": {
+                                            "type": "string"
+                                          },
+                                          "requested": {
+                                            "type": "string"
+                                          },
+                                          "observed": {
+                                            "type": "string"
+                                          }
+                                        },
+                                        "required": [
+                                          "field",
+                                          "requested",
+                                          "observed"
+                                        ]
+                                      }
+                                    },
+                                    "rank": {
+                                      "type": ["number", "null"]
+                                    },
+                                    "tiedWithPrevious": {
+                                      "type": "boolean"
+                                    },
+                                    "cohortSize": {
+                                      "type": ["number", "null"]
+                                    },
+                                    "sourceAvailable": {
+                                      "type": "boolean"
+                                    },
+                                    "installable": {
+                                      "type": "boolean"
+                                    },
+                                    "license": {
+                                      "type": "object",
+                                      "properties": {
+                                        "declared": {
+                                          "type": ["string", "null"]
+                                        },
+                                        "concluded": {
+                                          "type": ["string", "null"]
+                                        }
+                                      },
+                                      "required": ["declared", "concluded"]
+                                    },
+                                    "lastTestedAt": {
+                                      "type": ["string", "null"]
+                                    },
+                                    "indexedAt": {
+                                      "type": ["string", "null"]
+                                    },
+                                    "stale": {
+                                      "type": "boolean"
+                                    },
+                                    "disputed": {
+                                      "type": "boolean"
+                                    },
+                                    "caveats": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "string"
+                                      }
+                                    }
+                                  },
+                                  "required": [
+                                    "runId",
+                                    "implementation",
+                                    "install",
+                                    "project",
+                                    "revision",
+                                    "operation",
+                                    "workloadSummary",
+                                    "hardware",
+                                    "framework",
+                                    "language",
+                                    "primary",
+                                    "solScore",
+                                    "baseline",
+                                    "evidence",
+                                    "match",
+                                    "mismatches",
+                                    "rank",
+                                    "tiedWithPrevious",
+                                    "cohortSize",
+                                    "sourceAvailable",
+                                    "installable",
+                                    "license",
+                                    "lastTestedAt",
+                                    "indexedAt",
+                                    "stale",
+                                    "disputed",
+                                    "caveats"
+                                  ]
+                                },
+                                "deployable": {
+                                  "type": ["object", "null"],
+                                  "properties": {
+                                    "runId": {
+                                      "type": ["string", "null"]
+                                    },
+                                    "implementation": {
+                                      "type": "object",
+                                      "properties": {
+                                        "name": {
+                                          "type": "string"
+                                        },
+                                        "slug": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "required": ["name", "slug"]
+                                    },
+                                    "install": {
+                                      "type": ["object", "null"],
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string"
+                                        },
+                                        "command": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "required": ["kind", "command"]
+                                    },
+                                    "project": {
+                                      "type": "object",
+                                      "properties": {
+                                        "name": {
+                                          "type": "string"
+                                        },
+                                        "slug": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "required": ["name", "slug"]
+                                    },
+                                    "revision": {
+                                      "type": ["string", "null"]
+                                    },
+                                    "operation": {
+                                      "type": "object",
+                                      "properties": {
+                                        "name": {
+                                          "type": "string"
+                                        },
+                                        "slug": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "required": ["name", "slug"]
+                                    },
+                                    "workloadSummary": {
+                                      "type": "string"
+                                    },
+                                    "hardware": {
+                                      "type": "object",
+                                      "properties": {
+                                        "model": {
+                                          "type": "string"
+                                        },
+                                        "architecture": {
+                                          "type": ["string", "null"]
+                                        }
+                                      },
+                                      "required": ["model", "architecture"]
+                                    },
+                                    "framework": {
+                                      "type": ["string", "null"]
+                                    },
+                                    "language": {
+                                      "type": ["string", "null"]
+                                    },
+                                    "primary": {
+                                      "type": ["object", "null"],
+                                      "properties": {
+                                        "metric": {
+                                          "type": "string"
+                                        },
+                                        "unit": {
+                                          "type": "string"
+                                        },
+                                        "statistic": {
+                                          "type": "string"
+                                        },
+                                        "value": {
+                                          "type": "number"
+                                        },
+                                        "sampleCount": {
+                                          "type": ["number", "null"]
+                                        },
+                                        "uncertainty": {
+                                          "type": ["object", "null"],
+                                          "properties": {
+                                            "low": {
+                                              "type": "number"
+                                            },
+                                            "high": {
+                                              "type": "number"
+                                            }
+                                          },
+                                          "required": ["low", "high"]
+                                        }
+                                      },
+                                      "required": [
+                                        "metric",
+                                        "unit",
+                                        "statistic",
+                                        "value",
+                                        "sampleCount",
+                                        "uncertainty"
+                                      ]
+                                    },
+                                    "solScore": {
+                                      "type": ["number", "null"]
+                                    },
+                                    "baseline": {
+                                      "type": "boolean"
+                                    },
+                                    "evidence": {
+                                      "type": ["string", "null"],
+                                      "enum": [
+                                        "verified",
+                                        "replicated",
+                                        "reproducible",
+                                        "reported",
+                                        null
+                                      ]
+                                    },
+                                    "match": {
+                                      "type": "string",
+                                      "enum": [
+                                        "exact",
+                                        "compatible",
+                                        "supported_unobserved",
+                                        "related"
+                                      ]
+                                    },
+                                    "mismatches": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "object",
+                                        "properties": {
+                                          "field": {
+                                            "type": "string"
+                                          },
+                                          "requested": {
+                                            "type": "string"
+                                          },
+                                          "observed": {
+                                            "type": "string"
+                                          }
+                                        },
+                                        "required": [
+                                          "field",
+                                          "requested",
+                                          "observed"
+                                        ]
+                                      }
+                                    },
+                                    "rank": {
+                                      "type": ["number", "null"]
+                                    },
+                                    "tiedWithPrevious": {
+                                      "type": "boolean"
+                                    },
+                                    "cohortSize": {
+                                      "type": ["number", "null"]
+                                    },
+                                    "sourceAvailable": {
+                                      "type": "boolean"
+                                    },
+                                    "installable": {
+                                      "type": "boolean"
+                                    },
+                                    "license": {
+                                      "type": "object",
+                                      "properties": {
+                                        "declared": {
+                                          "type": ["string", "null"]
+                                        },
+                                        "concluded": {
+                                          "type": ["string", "null"]
+                                        }
+                                      },
+                                      "required": ["declared", "concluded"]
+                                    },
+                                    "lastTestedAt": {
+                                      "type": ["string", "null"]
+                                    },
+                                    "indexedAt": {
+                                      "type": ["string", "null"]
+                                    },
+                                    "stale": {
+                                      "type": "boolean"
+                                    },
+                                    "disputed": {
+                                      "type": "boolean"
+                                    },
+                                    "caveats": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "string"
+                                      }
+                                    }
+                                  },
+                                  "required": [
+                                    "runId",
+                                    "implementation",
+                                    "install",
+                                    "project",
+                                    "revision",
+                                    "operation",
+                                    "workloadSummary",
+                                    "hardware",
+                                    "framework",
+                                    "language",
+                                    "primary",
+                                    "solScore",
+                                    "baseline",
+                                    "evidence",
+                                    "match",
+                                    "mismatches",
+                                    "rank",
+                                    "tiedWithPrevious",
+                                    "cohortSize",
+                                    "sourceAvailable",
+                                    "installable",
+                                    "license",
+                                    "lastTestedAt",
+                                    "indexedAt",
+                                    "stale",
+                                    "disputed",
+                                    "caveats"
+                                  ]
+                                },
+                                "cohort": {
+                                  "type": "object",
+                                  "properties": {
+                                    "comparisonKey": {
+                                      "type": "string"
+                                    },
+                                    "profile": {
+                                      "type": "string",
+                                      "enum": [
+                                        "source_native",
+                                        "strict_exact",
+                                        "controlled_equivalent",
+                                        "compatible_workload",
+                                        "reported"
+                                      ]
+                                    },
+                                    "description": {
+                                      "type": "string"
+                                    },
+                                    "facts": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "object",
+                                        "properties": {
+                                          "key": {
+                                            "type": "string"
+                                          },
+                                          "value": {
+                                            "type": "string"
+                                          }
+                                        },
+                                        "required": ["key", "value"]
+                                      }
+                                    }
+                                  },
+                                  "required": [
+                                    "comparisonKey",
+                                    "profile",
+                                    "description",
+                                    "facts"
+                                  ]
+                                },
+                                "workloadId": {
+                                  "type": "string"
+                                },
+                                "alternatives": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "operation",
+                                "family",
+                                "fastest",
+                                "deployable",
+                                "cohort",
+                                "workloadId",
+                                "alternatives"
+                              ]
+                            }
+                          }
+                        },
+                        "required": ["family", "entries"]
+                      }
+                    },
+                    "gaps": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "operation": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "slug": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["name", "slug"]
+                          },
+                          "family": {
+                            "type": "string"
+                          },
+                          "measuredOn": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "required": ["operation", "family", "measuredOn"]
+                      }
+                    },
+                    "serving": {
+                      "type": ["object", "null"],
+                      "properties": {
+                        "slug": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "runs": {
+                          "type": "number"
+                        }
+                      },
+                      "required": ["slug", "name", "runs"]
+                    },
+                    "sources": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          },
+                          "kind": {
+                            "type": "string"
+                          },
+                          "url": {
+                            "type": ["string", "null"]
+                          },
+                          "license": {
+                            "type": ["string", "null"]
+                          },
+                          "externalId": {
+                            "type": ["string", "null"]
+                          },
+                          "observedAt": {
+                            "type": ["string", "null"]
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "kind",
+                          "url",
+                          "license",
+                          "externalId",
+                          "observedAt"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "illustrative",
+                    "model",
+                    "resolved",
+                    "stats",
+                    "gpus",
+                    "selectedGpu",
+                    "groups",
+                    "gaps",
+                    "serving",
+                    "sources"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown model slug",
             "content": {
               "application/json": {
                 "schema": {

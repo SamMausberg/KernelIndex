@@ -156,6 +156,7 @@ export function bestKnown(
     resultRow(byId.get(entry.id) as ModelRun, operation, {
       rank: entry.rank,
       tiedWithPrevious: entry.tiedWithPrevious,
+      cohortSize: ranked.length,
     })
   const deployableEntry = ranked.find((entry) => {
     const { implementation } = byId.get(entry.id) as ModelRun

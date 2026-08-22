@@ -6,6 +6,7 @@ import { z } from "@hono/zod-openapi"
 import type {
   AxisSpec,
   CohortContext,
+  CohortOption,
   ComparePageModel,
   CoveragePageModel,
   CoverageSource,
@@ -109,6 +110,7 @@ export const resultRow = z.object({
   ),
   rank: z.number().nullable(),
   tiedWithPrevious: z.boolean(),
+  cohortSize: z.number().nullable(),
   sourceAvailable: z.boolean(),
   installable: z.boolean(),
   license: licenseInfo,
@@ -127,6 +129,19 @@ export const cohortContext = z.object({
   description: z.string(),
   facts: z.array(keyValue),
 }) satisfies z.ZodType<CohortContext>
+
+export const cohortOption = z.object({
+  key: z.string(),
+  label: z.string(),
+  runs: z.number(),
+  head: z
+    .object({
+      runId: z.string(),
+      implementation: z.object({ name: z.string(), slug: z.string() }),
+      primary: primaryMetric,
+    })
+    .nullable(),
+}) satisfies z.ZodType<CohortOption>
 
 export const sourceRef = z.object({
   name: z.string(),
@@ -166,6 +181,7 @@ const recordEvent = z.object({
 export const recordHolder = z.object({
   cohortKey: z.string(),
   operation: z.object({ name: z.string(), slug: z.string() }),
+  workloadId: z.string(),
   workloadSummary: z.string(),
   hardware: z.string(),
   environmentSummary: z.string(),
@@ -226,6 +242,7 @@ export const resolveResponse = z.object({
   operation: z.object({ name: z.string(), slug: z.string() }).nullable(),
   policyVersion: z.string(),
   cohort: cohortContext.nullable(),
+  cohortOptions: z.array(cohortOption),
   bestVerified: resultRow.nullable(),
   bestDeployable: resultRow.nullable(),
   groups: z.object({
@@ -493,9 +510,7 @@ export const operationDossier = z.object({
   }),
   workloads: z.array(workloadOption),
   selectedWorkloadId: z.string().nullable(),
-  cohortOptions: z.array(
-    z.object({ key: z.string(), label: z.string(), runs: z.number() }),
-  ),
+  cohortOptions: z.array(cohortOption),
   cohort: cohortContext.nullable(),
   records: z.array(resultRow),
   sweep: z
@@ -584,6 +599,7 @@ export const implementationDossier = z.object({
   }),
   license: licenseInfo.extend({ evidencePath: z.string().nullable() }),
   trust: z.object({ evidence: evidenceLevel.nullable(), summary: z.string() }),
+  standing: z.object({ records: z.number() }),
   bestResults: z.array(resultRow),
   limitations: z.array(z.string()),
   provenance: z.object({
@@ -642,6 +658,7 @@ export const runDossier = z.object({
     rank: z.number().nullable(),
     eligible: z.boolean(),
     ineligibleReasons: z.array(z.string()),
+    headRunId: z.string().nullable(),
   }),
   implementation: z.object({
     name: z.string(),

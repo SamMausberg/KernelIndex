@@ -92,8 +92,10 @@ export default async function GpuPage({ params }: Props) {
                     className={`${RECORD_GRID} border-b border-line py-3 transition-colors hover:bg-raised`}
                   >
                     <div className="min-w-0 truncate">
+                      {/* Straight to the record's cohort, never the
+                          operation's default workload (§16.12). */}
                       <Link
-                        href={`/operations/${holder.operation.slug}`}
+                        href={`/operations/${holder.operation.slug}?workload=${holder.workloadId}&cohort=${encodeURIComponent(holder.cohortKey)}`}
                         prefetch={false}
                         className="text-body"
                       >

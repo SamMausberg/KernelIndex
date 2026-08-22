@@ -4,6 +4,7 @@
 // data. Selections never make this page dynamic (records pattern, §16.12).
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
+import { ApiLink } from "@/components/api-link"
 import { ContextHeader } from "@/components/context-header"
 import { CopyButton } from "@/components/copy-button"
 import { ExpandRows } from "@/components/expand-rows"
@@ -48,10 +49,13 @@ export default async function OperationPage({ params }: Props) {
       <ContextHeader
         title={operation.name}
         meta={
-          <span>
-            {coverage.verified} verified · {coverage.reproducible} reproducible
-            · {coverage.reported} reported
-          </span>
+          <>
+            <span>
+              {coverage.verified} verified · {coverage.reproducible}{" "}
+              reproducible · {coverage.reported} reported
+            </span>
+            <ApiLink path={`/operations/${operation.slug}`} />
+          </>
         }
       >
         {/* Identity as machined tags behind a disclosure (§16.7 progressive
@@ -127,6 +131,7 @@ export default async function OperationPage({ params }: Props) {
       <main className="shell animate-fade-in pb-24">
         <OperationRecords
           slug={operation.slug}
+          operationName={operation.name}
           workloads={model.workloads}
           lastObservedAt={coverage.lastObservedAt}
           initial={operationVariant(model)}

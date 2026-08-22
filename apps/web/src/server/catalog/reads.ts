@@ -24,6 +24,7 @@ import type {
   ImplementationSummary,
   OperationIndexEntry,
   OperationPageModel,
+  PrimaryMetric,
   RecordEvent,
   RecordHolder,
   RecordsPageModel,
@@ -246,13 +247,34 @@ function opRef(operation: { name: string; slug: string }) {
   return { name: humanizeOperationName(operation.name), slug: operation.slug }
 }
 
+/** The run's primary measurement in its base unit; null when unmeasured. */
+function primaryOf(run: JoinedRun["run"]): PrimaryMetric | null {
+  if (run.primaryValue === null) return null
+  return {
+    metric: run.primaryMetric,
+    unit: run.primaryUnit ?? "",
+    statistic: run.primaryStatistic ?? "value",
+    value: run.primaryValue,
+    sampleCount: run.sampleCount,
+    uncertainty:
+      run.uncertaintyLow !== null && run.uncertaintyHigh !== null
+        ? { low: run.uncertaintyLow, high: run.uncertaintyHigh }
+        : null,
+  }
+}
+
 export function resultRow(
   joined: JoinedRun,
   operation: { name: string; slug: string },
   extras: Partial<
     Pick<
       ResultRow,
-      "match" | "mismatches" | "rank" | "tiedWithPrevious" | "caveats"
+      | "match"
+      | "mismatches"
+      | "rank"
+      | "tiedWithPrevious"
+      | "cohortSize"
+      | "caveats"
     >
   > = {},
 ): ResultRow {
@@ -287,20 +309,7 @@ export function resultRow(
     },
     framework: implementation.framework,
     language: implementation.language,
-    primary:
-      run.primaryValue !== null
-        ? {
-            metric: run.primaryMetric,
-            unit: run.primaryUnit ?? "",
-            statistic: run.primaryStatistic ?? "value",
-            value: run.primaryValue,
-            sampleCount: run.sampleCount,
-            uncertainty:
-              run.uncertaintyLow !== null && run.uncertaintyHigh !== null
-                ? { low: run.uncertaintyLow, high: run.uncertaintyHigh }
-                : null,
-          }
-        : null,
+    primary: primaryOf(run),
     solScore: run.solScore,
     baseline: implementation.role === "baseline",
     evidence: runEvidence(run),
@@ -308,6 +317,7 @@ export function resultRow(
     mismatches: extras.mismatches ?? [],
     rank: extras.rank ?? null,
     tiedWithPrevious: extras.tiedWithPrevious ?? false,
+    cohortSize: extras.cohortSize ?? null,
     sourceAvailable: implementation.sourceAvailable,
     installable: implementation.installable,
     license: {
@@ -374,14 +384,34 @@ function groupRuns(
   const rankedCohorts = [...byCohort.entries()].sort(
     (a, b) => b[1].length - a[1].length,
   )
-  // One selectable option per measured environment cohort; equal hardware
-  // labels (distinct runner fleets) get a human ordinal — the cohort facts
-  // panel states what actually differs, never a leaked digest fragment.
-  const cohortOptions = rankedCohorts.map(([key, list]) => ({
-    key,
-    label: list[0].run.hardwareModel,
-    runs: list.length,
-  }))
+  // One selectable option per measured environment cohort, each stating its
+  // fastest rankable run (rows arrive fastest first); equal hardware labels
+  // (distinct runner fleets) get a human ordinal — the cohort facts panel
+  // states what actually differs, never a leaked digest fragment.
+  const cohortOptions = rankedCohorts.map(([key, list]) => {
+    const head = list.find((j) => j.run.primaryValue !== null)
+    const primary = head ? primaryOf(head.run) : null
+    return {
+      key,
+      label: list[0].run.hardwareModel,
+      runs: list.length,
+      head:
+        head && primary
+          ? {
+              runId: head.run.id,
+              implementation: {
+                name: implementationDisplayName(
+                  head.implementation.title ?? undefined,
+                  operation,
+                  head.implementation.slug,
+                ),
+                slug: head.implementation.slug,
+              },
+              primary,
+            }
+          : null,
+    }
+  })
   const labelCounts = new Map<string, number>()
   for (const option of cohortOptions) {
     labelCounts.set(option.label, (labelCounts.get(option.label) ?? 0) + 1)
@@ -440,6 +470,7 @@ function groupRuns(
     resultRow(byId.get(entry.id) as OperationJoinedRun, operation, {
       rank: entry.rank,
       tiedWithPrevious: entry.tiedWithPrevious,
+      cohortSize: rankable.length,
     }),
   )
   exact.push(
@@ -914,6 +945,7 @@ async function readRecordsPage(): Promise<RecordsPageModel> {
     records.push({
       cohortKey,
       operation: holderRow.operation,
+      workloadId: previous.workload.id,
       workloadSummary: holderRow.workloadSummary,
       hardware: previous.run.hardwareModel,
       environmentSummary: previous.run.environmentSummary ?? "",
@@ -1078,6 +1110,7 @@ export async function searchCatalog(
     browse: null,
     matches: null,
     cohort: null,
+    cohortOptions: [],
     groups: EMPTY_GROUPS,
     overflow: NO_OVERFLOW,
     related: [],
@@ -1206,8 +1239,9 @@ export async function searchCatalog(
         manifestById,
         selectedWorkloadId,
         intent,
+        input.cohort,
       )
-    : { ...EMPTY_GROUPS, cohort: null, headRunId: null }
+    : { ...EMPTY_GROUPS, cohort: null, cohortOptions: [], headRunId: null }
   // Independent round trips: cohort facts and source refs together.
   const [, sources] = await Promise.all([
     fillCohortFacts(groups),
@@ -1247,6 +1281,7 @@ export async function searchCatalog(
     ),
     operation: opRef(operation),
     cohort: groups.cohort,
+    cohortOptions: groups.cohortOptions,
     overflow: {
       exact: exact.overflow,
       compatible: compatible.overflow,
@@ -1328,6 +1363,7 @@ function supportedUnmeasuredRows(
         mismatches: [],
         rank: null,
         tiedWithPrevious: false,
+        cohortSize: null,
         sourceAvailable: implementation.sourceAvailable,
         installable: implementation.installable,
         license: {
@@ -1756,6 +1792,79 @@ async function implementationSourceCode(
   }
 }
 
+/**
+ * ranking-v1 over whole cohorts (§11.5): rank, tie, and cohort size for every
+ * eligible run in the given comparison cohorts, plus each cohort's #1. One
+ * lean query however many keys — the run dossier asks for one, the
+ * implementation page for every cohort its revision appears in.
+ */
+async function cohortRanks(comparisonKeys: string[]) {
+  const byRun = new Map<
+    string,
+    Pick<ResultRow, "rank" | "tiedWithPrevious" | "cohortSize">
+  >()
+  const headByCohort = new Map<string, string>()
+  if (comparisonKeys.length === 0) return { byRun, headByCohort }
+  const rows = await db()
+    .select({
+      id: schema.benchmarkRuns.id,
+      comparisonKey: schema.benchmarkRuns.comparisonKey,
+      primaryValue: schema.benchmarkRuns.primaryValue,
+      uncertaintyLow: schema.benchmarkRuns.uncertaintyLow,
+      uncertaintyHigh: schema.benchmarkRuns.uncertaintyHigh,
+      observedAt: schema.benchmarkRuns.observedAt,
+      sourceNative: schema.benchmarkRuns.sourceNative,
+      reproducedByKernelindex: schema.benchmarkRuns.reproducedByKernelindex,
+      independentReplicationCount:
+        schema.benchmarkRuns.independentReplicationCount,
+      sourceAvailable: schema.benchmarkRuns.sourceAvailable,
+      installable: schema.benchmarkRuns.installable,
+      hasRawEvidence: schema.benchmarkRuns.hasRawEvidence,
+    })
+    .from(schema.benchmarkRuns)
+    .where(
+      and(
+        inArray(schema.benchmarkRuns.comparisonKey, comparisonKeys),
+        eligibleRunFilter(),
+        isNotNull(schema.benchmarkRuns.primaryValue),
+      ),
+    )
+  const byCohort = new Map<string, typeof rows>()
+  for (const row of rows) {
+    const bucket = byCohort.get(row.comparisonKey)
+    if (bucket) bucket.push(row)
+    else byCohort.set(row.comparisonKey, [row])
+  }
+  for (const [key, cohort] of byCohort) {
+    const ranked = rankCohort(
+      cohort.map((row) => ({
+        id: row.id,
+        value: row.primaryValue as number,
+        interval:
+          row.uncertaintyLow !== null && row.uncertaintyHigh !== null
+            ? { low: row.uncertaintyLow, high: row.uncertaintyHigh }
+            : null,
+        evidence: runEvidence(row),
+        observedAt: row.observedAt,
+      })),
+      cohort.some((row) => row.sourceNative) ? "source_native" : "strict_exact",
+    )
+    for (const entry of ranked)
+      byRun.set(entry.id, {
+        rank: entry.rank,
+        tiedWithPrevious: entry.tiedWithPrevious,
+        cohortSize: ranked.length,
+      })
+    headByCohort.set(key, ranked[0].id)
+  }
+  return { byRun, headByCohort }
+}
+
+// Cohorts ranked per implementation page; a library baseline measured on
+// hundreds of workloads keeps its deeper rows unranked rather than loading
+// thousands of cohort rows for a disclosure few open.
+const IMPLEMENTATION_RANKED_COHORTS = 200
+
 export async function getImplementationPage(
   slug: string,
 ): Promise<ImplementationPageModel | null> {
@@ -1820,15 +1929,13 @@ export async function getImplementationPage(
       ),
     )
     .orderBy(schema.benchmarkRuns.primaryValue)
-  const bestResults = joined.map((j) =>
-    resultRow(j, { name: operation.name, slug: operation.slug }),
-  )
   const variant = manifest.spec.buildVariants?.[0]
   // "Best evidence level for this revision" means the strongest run, never
   // the fastest one — a per-run row elsewhere must never outrank this label.
   const evidence = bestEvidence(joined.map((j) => j.run))
-  // Independent round trips: source refs and the source-code bundle together.
-  const [refs, sourceCode] = await Promise.all([
+  // Independent round trips: source refs, the source-code bundle, the
+  // cohort ranks behind every evidence row, and the ledger for standing.
+  const [refs, sourceCode, ranks, ledger] = await Promise.all([
     sourceRefs(joined),
     implementationSourceCode(
       database,
@@ -1836,7 +1943,26 @@ export async function getImplementationPage(
       { name: operation.name, slug: operation.slug },
       joined[0]?.source.slug ?? null,
     ),
+    cohortRanks(
+      [...new Set(joined.map((j) => j.run.comparisonKey))].slice(
+        0,
+        IMPLEMENTATION_RANKED_COHORTS,
+      ),
+    ),
+    getRecordsPage(),
   ])
+  const bestResults = joined.map((j) =>
+    resultRow(
+      j,
+      { name: operation.name, slug: operation.slug },
+      ranks.byRun.get(j.run.id),
+    ),
+  )
+  const runIds = new Set(joined.map((j) => j.run.id))
+  const records = ledger.records.filter(
+    (holder) =>
+      holder.current.runId !== null && runIds.has(holder.current.runId),
+  ).length
 
   return {
     illustrative: pageIllustrative(joined),
@@ -1899,6 +2025,7 @@ export async function getImplementationPage(
         ? `Best evidence level for this revision: ${evidence}`
         : "No published measurement for this revision",
     },
+    standing: { records },
     bestResults,
     limitations: manifest.spec.support.axes ?? [],
     provenance: {
@@ -1956,7 +2083,7 @@ export async function getRunPage(id: string): Promise<RunPageModel | null> {
   const stored = run.manifest as StoredRunManifest
   const workloadManifest = workload.manifest as AnyWorkloadManifest
 
-  const [measurementRows, artifactRows, [supersededBy], cohortRuns, [link]] =
+  const [measurementRows, artifactRows, [supersededBy], ranks, [link]] =
     await Promise.all([
       database
         .select()
@@ -1979,28 +2106,7 @@ export async function getRunPage(id: string): Promise<RunPageModel | null> {
             isNotNull(schema.benchmarkRuns.publishedAt),
           ),
         ),
-      database
-        .select({
-          id: schema.benchmarkRuns.id,
-          primaryValue: schema.benchmarkRuns.primaryValue,
-          uncertaintyLow: schema.benchmarkRuns.uncertaintyLow,
-          uncertaintyHigh: schema.benchmarkRuns.uncertaintyHigh,
-          observedAt: schema.benchmarkRuns.observedAt,
-          reproducedByKernelindex: schema.benchmarkRuns.reproducedByKernelindex,
-          independentReplicationCount:
-            schema.benchmarkRuns.independentReplicationCount,
-          sourceAvailable: schema.benchmarkRuns.sourceAvailable,
-          installable: schema.benchmarkRuns.installable,
-          hasRawEvidence: schema.benchmarkRuns.hasRawEvidence,
-        })
-        .from(schema.benchmarkRuns)
-        .where(
-          and(
-            eq(schema.benchmarkRuns.comparisonKey, run.comparisonKey),
-            eligibleRunFilter(),
-            isNotNull(schema.benchmarkRuns.primaryValue),
-          ),
-        ),
+      cohortRanks([run.comparisonKey]),
       database
         .select({ externalId: schema.sourceLinks.externalId })
         .from(schema.sourceLinks)
@@ -2023,22 +2129,8 @@ export async function getRunPage(id: string): Promise<RunPageModel | null> {
   const profile = run.sourceNative
     ? ("source_native" as const)
     : ("strict_exact" as const)
-  const ranked = rankCohort(
-    cohortRuns.map((cohortRun) => ({
-      id: cohortRun.id,
-      value: cohortRun.primaryValue as number,
-      interval:
-        cohortRun.uncertaintyLow !== null && cohortRun.uncertaintyHigh !== null
-          ? { low: cohortRun.uncertaintyLow, high: cohortRun.uncertaintyHigh }
-          : null,
-      evidence: runEvidence(cohortRun),
-      observedAt: cohortRun.observedAt,
-    })),
-    profile,
-  )
-  const rank = eligible
-    ? (ranked.find((entry) => entry.id === run.id)?.rank ?? null)
-    : null
+  // Ineligible runs never rank; the helper only knows eligible ones anyway.
+  const rank = eligible ? (ranks.byRun.get(run.id)?.rank ?? null) : null
 
   const correctness = stored.run.spec.correctness
 
@@ -2085,6 +2177,7 @@ export async function getRunPage(id: string): Promise<RunPageModel | null> {
       rank,
       eligible,
       ineligibleReasons,
+      headRunId: ranks.headByCohort.get(run.comparisonKey) ?? null,
     },
     implementation: {
       name: implementationDisplayName(

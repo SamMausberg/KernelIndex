@@ -51,6 +51,8 @@ describe.skipIf(!url)("postgres catalog reads", () => {
       // The newest event is the current record.
       expect(holder.history[0].runId).toBe(holder.current.runId)
       expect(holder.since).toBe(holder.history[0].at)
+      // Every holder deep-links its exact cohort on the operation page.
+      expect(holder.workloadId).toBeTruthy()
       // Records only ever improve: newer events are strictly faster.
       for (let i = 0; i + 1 < holder.history.length; i++) {
         expect(holder.history[i].value.value).toBeLessThan(
@@ -69,10 +71,23 @@ describe.skipIf(!url)("postgres catalog reads", () => {
     expect(model.groups.exact.length).toBeGreaterThanOrEqual(1)
     const [first] = model.groups.exact
     expect(first.rank).toBe(1)
+    expect(first.cohortSize).toBeGreaterThanOrEqual(1)
     expect(first.primary?.value).toBe(8120)
     expect(first.primary?.unit).toBe("ns")
     expect(first.caveats).toContain("Illustrative example record")
     expect(model.cohort?.profile).toBe("strict_exact")
+    // The shown cohort leads the options, and its head is the #1 row.
+    expect(model.cohortOptions[0]?.key).toBe(model.cohort?.comparisonKey)
+    expect(model.cohortOptions[0]?.head?.runId).toBe(first.runId)
+  })
+
+  it("searchCatalog pins a requested cohort", async () => {
+    const model = await searchCatalog({ query: "rmsnorm" })
+    const last = model.cohortOptions.at(-1)
+    expect(last).toBeDefined()
+    const pinned = await searchCatalog({ query: "rmsnorm", cohort: last?.key })
+    expect(pinned.cohort?.comparisonKey).toBe(last?.key)
+    expect(pinned.groups.exact[0]?.runId).toBe(last?.head?.runId)
   })
 
   it("searchCatalog returns the browse start state for an empty query", async () => {
@@ -112,6 +127,11 @@ describe.skipIf(!url)("postgres catalog reads", () => {
     expect(model?.license.concluded).toBe("Apache-2.0")
     expect(model?.source.available).toBe(true)
     expect(model?.support.dtypes).toEqual(["bf16"])
+    // Standing (§16.9): every evidence row ranks inside its own cohort,
+    // and the record count comes from the same ledger the records page reads.
+    expect(model?.bestResults[0]?.rank).not.toBeNull()
+    expect(model?.bestResults[0]?.cohortSize).toBeGreaterThanOrEqual(1)
+    expect(model?.standing.records).toBeGreaterThanOrEqual(0)
     expect(model?.bestResults).toHaveLength(1)
   })
 
@@ -124,6 +144,8 @@ describe.skipIf(!url)("postgres catalog reads", () => {
     expect(model?.run.digest).toMatch(/^sha256:/)
     expect(model?.evidence).toBe("reported")
     expect(model?.cohort.rank).toBe(1)
+    // The #1 run is its own cohort head; the dossier links the cohort.
+    expect(model?.cohort.headRunId).toBe(runId)
     expect(model?.protocol.length).toBeGreaterThan(3)
     expect(model?.environment.length).toBeGreaterThan(3)
     expect(model?.measurements.length).toBeGreaterThanOrEqual(6)

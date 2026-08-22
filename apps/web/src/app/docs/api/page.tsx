@@ -18,6 +18,26 @@ const EXAMPLE_BODIES: Record<string, string> = {
   "/corrections": `{"action": "retract", "runId": "<run-id>", "reason": "…"}`,
 }
 
+/** Response shape beside the request, for the routes agents call first.
+ * Values are elided: this documents the contract, never a measurement. */
+const EXAMPLE_RESPONSES: Record<string, string> = {
+  "/search": `{
+  "query": "rmsnorm b200 bf16",
+  "mode": "exact",
+  "operation": { "name": "…", "slug": "…" },
+  "policyVersion": "ranking-v1",
+  "cohort": { "comparisonKey": "sha256:…", "profile": "…", "facts": [ … ] },
+  "cohortOptions": [ { "key": "sha256:…", "label": "NVIDIA B200", "runs": …, "head": { … } } ],
+  "bestVerified": null,
+  "bestDeployable": { "runId": "…", "implementation": { … }, "primary": { "metric": "latency", "unit": "ns", "value": … },
+                      "rank": …, "cohortSize": …, "install": { "kind": "pip", "command": "…" }, "evidence": "reported", … },
+  "groups": { "exact": [ … ], "compatible": [ … ], "supportedUnmeasured": [ … ], "reported": [ … ] },
+  "overflow": { "exact": 0, "compatible": 0, "supportedUnmeasured": 0, "reported": 0 },
+  "sources": [ { "name": "…", "observedAt": "…" } ],
+  "generatedAt": "…"
+}`,
+}
+
 type Operation = {
   description?: string
   parameters?: { name: string; in: string; required?: boolean }[]
@@ -105,6 +125,16 @@ export default function ApiReferencePage() {
                 <pre className="plate mt-3 overflow-x-auto px-4 py-2.5 font-mono text-small leading-relaxed text-muted">
                   {curlFor(method, path)}
                 </pre>
+                {EXAMPLE_RESPONSES[path] && (
+                  <>
+                    <p className="mt-2 text-small text-faint">
+                      Response shape; values elided.
+                    </p>
+                    <pre className="plate mt-1.5 overflow-x-auto px-4 py-2.5 font-mono text-small leading-relaxed text-muted">
+                      {EXAMPLE_RESPONSES[path]}
+                    </pre>
+                  </>
+                )}
               </section>
             )
           })}
