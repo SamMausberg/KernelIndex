@@ -806,11 +806,15 @@ function nearestCases(
   operation: { name: string; slug: string },
   operationManifest: OperationSpecManifest,
 ): SearchPageModel["nearest"] {
+  // Only measured cases can bracket: reviewed-equivalent definitions carry
+  // duplicate cases, and an unmeasured twin must never be the neighbour.
+  const measured = new Set(joined.map((j) => j.workload.id))
   const bracket = bracketCases(
     intent,
     workloadRows.flatMap((row) => {
       const manifest = manifestById.get(row.id)
-      if (manifest?.kind !== "WorkloadCase") return []
+      if (manifest?.kind !== "WorkloadCase" || !measured.has(row.id))
+        return []
       return [
         {
           id: row.id,
