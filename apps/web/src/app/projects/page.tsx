@@ -167,7 +167,7 @@ export default async function ProjectsPage({
           </span>
         }
       />
-      <main className="shell animate-fade-in pb-24">
+      <main className="shell pb-24">
         <Section id="libraries" title="Libraries">
           <p className="mb-4 max-w-[76ch] text-body text-muted">
             Software you can adopt: real projects with a repository, a license

@@ -4,6 +4,8 @@
 // presented as real benchmark evidence.
 import type {
   Attestation,
+  Challenge,
+  ChallengesModel,
   CompareField,
   ComparePageModel,
   CompareRun,
@@ -791,6 +793,73 @@ export async function getFeed(): Promise<FeedModel> {
     else days.push({ date, entries: [entry] })
   }
   return { illustrative: ILLUSTRATIVE, days }
+}
+
+/** The fixture challenges board (§2.3): one row per kind, derived from the
+ * fixture ledger the way the PostgreSQL read derives them. */
+export async function getChallenges(): Promise<ChallengesModel> {
+  const { records } = await getRecordsPage()
+  const stale = records.find((holder) => holder.current.stale)
+  const single = records.find(
+    (holder) => holder.history.length === 1 && !holder.current.baseline,
+  )
+  const challenge = (
+    kind: Challenge["kind"],
+    holder: (typeof records)[number],
+    detail: string,
+  ): Challenge => ({
+    kind,
+    operation: holder.operation,
+    family: null,
+    hardware: holder.hardware,
+    detail,
+    since: holder.since,
+    count: 0,
+    href: `/operations/${holder.operation.slug}?workload=${holder.workloadId}&cohort=${encodeURIComponent(holder.cohortKey)}`,
+  })
+  return {
+    illustrative: ILLUSTRATIVE,
+    challenges: [
+      {
+        kind: "requested",
+        operation: { name: "RMSNorm, hidden 4096", slug: "rmsnorm-h4096" },
+        family: null,
+        hardware: "H100",
+        detail: "bf16 · tokens ≈ 8k",
+        since: null,
+        count: 7,
+        href: "/search?q=op%3Armsnorm-h4096%20gpu%3AH100%20dtype%3Abf16%20tokens%3D8192",
+      },
+      {
+        kind: "gap",
+        operation: null,
+        family: "gqa-paged-attention",
+        hardware: "NVIDIA H100",
+        detail: "no eligible run for the gqa-paged-attention family",
+        since: null,
+        count: 0,
+        href: "/search?q=gqa-paged-attention%20H100",
+      },
+      ...(single
+        ? [
+            challenge(
+              "unchallenged",
+              single,
+              `${single.workloadSummary} · ${single.current.implementation.name} is the only entry`,
+            ),
+          ]
+        : []),
+      ...(stale
+        ? [
+            challenge(
+              "stale",
+              stale,
+              `${stale.workloadSummary} · ${stale.current.implementation.name} last observed ${(stale.current.lastTestedAt ?? "").slice(0, 10)}`,
+            ),
+          ]
+        : []),
+    ],
+  }
 }
 
 export async function getOperationIndex(): Promise<OperationIndexEntry[]> {

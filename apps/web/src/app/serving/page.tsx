@@ -244,7 +244,7 @@ export default async function ServingPage({
         // serving source lands.
         context={`${facets.totalRuns} results · all from MLPerf Inference, shown as published · ranked only when you pick an objective`}
       />
-      <main className="shell animate-fade-in pb-24">
+      <main className="shell pb-24">
         <form
           method="GET"
           className="flex flex-wrap items-stretch gap-x-6 gap-y-4 border-b border-border py-5"
@@ -325,38 +325,30 @@ export default async function ServingPage({
             </Field>
           </ConsoleGroup>
           <div aria-hidden="true" className="w-px bg-border" />
-          {/* Latency bounds are the power move, not the entry point: the
-              disclosure keeps the console leading with model + hardware.
-              It opens whenever a bound is set so active state stays visible. */}
-          <details
-            open={Boolean(params.ttft || params.tpot)}
-            className="group self-end"
-          >
-            <summary className="flex h-8 cursor-pointer list-none items-center font-mono text-label text-faint uppercase transition-colors hover:text-fg [&::-webkit-details-marker]:hidden">
-              Latency bounds ›
-            </summary>
-            <div className="mt-2.5 flex flex-wrap items-end gap-x-4 gap-y-3">
-              <Field label="TTFT p99 ≤">
-                <UnitInput
-                  name="ttft"
-                  ariaLabel="TTFT p99 bound (ms)"
-                  defaultValue={params.ttft}
-                  placeholder="450"
-                />
-              </Field>
-              <Field label="TPOT p99 ≤">
-                <UnitInput
-                  name="tpot"
-                  ariaLabel="TPOT p99 bound (ms)"
-                  defaultValue={params.tpot}
-                  placeholder="40"
-                />
-              </Field>
-            </div>
-          </details>
+          {/* Bounds sit in the console like every other group — one
+              caption, one row of h-8 controls, nothing to open (2026-08-22
+              founder feedback: the disclosure broke the console's line). */}
+          <ConsoleGroup label="Latency bounds">
+            <Field label="TTFT p99 ≤">
+              <UnitInput
+                name="ttft"
+                ariaLabel="TTFT p99 bound (ms)"
+                defaultValue={params.ttft}
+                placeholder="450"
+              />
+            </Field>
+            <Field label="TPOT p99 ≤">
+              <UnitInput
+                name="tpot"
+                ariaLabel="TPOT p99 bound (ms)"
+                defaultValue={params.tpot}
+                placeholder="40"
+              />
+            </Field>
+          </ConsoleGroup>
           <button
             type="submit"
-            className="key-primary h-8 cursor-pointer self-end px-5 text-small"
+            className="key h-8 cursor-pointer self-end px-5 text-small font-medium text-fg"
           >
             Resolve
           </button>

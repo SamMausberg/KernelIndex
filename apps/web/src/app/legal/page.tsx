@@ -55,7 +55,7 @@ export default function LegalPage() {
         title="Legal"
         context="terms · privacy · source licenses · takedown"
       />
-      <main className="shell-narrow animate-fade-in pb-24 text-body leading-relaxed text-muted">
+      <main className="shell-narrow pb-24 text-body leading-relaxed text-muted">
         <Section id="terms" title="Terms of use">
           <p>
             KernelIndex is a free public index of GPU performance evidence. The

@@ -78,7 +78,7 @@ export default async function ServingRunPage({ params }: Props) {
         </div>
       )}
 
-      <main className="shell animate-fade-in pb-24">
+      <main className="shell pb-24">
         <section className="grid grid-cols-[minmax(0,1.5fr)_minmax(280px,1fr)] gap-10 border-b border-border py-6 max-lg:grid-cols-1">
           <div>
             <div className="font-mono text-label text-faint uppercase">

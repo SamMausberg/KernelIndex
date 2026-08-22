@@ -6,6 +6,7 @@ import { createHash } from "node:crypto"
 import { unstable_cache } from "next/cache.js"
 import { cache } from "react"
 import type {
+  ChallengesModel,
   ComparePageModel,
   CoveragePageModel,
   FeedModel,
@@ -62,6 +63,8 @@ type CatalogReads = {
   getModelPage(slug: string, gpu?: string): Promise<ModelPageModel | null>
   // The feed (§13.11): what the index learned, trailing 30 days.
   getFeed(): Promise<FeedModel>
+  // Challenges (§2.3): what the index has no good answer for yet.
+  getChallenges(): Promise<ChallengesModel>
   // Serving (§8.16): a separate resolver surface behind the same seam.
   getServingFacets(): Promise<ServingFacetsModel>
   getServingOverview(): Promise<ServingOverviewModel>
@@ -330,6 +333,16 @@ export const getFeed = cache(
       return (await reads()).getFeed()
     },
     ["feed", BACKEND],
+    { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },
+  ),
+)
+
+export const getChallenges = cache(
+  cached(
+    async (): Promise<ChallengesModel> => {
+      return (await reads()).getChallenges()
+    },
+    ["challenges", BACKEND],
     { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },
   ),
 )

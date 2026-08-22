@@ -133,7 +133,7 @@ export function OperationRecords({
   return (
     <div onClickCapture={onClickCapture}>
       {top && (
-        <div className="animate-row-in border-b border-border pb-6">
+        <div className="border-b border-border pb-6">
           <AnswerSlots
             top={top}
             topLabel={top.baseline ? "Source baseline · unbeaten" : undefined}
@@ -203,7 +203,14 @@ export function OperationRecords({
             )}
             {variant.records.length > 0 && missing.length > 0 && (
               <p className="mt-2.5 text-small text-faint">
-                Not measured on {missing.join(", ")} for this workload.
+                Not measured on {missing.join(", ")} for this workload.{" "}
+                <Link
+                  href="/challenges"
+                  prefetch={false}
+                  className="text-small"
+                >
+                  Challenges →
+                </Link>
               </p>
             )}
           </div>

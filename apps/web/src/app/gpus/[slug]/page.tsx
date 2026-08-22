@@ -79,7 +79,7 @@ export default async function GpuPage({ params }: Props) {
         )}
       </ContextHeader>
 
-      <main className="shell animate-fade-in pb-24">
+      <main className="shell pb-24">
         <Section id="records" title="Records held on this GPU">
           {records.length > 0 ? (
             <div className="overflow-x-auto">

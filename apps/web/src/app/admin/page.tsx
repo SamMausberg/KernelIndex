@@ -138,7 +138,7 @@ export default async function AdminPage() {
         context={`${pending.length} submissions pending · ${claims.length} claims pending · ${openReports.length} reports open`}
         meta={<span>signed in as {user.name}</span>}
       />
-      <main className="shell animate-fade-in pb-24">
+      <main className="shell pb-24">
         <Section id="submissions" title="Submissions awaiting review">
           {pending.length === 0 && (
             <p className="text-body text-faint">Nothing pending.</p>

@@ -22,7 +22,7 @@ export function NearestMeasured({
     (side): side is NonNullable<typeof side> => side !== null,
   )
   return (
-    <section className="animate-row-in border-b border-border py-6">
+    <section className="border-b border-border py-6">
       <p className="text-body text-muted">
         Not measured at{" "}
         <span className="font-mono text-fg">

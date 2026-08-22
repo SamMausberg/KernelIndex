@@ -85,7 +85,7 @@ export function FeedView({ initial }: { initial: FeedModel }) {
           </>
         }
       />
-      <main className="shell animate-fade-in pb-24">
+      <main className="shell pb-24">
         {following ? (
           loaded === "sign-in" ? (
             <p className="py-8 text-body text-muted">

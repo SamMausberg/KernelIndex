@@ -31,6 +31,7 @@ describe("mcp server", () => {
       "get_manifest_schema",
       "get_operation",
       "get_serving_run",
+      "list_challenges",
       "list_changes",
       "list_hardware",
       "list_models",

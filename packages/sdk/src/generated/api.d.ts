@@ -4147,6 +4147,80 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  "/challenges": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: {
+      parameters: {
+        query?: never
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Requested workloads, priority and model gaps, unbeaten baselines, unchallenged and stale records; every row points at the cohort or search where the answer would go */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              illustrative: boolean
+              challenges: {
+                /** @enum {string} */
+                kind:
+                  | "requested"
+                  | "gap"
+                  | "model_gap"
+                  | "unbeaten_baseline"
+                  | "unchallenged"
+                  | "stale"
+                operation: {
+                  name: string
+                  slug: string
+                } | null
+                family: string | null
+                hardware: string | null
+                detail: string
+                since: string | null
+                count: number
+                href: string
+              }[]
+              generatedAt: string
+            }
+          }
+        }
+        /** @description Not found */
+        404: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              type: string
+              title: string
+              status: number
+              code: string
+              detail?: string
+              requestId: string
+            }
+          }
+        }
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   "/feed": {
     parameters: {
       query?: never
