@@ -4,6 +4,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import { ApiLink } from "@/components/api-link"
 import { EvidenceOpened } from "@/components/beacon"
 import { ContextHeader } from "@/components/context-header"
 import { CopyButton } from "@/components/copy-button"
@@ -58,7 +59,12 @@ export default async function ServingRunPage({ params }: Props) {
             <span className="text-faint">run {model.run.id.slice(0, 13)}…</span>
           </>
         }
-        meta={<span>{model.run.status} · Reported evidence</span>}
+        meta={
+          <>
+            <span>{model.run.status} · Reported evidence</span>
+            <ApiLink path={`/serving-runs/${model.run.id}`} />
+          </>
+        }
       />
 
       {model.lifecycle.retracted && (

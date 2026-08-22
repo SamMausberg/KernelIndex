@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
+import { ApiLink } from "@/components/api-link"
 import { ContextHeader } from "@/components/context-header"
 import { CopyButton } from "@/components/copy-button"
 import { ExpandRows } from "@/components/expand-rows"
@@ -13,7 +14,7 @@ import {
   SourceDiffView,
 } from "@/features/implementations/source-view"
 import { getImplementationPage } from "@/lib/catalog"
-import { evidenceLabel, formatDateUTC } from "@/lib/format"
+import { countNoun, evidenceLabel, formatDateUTC } from "@/lib/format"
 import { env } from "@/server/env"
 import { deployability } from "@/server/policy/deployability"
 
@@ -27,7 +28,7 @@ export function generateStaticParams(): { slug: string }[] {
 }
 
 const EVIDENCE_GRID =
-  "grid grid-cols-[minmax(260px,1.6fr)_170px_150px_90px_110px] min-w-[780px]"
+  "grid grid-cols-[minmax(260px,1.6fr)_170px_150px_92px_90px_110px] min-w-[870px]"
 
 type Props = { params: Promise<{ slug: string }> }
 
@@ -112,7 +113,18 @@ export default async function ImplementationPage({ params }: Props) {
                 lines ↓
               </a>
             )}
+            {/* Standing (§16.9): records held now, inside their own cohorts. */}
+            {model.standing.records > 0 && (
+              <span className="text-fg">
+                holds {countNoun(model.standing.records, "record")}
+              </span>
+            )}
             <span>{model.trust.summary}</span>
+            <ApiLink
+              path={`/implementations/${model.implementation.slug}${
+                model.sourceCode ? "?include=source" : ""
+              }`}
+            />
           </>
         }
       />
@@ -286,13 +298,14 @@ export default async function ImplementationPage({ params }: Props) {
           )}
           <div className="overflow-x-auto">
             {model.bestResults.length > 0 ? (
-              <div className="min-w-[780px]">
+              <div className="min-w-[870px]">
                 <div
                   className={`${EVIDENCE_GRID} border-b border-border-strong font-mono text-label text-faint uppercase`}
                 >
                   <div className="py-2">Operation / workload</div>
                   <div className="py-2">Hardware</div>
                   <div className="py-2 pr-3.5 text-right">Latency</div>
+                  <div className="py-2">Rank</div>
                   <div className="py-2">Observed</div>
                   <div />
                 </div>
@@ -324,6 +337,19 @@ export default async function ImplementationPage({ params }: Props) {
                           spread
                           valueClassName="font-mono text-body text-fg"
                         />
+                      </div>
+                      {/* Rank inside the row's own cohort (§16.9): the
+                          competitive fact the latency alone never states. */}
+                      <div
+                        className={`font-mono text-mini whitespace-nowrap ${
+                          row.rank === 1 ? "text-fg" : "text-faint"
+                        }`}
+                      >
+                        {row.rank === null
+                          ? "—"
+                          : `#${row.rank}${row.tiedWithPrevious ? "=" : ""}${
+                              row.cohortSize ? ` of ${row.cohortSize}` : ""
+                            }`}
                       </div>
                       <div className="font-mono text-mini text-faint">
                         {formatDateUTC(row.lastTestedAt)}

@@ -2612,6 +2612,33 @@ both backends (`MODEL_VERSION` v4), `GET /api/v1/models/{slug}`, the
 `model_resolved` event, and crosslinks from search (`model:` facet),
 operation-page model chips, docs `#views`, and llms.txt.
 
+**Reality note (2026-08-22, refinement batch).** A pass closing the places
+where a reader landed on a fact and could not step to the thing it named:
+
+- **Machine twins.** Every dossier and index page links its `/api/v1` JSON
+  from the header meta (`components/api-link.tsx`): operations,
+  implementations (`?include=source` when mirrored), runs, serving runs,
+  models, GPUs, records, and the search footer (beside copy-as-curl and
+  copy-as-`ki`). §16.18's "manifests linked as JSON alternates", done.
+- **Cohort permalinks.** `RecordHolder.workloadId` lets ledger and GPU
+  record rows deep-link `/operations/{slug}?workload=&cohort=`; the run
+  dossier's rank sentence links its cohort and, when not #1, offers
+  "Compare with #1" (`RunPageModel.cohort.headRunId`).
+- **Standing.** `ResultRow.cohortSize` rides every ranked row ("#3 of 12");
+  the implementation page states records held (`standing.records`, from the
+  memoized ledger) and ranks each evidence row inside its own cohort
+  (`cohortRanks`, one lean query for any number of comparison keys, also
+  behind the run dossier; capped at 200 cohorts per implementation page).
+- **Cohort switching on search.** `SearchInput.cohort` pins one of the
+  resolved workload's measured cohorts (`SearchPageModel.cohortOptions`,
+  also in the resolver envelope and `GET /search?cohort=`); the results
+  header renders them as hardware chips. On the operation page the chip row
+  became a compact per-environment table stating each cohort's best known
+  run (`CohortOption.head`), with a "Record history" link into the ledger.
+- **Home** lists three real example queries (newest record operations and
+  the most-measured `model:` tag); `/docs/api` shows the `/search` response
+  shape with values elided. `MODEL_VERSION` v5.
+
 ### 16.1 Product character
 
 KernelIndex should feel like a serious technical reference built by kernel engineers, not a generic SaaS dashboard, gaming leaderboard, or GPU marketing site.

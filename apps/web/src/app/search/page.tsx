@@ -18,6 +18,8 @@ export const metadata: Metadata = { title: "Search" }
 
 type Params = {
   q?: string
+  /** Pins one measured cohort of the resolved workload (hardware chips). */
+  cohort?: string
   view?: string
   verified?: string
   source?: string
@@ -36,7 +38,7 @@ const BROWSE_SORTS = new Set(["indexed", "active", "az"])
 
 async function Results({ params }: { params: Params }) {
   const query = params.q ?? ""
-  const model = await searchCatalog({ query })
+  const model = await searchCatalog({ query, cohort: params.cohort })
   // §20.5 answer-quality counters, after the response; empty = browse.
   if (query.trim() !== "")
     after(() =>
@@ -66,6 +68,7 @@ async function Results({ params }: { params: Params }) {
             : model
         }
         filters={{
+          cohort: params.cohort,
           view:
             params.view && MODES.has(params.view)
               ? (params.view as ResultMode)

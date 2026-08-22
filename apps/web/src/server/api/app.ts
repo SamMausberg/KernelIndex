@@ -68,6 +68,7 @@ function resolveEnvelope(model: SearchPageModel) {
     operation: model.operation,
     policyVersion: RANKING_POLICY_VERSION,
     cohort: model.cohort,
+    cohortOptions: model.cohortOptions,
     bestVerified: model.groups.exact.find(isVerified) ?? null,
     bestDeployable: model.groups.exact.find(isDeployable) ?? null,
     groups: model.groups,
@@ -209,12 +210,18 @@ api.openapi(
   createRoute({
     method: "get",
     path: "/search",
-    request: { query: z.object({ q: z.string().max(500).default("") }) },
+    request: {
+      query: z.object({
+        q: z.string().max(500).default(""),
+        // Pins one of the envelope's cohortOptions (§16.6 hardware chips).
+        cohort: z.string().max(200).optional(),
+      }),
+    },
     responses: json(resolveResponse, "Resolver decision for a text query"),
   }),
   async (c) => {
-    const { q } = c.req.valid("query")
-    const model = await searchCatalog({ query: q })
+    const { q, cohort } = c.req.valid("query")
+    const model = await searchCatalog({ query: q, cohort })
     c.header("Cache-Control", CACHE_SHORT)
     return c.json(resolveEnvelope(model))
   },

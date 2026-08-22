@@ -24,8 +24,14 @@ export function FilterChip({
   label: string
   count?: number
 }) {
+  // The selected surface (accent-soft) is lighter than the canvas: the
+  // counter steps up one role there to keep AA contrast (§16.17).
   const counter = count !== undefined && (
-    <span className="ml-1 font-mono text-mini text-faint">{count}</span>
+    <span
+      className={`ml-1 font-mono text-mini ${on ? "text-subtle" : "text-faint"}`}
+    >
+      {count}
+    </span>
   )
   if (dead) {
     return (

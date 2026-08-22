@@ -14,6 +14,21 @@ test("a retracted run keeps its evidence with a visible retraction", async ({
   ).toBeVisible()
 })
 
+test("a ranked run links its cohort and a comparison with #1", async ({
+  page,
+}) => {
+  await page.goto("/runs/run-fx-0002")
+  await expect(
+    page.getByRole("link", { name: "Rank 2 in its comparison group" }),
+  ).toHaveAttribute(
+    "href",
+    /\/operations\/rmsnorm-h4096\?workload=wl-2048&cohort=/,
+  )
+  await expect(
+    page.getByRole("link", { name: "Compare with #1 →" }),
+  ).toHaveAttribute("href", "/compare?run=run-fx-0001&run=run-fx-0002")
+})
+
 test("a superseded run stays auditable but ineligible", async ({ page }) => {
   await page.goto("/runs/run-fx-0008")
   await expect(
