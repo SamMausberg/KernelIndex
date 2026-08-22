@@ -35,6 +35,10 @@ Usage:
   ki serving <runs|configs>          serving corpus listings
   ki export                          immutable catalog export URL
   ki auth status                     API key identity, scopes, and quota
+  ki submit <path> [--send]          validate a submission or flat bench
+                                     record and preview its placement;
+                                     --send queues it for review (needs an
+                                     API key with submissions:write)
   ki manifest validate <path>        validate a manifest against its schema
   ki manifest digest <path>          canonical RFC 8785 spec digest
 
@@ -61,6 +65,7 @@ const { values, positionals } = parseArgs({
     json: { type: "boolean", default: false },
     jsonl: { type: "boolean", default: false },
     quiet: { type: "boolean", default: false },
+    send: { type: "boolean", default: false },
     help: { type: "boolean", default: false },
     limit: { type: "string" },
     cursor: { type: "string" },
@@ -459,6 +464,41 @@ async function main(): Promise<number> {
           ? ` · ${identity.usedToday ?? 0}/${identity.quotaPerDay} today`
           : ""),
     )
+    return 0
+  }
+
+  if (command === "submit") {
+    const [file] = rest
+    if (!file) usage("usage: ki submit <path> [--send]")
+    const document = readFileSync(file, "utf8")
+    const preview = await api.previewSubmission(document)
+    if (!preview.report.valid || !values.send) {
+      if (emit(preview, preview.placement)) return preview.report.valid ? 0 : 1
+      console.log(
+        preview.report.valid
+          ? `valid · ${preview.report.objects.length} objects`
+          : "invalid:",
+      )
+      for (const issue of preview.report.issues) console.log(`  ${issue}`)
+      table(
+        preview.placement.map((entry) => [
+          entry.operation?.name ?? "unmapped operation",
+          entry.workload,
+          entry.cohort === null
+            ? ""
+            : `${entry.cohort.size} entr${entry.cohort.size === 1 ? "y" : "ies"}`,
+          entry.note,
+        ]),
+      )
+      if (preview.report.valid && !values.quiet)
+        console.log(
+          "add --send with an API key (submissions:write scope) to submit for review",
+        )
+      return preview.report.valid ? 0 : 1
+    }
+    const receipt = await api.submitDocument(document)
+    if (emit(receipt)) return 0
+    console.log(`submitted for review · ${receipt.id} · ${receipt.state}`)
     return 0
   }
 

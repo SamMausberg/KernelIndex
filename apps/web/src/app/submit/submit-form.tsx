@@ -5,11 +5,12 @@
 // review. The preview never promises ranking — comparability is evaluated
 // at review and publication.
 import { useActionState } from "react"
-import { countNoun } from "@/lib/format"
+import { countNoun, formatLatency } from "@/lib/format"
 import { type SubmitState, submitAction, validateAction } from "./actions"
 
 const INITIAL: SubmitState = {
   report: null,
+  placement: [],
   submittedId: null,
   error: null,
   text: "",
@@ -98,6 +99,25 @@ export function SubmitForm({
           {state.report.issues.map((issue) => (
             <p key={issue} className="mt-1.5 font-mono text-small text-warning">
               {issue}
+            </p>
+          ))}
+          {/* §15.5 placement: where each run would land — a statement of
+              the cohort's current facts, never a promised rank. */}
+          {state.placement.map((entry) => (
+            <p key={entry.name} className="mt-1.5 text-small text-subtle">
+              <span className="font-mono">{entry.name}</span>
+              {" · "}
+              {entry.operation?.name ?? "unmapped operation"}
+              {entry.workload && (
+                <span className="font-mono text-mini text-faint">
+                  {" "}
+                  {entry.workload}
+                </span>
+              )}
+              {": "}
+              <span className="text-fg">{entry.note}</span>
+              {entry.cohort?.head &&
+                ` · current head ${entry.cohort.head.implementation} at ${formatLatency(entry.cohort.head.valueNs)}`}
             </p>
           ))}
           {state.report.objects.map((object) => (

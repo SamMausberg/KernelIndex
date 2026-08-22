@@ -18,6 +18,10 @@ export function CreateKeyForm() {
           maxLength={80}
           className="well w-[240px] px-2.5 py-1.5 font-mono text-small outline-none"
         />
+        <label className="flex cursor-pointer items-center gap-1.5 text-small text-subtle">
+          <input type="checkbox" name="write" />
+          submissions:write
+        </label>
         <button
           type="submit"
           disabled={pending}

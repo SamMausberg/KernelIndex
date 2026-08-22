@@ -32,6 +32,7 @@ import {
   implementationDossier,
   meResponse,
   operationDossier,
+  previewResponse,
   problemDetails,
   projectDossier,
   type ResolveKernelRequest,
@@ -46,6 +47,8 @@ import {
   servingResolveResponse,
   servingRunDossier,
   servingRunsResponse,
+  submissionDocumentRequest,
+  submissionReceipt,
 } from "./schemas.ts"
 
 const isVerified = (row: ResultRow) =>
@@ -167,6 +170,8 @@ api.use(async (c, next) => {
       !path.endsWith("/corrections") &&
       !path.endsWith("/revalidate") &&
       !path.endsWith("/attestations") &&
+      !path.endsWith("/submissions") &&
+      !path.endsWith("/submissions/preview") &&
       !result.identity.scopes.includes("catalog:read")
     )
       fail(403, "MISSING_SCOPE", "this route requires the catalog:read scope")
@@ -549,6 +554,85 @@ api.openapi(
         "no catalog export has been generated yet",
       )
     }
+  },
+)
+
+// §15.5: the same validation and placement preview the web form shows,
+// for the CLI and agents. Validation is read-only; no key needed.
+api.openapi(
+  createRoute({
+    method: "post",
+    path: "/submissions/preview",
+    request: {
+      body: {
+        content: { "application/json": { schema: submissionDocumentRequest } },
+      },
+    },
+    responses: json(
+      previewResponse,
+      "Validation report plus, per run, the cohort it would join and the rank it would take under ranking-v1 — never a promise; review decides comparability",
+    ),
+  }),
+  async (c) => {
+    const { document } = c.req.valid("json")
+    const { previewSubmission } = await import("../catalog/submissions.ts")
+    const result = await previewSubmission(document)
+    c.header("Cache-Control", "no-store")
+    return c.json({ ...result, generatedAt: new Date().toISOString() })
+  },
+)
+
+// §15.2 machine submissions: the same reviewed path the web form uses,
+// authorized by an API key carrying submissions:write.
+api.openapi(
+  createRoute({
+    method: "post",
+    path: "/submissions",
+    security: [{ apiKey: [] }],
+    request: {
+      body: {
+        content: { "application/json": { schema: submissionDocumentRequest } },
+      },
+    },
+    responses: {
+      201: {
+        description: "Queued for review (or needs_changes with the report)",
+        content: { "application/json": { schema: submissionReceipt } },
+      },
+      401: {
+        description: "No API key presented",
+        content: { "application/json": { schema: problemDetails } },
+      },
+      403: {
+        description: "Key lacks the submissions:write scope",
+        content: { "application/json": { schema: problemDetails } },
+      },
+    },
+  }),
+  async (c) => {
+    c.header("Cache-Control", "private, no-store")
+    const identity = c.get("apiKey")
+    if (!identity) fail(401, "API_KEY_REQUIRED", "send an API key bearer token")
+    if (!identity.scopes.includes("submissions:write"))
+      fail(403, "MISSING_SCOPE", "this route requires submissions:write")
+    const { db } = await import("../db/client.ts")
+    const schema = await import("../db/schema.ts")
+    const { eq } = await import("drizzle-orm")
+    const [user] = await db()
+      .select({
+        id: schema.users.id,
+        name: schema.users.name,
+        email: schema.users.email,
+      })
+      .from(schema.users)
+      .where(eq(schema.users.id, identity.userId))
+    if (!user) fail(401, "INVALID_API_KEY", "API key owner no longer exists")
+    const { createSubmission } = await import("../catalog/submissions.ts")
+    const receipt = await createSubmission(
+      { ...user, roles: [] },
+      c.req.valid("json").document,
+    )
+    return c.json(receipt, 201)
   },
 )
 

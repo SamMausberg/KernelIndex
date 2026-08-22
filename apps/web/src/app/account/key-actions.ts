@@ -4,7 +4,7 @@
 // once; revoke is immediate. Authorization is the session — keys belong to
 // their creator only.
 import { headers } from "next/headers"
-import { createApiKey, revokeApiKey } from "@/server/api-keys"
+import { type ApiKeyScope, createApiKey, revokeApiKey } from "@/server/api-keys"
 import { sessionUser } from "@/server/policy/authorization"
 
 export type KeyState = { message: string; token?: string }
@@ -18,7 +18,11 @@ export async function createKeyAction(
   const name = String(formData.get("name") ?? "").trim()
   if (name.length === 0 || name.length > 80)
     return { message: "name a key (at most 80 characters)" }
-  const { token, prefix } = await createApiKey(user.id, name)
+  const scopes: ApiKeyScope[] =
+    formData.get("write") === "on"
+      ? ["catalog:read", "submissions:write"]
+      : ["catalog:read"]
+  const { token, prefix } = await createApiKey(user.id, name, scopes)
   return {
     message: `created ${prefix}… — copy the key now; it is never shown again`,
     token,

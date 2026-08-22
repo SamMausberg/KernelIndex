@@ -305,6 +305,11 @@ curl "https://kernelindex.com/api/v1/feed?since=2026-08-01T00:00:00Z"
 ki search "gemm b200 nvfp4" --json | jq '.groups.exact[0]'
 ki manifest digest my-run.yaml
 
+# validate a submission or flat bench record and preview its placement:
+curl -X POST https://kernelindex.com/api/v1/submissions/preview \\
+  -H 'Content-Type: application/json' \\
+  -d "{\\"document\\": $(jq -Rs . < record.json)}"
+
 # bulk export (versioned, immutable, zstd JSONL):
 curl -L https://kernelindex.com/api/v1/exports/catalog.jsonl.zst
 

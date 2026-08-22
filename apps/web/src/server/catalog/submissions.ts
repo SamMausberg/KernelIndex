@@ -3,7 +3,7 @@
 // same strict Zod manifests and published — on acceptance only — through
 // the same publication transaction as every importer. Neither path can
 // touch derived rankings directly.
-import { eq } from "drizzle-orm"
+import { and, eq } from "drizzle-orm"
 import { parse as parseYaml } from "yaml"
 import type {
   AnyManifest,
@@ -19,10 +19,19 @@ import type {
 import { parseManifestDocument } from "../../schemas/parse.ts"
 import { db } from "../db/client.ts"
 import * as schema from "../db/schema.ts"
+import { env } from "../env.ts"
 import { specDigest } from "../identity/digest.ts"
 import { kebab } from "../import/shared.ts"
 import type { SessionUser } from "../policy/authorization.ts"
+import {
+  comparisonKey,
+  correctnessKey,
+  metricKey,
+} from "../policy/comparison.ts"
+import { RANKING_POLICY_VERSION, rankCohort } from "../policy/ranking.ts"
+import { isBenchRecord, submissionFromBenchRecord } from "./bench-record.ts"
 import { type ImportBundle, publishBundle } from "./publication.ts"
+import { eligibleRunFilter } from "./record-events.ts"
 
 /** Community submissions publish under one reviewed source (§15.1). */
 export const COMMUNITY_SOURCE = {
@@ -81,7 +90,26 @@ export function bundleFromSubmission(text: string): {
     const parsed = parseYaml(text) as unknown
     if (parsed === null || typeof parsed !== "object")
       throw new Error("not a submission document")
-    document = parsed as SubmissionDocument
+    // A flat bench record (§15.5) assembles into the same document the
+    // multi-manifest path validates; nothing bypasses the schemas.
+    if (isBenchRecord(parsed)) {
+      const converted = submissionFromBenchRecord(
+        parsed as Record<string, unknown>,
+      )
+      if (converted.issues.length > 0) {
+        return {
+          bundle,
+          report: {
+            valid: false,
+            issues: converted.issues.map((issue) => `record: ${issue}`),
+            objects: [],
+          },
+        }
+      }
+      document = converted.document as SubmissionDocument
+    } else {
+      document = parsed as SubmissionDocument
+    }
   } catch (error) {
     return {
       bundle,
@@ -193,6 +221,177 @@ export function bundleFromSubmission(text: string): {
     report.issues.push("document contains no manifests")
   }
   return { bundle, report }
+}
+
+/** §15.5 placement preview: where each run would land if accepted. */
+export type Placement = {
+  name: string
+  operation: { name: string; slug: string } | null
+  workload: string
+  cohort: {
+    key: string
+    size: number
+    head: { implementation: string; valueNs: number } | null
+  } | null
+  wouldRank: number | null
+  note: string
+}
+
+/** The run's central latency exactly as publication derives it. */
+function centralLatency(
+  manifest: BenchmarkRunManifest,
+): { value: number; statistic: string } | null {
+  const timing = manifest.spec.timing
+  if (!timing) return null
+  const value =
+    timing.primaryStatistic === "mean"
+      ? (timing.latencyNs.mean ?? timing.latencyNs.median)
+      : (timing.latencyNs.median ?? timing.latencyNs.mean)
+  return value === undefined
+    ? null
+    : { value, statistic: timing.primaryStatistic }
+}
+
+/**
+ * Validate a submission and state where each run would land: the cohort it
+ * would join (the same key derivation the publication transaction uses),
+ * the cohort's size and head, and the dense rank the run would take under
+ * ranking-v1 — never a promise; review decides comparability (§15.5).
+ */
+export async function previewSubmission(
+  text: string,
+): Promise<{ report: SubmissionReport; placement: Placement[] }> {
+  const { bundle, report } = bundleFromSubmission(text)
+  // Placement needs the catalog database; fixture deployments (previews,
+  // e2e) still get the full validation report.
+  if (!report.valid || bundle.runs.length === 0 || !env.DATABASE_URL)
+    return { report, placement: [] }
+  const placement: Placement[] = []
+  for (const entry of bundle.runs) {
+    const { manifest, protocol, environment } = entry
+    const protocolKey = specDigest(protocol)
+    const environmentKey = specDigest(environment)
+    const workload =
+      bundle.workloads.find(
+        (w) => specDigest(w.manifest) === manifest.spec.workloadDigest,
+      )?.manifest ??
+      ((
+        await db()
+          .select({ manifest: schema.workloads.manifest })
+          .from(schema.workloads)
+          .where(
+            eq(schema.workloads.workloadDigest, manifest.spec.workloadDigest),
+          )
+      )[0]?.manifest as
+        | WorkloadCaseManifest
+        | WorkloadSuiteManifest
+        | undefined)
+    if (!workload) {
+      placement.push({
+        name: manifest.metadata.name,
+        operation: null,
+        workload: manifest.spec.workloadDigest.slice(0, 23),
+        cohort: null,
+        wouldRank: null,
+        note: "workload is in neither the bundle nor the catalog",
+      })
+      continue
+    }
+    const operationDigest = workload.spec.operationSpecDigest
+    const [operation] = await db()
+      .select({ name: schema.operations.name, slug: schema.operations.slug })
+      .from(schema.operations)
+      .where(eq(schema.operations.semanticDigest, operationDigest))
+    const central = centralLatency(manifest)
+    const key = comparisonKey({
+      operationDigest,
+      workloadDigest: manifest.spec.workloadDigest,
+      protocolKey,
+      environmentKey,
+      correctnessKey: correctnessKey(workload.spec.correctness),
+      metricKey: central
+        ? metricKey("latency", central.statistic, "ns")
+        : "none",
+    })
+    const rows = await db()
+      .select({
+        id: schema.benchmarkRuns.id,
+        value: schema.benchmarkRuns.primaryValue,
+        low: schema.benchmarkRuns.uncertaintyLow,
+        high: schema.benchmarkRuns.uncertaintyHigh,
+        observedAt: schema.benchmarkRuns.observedAt,
+        sourceNative: schema.benchmarkRuns.sourceNative,
+        title: schema.implementations.title,
+        slug: schema.implementations.slug,
+      })
+      .from(schema.benchmarkRuns)
+      .innerJoin(
+        schema.implementations,
+        eq(schema.benchmarkRuns.implementationId, schema.implementations.id),
+      )
+      .where(
+        and(eq(schema.benchmarkRuns.comparisonKey, key), eligibleRunFilter()),
+      )
+    const measured = rows.filter(
+      (row): row is typeof row & { value: number } => row.value !== null,
+    )
+    const head = [...measured].sort((a, b) => a.value - b.value)[0]
+    let wouldRank: number | null = null
+    if (central) {
+      const confidence = manifest.spec.timing?.latencyNs.confidence95
+      const ranked = rankCohort(
+        [
+          ...measured.map((row) => ({
+            id: row.id,
+            value: row.value,
+            interval:
+              row.low !== null && row.high !== null
+                ? { low: row.low, high: row.high }
+                : null,
+            evidence: "reported" as const,
+            observedAt: row.observedAt,
+          })),
+          {
+            id: "candidate",
+            value: central.value,
+            interval: confidence
+              ? { low: confidence[0], high: confidence[1] }
+              : null,
+            evidence: "reported" as const,
+            observedAt: new Date(manifest.spec.observedAt),
+          },
+        ],
+        measured.some((row) => row.sourceNative)
+          ? "source_native"
+          : "strict_exact",
+      )
+      wouldRank = ranked.find((entry) => entry.id === "candidate")?.rank ?? null
+    }
+    placement.push({
+      name: manifest.metadata.name,
+      operation: operation ?? null,
+      workload:
+        workload.kind === "WorkloadCase"
+          ? Object.entries(workload.spec.axes)
+              .map(([axis, value]) => `${axis} = ${value}`)
+              .join(" · ")
+          : workload.metadata.name,
+      cohort: {
+        key,
+        size: measured.length,
+        head: head
+          ? { implementation: head.title ?? head.slug, valueNs: head.value }
+          : null,
+      },
+      wouldRank,
+      note: !operation
+        ? "operation not indexed: a reviewer maps the semantics first"
+        : measured.length === 0
+          ? "first entry in a new comparison group"
+          : `would rank #${wouldRank ?? "—"} of ${measured.length + 1} under ${RANKING_POLICY_VERSION} if accepted; review decides comparability`,
+    })
+  }
+  return { report, placement }
 }
 
 async function audit(
