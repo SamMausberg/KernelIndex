@@ -2753,7 +2753,11 @@ coverage-gap discovery is a surface, and the entrance motion is gone:
   tokens remain for hover, focus, disclosure, and copy confirmation only.
   `next/font` display switched to `optional` so text never repaints when
   the webfont lands. The browse family chips expand in place into one
-  wrapped row instead of opening a detached block below the leads.
+  wrapped row instead of opening a detached block below the leads. The
+  serving latency bounds left their disclosure and sit in the console as a
+  labeled group like Scope and Objective (superseding the 2026-08-21
+  "secondary disclosure" note), and Resolve is a machined key, not the
+  tinted primary.
 
 ### 16.1 Product character
 
