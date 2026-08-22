@@ -44,3 +44,21 @@ test("a run dossier serves its own Open Graph card", async ({ request }) => {
   expect(response.ok()).toBe(true)
   expect(response.headers()["content-type"]).toContain("image/png")
 })
+
+test("a run dossier lists community attestations and gates the form", async ({
+  page,
+}) => {
+  await page.goto("/runs/run-fx-0002")
+  await expect(
+    page.getByText("1 reproduced · 1 environment note"),
+  ).toBeVisible()
+  await page.getByText("Add a reproduction or note").click()
+  // The note is required; native validation blocks an empty submit.
+  await page
+    .getByLabel("Attestation", { exact: true })
+    .fill("same number on my B200")
+  await page.getByRole("button", { name: "File attestation" }).click()
+  await expect(
+    page.getByRole("link", { name: "Sign in to attest →" }),
+  ).toHaveAttribute("href", "/signin?next=%2Fruns%2Frun-fx-0002")
+})

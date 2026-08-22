@@ -1,10 +1,10 @@
 "use server"
 
 import { eq } from "drizzle-orm"
+import { revalidateTag } from "next/cache"
 // Maintainer actions (§15.8): every one passes the centralized policy and
 // writes an audit event through its use case; nothing touches derived
 // rankings directly.
-import { revalidateTag } from "next/cache.js"
 import { headers } from "next/headers"
 import { retractRun } from "@/server/catalog/corrections"
 import { reviewSubmission } from "@/server/catalog/submissions"
@@ -108,4 +108,23 @@ export async function claimReviewAction(
       reason: String(formData.get("note") ?? ""),
     })
   return { message: `claim ${state}` }
+}
+
+/** Hide a published attestation (§15.6 moderation); audited. */
+export async function attestationHideAction(
+  _previous: AdminActionState,
+  formData: FormData,
+): Promise<AdminActionState> {
+  const user = await sessionUser(await headers())
+  if (user === null || !canReviewSubmissions(user)) {
+    return { message: "forbidden: site_admin required" }
+  }
+  const { hideAttestation } = await import("@/server/attestations")
+  const hidden = await hideAttestation(
+    String(formData.get("id") ?? ""),
+    String(formData.get("note") ?? ""),
+    `${user.name} (${user.id})`,
+  )
+  if (hidden) revalidateTag("catalog", "max")
+  return { message: hidden ? "attestation hidden" : "already hidden" }
 }

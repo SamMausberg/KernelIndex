@@ -126,6 +126,9 @@ export type ResultRow = {
   stale: boolean
   disputed: boolean
   caveats: string[]
+  /** Published community attestations on the row's run (§16.10); set by
+   * the implementation page, zero elsewhere. Never an evidence input. */
+  attestations: number
 }
 
 export type RelatedItem = {
@@ -620,6 +623,25 @@ export type ImplementationPageModel = {
   } | null
 }
 
+/** One community attestation on a run (§15.6, §16.10 Replications): a
+ * typed statement with optional evidence and a measured value. Stated as
+ * community knowledge; never an input to the evidence level (§8.14). */
+export type Attestation = {
+  id: string
+  type:
+    | "reproduced"
+    | "could_not_reproduce"
+    | "environment_note"
+    | "regression_observed"
+  body: string
+  evidenceUrl: string | null
+  /** The attester's own measurement in nanoseconds, when stated. */
+  observedNs: number | null
+  environmentSummary: string | null
+  author: string
+  at: string
+}
+
 /** §16.10: the run page is a permanent evidence dossier. */
 export type RunPageModel = {
   illustrative: boolean
@@ -692,6 +714,8 @@ export type RunPageModel = {
     parserVersion: string | null
     snapshotDigest: string | null
   }
+  /** Published community attestations, newest first. */
+  attestations: Attestation[]
   /** Canonical run manifest for the manifest section. */
   manifest: unknown
 }

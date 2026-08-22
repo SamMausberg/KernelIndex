@@ -3,6 +3,7 @@
 import { useActionState } from "react"
 import {
   type AdminActionState,
+  attestationHideAction,
   claimReviewAction,
   reportReviewAction,
   retractAction,
@@ -138,6 +139,33 @@ export function ClaimReviewForm({ id }: { id: string }) {
         className="key cursor-pointer px-2.5 py-0.5 text-small text-warning hover:text-fg"
       >
         Reject
+      </button>
+      {state.message && (
+        <span className="font-mono text-small text-faint">{state.message}</span>
+      )}
+    </form>
+  )
+}
+
+export function AttestationHideForm({ id }: { id: string }) {
+  const [state, action, pending] = useActionState(
+    attestationHideAction,
+    INITIAL,
+  )
+  return (
+    <form action={action} className="flex flex-wrap items-center gap-2.5">
+      <input type="hidden" name="id" value={id} />
+      <input
+        name="note"
+        placeholder="reason"
+        className="well w-[280px] px-2.5 py-1 font-mono text-small outline-none"
+      />
+      <button
+        type="submit"
+        disabled={pending}
+        className="key cursor-pointer px-2.5 py-0.5 text-small text-warning hover:text-fg"
+      >
+        Hide
       </button>
       {state.message && (
         <span className="font-mono text-small text-faint">{state.message}</span>

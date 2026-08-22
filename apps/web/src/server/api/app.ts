@@ -25,6 +25,7 @@ import { RANKING_POLICY_VERSION } from "../policy/ranking.ts"
 import { listRoutes } from "./catalog-routes.ts"
 import { CACHE_MEDIUM, CACHE_SHORT, fail, json } from "./http.ts"
 import {
+  attestationRequest,
   compareResponse,
   correctionRequest,
   correctionResponse,
@@ -165,6 +166,7 @@ api.use(async (c, next) => {
       !path.endsWith("/me") &&
       !path.endsWith("/corrections") &&
       !path.endsWith("/revalidate") &&
+      !path.endsWith("/attestations") &&
       !result.identity.scopes.includes("catalog:read")
     )
       fail(403, "MISSING_SCOPE", "this route requires the catalog:read scope")
@@ -372,6 +374,78 @@ api.openapi(
     if (!model) fail(404, "RUN_NOT_FOUND", idOrDigest)
     c.header("Cache-Control", CACHE_MEDIUM)
     return c.json(model)
+  },
+)
+
+// Machine attestations (§16.10): an agent or CI that reran a kernel states
+// what it saw. Key-mandatory with the submissions:write scope; the same
+// validation and daily cap as the web form; never an evidence input.
+api.openapi(
+  createRoute({
+    method: "post",
+    path: "/runs/{idOrDigest}/attestations",
+    security: [{ apiKey: [] }],
+    request: {
+      params: z.object({ idOrDigest: z.string().max(200) }),
+      body: { content: { "application/json": { schema: attestationRequest } } },
+    },
+    responses: {
+      201: {
+        description: "The attestation was published on the run",
+        content: {
+          "application/json": {
+            schema: z.object({ filed: z.literal(true), runId: z.string() }),
+          },
+        },
+      },
+      401: {
+        description: "No API key presented",
+        content: { "application/json": { schema: problemDetails } },
+      },
+      403: {
+        description: "Key lacks the submissions:write scope",
+        content: { "application/json": { schema: problemDetails } },
+      },
+      404: {
+        description: "No such run",
+        content: { "application/json": { schema: problemDetails } },
+      },
+      422: {
+        description: "Rejected attestation",
+        content: { "application/json": { schema: problemDetails } },
+      },
+    },
+  }),
+  async (c) => {
+    c.header("Cache-Control", "private, no-store")
+    const identity = c.get("apiKey")
+    if (!identity) fail(401, "API_KEY_REQUIRED", "send an API key bearer token")
+    if (!identity.scopes.includes("submissions:write"))
+      fail(403, "MISSING_SCOPE", "this route requires submissions:write")
+    const model = await getRunPage(c.req.valid("param").idOrDigest)
+    if (!model) fail(404, "RUN_NOT_FOUND", c.req.valid("param").idOrDigest)
+    const body = c.req.valid("json")
+    const { db } = await import("../db/client.ts")
+    const schema = await import("../db/schema.ts")
+    const { eq } = await import("drizzle-orm")
+    const [user] = await db()
+      .select({ id: schema.users.id, name: schema.users.name })
+      .from(schema.users)
+      .where(eq(schema.users.id, identity.userId))
+    if (!user) fail(401, "INVALID_API_KEY", "API key owner no longer exists")
+    const { fileAttestation } = await import("../attestations.ts")
+    const error = await fileAttestation({
+      runId: model.run.id,
+      type: body.type,
+      body: body.body,
+      evidenceUrl: body.evidenceUrl ?? "",
+      observedNs: body.observedNs ?? null,
+      environmentSummary: body.environmentSummary ?? "",
+      user,
+    })
+    if (error !== null) fail(422, "INVALID_ATTESTATION", error)
+    revalidateTag("catalog", "max")
+    return c.json({ filed: true as const, runId: model.run.id }, 201)
   },
 )
 

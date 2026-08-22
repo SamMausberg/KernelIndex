@@ -205,6 +205,7 @@ export interface paths {
                 stale: boolean
                 disputed: boolean
                 caveats: string[]
+                attestations: number
               } | null
               bestDeployable: {
                 runId: string | null
@@ -277,6 +278,7 @@ export interface paths {
                 stale: boolean
                 disputed: boolean
                 caveats: string[]
+                attestations: number
               } | null
               groups: {
                 exact: {
@@ -350,6 +352,7 @@ export interface paths {
                   stale: boolean
                   disputed: boolean
                   caveats: string[]
+                  attestations: number
                 }[]
                 compatible: {
                   runId: string | null
@@ -422,6 +425,7 @@ export interface paths {
                   stale: boolean
                   disputed: boolean
                   caveats: string[]
+                  attestations: number
                 }[]
                 supportedUnmeasured: {
                   runId: string | null
@@ -494,6 +498,7 @@ export interface paths {
                   stale: boolean
                   disputed: boolean
                   caveats: string[]
+                  attestations: number
                 }[]
                 reported: {
                   runId: string | null
@@ -566,6 +571,7 @@ export interface paths {
                   stale: boolean
                   disputed: boolean
                   caveats: string[]
+                  attestations: number
                 }[]
               }
               overflow: {
@@ -858,6 +864,7 @@ export interface paths {
                 stale: boolean
                 disputed: boolean
                 caveats: string[]
+                attestations: number
               } | null
               bestDeployable: {
                 runId: string | null
@@ -930,6 +937,7 @@ export interface paths {
                 stale: boolean
                 disputed: boolean
                 caveats: string[]
+                attestations: number
               } | null
               groups: {
                 exact: {
@@ -1003,6 +1011,7 @@ export interface paths {
                   stale: boolean
                   disputed: boolean
                   caveats: string[]
+                  attestations: number
                 }[]
                 compatible: {
                   runId: string | null
@@ -1075,6 +1084,7 @@ export interface paths {
                   stale: boolean
                   disputed: boolean
                   caveats: string[]
+                  attestations: number
                 }[]
                 supportedUnmeasured: {
                   runId: string | null
@@ -1147,6 +1157,7 @@ export interface paths {
                   stale: boolean
                   disputed: boolean
                   caveats: string[]
+                  attestations: number
                 }[]
                 reported: {
                   runId: string | null
@@ -1219,6 +1230,7 @@ export interface paths {
                   stale: boolean
                   disputed: boolean
                   caveats: string[]
+                  attestations: number
                 }[]
               }
               overflow: {
@@ -1512,6 +1524,7 @@ export interface paths {
                   stale: boolean
                   disputed: boolean
                   caveats: string[]
+                  attestations: number
                 } | null
                 bestDeployable: {
                   runId: string | null
@@ -1584,6 +1597,7 @@ export interface paths {
                   stale: boolean
                   disputed: boolean
                   caveats: string[]
+                  attestations: number
                 } | null
                 groups: {
                   exact: {
@@ -1657,6 +1671,7 @@ export interface paths {
                     stale: boolean
                     disputed: boolean
                     caveats: string[]
+                    attestations: number
                   }[]
                   compatible: {
                     runId: string | null
@@ -1729,6 +1744,7 @@ export interface paths {
                     stale: boolean
                     disputed: boolean
                     caveats: string[]
+                    attestations: number
                   }[]
                   supportedUnmeasured: {
                     runId: string | null
@@ -1801,6 +1817,7 @@ export interface paths {
                     stale: boolean
                     disputed: boolean
                     caveats: string[]
+                    attestations: number
                   }[]
                   reported: {
                     runId: string | null
@@ -1873,6 +1890,7 @@ export interface paths {
                     stale: boolean
                     disputed: boolean
                     caveats: string[]
+                    attestations: number
                   }[]
                 }
                 overflow: {
@@ -2182,6 +2200,7 @@ export interface paths {
                 stale: boolean
                 disputed: boolean
                 caveats: string[]
+                attestations: number
               }[]
               sweep: {
                 axis: string
@@ -2438,6 +2457,7 @@ export interface paths {
                 stale: boolean
                 disputed: boolean
                 caveats: string[]
+                attestations: number
               }[]
               limitations: string[]
               provenance: {
@@ -2626,6 +2646,7 @@ export interface paths {
                   stale: boolean
                   disputed: boolean
                   caveats: string[]
+                  attestations: number
                 }
                 since: string
                 indexedAt: string
@@ -2903,6 +2924,21 @@ export interface paths {
                 parserVersion: string | null
                 snapshotDigest: string | null
               }
+              attestations: {
+                id: string
+                /** @enum {string} */
+                type:
+                  | "reproduced"
+                  | "could_not_reproduce"
+                  | "environment_note"
+                  | "regression_observed"
+                body: string
+                evidenceUrl: string | null
+                observedNs: number | null
+                environmentSummary: string | null
+                author: string
+                at: string
+              }[]
               manifest?: unknown
             }
           }
@@ -2927,6 +2963,126 @@ export interface paths {
     }
     put?: never
     post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/runs/{idOrDigest}/attestations": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          idOrDigest: string
+        }
+        cookie?: never
+      }
+      requestBody?: {
+        content: {
+          "application/json": {
+            /** @enum {string} */
+            type:
+              | "reproduced"
+              | "could_not_reproduce"
+              | "environment_note"
+              | "regression_observed"
+            body: string
+            evidenceUrl?: string
+            observedNs?: number
+            environmentSummary?: string
+          }
+        }
+      }
+      responses: {
+        /** @description The attestation was published on the run */
+        201: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              /** @enum {boolean} */
+              filed: true
+              runId: string
+            }
+          }
+        }
+        /** @description No API key presented */
+        401: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              type: string
+              title: string
+              status: number
+              code: string
+              detail?: string
+              requestId: string
+            }
+          }
+        }
+        /** @description Key lacks the submissions:write scope */
+        403: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              type: string
+              title: string
+              status: number
+              code: string
+              detail?: string
+              requestId: string
+            }
+          }
+        }
+        /** @description No such run */
+        404: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              type: string
+              title: string
+              status: number
+              code: string
+              detail?: string
+              requestId: string
+            }
+          }
+        }
+        /** @description Rejected attestation */
+        422: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              type: string
+              title: string
+              status: number
+              code: string
+              detail?: string
+              requestId: string
+            }
+          }
+        }
+      }
+    }
     delete?: never
     options?: never
     head?: never
@@ -3040,6 +3196,7 @@ export interface paths {
                   stale: boolean
                   disputed: boolean
                   caveats: string[]
+                  attestations: number
                 }
                 since: string
                 indexedAt: string
@@ -4483,6 +4640,7 @@ export interface paths {
                     stale: boolean
                     disputed: boolean
                     caveats: string[]
+                    attestations: number
                   }
                   deployable: {
                     runId: string | null
@@ -4555,6 +4713,7 @@ export interface paths {
                     stale: boolean
                     disputed: boolean
                     caveats: string[]
+                    attestations: number
                   } | null
                   cohort: {
                     comparisonKey: string

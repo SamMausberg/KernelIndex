@@ -32,7 +32,10 @@ Claim rules (keep these when quoting results):
 - GET  /models/{slug}?gpu=           best known per operation for one model on one GPU, plus gaps
 - GET  /implementations/{idOrSlug}   source, install, license, revisions
 - GET  /projects/{slug}              a library or author: records held, kernels, claim state
-- GET  /runs/{idOrDigest}            immutable evidence dossier
+- GET  /runs/{idOrDigest}            immutable evidence dossier, with community
+                                     attestations (never an evidence input)
+- POST /runs/{id}/attestations       attest a reproduction or note (API key with
+                                     submissions:write)
 - GET  /records                      record ledger (cursor-paginated)
 - GET  /feed?since=<iso>             what changed: record breaks, imports,
                                      corrections, accepted claims (30 days)

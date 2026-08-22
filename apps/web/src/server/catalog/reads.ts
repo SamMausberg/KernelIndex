@@ -50,6 +50,7 @@ import type {
   ImplementationRevisionManifest,
   OperationSpecManifest,
 } from "../../schemas/kinds.ts"
+import { attestationCounts, attestationsFor } from "../attestations.ts"
 import { db } from "../db/client.ts"
 import * as schema from "../db/schema.ts"
 import {
@@ -291,6 +292,7 @@ export function resultRow(
       | "tiedWithPrevious"
       | "cohortSize"
       | "caveats"
+      | "attestations"
     >
   > = {},
 ): ResultRow {
@@ -345,6 +347,7 @@ export function resultRow(
     stale: isStale(run.observedAt),
     disputed: false,
     caveats: [...rowCaveats(joined), ...(extras.caveats ?? [])],
+    attestations: extras.attestations ?? 0,
   }
 }
 
@@ -1505,6 +1508,7 @@ function supportedUnmeasuredRows(
         stale: false,
         disputed: false,
         caveats: ["Declared support only; no measurement for this workload"],
+        attestations: 0,
       }
     })
 }
@@ -2094,6 +2098,10 @@ export async function getImplementationPage(
       holder.current.runId !== null && runIds.has(holder.current.runId),
   ).length
 
+  // §16.10: community attestations on each evidence row, one grouped count.
+  const notes = await attestationCounts(
+    bestResults.flatMap((row) => (row.runId === null ? [] : [row.runId])),
+  )
   return {
     illustrative: pageIllustrative(joined),
     implementation: {
@@ -2156,7 +2164,10 @@ export async function getImplementationPage(
         : "No published measurement for this revision",
     },
     standing: { records },
-    bestResults,
+    bestResults: bestResults.map((row) => ({
+      ...row,
+      attestations: row.runId === null ? 0 : (notes.get(row.runId) ?? 0),
+    })),
     limitations: manifest.spec.support.axes ?? [],
     provenance: {
       source: refs[0] ?? null,
@@ -2213,40 +2224,47 @@ export async function getRunPage(id: string): Promise<RunPageModel | null> {
   const stored = run.manifest as StoredRunManifest
   const workloadManifest = workload.manifest as AnyWorkloadManifest
 
-  const [measurementRows, artifactRows, [supersededBy], ranks, [link]] =
-    await Promise.all([
-      database
-        .select()
-        .from(schema.measurements)
-        .where(eq(schema.measurements.runId, run.id)),
-      database
-        .select({ artifact: schema.artifacts, link: schema.runArtifacts })
-        .from(schema.runArtifacts)
-        .innerJoin(
-          schema.artifacts,
-          eq(schema.runArtifacts.artifactId, schema.artifacts.id),
-        )
-        .where(eq(schema.runArtifacts.runId, run.id)),
-      database
-        .select({ id: schema.benchmarkRuns.id })
-        .from(schema.benchmarkRuns)
-        .where(
-          and(
-            eq(schema.benchmarkRuns.supersedesId, run.id),
-            isNotNull(schema.benchmarkRuns.publishedAt),
-          ),
+  const [
+    measurementRows,
+    artifactRows,
+    [supersededBy],
+    ranks,
+    [link],
+    attestations,
+  ] = await Promise.all([
+    database
+      .select()
+      .from(schema.measurements)
+      .where(eq(schema.measurements.runId, run.id)),
+    database
+      .select({ artifact: schema.artifacts, link: schema.runArtifacts })
+      .from(schema.runArtifacts)
+      .innerJoin(
+        schema.artifacts,
+        eq(schema.runArtifacts.artifactId, schema.artifacts.id),
+      )
+      .where(eq(schema.runArtifacts.runId, run.id)),
+    database
+      .select({ id: schema.benchmarkRuns.id })
+      .from(schema.benchmarkRuns)
+      .where(
+        and(
+          eq(schema.benchmarkRuns.supersedesId, run.id),
+          isNotNull(schema.benchmarkRuns.publishedAt),
         ),
-      cohortRanks([run.comparisonKey]),
-      database
-        .select({ externalId: schema.sourceLinks.externalId })
-        .from(schema.sourceLinks)
-        .where(
-          and(
-            eq(schema.sourceLinks.entityKind, "run"),
-            eq(schema.sourceLinks.entityId, run.id),
-          ),
+      ),
+    cohortRanks([run.comparisonKey]),
+    database
+      .select({ externalId: schema.sourceLinks.externalId })
+      .from(schema.sourceLinks)
+      .where(
+        and(
+          eq(schema.sourceLinks.entityKind, "run"),
+          eq(schema.sourceLinks.entityId, run.id),
         ),
-    ])
+      ),
+    attestationsFor(run.id),
+  ])
 
   const ineligibleReasons = eligibilityReasons({
     status: run.status,
@@ -2379,6 +2397,7 @@ export async function getRunPage(id: string): Promise<RunPageModel | null> {
     sourceNativeMetrics: numericSourceMetrics(
       stored.run.spec.sourceNative?.metrics,
     ),
+    attestations,
     manifest: run.manifest,
   }
 }

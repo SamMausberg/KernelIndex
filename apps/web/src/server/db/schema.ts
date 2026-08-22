@@ -663,6 +663,35 @@ export const reports = pgTable(
   ],
 )
 
+/** Community attestations on runs (§15.6, §16.10 Replications): a signed-in
+    reader states a reproduction, a failed reproduction, an environment note,
+    or a regression, with optional evidence and a measured value. Published
+    on write, hidden by a maintainer; never an input to the evidence level
+    (§8.14). user_id detaches on account deletion like reports. */
+export const attestations = pgTable(
+  "attestations",
+  {
+    id: id(),
+    runId: uuid("run_id")
+      .notNull()
+      .references(() => benchmarkRuns.id),
+    type: text("type").notNull(),
+    body: text("body").notNull(),
+    evidenceUrl: text("evidence_url"),
+    observedNs: numeric("observed_ns", { mode: "number" }),
+    environmentSummary: text("environment_summary"),
+    userId: text("user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    /* Author display name captured at write time, so a detached row still
+       reads as attributed. */
+    author: text("author").notNull(),
+    state: text("state").notNull().default("published"),
+    createdAt: createdAt(),
+  },
+  (t) => [index("attestations_run_idx").on(t.runId, t.createdAt)],
+)
+
 /** Minimal first-party product events (§20.5): event name plus coarse
     facets. Deliberately no user id, no IP, no session key, and no raw
     query text — the answer-quality metrics in §20.4 need nothing more.

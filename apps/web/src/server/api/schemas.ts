@@ -4,6 +4,7 @@
 // §22.6 gate ("web and API return the same resolver decision").
 import { z } from "@hono/zod-openapi"
 import type {
+  Attestation,
   AxisSpec,
   CohortContext,
   CohortOption,
@@ -123,6 +124,7 @@ export const resultRow = z.object({
   stale: z.boolean(),
   disputed: z.boolean(),
   caveats: z.array(z.string()),
+  attestations: z.number(),
 }) satisfies z.ZodType<ResultRow>
 
 const keyValue = z.object({ key: z.string(), value: z.string() })
@@ -755,6 +757,31 @@ export const projectDossier = z.object({
   sources: z.array(sourceRef),
 }) satisfies z.ZodType<ProjectPageModel>
 
+export const attestation = z.object({
+  id: z.string(),
+  type: z.enum([
+    "reproduced",
+    "could_not_reproduce",
+    "environment_note",
+    "regression_observed",
+  ]),
+  body: z.string(),
+  evidenceUrl: z.string().nullable(),
+  observedNs: z.number().nullable(),
+  environmentSummary: z.string().nullable(),
+  author: z.string(),
+  at: z.string(),
+}) satisfies z.ZodType<Attestation>
+
+/** Machine attestation intake (API key with submissions:write). */
+export const attestationRequest = z.object({
+  type: attestation.shape.type,
+  body: z.string().min(1).max(2000),
+  evidenceUrl: z.string().max(2000).optional(),
+  observedNs: z.number().positive().optional(),
+  environmentSummary: z.string().max(200).optional(),
+})
+
 export const runDossier = z.object({
   illustrative: z.boolean(),
   run: z.object({
@@ -833,6 +860,7 @@ export const runDossier = z.object({
     parserVersion: z.string().nullable(),
     snapshotDigest: z.string().nullable(),
   }),
+  attestations: z.array(attestation),
   manifest: z.unknown(),
 }) satisfies z.ZodType<RunPageModel>
 
