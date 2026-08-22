@@ -21,6 +21,7 @@ import type {
   OperationPageModel,
   PrimaryMetric,
   ProjectIndexModel,
+  ProjectPageModel,
   RecordHolder,
   RecordsPageModel,
   ResultRow,
@@ -1479,8 +1480,46 @@ export async function getHardwarePage(
   }
 }
 
-export async function getProjectIndex(): Promise<ProjectIndexModel> {
+/** Strongest first: the evidence ceiling of a set of fixture runs. */
+const STRONGEST: EvidenceLevel[] = [
+  "replicated",
+  "verified",
+  "reproducible",
+  "reported",
+]
+const strongest = (runs: FxRun[]) =>
+  STRONGEST.find((level) => runs.some((r) => r.evidence === level)) ?? null
+
+/** Project of a fixture implementation, for crediting record transitions. */
+const projectOf = (implementationSlug: string) =>
+  RUNS.find((r) => r.impl.slug === implementationSlug)?.project.slug ?? null
+
+/** Trailing-30-day record transitions per project, from the handcrafted
+ * histories: the new holder gains, a displaced different project loses. */
+async function recordTransitions() {
   const { records } = await getRecordsPage()
+  const since = Date.now() - 30 * 24 * 60 * 60 * 1000
+  const gained = new Map<string, number>()
+  const lost = new Map<string, number>()
+  for (const holder of records)
+    holder.history.forEach((event, index) => {
+      if (new Date(event.at).getTime() < since) return
+      const winner = projectOf(event.implementation.slug)
+      if (winner === null) return
+      gained.set(winner, (gained.get(winner) ?? 0) + 1)
+      const previous = holder.history[index + 1]
+      const loser = previous ? projectOf(previous.implementation.slug) : null
+      if (loser !== null && loser !== winner)
+        lost.set(loser, (lost.get(loser) ?? 0) + 1)
+    })
+  return { gained, lost }
+}
+
+export async function getProjectIndex(): Promise<ProjectIndexModel> {
+  const [{ records }, transitions] = await Promise.all([
+    getRecordsPage(),
+    recordTransitions(),
+  ])
   const bySlug = new Map<string, { name: string; runs: FxRun[] }>()
   for (const run of eligible()) {
     const entry = bySlug.get(run.project.slug) ?? {
@@ -1490,12 +1529,6 @@ export async function getProjectIndex(): Promise<ProjectIndexModel> {
     entry.runs.push(run)
     bySlug.set(run.project.slug, entry)
   }
-  const order: EvidenceLevel[] = [
-    "replicated",
-    "verified",
-    "reproducible",
-    "reported",
-  ]
   return {
     illustrative: ILLUSTRATIVE,
     projects: [...bySlug.entries()].map(([slug, entry]) => ({
@@ -1506,9 +1539,9 @@ export async function getProjectIndex(): Promise<ProjectIndexModel> {
       implementations: new Set(entry.runs.map((r) => r.impl.slug)).size,
       runs: entry.runs.length,
       records: records.filter((h) => h.current.project.slug === slug).length,
-      bestEvidence:
-        order.find((level) => entry.runs.some((r) => r.evidence === level)) ??
-        null,
+      gained30d: transitions.gained.get(slug) ?? 0,
+      lost30d: transitions.lost.get(slug) ?? 0,
+      bestEvidence: strongest(entry.runs),
       licenses: [
         ...new Set(
           entry.runs
@@ -1529,6 +1562,71 @@ export async function getProjectIndex(): Promise<ProjectIndexModel> {
 // states it), so the model page exercises the fastest-vs-deployable split
 // (ionflux vs meridian) and a stated gap (the unmeasured fused operation).
 const FIXTURE_MODEL = "llama-3.1-8b"
+
+/** Fixture project dossier: derived from the run corpus like the index, one
+ * row per implementation fastest first, records from the handcrafted
+ * ledger. Meridian declares a GitHub host so the one-click claim path
+ * renders; nothing is ever claimed in fixtures. */
+export async function getProjectPage(
+  slug: string,
+): Promise<ProjectPageModel | null> {
+  const runs = eligible()
+    .filter((r) => r.project.slug === slug)
+    .sort((a, b) => a.latencyNs - b.latencyNs)
+  if (runs.length === 0) return null
+  const { records } = await getRecordsPage()
+  const byImplementation = new Map<string, FxRun[]>()
+  for (const run of runs)
+    byImplementation.set(run.impl.slug, [
+      ...(byImplementation.get(run.impl.slug) ?? []),
+      run,
+    ])
+  const meridian = slug === "meridian-kernels"
+  return {
+    illustrative: ILLUSTRATIVE,
+    project: {
+      slug,
+      name: runs[0].project.name,
+      kind: "library",
+      repositoryUrl: meridian
+        ? "https://example.invalid/meridian/kernels"
+        : null,
+      host: meridian ? { kind: "github", id: "meridian/kernels" } : null,
+      licenses: [
+        ...new Set(
+          runs
+            .map((r) => r.license.concluded)
+            .filter((license): license is string => license !== null),
+        ),
+      ],
+    },
+    stats: {
+      implementations: byImplementation.size,
+      runs: runs.length,
+      hardware: [B200.model],
+      lastObservedAt: FRESH,
+    },
+    records: records.filter((h) => h.current.project.slug === slug),
+    implementations: [...byImplementation.values()].map((own) => {
+      const row = rowFromRun(own[0])
+      return {
+        slug: row.implementation.slug,
+        name: row.implementation.name,
+        project: row.project,
+        operation: row.operation,
+        language: row.language,
+        framework: row.framework,
+        evidence: strongest(own),
+        bestPrimary: row.primary,
+        sourceAvailable: row.sourceAvailable,
+        installable: row.installable,
+        license: row.license,
+      }
+    }),
+    claim: { state: "unclaimed", by: null },
+    sources: [FIXTURE_SOURCE_REF],
+  }
+}
 
 export async function getModelIndex(): Promise<ModelIndexModel> {
   return {

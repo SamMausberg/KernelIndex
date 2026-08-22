@@ -49,3 +49,18 @@ export const canReviewSubmissions = isSiteAdmin
 
 /** §15.5: any signed-in contributor may draft and submit evidence. */
 export const canSubmit = (user: SessionUser | null): boolean => user !== null
+
+/**
+ * §15.3 one-click claims: a GitHub-hosted project is claimed instantly by
+ * the login that owns its repository path (`owner/repo`). Organization
+ * repositories and every other host stay on the reviewed evidence path,
+ * since membership is not something a login proves.
+ */
+export function canAutoApproveClaim(
+  login: string,
+  host: { kind: string; id: string } | null,
+): boolean {
+  if (host === null || host.kind !== "github") return false
+  const owner = host.id.split("/")[0]
+  return owner !== "" && owner.toLowerCase() === login.toLowerCase()
+}

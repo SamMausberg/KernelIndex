@@ -9,6 +9,8 @@ import {
   getHomePage,
   getImplementationPage,
   getOperationPage,
+  getProjectIndex,
+  getProjectPage,
   getRecordsPage,
   getRunPage,
   searchCatalog,
@@ -150,6 +152,22 @@ describe.skipIf(!url)("postgres catalog reads", () => {
     expect(model?.environment.length).toBeGreaterThan(3)
     expect(model?.measurements.length).toBeGreaterThanOrEqual(6)
     expect(model?.workload.tolerance.length).toBeGreaterThan(0)
+  })
+
+  it("getProjectPage states standing, kernels, and claim state", async () => {
+    const model = await getProjectPage("meridian-kernels")
+    expect(model).not.toBeNull()
+    expect(model?.project.kind).toBe("library")
+    expect(model?.implementations.length).toBeGreaterThanOrEqual(1)
+    expect(model?.implementations[0]?.operation.slug).toBeTruthy()
+    expect(model?.stats.runs).toBeGreaterThanOrEqual(model?.records.length ?? 0)
+    expect(["unclaimed", "pending", "claimed"]).toContain(model?.claim.state)
+    expect(await getProjectPage("no-such-project")).toBeNull()
+    // The index carries the trailing-30-day transitions for every project.
+    const index = await getProjectIndex()
+    const entry = index.projects.find((p) => p.slug === "meridian-kernels")
+    expect(entry?.gained30d).toBeGreaterThanOrEqual(0)
+    expect(entry?.lost30d).toBeGreaterThanOrEqual(0)
   })
 
   it("getRunPage rejects malformed identifiers without touching the database", async () => {

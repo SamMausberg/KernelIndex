@@ -227,6 +227,14 @@ rmsnorm gpu:B200 dtype:bf16 shape:[2048,4096] framework=pytorch trust:verified`}
             accepted report retracts or supersedes the record; the history stays
             visible.
           </p>
+          <p className="mt-3">
+            Every <Link href="/projects">project</Link> (a library, a
+            competition author, or a vendor) has a page stating the records it
+            holds and every kernel it measured. Authors can claim theirs: a
+            GitHub-hosted project is claimed in one click by the login that owns
+            the repository path; anything else goes through reviewed evidence. A
+            claim grants attribution, never the right to edit evidence.
+          </p>
         </Section>
 
         <Section id="data" title="Data and API">

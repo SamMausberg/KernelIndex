@@ -10,6 +10,7 @@ import {
   getComparePage,
   getImplementationPage,
   getOperationPage,
+  getProjectPage,
   getRecordsPage,
   getRunPage,
   getServingRunPage,
@@ -31,6 +32,7 @@ import {
   meResponse,
   operationDossier,
   problemDetails,
+  projectDossier,
   type ResolveKernelRequest,
   recordsResponse,
   resolveKernelRequest,
@@ -302,6 +304,25 @@ api.openapi(
           ? null
           : { ...sourceCode, content: undefined, diff: undefined },
     })
+  },
+)
+
+api.openapi(
+  createRoute({
+    method: "get",
+    path: "/projects/{slug}",
+    request: { params: z.object({ slug: z.string().max(200) }) },
+    responses: json(
+      projectDossier,
+      "Project dossier: standing, measured implementations, claim state",
+    ),
+  }),
+  async (c) => {
+    const { slug } = c.req.valid("param")
+    const model = await getProjectPage(slug)
+    if (!model) fail(404, "PROJECT_NOT_FOUND", slug)
+    c.header("Cache-Control", CACHE_MEDIUM)
+    return c.json(model)
   },
 )
 

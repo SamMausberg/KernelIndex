@@ -2639,6 +2639,34 @@ where a reader landed on a fact and could not step to the thing it named:
   the most-measured `model:` tag); `/docs/api` shows the `/search` response
   shape with values elided. `MODEL_VERSION` v5.
 
+**Reality note (2026-08-22, project pages and claims).** The project entity
+page and the one-click claim (§15.3), the first layer of the community
+direction:
+
+- **`/projects/[slug]`** is one dossier for libraries, competition authors,
+  and vendors (`projects.kind`): records held (ledger idiom with the
+  staircase, cohort-deep-linked), every measured implementation
+  (`features/implementations/implementations-table.tsx`, now shared with
+  the operation page; across operations no ×-multiple is computed), record
+  activity, provenance, and the claim state. Served verbatim at
+  `GET /api/v1/projects/{slug}`. A claimed author project is that person's
+  public profile; no people table exists or is planned.
+- **`/projects`** (308 from `/implementations`; dossiers stay at
+  `/implementations/[slug]`) is also the standings surface: sorts Presence ·
+  Records held · Gained 30d, with gained/lost columns from `record_events`
+  (`new_run` credits the new holder's project and debits a displaced
+  different project). Records are counted inside their own cohorts and the
+  page says so; cohorts are never ranked against each other (§16.12).
+- **One-click claim.** `canAutoApproveClaim(login, host)` accepts when the
+  project declares a GitHub host and the session's login owns the
+  repository path; the login is read live from GitHub with the stored
+  OAuth token (`auth().api.getAccessToken`), so no schema change and no
+  stale identity. Organization repositories and every other host (GPU MODE,
+  SOL authors) stay on the reviewed evidence path, now offered on the
+  project page itself (`ClaimPanel`, session-free like the watch button);
+  the account page lists claimed projects instead of hosting the form.
+  Audit actions: `claim_auto_accepted`, `claim_submitted`.
+
 ### 16.1 Product character
 
 KernelIndex should feel like a serious technical reference built by kernel engineers, not a generic SaaS dashboard, gaming leaderboard, or GPU marketing site.

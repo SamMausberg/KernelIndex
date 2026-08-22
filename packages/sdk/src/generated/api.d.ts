@@ -1733,6 +1733,246 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  "/projects/{slug}": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          slug: string
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Project dossier: standing, measured implementations, claim state */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              illustrative: boolean
+              project: {
+                slug: string
+                name: string
+                /** @enum {string} */
+                kind: "library" | "individual" | "vendor"
+                repositoryUrl: string | null
+                host: {
+                  kind: string
+                  id: string
+                } | null
+                licenses: string[]
+              }
+              stats: {
+                implementations: number
+                runs: number
+                hardware: string[]
+                lastObservedAt: string | null
+              }
+              records: {
+                cohortKey: string
+                operation: {
+                  name: string
+                  slug: string
+                }
+                workloadId: string
+                workloadSummary: string
+                hardware: string
+                environmentSummary: string
+                current: {
+                  runId: string | null
+                  implementation: {
+                    name: string
+                    slug: string
+                  }
+                  install: {
+                    kind: string
+                    command: string
+                  } | null
+                  project: {
+                    name: string
+                    slug: string
+                  }
+                  revision: string | null
+                  operation: {
+                    name: string
+                    slug: string
+                  }
+                  workloadSummary: string
+                  hardware: {
+                    model: string
+                    architecture: string | null
+                  }
+                  framework: string | null
+                  language: string | null
+                  primary: {
+                    metric: string
+                    unit: string
+                    statistic: string
+                    value: number
+                    sampleCount: number | null
+                    uncertainty: {
+                      low: number
+                      high: number
+                    } | null
+                  } | null
+                  solScore: number | null
+                  baseline: boolean
+                  /** @enum {string|null} */
+                  evidence:
+                    | "verified"
+                    | "replicated"
+                    | "reproducible"
+                    | "reported"
+                    | null
+                  /** @enum {string} */
+                  match:
+                    | "exact"
+                    | "compatible"
+                    | "supported_unobserved"
+                    | "related"
+                  mismatches: {
+                    field: string
+                    requested: string
+                    observed: string
+                  }[]
+                  rank: number | null
+                  tiedWithPrevious: boolean
+                  cohortSize: number | null
+                  sourceAvailable: boolean
+                  installable: boolean
+                  license: {
+                    declared: string | null
+                    concluded: string | null
+                  }
+                  lastTestedAt: string | null
+                  indexedAt: string | null
+                  stale: boolean
+                  disputed: boolean
+                  caveats: string[]
+                }
+                since: string
+                indexedAt: string
+                history: {
+                  at: string
+                  runId: string
+                  implementation: {
+                    name: string
+                    slug: string
+                  }
+                  value: {
+                    metric: string
+                    unit: string
+                    statistic: string
+                    value: number
+                    sampleCount: number | null
+                    uncertainty: {
+                      low: number
+                      high: number
+                    } | null
+                  }
+                  previousValue: {
+                    metric: string
+                    unit: string
+                    statistic: string
+                    value: number
+                    sampleCount: number | null
+                    uncertainty: {
+                      low: number
+                      high: number
+                    } | null
+                  } | null
+                  improvementPct: number | null
+                }[]
+              }[]
+              implementations: {
+                slug: string
+                name: string
+                project: {
+                  name: string
+                  slug: string
+                }
+                language: string | null
+                framework: string | null
+                /** @enum {string|null} */
+                evidence:
+                  | "verified"
+                  | "replicated"
+                  | "reproducible"
+                  | "reported"
+                  | null
+                bestPrimary: {
+                  metric: string
+                  unit: string
+                  statistic: string
+                  value: number
+                  sampleCount: number | null
+                  uncertainty: {
+                    low: number
+                    high: number
+                  } | null
+                } | null
+                sourceAvailable: boolean
+                installable: boolean
+                license: {
+                  declared: string | null
+                  concluded: string | null
+                }
+                operation: {
+                  name: string
+                  slug: string
+                }
+              }[]
+              claim: {
+                /** @enum {string} */
+                state: "unclaimed" | "pending" | "claimed"
+                by: string | null
+              }
+              sources: {
+                name: string
+                kind: string
+                url: string | null
+                license: string | null
+                externalId: string | null
+                observedAt: string | null
+              }[]
+            }
+          }
+        }
+        /** @description Not found */
+        404: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              type: string
+              title: string
+              status: number
+              code: string
+              detail?: string
+              requestId: string
+            }
+          }
+        }
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   "/runs/{idOrDigest}": {
     parameters: {
       query?: never

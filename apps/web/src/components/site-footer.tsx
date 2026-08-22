@@ -3,7 +3,7 @@ import { releaseSha } from "@/server/env"
 
 const LINKS = [
   { label: "Models", href: "/models" },
-  { label: "Projects", href: "/implementations" },
+  { label: "Projects", href: "/projects" },
   { label: "Contribute", href: "/submit" },
   { label: "Sources", href: "/docs#sources" },
   { label: "Methodology", href: "/docs" },

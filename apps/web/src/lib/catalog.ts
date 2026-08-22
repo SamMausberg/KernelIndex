@@ -17,6 +17,7 @@ import type {
   OperationIndexEntry,
   OperationPageModel,
   ProjectIndexModel,
+  ProjectPageModel,
   RecordsPageModel,
   RunListInput,
   RunPageModel,
@@ -53,6 +54,7 @@ type CatalogReads = {
   getHardwareIndex(): Promise<HardwareIndexModel>
   getHardwarePage(slug: string): Promise<HardwarePageModel | null>
   getProjectIndex(): Promise<ProjectIndexModel>
+  getProjectPage(slug: string): Promise<ProjectPageModel | null>
   // Model surface (§16.21): kernel model: tags and serving revisions,
   // never merged.
   getModelIndex(): Promise<ModelIndexModel>
@@ -285,6 +287,16 @@ export const getProjectIndex = cache(
       return (await reads()).getProjectIndex()
     },
     ["project-index", BACKEND],
+    { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },
+  ),
+)
+
+export const getProjectPage = cache(
+  cached(
+    async (slug: string): Promise<ProjectPageModel | null> => {
+      return (await reads()).getProjectPage(slug)
+    },
+    ["project", BACKEND],
     { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },
   ),
 )

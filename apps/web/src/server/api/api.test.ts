@@ -69,6 +69,18 @@ describe("api /v1", () => {
     expect(bad.status).toBe(400)
   })
 
+  it("serves the project dossier and 404s an unknown slug", async () => {
+    const response = await get("/projects/meridian-kernels")
+    expect(response.status).toBe(200)
+    const model = await response.json()
+    expect(model.project.slug).toBe("meridian-kernels")
+    expect(model.implementations.length).toBeGreaterThanOrEqual(1)
+    expect(model.implementations[0].operation.slug).toBe("rmsnorm-h4096")
+    expect(model.claim.state).toBe("unclaimed")
+    const missing = await get("/projects/no-such-project")
+    expect(missing.status).toBe(404)
+  })
+
   it("serves dossiers and Problem Details", async () => {
     const run = await get("/runs/run-fx-0001")
     expect(run.status).toBe(200)

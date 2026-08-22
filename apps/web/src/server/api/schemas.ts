@@ -19,6 +19,7 @@ import type {
   OperationListEntry,
   OperationPageModel,
   PrimaryMetric,
+  ProjectPageModel,
   RecordHolder,
   ResultRow,
   RunListRow,
@@ -632,6 +633,36 @@ export const implementationDossier = z.object({
     })
     .nullable(),
 }) satisfies z.ZodType<ImplementationDossier>
+
+/** The project dossier (§16.9 sibling): the web page's model, verbatim. */
+export const projectDossier = z.object({
+  illustrative: z.boolean(),
+  project: z.object({
+    slug: z.string(),
+    name: z.string(),
+    kind: z.enum(["library", "individual", "vendor"]),
+    repositoryUrl: z.string().nullable(),
+    host: z.object({ kind: z.string(), id: z.string() }).nullable(),
+    licenses: z.array(z.string()),
+  }),
+  stats: z.object({
+    implementations: z.number(),
+    runs: z.number(),
+    hardware: z.array(z.string()),
+    lastObservedAt: z.string().nullable(),
+  }),
+  records: z.array(recordHolder),
+  implementations: z.array(
+    implementationSummary.extend({
+      operation: z.object({ name: z.string(), slug: z.string() }),
+    }),
+  ),
+  claim: z.object({
+    state: z.enum(["unclaimed", "pending", "claimed"]),
+    by: z.string().nullable(),
+  }),
+  sources: z.array(sourceRef),
+}) satisfies z.ZodType<ProjectPageModel>
 
 export const runDossier = z.object({
   illustrative: z.boolean(),

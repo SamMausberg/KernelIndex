@@ -12,7 +12,6 @@ import { db } from "@/server/db/client"
 import * as schema from "@/server/db/schema"
 import { sessionUser } from "@/server/policy/authorization"
 import { watchFeed } from "@/server/watches"
-import { ClaimForm } from "./claim-form"
 import { DeleteAccountForm } from "./delete-form"
 import { CreateKeyForm, RevokeKeyForm } from "./key-forms"
 import { markSeenAction, unwatchAction } from "./seen-action"
@@ -59,8 +58,15 @@ export default async function AccountPage() {
       .where(eq(schema.submissions.userId, user.id))
       .orderBy(desc(schema.submissions.createdAt)),
     db()
-      .select()
+      .select({
+        claim: schema.projectClaims,
+        project: { name: schema.projects.name, slug: schema.projects.slug },
+      })
       .from(schema.projectClaims)
+      .innerJoin(
+        schema.projects,
+        eq(schema.projectClaims.projectId, schema.projects.id),
+      )
       .where(eq(schema.projectClaims.userId, user.id)),
     listApiKeys(user.id),
     watchFeed(user.id),
@@ -236,18 +242,22 @@ export default async function AccountPage() {
             <CreateKeyForm />
           </div>
         </Section>
-        <Section id="claims" title="Project claims">
-          {claims.map((claim) => (
-            <p
-              key={claim.id}
-              className="border-b border-line py-2 font-mono text-small text-subtle"
-            >
-              {claim.evidenceUrl} · {claim.state}
+        <Section id="claims" title="Your projects">
+          {claims.length === 0 && (
+            <p className="text-body text-faint">
+              None yet. Claim a project from its page: GitHub-hosted projects
+              are yours in one click as the repository owner.
+            </p>
+          )}
+          {claims.map(({ claim, project }) => (
+            <p key={claim.id} className="border-b border-line py-2 text-body">
+              <a href={`/projects/${project.slug}`}>{project.name}</a>
+              <span className="ml-2 font-mono text-small text-subtle">
+                {claim.state}
+                {claim.reviewNote && ` · ${claim.reviewNote}`}
+              </span>
             </p>
           ))}
-          <div className="mt-3">
-            <ClaimForm />
-          </div>
         </Section>
         <Section id="delete" title="Delete account">
           <DeleteAccountForm email={user.email} />
