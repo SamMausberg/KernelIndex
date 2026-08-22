@@ -21,6 +21,7 @@ import {
   sessionUser,
 } from "@/server/policy/authorization"
 import {
+  AttestationHideForm,
   ClaimReviewForm,
   ReportReviewForm,
   RetractForm,
@@ -58,51 +59,64 @@ export default async function AdminPage() {
     )
   }
 
-  const [pending, claims, openReports, recentAudit, sourceRows, metrics] =
-    await Promise.all([
-      db()
-        .select()
-        .from(schema.submissions)
-        .where(
-          inArray(schema.submissions.state, ["ready_for_review", "in_review"]),
-        )
-        .orderBy(desc(schema.submissions.createdAt)),
-      db()
-        .select({
-          claim: schema.projectClaims,
-          project: { name: schema.projects.name, slug: schema.projects.slug },
-        })
-        .from(schema.projectClaims)
-        .innerJoin(
-          schema.projects,
-          eq(schema.projectClaims.projectId, schema.projects.id),
-        )
-        .where(eq(schema.projectClaims.state, "pending")),
-      db()
-        .select()
-        .from(schema.reports)
-        .where(eq(schema.reports.state, "open"))
-        .orderBy(desc(schema.reports.createdAt)),
-      db()
-        .select()
-        .from(schema.auditEvents)
-        .orderBy(desc(schema.auditEvents.at))
-        .limit(20),
-      db().execute(sql`
+  const [
+    pending,
+    claims,
+    openReports,
+    recentAudit,
+    sourceRows,
+    metrics,
+    attestations,
+  ] = await Promise.all([
+    db()
+      .select()
+      .from(schema.submissions)
+      .where(
+        inArray(schema.submissions.state, ["ready_for_review", "in_review"]),
+      )
+      .orderBy(desc(schema.submissions.createdAt)),
+    db()
+      .select({
+        claim: schema.projectClaims,
+        project: { name: schema.projects.name, slug: schema.projects.slug },
+      })
+      .from(schema.projectClaims)
+      .innerJoin(
+        schema.projects,
+        eq(schema.projectClaims.projectId, schema.projects.id),
+      )
+      .where(eq(schema.projectClaims.state, "pending")),
+    db()
+      .select()
+      .from(schema.reports)
+      .where(eq(schema.reports.state, "open"))
+      .orderBy(desc(schema.reports.createdAt)),
+    db()
+      .select()
+      .from(schema.auditEvents)
+      .orderBy(desc(schema.auditEvents.at))
+      .limit(20),
+    db().execute(sql`
       select s.slug, s.kind, max(ss.fetched_at) last_fetched,
         (select count(*) from benchmark_runs r
            where r.source_id = s.id and r.published_at is not null) runs
       from sources s left join source_snapshots ss on ss.source_id = s.id
       group by s.id order by s.slug`) as Promise<
-        {
-          slug: string
-          kind: string
-          last_fetched: Date | null
-          runs: number
-        }[]
-      >,
-      eventSummary(30),
-    ])
+      {
+        slug: string
+        kind: string
+        last_fetched: Date | null
+        runs: number
+      }[]
+    >,
+    eventSummary(30),
+    db()
+      .select()
+      .from(schema.attestations)
+      .where(eq(schema.attestations.state, "published"))
+      .orderBy(desc(schema.attestations.createdAt))
+      .limit(20),
+  ])
 
   const sources = sourceRows.map((row) => {
     const declared = FRESHNESS_DAYS[row.slug]
@@ -203,6 +217,38 @@ export default async function AdminPage() {
               </p>
               <div className="mt-2">
                 <ReportReviewForm id={report.id} />
+              </div>
+            </div>
+          ))}
+        </Section>
+
+        <Section id="attestations" title="Recent attestations">
+          {attestations.length === 0 && (
+            <p className="text-body text-faint">None published.</p>
+          )}
+          {attestations.map((row) => (
+            <div key={row.id} className="border-b border-line py-3 text-body">
+              <div className="flex flex-wrap items-baseline gap-4">
+                <a href={`/runs/${row.runId}`} className="font-mono text-small">
+                  run/{row.runId.slice(0, 13)}…
+                </a>
+                <span className="font-mono text-small text-subtle">
+                  {row.type}
+                </span>
+                <span className="text-faint">
+                  {row.createdAt.toISOString().slice(0, 10)} · {row.author}
+                </span>
+                {row.evidenceUrl && (
+                  <a href={row.evidenceUrl} className="text-small">
+                    evidence
+                  </a>
+                )}
+              </div>
+              <p className="mt-1.5 max-w-[80ch] whitespace-pre-wrap text-small text-subtle">
+                {row.body}
+              </p>
+              <div className="mt-2">
+                <AttestationHideForm id={row.id} />
               </div>
             </div>
           ))}

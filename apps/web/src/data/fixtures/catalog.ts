@@ -3,6 +3,7 @@
 // label. Projects, runs, and numbers are fictional and must never be
 // presented as real benchmark evidence.
 import type {
+  Attestation,
   CompareField,
   ComparePageModel,
   CompareRun,
@@ -480,8 +481,33 @@ function rowFromRun(r: FxRun): ResultRow {
     stale: r.stale ?? false,
     disputed: r.disputed !== undefined,
     caveats: r.caveats ?? [],
+    attestations: r.id === "run-fx-0002" ? FIXTURE_ATTESTATIONS.length : 0,
   }
 }
+
+/** Two community notes on the fastest deployable run (§16.10). */
+const FIXTURE_ATTESTATIONS: Attestation[] = [
+  {
+    id: "att-fx-0001",
+    type: "reproduced",
+    body: "Rebuilt at b81d40e and ran the fixed-clock protocol: 8.14 µs median over 200 samples, inside the published interval.",
+    evidenceUrl: "https://example.invalid/runs/meridian-b200.log",
+    observedNs: 8140,
+    environmentSummary: "B200 SXM · CUDA 13.1 · torch 2.9",
+    author: "reproducer (fictional)",
+    at: "2026-08-18T09:00:00Z",
+  },
+  {
+    id: "att-fx-0002",
+    type: "environment_note",
+    body: "Persistence mode off adds roughly 4% on this GPU; the published environment had it on.",
+    evidenceUrl: null,
+    observedNs: null,
+    environmentSummary: null,
+    author: "another reader (fictional)",
+    at: "2026-08-19T14:30:00Z",
+  },
+]
 
 // A declared-support implementation with no measurement, and a row with
 // deliberately long values, for the supported-unmeasured and overflow states.
@@ -516,6 +542,7 @@ const SUPPORTED_UNMEASURED: ResultRow = {
   stale: false,
   disputed: false,
   caveats: ["Declared support only; no measurement for this exact workload"],
+  attestations: 0,
 }
 
 const RANKED = RUNS.filter((r) => r.workloadId === "wl-2048" && r.rank !== null)
@@ -1437,6 +1464,7 @@ function runPage(r: FxRun): RunPageModel {
       snapshotDigest: null,
     },
     sourceNativeMetrics: r.sourceNative ?? null,
+    attestations: r.id === "run-fx-0002" ? FIXTURE_ATTESTATIONS : [],
     manifest: {
       apiVersion: "kernelindex.dev/v1alpha1",
       kind: "BenchmarkRun",

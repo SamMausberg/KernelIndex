@@ -206,6 +206,16 @@ rmsnorm gpu:B200 dtype:bf16 shape:[2048,4096] framework=pytorch trust:verified`}
             is a separate fact: the fastest result and the fastest one you can
             deploy are often different rows.
           </p>
+          <p className="mt-3">
+            Run pages also carry community attestations: <em>reproduced</em>,{" "}
+            <em>could not reproduce</em>, an <em>environment note</em>, or a{" "}
+            <em>regression observed</em>, each with an optional measured value
+            and evidence link, filed under an account name (or through the API
+            with a{" "}
+            <span className="font-mono text-small">submissions:write</span>{" "}
+            key). They accumulate beside the evidence and never change its
+            level; only a KernelIndex-controlled rerun does.
+          </p>
         </Section>
 
         <Section id="records" title="How records are decided">

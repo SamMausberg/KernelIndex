@@ -8,6 +8,8 @@ import { CopyButton } from "@/components/copy-button"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
 import { KeyValueList } from "@/components/key-value-list"
 import { Section } from "@/components/section"
+import { AttestForm } from "@/features/attestations/attest-form"
+import { AttestationList } from "@/features/attestations/attestations"
 import { ReportForm } from "@/features/reports/report-form"
 import { getRunPage } from "@/lib/catalog"
 import {
@@ -314,6 +316,19 @@ export default async function RunPage({ params }: Props) {
             )}
           </Section>
         </div>
+
+        {/* §16.10 Replications: community knowledge accumulates beside the
+            evidence and never changes its level (§8.14). */}
+        <Section id="replications" title="Replications and notes">
+          <AttestationList rows={model.attestations} />
+          <p className="mt-2.5 text-small text-faint">
+            Community attestations. They never change the evidence level; only a
+            KernelIndex-controlled rerun does.
+          </p>
+          <div className="mt-3">
+            <AttestForm runId={model.run.id} />
+          </div>
+        </Section>
 
         <Section id="manifest" title="Canonical manifest">
           <details className="group">

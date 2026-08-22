@@ -350,6 +350,12 @@ export default async function ImplementationPage({ params }: Props) {
                           : `#${row.rank}${row.tiedWithPrevious ? "=" : ""}${
                               row.cohortSize ? ` of ${row.cohortSize}` : ""
                             }`}
+                        {row.attestations > 0 && (
+                          <span className="ml-1.5 text-faint">
+                            · {row.attestations} note
+                            {row.attestations === 1 ? "" : "s"}
+                          </span>
+                        )}
                       </div>
                       <div className="font-mono text-mini text-faint">
                         {formatDateUTC(row.lastTestedAt)}

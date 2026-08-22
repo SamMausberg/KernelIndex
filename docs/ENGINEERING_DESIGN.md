@@ -2721,6 +2721,17 @@ a public surface first:
   advances it. `/account` lists follows; the inline change list moved to
   the feed. Footer: Feed; the Atom link reads Atom.
 
+**Reality note (2026-08-22, attestations).** §16.10's Replications section
+exists: a signed-in reader files a typed attestation on a run (reproduced ·
+could not reproduce · environment note · regression observed) with an
+optional measured value, environment line, and HTTPS evidence link
+(`server/attestations.ts`, table `attestations`, migration 0021, per-user
+daily cap, published on write, hidden by a maintainer from /admin with an
+audit event). The run dossier model and `GET /runs/{id}` carry them; the
+implementation page's evidence rows count them; `POST
+/runs/{id}/attestations` takes them from a `submissions:write` API key. They
+never change the evidence level (§8.14) and every surface says so.
+
 ### 16.1 Product character
 
 KernelIndex should feel like a serious technical reference built by kernel engineers, not a generic SaaS dashboard, gaming leaderboard, or GPU marketing site.

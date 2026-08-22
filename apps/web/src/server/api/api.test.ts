@@ -180,6 +180,24 @@ describe("api /v1", () => {
     )
   })
 
+  it("refuses a machine attestation without a key (key-mandatory)", async () => {
+    const response = await post("/runs/run-fx-0002/attestations", {
+      type: "reproduced",
+      body: "same number here",
+    })
+    expect(response.status).toBe(401)
+    expect(response.headers.get("Content-Type")).toContain("problem+json")
+  })
+
+  it("serves published attestations on the run dossier", async () => {
+    const response = await get("/runs/run-fx-0002")
+    const model = await response.json()
+    expect(model.attestations.map((a: { type: string }) => a.type)).toEqual([
+      "reproduced",
+      "environment_note",
+    ])
+  })
+
   it("rejects revalidation without the token", async () => {
     const response = await api.request("/revalidate", { method: "POST" })
     expect(response.status).toBe(401)
