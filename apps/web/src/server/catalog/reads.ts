@@ -813,8 +813,7 @@ function nearestCases(
     intent,
     workloadRows.flatMap((row) => {
       const manifest = manifestById.get(row.id)
-      if (manifest?.kind !== "WorkloadCase" || !measured.has(row.id))
-        return []
+      if (manifest?.kind !== "WorkloadCase" || !measured.has(row.id)) return []
       return [
         {
           id: row.id,
