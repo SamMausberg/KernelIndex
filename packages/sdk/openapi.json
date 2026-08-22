@@ -11397,6 +11397,543 @@
         }
       }
     },
+    "/feed": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "required": false,
+            "name": "since",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Record breaks, publication batches, corrections, and accepted claims over the trailing 30 days, newest first, grouped by UTC day",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "illustrative": {
+                      "type": "boolean"
+                    },
+                    "days": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "date": {
+                            "type": "string"
+                          },
+                          "entries": {
+                            "type": "array",
+                            "items": {
+                              "oneOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "at": {
+                                      "type": "string"
+                                    },
+                                    "match": {
+                                      "type": "object",
+                                      "properties": {
+                                        "cohort": {
+                                          "type": ["string", "null"]
+                                        },
+                                        "operation": {
+                                          "type": ["string", "null"]
+                                        },
+                                        "projects": {
+                                          "type": "array",
+                                          "items": {
+                                            "type": "string"
+                                          }
+                                        },
+                                        "gpu": {
+                                          "type": ["string", "null"]
+                                        },
+                                        "models": {
+                                          "type": "array",
+                                          "items": {
+                                            "type": "string"
+                                          }
+                                        }
+                                      },
+                                      "required": [
+                                        "cohort",
+                                        "operation",
+                                        "projects",
+                                        "gpu",
+                                        "models"
+                                      ]
+                                    },
+                                    "kind": {
+                                      "type": "string",
+                                      "enum": ["record"]
+                                    },
+                                    "runId": {
+                                      "type": "string"
+                                    },
+                                    "operation": {
+                                      "type": "object",
+                                      "properties": {
+                                        "name": {
+                                          "type": "string"
+                                        },
+                                        "slug": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "required": ["name", "slug"]
+                                    },
+                                    "workloadId": {
+                                      "type": "string"
+                                    },
+                                    "workloadSummary": {
+                                      "type": "string"
+                                    },
+                                    "hardware": {
+                                      "type": "string"
+                                    },
+                                    "implementation": {
+                                      "type": "object",
+                                      "properties": {
+                                        "name": {
+                                          "type": "string"
+                                        },
+                                        "slug": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "required": ["name", "slug"]
+                                    },
+                                    "project": {
+                                      "type": "object",
+                                      "properties": {
+                                        "name": {
+                                          "type": "string"
+                                        },
+                                        "slug": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "required": ["name", "slug"]
+                                    },
+                                    "value": {
+                                      "type": "object",
+                                      "properties": {
+                                        "metric": {
+                                          "type": "string"
+                                        },
+                                        "unit": {
+                                          "type": "string"
+                                        },
+                                        "statistic": {
+                                          "type": "string"
+                                        },
+                                        "value": {
+                                          "type": "number"
+                                        },
+                                        "sampleCount": {
+                                          "type": ["number", "null"]
+                                        },
+                                        "uncertainty": {
+                                          "type": ["object", "null"],
+                                          "properties": {
+                                            "low": {
+                                              "type": "number"
+                                            },
+                                            "high": {
+                                              "type": "number"
+                                            }
+                                          },
+                                          "required": ["low", "high"]
+                                        }
+                                      },
+                                      "required": [
+                                        "metric",
+                                        "unit",
+                                        "statistic",
+                                        "value",
+                                        "sampleCount",
+                                        "uncertainty"
+                                      ]
+                                    },
+                                    "previous": {
+                                      "type": "object",
+                                      "properties": {
+                                        "implementation": {
+                                          "type": "object",
+                                          "properties": {
+                                            "name": {
+                                              "type": "string"
+                                            },
+                                            "slug": {
+                                              "type": "string"
+                                            }
+                                          },
+                                          "required": ["name", "slug"]
+                                        },
+                                        "value": {
+                                          "type": "object",
+                                          "properties": {
+                                            "metric": {
+                                              "type": "string"
+                                            },
+                                            "unit": {
+                                              "type": "string"
+                                            },
+                                            "statistic": {
+                                              "type": "string"
+                                            },
+                                            "value": {
+                                              "type": "number"
+                                            },
+                                            "sampleCount": {
+                                              "type": ["number", "null"]
+                                            },
+                                            "uncertainty": {
+                                              "type": ["object", "null"],
+                                              "properties": {
+                                                "low": {
+                                                  "type": "number"
+                                                },
+                                                "high": {
+                                                  "type": "number"
+                                                }
+                                              },
+                                              "required": ["low", "high"]
+                                            }
+                                          },
+                                          "required": [
+                                            "metric",
+                                            "unit",
+                                            "statistic",
+                                            "value",
+                                            "sampleCount",
+                                            "uncertainty"
+                                          ]
+                                        }
+                                      },
+                                      "required": ["implementation", "value"]
+                                    },
+                                    "improvementPct": {
+                                      "type": ["number", "null"]
+                                    },
+                                    "cohortKey": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "at",
+                                    "match",
+                                    "kind",
+                                    "runId",
+                                    "operation",
+                                    "workloadId",
+                                    "workloadSummary",
+                                    "hardware",
+                                    "implementation",
+                                    "project",
+                                    "value",
+                                    "previous",
+                                    "improvementPct",
+                                    "cohortKey"
+                                  ]
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "at": {
+                                      "type": "string"
+                                    },
+                                    "match": {
+                                      "type": "object",
+                                      "properties": {
+                                        "cohort": {
+                                          "type": ["string", "null"]
+                                        },
+                                        "operation": {
+                                          "type": ["string", "null"]
+                                        },
+                                        "projects": {
+                                          "type": "array",
+                                          "items": {
+                                            "type": "string"
+                                          }
+                                        },
+                                        "gpu": {
+                                          "type": ["string", "null"]
+                                        },
+                                        "models": {
+                                          "type": "array",
+                                          "items": {
+                                            "type": "string"
+                                          }
+                                        }
+                                      },
+                                      "required": [
+                                        "cohort",
+                                        "operation",
+                                        "projects",
+                                        "gpu",
+                                        "models"
+                                      ]
+                                    },
+                                    "kind": {
+                                      "type": "string",
+                                      "enum": ["import"]
+                                    },
+                                    "source": {
+                                      "type": "object",
+                                      "properties": {
+                                        "slug": {
+                                          "type": "string"
+                                        },
+                                        "name": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "required": ["slug", "name"]
+                                    },
+                                    "runs": {
+                                      "type": "number"
+                                    },
+                                    "firstRecords": {
+                                      "type": "number"
+                                    },
+                                    "operations": {
+                                      "type": "number"
+                                    },
+                                    "hardware": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "string"
+                                      }
+                                    }
+                                  },
+                                  "required": [
+                                    "at",
+                                    "match",
+                                    "kind",
+                                    "source",
+                                    "runs",
+                                    "firstRecords",
+                                    "operations",
+                                    "hardware"
+                                  ]
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "at": {
+                                      "type": "string"
+                                    },
+                                    "match": {
+                                      "type": "object",
+                                      "properties": {
+                                        "cohort": {
+                                          "type": ["string", "null"]
+                                        },
+                                        "operation": {
+                                          "type": ["string", "null"]
+                                        },
+                                        "projects": {
+                                          "type": "array",
+                                          "items": {
+                                            "type": "string"
+                                          }
+                                        },
+                                        "gpu": {
+                                          "type": ["string", "null"]
+                                        },
+                                        "models": {
+                                          "type": "array",
+                                          "items": {
+                                            "type": "string"
+                                          }
+                                        }
+                                      },
+                                      "required": [
+                                        "cohort",
+                                        "operation",
+                                        "projects",
+                                        "gpu",
+                                        "models"
+                                      ]
+                                    },
+                                    "kind": {
+                                      "type": "string",
+                                      "enum": ["correction"]
+                                    },
+                                    "runId": {
+                                      "type": "string"
+                                    },
+                                    "action": {
+                                      "type": "string",
+                                      "enum": ["retracted", "superseded"]
+                                    },
+                                    "reason": {
+                                      "type": ["string", "null"]
+                                    },
+                                    "operation": {
+                                      "type": "object",
+                                      "properties": {
+                                        "name": {
+                                          "type": "string"
+                                        },
+                                        "slug": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "required": ["name", "slug"]
+                                    },
+                                    "implementation": {
+                                      "type": "object",
+                                      "properties": {
+                                        "name": {
+                                          "type": "string"
+                                        },
+                                        "slug": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "required": ["name", "slug"]
+                                    }
+                                  },
+                                  "required": [
+                                    "at",
+                                    "match",
+                                    "kind",
+                                    "runId",
+                                    "action",
+                                    "reason",
+                                    "operation",
+                                    "implementation"
+                                  ]
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "at": {
+                                      "type": "string"
+                                    },
+                                    "match": {
+                                      "type": "object",
+                                      "properties": {
+                                        "cohort": {
+                                          "type": ["string", "null"]
+                                        },
+                                        "operation": {
+                                          "type": ["string", "null"]
+                                        },
+                                        "projects": {
+                                          "type": "array",
+                                          "items": {
+                                            "type": "string"
+                                          }
+                                        },
+                                        "gpu": {
+                                          "type": ["string", "null"]
+                                        },
+                                        "models": {
+                                          "type": "array",
+                                          "items": {
+                                            "type": "string"
+                                          }
+                                        }
+                                      },
+                                      "required": [
+                                        "cohort",
+                                        "operation",
+                                        "projects",
+                                        "gpu",
+                                        "models"
+                                      ]
+                                    },
+                                    "kind": {
+                                      "type": "string",
+                                      "enum": ["claim"]
+                                    },
+                                    "project": {
+                                      "type": "object",
+                                      "properties": {
+                                        "name": {
+                                          "type": "string"
+                                        },
+                                        "slug": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "required": ["name", "slug"]
+                                    },
+                                    "by": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "at",
+                                    "match",
+                                    "kind",
+                                    "project",
+                                    "by"
+                                  ]
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        "required": ["date", "entries"]
+                      }
+                    },
+                    "generatedAt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["illustrative", "days", "generatedAt"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "number"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["type", "title", "status", "code", "requestId"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/operations": {
       "get": {
         "parameters": [

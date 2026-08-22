@@ -141,6 +141,13 @@
       "when": 1787331000000,
       "tag": "0019_stack-name-hygiene",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1787400000000,
+      "tag": "0020_follows",
+      "breakpoints": true
     }
   ]
 }

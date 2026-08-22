@@ -34,6 +34,8 @@ Claim rules (keep these when quoting results):
 - GET  /projects/{slug}              a library or author: records held, kernels, claim state
 - GET  /runs/{idOrDigest}            immutable evidence dossier
 - GET  /records                      record ledger (cursor-paginated)
+- GET  /feed?since=<iso>             what changed: record breaks, imports,
+                                     corrections, accepted claims (30 days)
 - POST /compare                      up to 8 runs, winner only inside one cohort
 - POST /resolve/serving              objective + constraints -> feasible + Pareto
 - GET  /serving-runs, /serving-configurations

@@ -230,6 +230,14 @@ rmsnorm gpu:B200 dtype:bf16 shape:[2048,4096] framework=pytorch trust:verified`}
             visible.
           </p>
           <p className="mt-3">
+            The <Link href="/feed">feed</Link> states what the index learned
+            over the trailing 30 days: record breaks, what each import brought,
+            corrections, and accepted claims. Signed in, <em>Following</em>{" "}
+            narrows it to the cohorts, operations, projects, GPUs, and models
+            you follow; every such page carries a Follow button, and so does a
+            resolved search.
+          </p>
+          <p className="mt-3">
             Every <Link href="/projects">project</Link> (a library, a
             competition author, or a vendor) has a page stating the records it
             holds and every kernel it measured. Authors can claim theirs: a
@@ -271,6 +279,9 @@ curl "https://kernelindex.com/api/v1/implementations/<slug>?include=source"
 
 # records ledger, cursor-paginated:
 curl "https://kernelindex.com/api/v1/records?limit=50"
+
+# what the index learned since you last polled:
+curl "https://kernelindex.com/api/v1/feed?since=2026-08-01T00:00:00Z"
 
 # the ki CLI (apps/cli): stable --json for machines:
 ki search "gemm b200 nvfp4" --json | jq '.groups.exact[0]'
@@ -320,9 +331,11 @@ curl -L https://kernelindex.com/api/v1/exports/catalog.jsonl.zst
 }`}
           </pre>
           <p className="mt-4">
-            REST, the CLI, MCP, the bulk export, and the{" "}
-            <a href="/records/feed.xml">Atom feed</a> all return the same
-            answers as these pages; machines never get a weaker explanation.
+            REST, the CLI, MCP, the bulk export, the{" "}
+            <a href="/records/feed.xml">Atom feed</a>, and the change feed (
+            <span className="font-mono text-small">GET /feed?since=</span>) all
+            return the same answers as these pages; machines never get a weaker
+            explanation.
           </p>
         </Section>
 

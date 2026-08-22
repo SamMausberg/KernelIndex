@@ -20,6 +20,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: origin },
     { url: `${origin}/search` },
     { url: `${origin}/records` },
+    { url: `${origin}/feed` },
     { url: `${origin}/gpus` },
     { url: `${origin}/models` },
     { url: `${origin}/projects` },

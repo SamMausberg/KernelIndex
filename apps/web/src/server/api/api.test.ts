@@ -85,6 +85,23 @@ describe("api /v1", () => {
     expect((await measured.json()).nearest).toBeNull()
   })
 
+  it("serves the change feed grouped by day and honors since", async () => {
+    const response = await get("/feed")
+    expect(response.status).toBe(200)
+    const feed = await response.json()
+    expect(feed.days.length).toBeGreaterThan(0)
+    const kinds = new Set(
+      feed.days.flatMap((day: { entries: { kind: string }[] }) =>
+        day.entries.map((entry) => entry.kind),
+      ),
+    )
+    expect(kinds.has("record")).toBe(true)
+    expect(kinds.has("import")).toBe(true)
+    const narrowed = await get("/feed?since=2099-01-01T00:00:00Z")
+    expect((await narrowed.json()).days).toEqual([])
+    expect((await get("/feed?since=yesterday")).status).toBe(400)
+  })
+
   it("pages records with a stable cursor", async () => {
     const first = await get("/records?limit=1")
     expect(first.status).toBe(200)

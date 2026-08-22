@@ -195,9 +195,13 @@ describe.skipIf(!url)("catalog schema constraints", () => {
         prefix: "ki_test",
         secretHash: digest("d"),
       })
-      await tx
-        .insert(schema.watches)
-        .values({ userId: user.id, comparisonKey: digest("e") })
+      await tx.insert(schema.follows).values({
+        userId: user.id,
+        kind: "cohort",
+        key: digest("e"),
+        label: "e",
+        href: "/",
+      })
       const [submission] = await tx
         .insert(schema.submissions)
         .values({ userId: user.id, bundle: {} })
@@ -212,8 +216,8 @@ describe.skipIf(!url)("catalog schema constraints", () => {
       expect(
         await tx
           .select()
-          .from(schema.watches)
-          .where(eq(schema.watches.userId, user.id)),
+          .from(schema.follows)
+          .where(eq(schema.follows.userId, user.id)),
       ).toHaveLength(0)
       const [kept] = await tx
         .select()

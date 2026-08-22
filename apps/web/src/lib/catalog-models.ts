@@ -267,6 +267,62 @@ export type RecordsPageModel = {
   records: RecordHolder[]
 }
 
+// ---------------------------------------------------------------------------
+// Feed (§13.11): what the index learned, derived on read from record events,
+// publication batches, and the audit trail — never a stored feed.
+
+/** The keys the following filter matches an entry on; rendered nowhere. */
+export type FeedMatch = {
+  cohort: string | null
+  operation: string | null
+  projects: string[]
+  gpu: string | null
+  models: string[]
+}
+
+export type FeedEntry = { at: string; match: FeedMatch } & (
+  | {
+      kind: "record"
+      runId: string
+      operation: { name: string; slug: string }
+      workloadId: string
+      workloadSummary: string
+      hardware: string
+      implementation: { name: string; slug: string }
+      project: { name: string; slug: string }
+      value: PrimaryMetric
+      previous: {
+        implementation: { name: string; slug: string }
+        value: PrimaryMetric
+      }
+      improvementPct: number | null
+      cohortKey: string
+    }
+  | {
+      kind: "import"
+      source: { slug: string; name: string }
+      runs: number
+      firstRecords: number
+      operations: number
+      hardware: string[]
+    }
+  | {
+      kind: "correction"
+      runId: string
+      action: "retracted" | "superseded"
+      reason: string | null
+      operation: { name: string; slug: string }
+      implementation: { name: string; slug: string }
+    }
+  | { kind: "claim"; project: { name: string; slug: string }; by: string }
+)
+
+export type FeedModel = {
+  illustrative: boolean
+  /** UTC days, newest first; entries newest first inside a day. */
+  days: { date: string; entries: FeedEntry[] }[]
+}
+
 /** One recognized facet rendered as an editable token (§16.6). */
 export type SearchFacetToken = {
   token: string

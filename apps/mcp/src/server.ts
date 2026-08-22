@@ -138,6 +138,16 @@ export function buildServer(): McpServer {
   )
 
   server.registerTool(
+    "list_changes",
+    {
+      description:
+        "What the index learned over the trailing 30 days: record breaks, publication batches, corrections, accepted claims; newest first by UTC day. `since` narrows to entries after that ISO instant.",
+      inputSchema: { since: z.string().max(40).optional() },
+    },
+    async ({ since }) => json(await api.feed({ since })),
+  )
+
+  server.registerTool(
     "list_runs",
     {
       description:

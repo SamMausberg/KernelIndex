@@ -3990,6 +3990,186 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  "/feed": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: {
+      parameters: {
+        query?: {
+          since?: string
+        }
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Record breaks, publication batches, corrections, and accepted claims over the trailing 30 days, newest first, grouped by UTC day */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              illustrative: boolean
+              days: {
+                date: string
+                entries: (
+                  | {
+                      at: string
+                      match: {
+                        cohort: string | null
+                        operation: string | null
+                        projects: string[]
+                        gpu: string | null
+                        models: string[]
+                      }
+                      /** @enum {string} */
+                      kind: "record"
+                      runId: string
+                      operation: {
+                        name: string
+                        slug: string
+                      }
+                      workloadId: string
+                      workloadSummary: string
+                      hardware: string
+                      implementation: {
+                        name: string
+                        slug: string
+                      }
+                      project: {
+                        name: string
+                        slug: string
+                      }
+                      value: {
+                        metric: string
+                        unit: string
+                        statistic: string
+                        value: number
+                        sampleCount: number | null
+                        uncertainty: {
+                          low: number
+                          high: number
+                        } | null
+                      }
+                      previous: {
+                        implementation: {
+                          name: string
+                          slug: string
+                        }
+                        value: {
+                          metric: string
+                          unit: string
+                          statistic: string
+                          value: number
+                          sampleCount: number | null
+                          uncertainty: {
+                            low: number
+                            high: number
+                          } | null
+                        }
+                      }
+                      improvementPct: number | null
+                      cohortKey: string
+                    }
+                  | {
+                      at: string
+                      match: {
+                        cohort: string | null
+                        operation: string | null
+                        projects: string[]
+                        gpu: string | null
+                        models: string[]
+                      }
+                      /** @enum {string} */
+                      kind: "import"
+                      source: {
+                        slug: string
+                        name: string
+                      }
+                      runs: number
+                      firstRecords: number
+                      operations: number
+                      hardware: string[]
+                    }
+                  | {
+                      at: string
+                      match: {
+                        cohort: string | null
+                        operation: string | null
+                        projects: string[]
+                        gpu: string | null
+                        models: string[]
+                      }
+                      /** @enum {string} */
+                      kind: "correction"
+                      runId: string
+                      /** @enum {string} */
+                      action: "retracted" | "superseded"
+                      reason: string | null
+                      operation: {
+                        name: string
+                        slug: string
+                      }
+                      implementation: {
+                        name: string
+                        slug: string
+                      }
+                    }
+                  | {
+                      at: string
+                      match: {
+                        cohort: string | null
+                        operation: string | null
+                        projects: string[]
+                        gpu: string | null
+                        models: string[]
+                      }
+                      /** @enum {string} */
+                      kind: "claim"
+                      project: {
+                        name: string
+                        slug: string
+                      }
+                      by: string
+                    }
+                )[]
+              }[]
+              generatedAt: string
+            }
+          }
+        }
+        /** @description Not found */
+        404: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              type: string
+              title: string
+              status: number
+              code: string
+              detail?: string
+              requestId: string
+            }
+          }
+        }
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   "/operations": {
     parameters: {
       query?: never

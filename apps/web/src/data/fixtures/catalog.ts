@@ -8,6 +8,8 @@ import type {
   CompareRun,
   CoveragePageModel,
   EvidenceLevel,
+  FeedEntry,
+  FeedModel,
   HardwareIndexModel,
   HardwarePageModel,
   HomePageModel,
@@ -677,6 +679,93 @@ async function annotatedMatches(
 }
 
 /** The corpus index behind suggestions and browse (two fixture operations). */
+/** The fixture feed (§13.11): every record break from the fixture ledger,
+ * the import that published the fixtures, and the one retraction, grouped
+ * by day like the PostgreSQL read. */
+export async function getFeed(): Promise<FeedModel> {
+  const { records } = await getRecordsPage()
+  const blank = {
+    cohort: null,
+    operation: null,
+    projects: [],
+    gpu: null,
+    models: [],
+  }
+  const entries: FeedEntry[] = records.flatMap((holder) =>
+    holder.history.flatMap((event, index) => {
+      const previous = holder.history[index + 1]
+      if (!event.previousValue || !previous) return []
+      const run = RUNS.find((r) => r.id === event.runId)
+      return [
+        {
+          kind: "record" as const,
+          at: event.at,
+          runId: event.runId,
+          operation: holder.operation,
+          workloadId: holder.workloadId,
+          workloadSummary: holder.workloadSummary,
+          hardware: holder.hardware,
+          implementation: event.implementation,
+          project: run?.project ?? holder.current.project,
+          value: event.value,
+          previous: {
+            implementation: previous.implementation,
+            value: event.previousValue,
+          },
+          improvementPct: event.improvementPct,
+          cohortKey: holder.cohortKey,
+          match: {
+            cohort: holder.cohortKey,
+            operation: holder.operation.slug,
+            projects: [run?.project.slug ?? holder.current.project.slug],
+            gpu: holder.hardware,
+            models: ["llama-3.1-8b"],
+          },
+        },
+      ]
+    }),
+  )
+  const retracted = RUNS.find((r) => r.retracted)
+  if (retracted?.retracted)
+    entries.push({
+      kind: "correction",
+      at: retracted.retracted.at,
+      runId: retracted.id,
+      action: "retracted",
+      reason: retracted.retracted.reason,
+      operation: { name: "RMSNorm, hidden 4096", slug: "rmsnorm-h4096" },
+      implementation: { name: retracted.impl.name, slug: retracted.impl.slug },
+      match: {
+        ...blank,
+        cohort: COHORT_2048.comparisonKey,
+        operation: "rmsnorm-h4096",
+        projects: [retracted.project.slug],
+        gpu: B200.model,
+      },
+    })
+  entries.push({
+    kind: "import",
+    at: FRESH,
+    source: { slug: "illustrative", name: FIXTURE_SOURCE_REF.name },
+    runs: RUNS.length,
+    firstRecords: records.length,
+    operations: 2,
+    hardware: [B200.model],
+    match: blank,
+  })
+  const sorted = entries.sort((a, b) =>
+    a.at < b.at ? 1 : a.at > b.at ? -1 : 0,
+  )
+  const days: FeedModel["days"] = []
+  for (const entry of sorted) {
+    const date = entry.at.slice(0, 10)
+    const day = days.at(-1)
+    if (day?.date === date) day.entries.push(entry)
+    else days.push({ date, entries: [entry] })
+  }
+  return { illustrative: ILLUSTRATIVE, days }
+}
+
 export async function getOperationIndex(): Promise<OperationIndexEntry[]> {
   return [
     {

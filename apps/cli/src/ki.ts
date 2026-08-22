@@ -27,6 +27,7 @@ Usage:
   ki show <operation|implementation|run|serving-run> <id-or-slug>
   ki compare run <id> <id> [...]     aligned comparison (2–8 runs)
   ki records [--limit n] [--cursor c]   current record holders, newest first
+  ki changes [--since <iso>]         what the index learned, newest first
   ki runs [filters]                  published runs, newest first (paged)
   ki hardware                        per-GPU kernel/serving coverage
   ki models                          serving models + kernel model: tags
@@ -299,6 +300,26 @@ async function main(): Promise<number> {
     ])
     if (page.nextCursor && !values.quiet)
       console.log(`next: ki records --cursor ${page.nextCursor}`)
+    return 0
+  }
+
+  if (command === "changes") {
+    const feed = await api.feed({ since: values.since })
+    const entries = feed.days.flatMap((day) => day.entries)
+    if (emit(feed, entries)) return 0
+    table(
+      entries.map((entry) => [
+        entry.at.slice(0, 10),
+        entry.kind,
+        entry.kind === "record"
+          ? `${entry.operation.name} · ${entry.workloadSummary} · ${entry.hardware}: ${entry.implementation.name} at ${formatPrimary(entry.value)}${entry.improvementPct === null ? "" : ` (${entry.improvementPct.toFixed(1)}% faster)`}`
+          : entry.kind === "import"
+            ? `${entry.source.name} · ${entry.runs} runs · ${entry.operations} operations · ${entry.firstRecords} first records`
+            : entry.kind === "correction"
+              ? `${entry.implementation.name} on ${entry.operation.name} ${entry.action}${entry.reason ? `: ${entry.reason}` : ""}`
+              : `${entry.project.name} claimed by ${entry.by}`,
+      ]),
+    )
     return 0
   }
 

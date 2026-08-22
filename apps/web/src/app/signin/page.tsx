@@ -18,7 +18,7 @@ const UNLOCKS = [
   ["Submit evidence", "send benchmark manifests for review"],
   ["Claim projects", "maintain your kernels' pages"],
   ["API keys", "higher API quota, scoped tokens"],
-  ["Watch records", "get told when a record falls"],
+  ["Follow records", "your feed shows when a record falls"],
 ] as const
 
 export default async function SignInPage({

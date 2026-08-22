@@ -10,6 +10,8 @@ import type {
   ComparePageModel,
   CoveragePageModel,
   CoverageSource,
+  FeedEntry,
+  FeedModel,
   HardwareCoverageEntry,
   ImplementationPageModel,
   ImplementationSummary,
@@ -289,6 +291,64 @@ export const resolveBatchResponse = z.object({
   results: z.array(resolveResponse),
   generatedAt: z.string(),
 })
+
+const feedMatch = z.object({
+  cohort: z.string().nullable(),
+  operation: z.string().nullable(),
+  projects: z.array(z.string()),
+  gpu: z.string().nullable(),
+  models: z.array(z.string()),
+})
+const ref = z.object({ name: z.string(), slug: z.string() })
+const feedBase = { at: z.string(), match: feedMatch }
+
+export const feedEntry = z.discriminatedUnion("kind", [
+  z.object({
+    ...feedBase,
+    kind: z.literal("record"),
+    runId: z.string(),
+    operation: ref,
+    workloadId: z.string(),
+    workloadSummary: z.string(),
+    hardware: z.string(),
+    implementation: ref,
+    project: ref,
+    value: primaryMetric,
+    previous: z.object({ implementation: ref, value: primaryMetric }),
+    improvementPct: z.number().nullable(),
+    cohortKey: z.string(),
+  }),
+  z.object({
+    ...feedBase,
+    kind: z.literal("import"),
+    source: z.object({ slug: z.string(), name: z.string() }),
+    runs: z.number(),
+    firstRecords: z.number(),
+    operations: z.number(),
+    hardware: z.array(z.string()),
+  }),
+  z.object({
+    ...feedBase,
+    kind: z.literal("correction"),
+    runId: z.string(),
+    action: z.enum(["retracted", "superseded"]),
+    reason: z.string().nullable(),
+    operation: ref,
+    implementation: ref,
+  }),
+  z.object({
+    ...feedBase,
+    kind: z.literal("claim"),
+    project: ref,
+    by: z.string(),
+  }),
+]) satisfies z.ZodType<FeedEntry>
+
+export const feedResponse = z.object({
+  illustrative: z.boolean(),
+  days: z.array(z.object({ date: z.string(), entries: z.array(feedEntry) })),
+  generatedAt: z.string(),
+}) satisfies z.ZodType<FeedModel & { generatedAt: string }>
 
 export const recordsResponse = z.object({
   records: z.array(recordHolder),
