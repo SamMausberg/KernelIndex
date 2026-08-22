@@ -593,6 +593,62 @@ export interface paths {
                     } | null
                   }[]
                 | null
+              nearest: {
+                axis: string
+                requested: number
+                below: {
+                  workloadId: string
+                  label: string
+                  value: number
+                  runs: number
+                  head: {
+                    runId: string
+                    implementation: {
+                      name: string
+                      slug: string
+                    }
+                    primary: {
+                      metric: string
+                      unit: string
+                      statistic: string
+                      value: number
+                      sampleCount: number | null
+                      uncertainty: {
+                        low: number
+                        high: number
+                      } | null
+                    }
+                  } | null
+                  cohortKey: string | null
+                  query: string
+                } | null
+                above: {
+                  workloadId: string
+                  label: string
+                  value: number
+                  runs: number
+                  head: {
+                    runId: string
+                    implementation: {
+                      name: string
+                      slug: string
+                    }
+                    primary: {
+                      metric: string
+                      unit: string
+                      statistic: string
+                      value: number
+                      sampleCount: number | null
+                      uncertainty: {
+                        low: number
+                        high: number
+                      } | null
+                    }
+                  } | null
+                  cohortKey: string | null
+                  query: string
+                } | null
+              } | null
               sources: {
                 name: string
                 kind: string
@@ -1190,6 +1246,62 @@ export interface paths {
                     } | null
                   }[]
                 | null
+              nearest: {
+                axis: string
+                requested: number
+                below: {
+                  workloadId: string
+                  label: string
+                  value: number
+                  runs: number
+                  head: {
+                    runId: string
+                    implementation: {
+                      name: string
+                      slug: string
+                    }
+                    primary: {
+                      metric: string
+                      unit: string
+                      statistic: string
+                      value: number
+                      sampleCount: number | null
+                      uncertainty: {
+                        low: number
+                        high: number
+                      } | null
+                    }
+                  } | null
+                  cohortKey: string | null
+                  query: string
+                } | null
+                above: {
+                  workloadId: string
+                  label: string
+                  value: number
+                  runs: number
+                  head: {
+                    runId: string
+                    implementation: {
+                      name: string
+                      slug: string
+                    }
+                    primary: {
+                      metric: string
+                      unit: string
+                      statistic: string
+                      value: number
+                      sampleCount: number | null
+                      uncertainty: {
+                        low: number
+                        high: number
+                      } | null
+                    }
+                  } | null
+                  cohortKey: string | null
+                  query: string
+                } | null
+              } | null
               sources: {
                 name: string
                 kind: string
@@ -1197,6 +1309,662 @@ export interface paths {
                 license: string | null
                 externalId: string | null
                 observedAt: string | null
+              }[]
+              generatedAt: string
+            }
+          }
+        }
+        /** @description Not found */
+        404: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              type: string
+              title: string
+              status: number
+              code: string
+              detail?: string
+              requestId: string
+            }
+          }
+        }
+      }
+    }
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/resolve/kernel/batch": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: {
+      parameters: {
+        query?: never
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody?: {
+        content: {
+          "application/json": {
+            requests: {
+              query?: string
+              operation?: {
+                family?: string
+                name?: string
+                axes?: {
+                  [key: string]: number
+                }
+              }
+              environment?: {
+                hardwareProduct?: string
+                dtype?: string
+              }
+              policy?: {
+                /** @enum {string} */
+                minimumTrust?:
+                  | "verified"
+                  | "replicated"
+                  | "reproducible"
+                  | "reported"
+                sourceRequired?: boolean
+                installableRequired?: boolean
+                license?: string
+              }
+            }[]
+          }
+        }
+      }
+      responses: {
+        /** @description One resolver decision per request, in request order */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              results: {
+                query: string
+                interpretation: string
+                /** @enum {string} */
+                mode: "exact" | "chooser" | "browse" | "none"
+                operation: {
+                  name: string
+                  slug: string
+                } | null
+                policyVersion: string
+                cohort: {
+                  comparisonKey: string
+                  /** @enum {string} */
+                  profile:
+                    | "source_native"
+                    | "strict_exact"
+                    | "controlled_equivalent"
+                    | "compatible_workload"
+                    | "reported"
+                  description: string
+                  facts: {
+                    key: string
+                    value: string
+                  }[]
+                } | null
+                cohortOptions: {
+                  key: string
+                  label: string
+                  runs: number
+                  head: {
+                    runId: string
+                    implementation: {
+                      name: string
+                      slug: string
+                    }
+                    primary: {
+                      metric: string
+                      unit: string
+                      statistic: string
+                      value: number
+                      sampleCount: number | null
+                      uncertainty: {
+                        low: number
+                        high: number
+                      } | null
+                    }
+                  } | null
+                }[]
+                bestVerified: {
+                  runId: string | null
+                  implementation: {
+                    name: string
+                    slug: string
+                  }
+                  install: {
+                    kind: string
+                    command: string
+                  } | null
+                  project: {
+                    name: string
+                    slug: string
+                  }
+                  revision: string | null
+                  operation: {
+                    name: string
+                    slug: string
+                  }
+                  workloadSummary: string
+                  hardware: {
+                    model: string
+                    architecture: string | null
+                  }
+                  framework: string | null
+                  language: string | null
+                  primary: {
+                    metric: string
+                    unit: string
+                    statistic: string
+                    value: number
+                    sampleCount: number | null
+                    uncertainty: {
+                      low: number
+                      high: number
+                    } | null
+                  } | null
+                  solScore: number | null
+                  baseline: boolean
+                  /** @enum {string|null} */
+                  evidence:
+                    | "verified"
+                    | "replicated"
+                    | "reproducible"
+                    | "reported"
+                    | null
+                  /** @enum {string} */
+                  match:
+                    | "exact"
+                    | "compatible"
+                    | "supported_unobserved"
+                    | "related"
+                  mismatches: {
+                    field: string
+                    requested: string
+                    observed: string
+                  }[]
+                  rank: number | null
+                  tiedWithPrevious: boolean
+                  cohortSize: number | null
+                  sourceAvailable: boolean
+                  installable: boolean
+                  license: {
+                    declared: string | null
+                    concluded: string | null
+                  }
+                  lastTestedAt: string | null
+                  indexedAt: string | null
+                  stale: boolean
+                  disputed: boolean
+                  caveats: string[]
+                } | null
+                bestDeployable: {
+                  runId: string | null
+                  implementation: {
+                    name: string
+                    slug: string
+                  }
+                  install: {
+                    kind: string
+                    command: string
+                  } | null
+                  project: {
+                    name: string
+                    slug: string
+                  }
+                  revision: string | null
+                  operation: {
+                    name: string
+                    slug: string
+                  }
+                  workloadSummary: string
+                  hardware: {
+                    model: string
+                    architecture: string | null
+                  }
+                  framework: string | null
+                  language: string | null
+                  primary: {
+                    metric: string
+                    unit: string
+                    statistic: string
+                    value: number
+                    sampleCount: number | null
+                    uncertainty: {
+                      low: number
+                      high: number
+                    } | null
+                  } | null
+                  solScore: number | null
+                  baseline: boolean
+                  /** @enum {string|null} */
+                  evidence:
+                    | "verified"
+                    | "replicated"
+                    | "reproducible"
+                    | "reported"
+                    | null
+                  /** @enum {string} */
+                  match:
+                    | "exact"
+                    | "compatible"
+                    | "supported_unobserved"
+                    | "related"
+                  mismatches: {
+                    field: string
+                    requested: string
+                    observed: string
+                  }[]
+                  rank: number | null
+                  tiedWithPrevious: boolean
+                  cohortSize: number | null
+                  sourceAvailable: boolean
+                  installable: boolean
+                  license: {
+                    declared: string | null
+                    concluded: string | null
+                  }
+                  lastTestedAt: string | null
+                  indexedAt: string | null
+                  stale: boolean
+                  disputed: boolean
+                  caveats: string[]
+                } | null
+                groups: {
+                  exact: {
+                    runId: string | null
+                    implementation: {
+                      name: string
+                      slug: string
+                    }
+                    install: {
+                      kind: string
+                      command: string
+                    } | null
+                    project: {
+                      name: string
+                      slug: string
+                    }
+                    revision: string | null
+                    operation: {
+                      name: string
+                      slug: string
+                    }
+                    workloadSummary: string
+                    hardware: {
+                      model: string
+                      architecture: string | null
+                    }
+                    framework: string | null
+                    language: string | null
+                    primary: {
+                      metric: string
+                      unit: string
+                      statistic: string
+                      value: number
+                      sampleCount: number | null
+                      uncertainty: {
+                        low: number
+                        high: number
+                      } | null
+                    } | null
+                    solScore: number | null
+                    baseline: boolean
+                    /** @enum {string|null} */
+                    evidence:
+                      | "verified"
+                      | "replicated"
+                      | "reproducible"
+                      | "reported"
+                      | null
+                    /** @enum {string} */
+                    match:
+                      | "exact"
+                      | "compatible"
+                      | "supported_unobserved"
+                      | "related"
+                    mismatches: {
+                      field: string
+                      requested: string
+                      observed: string
+                    }[]
+                    rank: number | null
+                    tiedWithPrevious: boolean
+                    cohortSize: number | null
+                    sourceAvailable: boolean
+                    installable: boolean
+                    license: {
+                      declared: string | null
+                      concluded: string | null
+                    }
+                    lastTestedAt: string | null
+                    indexedAt: string | null
+                    stale: boolean
+                    disputed: boolean
+                    caveats: string[]
+                  }[]
+                  compatible: {
+                    runId: string | null
+                    implementation: {
+                      name: string
+                      slug: string
+                    }
+                    install: {
+                      kind: string
+                      command: string
+                    } | null
+                    project: {
+                      name: string
+                      slug: string
+                    }
+                    revision: string | null
+                    operation: {
+                      name: string
+                      slug: string
+                    }
+                    workloadSummary: string
+                    hardware: {
+                      model: string
+                      architecture: string | null
+                    }
+                    framework: string | null
+                    language: string | null
+                    primary: {
+                      metric: string
+                      unit: string
+                      statistic: string
+                      value: number
+                      sampleCount: number | null
+                      uncertainty: {
+                        low: number
+                        high: number
+                      } | null
+                    } | null
+                    solScore: number | null
+                    baseline: boolean
+                    /** @enum {string|null} */
+                    evidence:
+                      | "verified"
+                      | "replicated"
+                      | "reproducible"
+                      | "reported"
+                      | null
+                    /** @enum {string} */
+                    match:
+                      | "exact"
+                      | "compatible"
+                      | "supported_unobserved"
+                      | "related"
+                    mismatches: {
+                      field: string
+                      requested: string
+                      observed: string
+                    }[]
+                    rank: number | null
+                    tiedWithPrevious: boolean
+                    cohortSize: number | null
+                    sourceAvailable: boolean
+                    installable: boolean
+                    license: {
+                      declared: string | null
+                      concluded: string | null
+                    }
+                    lastTestedAt: string | null
+                    indexedAt: string | null
+                    stale: boolean
+                    disputed: boolean
+                    caveats: string[]
+                  }[]
+                  supportedUnmeasured: {
+                    runId: string | null
+                    implementation: {
+                      name: string
+                      slug: string
+                    }
+                    install: {
+                      kind: string
+                      command: string
+                    } | null
+                    project: {
+                      name: string
+                      slug: string
+                    }
+                    revision: string | null
+                    operation: {
+                      name: string
+                      slug: string
+                    }
+                    workloadSummary: string
+                    hardware: {
+                      model: string
+                      architecture: string | null
+                    }
+                    framework: string | null
+                    language: string | null
+                    primary: {
+                      metric: string
+                      unit: string
+                      statistic: string
+                      value: number
+                      sampleCount: number | null
+                      uncertainty: {
+                        low: number
+                        high: number
+                      } | null
+                    } | null
+                    solScore: number | null
+                    baseline: boolean
+                    /** @enum {string|null} */
+                    evidence:
+                      | "verified"
+                      | "replicated"
+                      | "reproducible"
+                      | "reported"
+                      | null
+                    /** @enum {string} */
+                    match:
+                      | "exact"
+                      | "compatible"
+                      | "supported_unobserved"
+                      | "related"
+                    mismatches: {
+                      field: string
+                      requested: string
+                      observed: string
+                    }[]
+                    rank: number | null
+                    tiedWithPrevious: boolean
+                    cohortSize: number | null
+                    sourceAvailable: boolean
+                    installable: boolean
+                    license: {
+                      declared: string | null
+                      concluded: string | null
+                    }
+                    lastTestedAt: string | null
+                    indexedAt: string | null
+                    stale: boolean
+                    disputed: boolean
+                    caveats: string[]
+                  }[]
+                  reported: {
+                    runId: string | null
+                    implementation: {
+                      name: string
+                      slug: string
+                    }
+                    install: {
+                      kind: string
+                      command: string
+                    } | null
+                    project: {
+                      name: string
+                      slug: string
+                    }
+                    revision: string | null
+                    operation: {
+                      name: string
+                      slug: string
+                    }
+                    workloadSummary: string
+                    hardware: {
+                      model: string
+                      architecture: string | null
+                    }
+                    framework: string | null
+                    language: string | null
+                    primary: {
+                      metric: string
+                      unit: string
+                      statistic: string
+                      value: number
+                      sampleCount: number | null
+                      uncertainty: {
+                        low: number
+                        high: number
+                      } | null
+                    } | null
+                    solScore: number | null
+                    baseline: boolean
+                    /** @enum {string|null} */
+                    evidence:
+                      | "verified"
+                      | "replicated"
+                      | "reproducible"
+                      | "reported"
+                      | null
+                    /** @enum {string} */
+                    match:
+                      | "exact"
+                      | "compatible"
+                      | "supported_unobserved"
+                      | "related"
+                    mismatches: {
+                      field: string
+                      requested: string
+                      observed: string
+                    }[]
+                    rank: number | null
+                    tiedWithPrevious: boolean
+                    cohortSize: number | null
+                    sourceAvailable: boolean
+                    installable: boolean
+                    license: {
+                      declared: string | null
+                      concluded: string | null
+                    }
+                    lastTestedAt: string | null
+                    indexedAt: string | null
+                    stale: boolean
+                    disputed: boolean
+                    caveats: string[]
+                  }[]
+                }
+                overflow: {
+                  exact: number
+                  compatible: number
+                  supportedUnmeasured: number
+                  reported: number
+                }
+                matches:
+                  | {
+                      name: string
+                      slug: string
+                      family: string
+                      aliases: string[]
+                      runs: number
+                      lastObservedAt: string | null
+                      match?: {
+                        matching: number
+                        withSource: number
+                        best: {
+                          value: number
+                          unit: string
+                        } | null
+                        facetLabel: string
+                      } | null
+                    }[]
+                  | null
+                nearest: {
+                  axis: string
+                  requested: number
+                  below: {
+                    workloadId: string
+                    label: string
+                    value: number
+                    runs: number
+                    head: {
+                      runId: string
+                      implementation: {
+                        name: string
+                        slug: string
+                      }
+                      primary: {
+                        metric: string
+                        unit: string
+                        statistic: string
+                        value: number
+                        sampleCount: number | null
+                        uncertainty: {
+                          low: number
+                          high: number
+                        } | null
+                      }
+                    } | null
+                    cohortKey: string | null
+                    query: string
+                  } | null
+                  above: {
+                    workloadId: string
+                    label: string
+                    value: number
+                    runs: number
+                    head: {
+                      runId: string
+                      implementation: {
+                        name: string
+                        slug: string
+                      }
+                      primary: {
+                        metric: string
+                        unit: string
+                        statistic: string
+                        value: number
+                        sampleCount: number | null
+                        uncertainty: {
+                          low: number
+                          high: number
+                        } | null
+                      }
+                    } | null
+                    cohortKey: string | null
+                    query: string
+                  } | null
+                } | null
+                sources: {
+                  name: string
+                  kind: string
+                  url: string | null
+                  license: string | null
+                  externalId: string | null
+                  observedAt: string | null
+                }[]
+                generatedAt: string
               }[]
               generatedAt: string
             }

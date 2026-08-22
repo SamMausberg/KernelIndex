@@ -50,3 +50,20 @@ export function compareJson(model: ComparePageModel): string {
     2,
   )
 }
+
+/** One row per field, the primary measurement first; every cell quoted. */
+export function compareCsv(model: ComparePageModel): string {
+  const quote = (cell: string | null) =>
+    `"${(cell ?? "unknown").replaceAll('"', '""')}"`
+  const rows: (string | null)[][] = [
+    ["field", ...model.runs.map((run) => run.implementation.name)],
+    [
+      "primary",
+      ...model.runs.map((run) =>
+        run.primary ? formatPrimary(run.primary) : "",
+      ),
+    ],
+    ...model.fields.map((field) => [field.field, ...field.values]),
+  ]
+  return rows.map((row) => row.map(quote).join(",")).join("\n")
+}

@@ -259,6 +259,12 @@ export default async function AdminPage() {
                   </span>
                 </span>
                 <span>
+                  bracketed{" "}
+                  <span className="font-mono text-fg">
+                    {rate(metrics.searches.nearest)}
+                  </span>
+                </span>
+                <span>
                   zero-result{" "}
                   <span className="font-mono text-fg">
                     {rate(metrics.searches.zero)}

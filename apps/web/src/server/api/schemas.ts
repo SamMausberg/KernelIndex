@@ -15,6 +15,7 @@ import type {
   ImplementationSummary,
   ModelCoverageModel,
   ModelPageModel,
+  NearestCase,
   OperationIndexEntry,
   OperationListEntry,
   OperationPageModel,
@@ -144,6 +145,16 @@ export const cohortOption = z.object({
     .nullable(),
 }) satisfies z.ZodType<CohortOption>
 
+export const nearestCase = z.object({
+  workloadId: z.string(),
+  label: z.string(),
+  value: z.number(),
+  runs: z.number(),
+  head: cohortOption.shape.head,
+  cohortKey: z.string().nullable(),
+  query: z.string(),
+}) satisfies z.ZodType<NearestCase>
+
 export const sourceRef = z.object({
   name: z.string(),
   kind: z.string(),
@@ -259,7 +270,23 @@ export const resolveResponse = z.object({
     reported: z.number(),
   }),
   matches: z.array(operationIndexEntry).nullable(),
+  /** §12.5 bracketing: set only when the request bound an unmeasured case. */
+  nearest: z
+    .object({
+      axis: z.string(),
+      requested: z.number(),
+      below: nearestCase.nullable(),
+      above: nearestCase.nullable(),
+    })
+    .nullable(),
   sources: z.array(sourceRef),
+  generatedAt: z.string(),
+})
+
+/** Many workloads in one call (agents planning a whole model): the same
+ * envelope per request, bounded so one call never becomes a bulk export. */
+export const resolveBatchResponse = z.object({
+  results: z.array(resolveResponse),
   generatedAt: z.string(),
 })
 
@@ -305,6 +332,10 @@ export const resolveKernelRequest = z.object({
     .optional(),
 })
 export type ResolveKernelRequest = z.output<typeof resolveKernelRequest>
+
+export const resolveKernelBatchRequest = z.object({
+  requests: z.array(resolveKernelRequest).min(1).max(20),
+})
 
 // ---------------------------------------------------------------------------
 // Serving (§12.7, §13.2 — Week 9). Same drift gate: these mirror the

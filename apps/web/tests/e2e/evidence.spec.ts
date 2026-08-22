@@ -38,3 +38,9 @@ test("a superseded run stays auditable but ineligible", async ({ page }) => {
     page.getByText("Not eligible to rank: SUPERSEDED", { exact: false }),
   ).toBeVisible()
 })
+
+test("a run dossier serves its own Open Graph card", async ({ request }) => {
+  const response = await request.get("/runs/run-fx-0002/opengraph-image")
+  expect(response.ok()).toBe(true)
+  expect(response.headers()["content-type"]).toContain("image/png")
+})

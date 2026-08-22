@@ -5,10 +5,15 @@ import { ExpandRows } from "@/components/expand-rows"
 import { KeyValueList } from "@/components/key-value-list"
 import { Link } from "@/components/quiet-link"
 import { Section } from "@/components/section"
-import { AnswerSlots, isDeployable } from "@/features/answer/answer-slots"
+import {
+  AnswerSlots,
+  ByLanguage,
+  isDeployable,
+} from "@/features/answer/answer-slots"
 import { ResultRowItem, ResultTableHead } from "@/features/search/result-row"
 import type { WorkloadOption } from "@/lib/catalog"
 import { formatDateUTC, formatPrimary } from "@/lib/format"
+import { HERO_GPUS } from "@/lib/priority"
 import { SweepChart } from "./sweep"
 import type { OperationVariant } from "./variant"
 import { WatchButton } from "./watch-button"
@@ -97,6 +102,12 @@ export function OperationRecords({
     swap(new URLSearchParams(href.slice(href.indexOf("?") + 1)))
   }
 
+  // §16.8 coverage gaps, stated for the selected workload: the priority
+  // GPUs with no measured environment here. A zero stated is a fact.
+  const missing = HERO_GPUS.filter(
+    (gpu) =>
+      !variant.cohortOptions.some((option) => option.label.includes(gpu)),
+  ).map((gpu) => gpu.replace("NVIDIA ", ""))
   const best = variant.records[0]?.primary ?? null
   const baselineMetric =
     variant.records.find((row) => row.baseline)?.primary ?? null
@@ -129,6 +140,7 @@ export function OperationRecords({
             deploy={deploy}
             vsBaseline={vsBaseline}
           />
+          <ByLanguage rows={variant.records} />
         </div>
       )}
       <Section id="records" title="Current records">
@@ -188,6 +200,11 @@ export function OperationRecords({
                   })}
                 />
               </div>
+            )}
+            {variant.records.length > 0 && missing.length > 0 && (
+              <p className="mt-2.5 text-small text-faint">
+                Not measured on {missing.join(", ")} for this workload.
+              </p>
             )}
           </div>
           {variant.cohort && (

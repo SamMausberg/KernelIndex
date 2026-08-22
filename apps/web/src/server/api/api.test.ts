@@ -54,6 +54,37 @@ describe("api /v1", () => {
     expect(envelope.mode).toBe("exact")
   })
 
+  it("resolves a batch of structured requests in order, bounded", async () => {
+    const response = await post("/resolve/kernel/batch", {
+      requests: [{ operation: { name: "rmsnorm" } }, { query: "zzz-none" }],
+    })
+    expect(response.status).toBe(200)
+    const batch = await response.json()
+    expect(batch.results.map((r: { mode: string }) => r.mode)).toEqual([
+      "exact",
+      "none",
+    ])
+    expect(batch.generatedAt).toMatch(/Z$/)
+    const tooMany = await post("/resolve/kernel/batch", {
+      requests: Array.from({ length: 21 }, () => ({})),
+    })
+    expect(tooMany.status).toBe(400)
+  })
+
+  it("brackets an unmeasured case with its measured neighbours", async () => {
+    const response = await get("/search?q=rmsnorm%20tokens%3D3000")
+    const envelope = await response.json()
+    expect(envelope.groups.exact).toHaveLength(0)
+    expect(envelope.nearest).toMatchObject({
+      axis: "tokens",
+      requested: 3000,
+      below: { value: 2048, query: "rmsnorm tokens=2048" },
+      above: { value: 4096, query: "rmsnorm tokens=4096" },
+    })
+    const measured = await get("/search?q=rmsnorm%20tokens%3D2048")
+    expect((await measured.json()).nearest).toBeNull()
+  })
+
   it("pages records with a stable cursor", async () => {
     const first = await get("/records?limit=1")
     expect(first.status).toBe(200)

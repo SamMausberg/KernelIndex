@@ -1,7 +1,7 @@
 import { CopyButton } from "@/components/copy-button"
 import { Link } from "@/components/quiet-link"
 import type { ComparePageModel, CompareRun } from "@/lib/catalog"
-import { compareJson, compareMarkdown } from "@/lib/compare-export"
+import { compareCsv, compareJson, compareMarkdown } from "@/lib/compare-export"
 import {
   evidenceLabel,
   formatDateUTC,
@@ -57,6 +57,30 @@ function RunHeader({ run }: { run: CompareRun }) {
   )
 }
 
+/** Add a run by id (§16.11: two to eight). A plain GET form: the selection
+ * stays in the URL, and the existing runs ride along as hidden fields. */
+function AddRun({ runs }: { runs: string[] }) {
+  return (
+    <form
+      method="GET"
+      action="/compare"
+      className="well flex h-8 w-[300px] max-w-full items-center px-2.5"
+    >
+      {runs.map((id) => (
+        <input key={id} type="hidden" name="run" value={id} />
+      ))}
+      <input
+        name="run"
+        placeholder="add a run id"
+        aria-label="Add a run"
+        autoComplete="off"
+        spellCheck={false}
+        className="min-w-0 flex-1 border-0 bg-transparent p-0 font-mono text-small outline-none"
+      />
+    </form>
+  )
+}
+
 export function CompareView({ model }: { model: ComparePageModel }) {
   if (model.runs.length === 0) {
     return (
@@ -71,6 +95,9 @@ export function CompareView({ model }: { model: ComparePageModel }) {
           Pick runs from any <Link href="/search">search result</Link> or the{" "}
           <Link href="/records">records ledger</Link>. Each row links here.
         </p>
+        <div className="mt-4">
+          <AddRun runs={[]} />
+        </div>
       </main>
     )
   }
@@ -187,16 +214,24 @@ export function CompareView({ model }: { model: ComparePageModel }) {
         </div>
       </div>
 
-      <div className="mt-8 flex flex-wrap items-baseline justify-between gap-5 border-t border-border pt-5">
-        <p className="max-w-[70ch] text-small text-subtle">
-          {model.comparable
-            ? "Ranks compare only these runs. Too close to call shares a rank."
-            : "No winner: these runs didn't measure the same thing. The rows above show what differs."}{" "}
-          <Link href="/docs#comparability">Why comparable?</Link>
-        </p>
+      <div className="mt-8 flex flex-wrap items-center justify-between gap-5 border-t border-border pt-5">
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+          <p className="max-w-[60ch] text-small text-subtle">
+            {model.comparable
+              ? "Ranks compare only these runs. Too close to call shares a rank."
+              : "No winner: these runs didn't measure the same thing. The rows above show what differs."}{" "}
+            <Link href="/docs#comparability">Why comparable?</Link>
+          </p>
+          {model.runs.length < 8 && (
+            <AddRun runs={model.runs.map((run) => run.runId)} />
+          )}
+        </div>
         <div className="flex items-center gap-4 text-small">
           <span className="flex items-center gap-1.5 text-subtle">
             Markdown <CopyButton text={markdown} />
+          </span>
+          <span className="flex items-center gap-1.5 text-subtle">
+            CSV <CopyButton text={compareCsv(model)} />
           </span>
           <span className="flex items-center gap-1.5 text-subtle">
             JSON <CopyButton text={json} />

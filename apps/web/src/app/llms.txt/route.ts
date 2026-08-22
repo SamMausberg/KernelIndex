@@ -23,8 +23,11 @@ Claim rules (keep these when quoting results):
 ## API (JSON; reads need no key)
 - Base: https://kernelindex.com/api/v1
 - OpenAPI: https://kernelindex.com/api/v1/openapi.json
-- GET  /search?q=rmsnorm+B200+bf16   ranked cohort with explanations
+- GET  /search?q=rmsnorm+B200+bf16   ranked cohort with explanations; an
+                                     unmeasured shape answers with "nearest",
+                                     the measured cases on either side of it
 - POST /resolve/kernel               exact resolution for a structured workload
+- POST /resolve/kernel/batch         up to 20 structured requests in one call
 - GET  /operations/{idOrSlug}        semantics, cohorts, records
 - GET  /models/{slug}?gpu=           best known per operation for one model on one GPU, plus gaps
 - GET  /implementations/{idOrSlug}   source, install, license, revisions

@@ -36,6 +36,7 @@ describe("mcp server", () => {
       "list_records",
       "list_runs",
       "resolve_kernel",
+      "resolve_kernels",
       "resolve_serving",
       "search_catalog",
       "validate_manifest",

@@ -64,6 +64,23 @@ export function buildServer(): McpServer {
   )
 
   server.registerTool(
+    "resolve_kernels",
+    {
+      description:
+        "Resolve up to twenty structured kernel requests in one call (every operation of a model, say); one resolver decision per request, in order.",
+      inputSchema: {
+        requests: z
+          .array(z.record(z.string(), z.unknown()))
+          .min(1)
+          .max(20)
+          .describe("ResolveKernelRequest[] per /openapi.json"),
+      },
+    },
+    async ({ requests }) =>
+      json(await api.resolveKernels(requests as ResolveKernelRequest[])),
+  )
+
+  server.registerTool(
     "get_operation",
     {
       description:
