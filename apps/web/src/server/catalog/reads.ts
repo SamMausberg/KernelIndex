@@ -98,6 +98,7 @@ export {
   getHardwareIndex,
   getHardwarePage,
   getProjectIndex,
+  getProjectPage,
 } from "./surfaces.ts"
 
 const UUID_PATTERN =

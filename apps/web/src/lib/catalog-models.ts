@@ -853,4 +853,49 @@ export type ProjectIndexEntry = {
   /** Distinct GPU models measured. */
   hardware: string[]
   lastObservedAt: string | null
+  /** Records gained and lost over the trailing 30 days of record events:
+   * a first record counts as gained, a displaced holder as lost. Standing
+   * inside cohorts, never a cross-cohort rank (§16.12). */
+  gained30d: number
+  lost30d: number
+}
+
+/** One measured implementation on a project page: the operation-page
+ * summary plus the operation it implements, since rows span operations. */
+export type ProjectImplementation = ImplementationSummary & {
+  operation: { name: string; slug: string }
+}
+
+/**
+ * The project entity page (§16.9's sibling): a library, a competition
+ * author, or a vendor, with standing as records held, every measured
+ * implementation, and the claim state. A claimed author project is that
+ * person's public profile (§15.3); profiles need no separate people table.
+ */
+export type ProjectPageModel = {
+  illustrative: boolean
+  project: {
+    slug: string
+    name: string
+    kind: ProjectIndexEntry["kind"]
+    repositoryUrl: string | null
+    /** Declared source-host identity, e.g. github "linkedin/Liger-Kernel". */
+    host: { kind: string; id: string } | null
+    /** Distinct concluded license expressions; empty means unknown. */
+    licenses: string[]
+  }
+  stats: {
+    implementations: number
+    runs: number
+    hardware: string[]
+    lastObservedAt: string | null
+  }
+  /** Current records held, newest indexed first (ledger order). */
+  records: RecordHolder[]
+  /** Fastest first; one row per measured implementation revision. */
+  implementations: ProjectImplementation[]
+  /** Accepted claim → claimed by that user's display name; a pending claim
+   * waits for review; otherwise unclaimed and claimable. */
+  claim: { state: "unclaimed" | "pending" | "claimed"; by: string | null }
+  sources: SourceRef[]
 }

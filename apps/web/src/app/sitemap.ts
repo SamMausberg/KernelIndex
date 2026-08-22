@@ -4,15 +4,17 @@ import {
   getHardwareIndex,
   getModelIndex,
   getOperationIndex,
+  getProjectIndex,
 } from "@/lib/catalog"
 import { env, servingEnabled } from "@/server/env"
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const origin = env.SITE_ORIGIN ?? "https://kernelindex.com"
-  const [index, hardware, models] = await Promise.all([
+  const [index, hardware, models, projects] = await Promise.all([
     getOperationIndex(),
     getHardwareIndex(),
     getModelIndex(),
+    getProjectIndex(),
   ])
   return [
     { url: origin },
@@ -20,7 +22,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${origin}/records` },
     { url: `${origin}/gpus` },
     { url: `${origin}/models` },
-    { url: `${origin}/implementations` },
+    { url: `${origin}/projects` },
     ...(servingEnabled ? [{ url: `${origin}/serving` }] : []),
     { url: `${origin}/docs` },
     { url: `${origin}/docs/api` },
@@ -32,6 +34,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...models.kernel.map((entry) => ({
       url: `${origin}/models/${entry.model}`,
       lastModified: entry.lastObservedAt ?? undefined,
+    })),
+    ...projects.projects.map((project) => ({
+      url: `${origin}/projects/${project.slug}`,
+      lastModified: project.lastObservedAt ?? undefined,
     })),
     ...index.map((operation) => ({
       url: `${origin}/operations/${operation.slug}`,

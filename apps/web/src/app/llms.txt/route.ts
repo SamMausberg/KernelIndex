@@ -28,6 +28,7 @@ Claim rules (keep these when quoting results):
 - GET  /operations/{idOrSlug}        semantics, cohorts, records
 - GET  /models/{slug}?gpu=           best known per operation for one model on one GPU, plus gaps
 - GET  /implementations/{idOrSlug}   source, install, license, revisions
+- GET  /projects/{slug}              a library or author: records held, kernels, claim state
 - GET  /runs/{idOrDigest}            immutable evidence dossier
 - GET  /records                      record ledger (cursor-paginated)
 - POST /compare                      up to 8 runs, winner only inside one cohort

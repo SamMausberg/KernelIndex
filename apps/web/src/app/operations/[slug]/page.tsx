@@ -7,14 +7,12 @@ import { notFound } from "next/navigation"
 import { ApiLink } from "@/components/api-link"
 import { ContextHeader } from "@/components/context-header"
 import { CopyButton } from "@/components/copy-button"
-import { ExpandRows } from "@/components/expand-rows"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
 import { KeyValueList } from "@/components/key-value-list"
-import { Metric } from "@/components/metric"
 import { Link } from "@/components/quiet-link"
 import { Section } from "@/components/section"
 import { SourcesFooter } from "@/components/sources-footer"
-import { AvailabilityCell, EvidenceCell } from "@/components/trust"
+import { ImplementationsTable } from "@/features/implementations/implementations-table"
 import { OperationRecords } from "@/features/operations/operation-records"
 import { operationVariant } from "@/features/operations/variant"
 import { getOperationPage } from "@/lib/catalog"
@@ -138,80 +136,7 @@ export default async function OperationPage({ params }: Props) {
         />
 
         <Section id="implementations" title="Implementations">
-          {/* The house ratio notation (§16.7): every best latency states its
-              multiple of the fastest, matching the ranked rows' vs #1. */}
-          {(() => {
-            const fastest = Math.min(
-              ...model.implementations
-                .map((impl) => impl.bestPrimary?.value)
-                .filter((value): value is number => value !== undefined),
-            )
-            const multiple = (value: number | undefined) =>
-              value !== undefined && Number.isFinite(fastest) && fastest > 0
-                ? `${(value / fastest).toFixed(2)}×`
-                : null
-            return (
-              <div className="overflow-x-auto">
-                <div className="grid min-w-[940px] grid-cols-[minmax(240px,1.6fr)_150px_150px_92px_minmax(150px,1fr)] border-b border-border-strong font-mono text-label text-faint uppercase">
-                  <div className="py-2">Implementation</div>
-                  <div className="py-2">Runtime</div>
-                  <div className="py-2 pr-3.5 text-right">Best latency</div>
-                  <div className="py-2">Evidence</div>
-                  <div className="py-2">Availability</div>
-                </div>
-                {/* Slugs can repeat when an implementation appears once per
-                revision or evidence source; the list is server-rendered and
-                never reordered, so the index is a safe disambiguator. */}
-                <ExpandRows
-                  cap={8}
-                  noun="implementations"
-                  rows={model.implementations.map((impl, index) => (
-                    <div
-                      // biome-ignore lint/suspicious/noArrayIndexKey: static read-only rows
-                      key={`${impl.slug}-${index}`}
-                      className="grid min-w-[940px] grid-cols-[minmax(240px,1.6fr)_150px_150px_92px_minmax(150px,1fr)] items-center border-b border-line transition-colors hover:bg-raised"
-                    >
-                      <div className="min-w-0 truncate py-3 pr-3">
-                        <Link
-                          href={`/implementations/${impl.slug}`}
-                          className="text-body"
-                        >
-                          {impl.name}
-                        </Link>
-                        {impl.project.name !== impl.name && (
-                          <span className="ml-2 text-small text-faint">
-                            {impl.project.name}
-                          </span>
-                        )}
-                      </div>
-                      <div className="py-3 font-mono text-small text-subtle">
-                        {[impl.language, impl.framework]
-                          .filter(Boolean)
-                          .join(" · ") || "—"}
-                      </div>
-                      <div className="py-3 pr-3.5 text-right whitespace-nowrap">
-                        <Metric
-                          primary={impl.bestPrimary}
-                          valueClassName="font-mono text-body text-fg"
-                        />
-                        {multiple(impl.bestPrimary?.value) && (
-                          <div className="font-mono text-mini text-faint">
-                            {multiple(impl.bestPrimary?.value)}
-                          </div>
-                        )}
-                      </div>
-                      <div className="py-3">
-                        <EvidenceCell row={impl} />
-                      </div>
-                      <div className="py-3">
-                        <AvailabilityCell row={impl} />
-                      </div>
-                    </div>
-                  ))}
-                />
-              </div>
-            )
-          })()}
+          <ImplementationsTable rows={model.implementations} />
         </Section>
 
         <Section id="semantics" title="Semantics">
