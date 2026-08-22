@@ -2759,6 +2759,28 @@ coverage-gap discovery is a surface, and the entrance motion is gone:
   "secondary disclosure" note), and Resolve is a machined key, not the
   tinted primary.
 
+**Reality note (2026-08-22, contribution that is easy and rigorous).**
+§15.5's ladder, second rung:
+
+- **The bench record**: one flat JSON document
+  (`registry/examples/bench-record.json`) instead of six digest-chained
+  manifests. `server/catalog/bench-record.ts` assembles the canonical
+  manifests, computes every digest, and hands the same submission document
+  the YAML path uses — the strict per-kind schemas validate the assembly,
+  so a record can never bypass the manifest contract. A GitHub repository
+  URL becomes the project's host identity, so a recorded project is
+  one-click claimable.
+- **Placement preview**: `previewSubmission` states, per run, the cohort it
+  would join (the same key derivation the publication transaction uses),
+  the cohort's size and head, and the dense rank it would take under
+  ranking-v1 — worded as a statement of current facts, never a promise;
+  review decides comparability. Shown by the web form's Validate and served
+  at `POST /api/v1/submissions/preview` (no key).
+- **Machine submissions**: `POST /api/v1/submissions` with a
+  `submissions:write` API key runs the same `createSubmission` reviewed
+  path; the account key form offers the scope. `ki submit <path>` previews
+  (multi-manifest YAML or a bench record) and `--send` submits.
+
 ### 16.1 Product character
 
 KernelIndex should feel like a serious technical reference built by kernel engineers, not a generic SaaS dashboard, gaming leaderboard, or GPU marketing site.

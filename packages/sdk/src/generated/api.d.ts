@@ -3472,6 +3472,177 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  "/submissions/preview": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: {
+      parameters: {
+        query?: never
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody?: {
+        content: {
+          "application/json": {
+            document: string
+          }
+        }
+      }
+      responses: {
+        /** @description Validation report plus, per run, the cohort it would join and the rank it would take under ranking-v1 — never a promise; review decides comparability */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              report: {
+                valid: boolean
+                issues: string[]
+                objects: {
+                  kind: string
+                  name: string
+                  digest: string
+                }[]
+              }
+              placement: {
+                name: string
+                operation: {
+                  name: string
+                  slug: string
+                } | null
+                workload: string
+                cohort: {
+                  key: string
+                  size: number
+                  head: {
+                    implementation: string
+                    valueNs: number
+                  } | null
+                } | null
+                wouldRank: number | null
+                note: string
+              }[]
+              generatedAt: string
+            }
+          }
+        }
+        /** @description Not found */
+        404: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              type: string
+              title: string
+              status: number
+              code: string
+              detail?: string
+              requestId: string
+            }
+          }
+        }
+      }
+    }
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/submissions": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: {
+      parameters: {
+        query?: never
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody?: {
+        content: {
+          "application/json": {
+            document: string
+          }
+        }
+      }
+      responses: {
+        /** @description Queued for review (or needs_changes with the report) */
+        201: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              id: string
+              state: string
+              report: {
+                valid: boolean
+                issues: string[]
+                objects: {
+                  kind: string
+                  name: string
+                  digest: string
+                }[]
+              }
+            }
+          }
+        }
+        /** @description No API key presented */
+        401: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              type: string
+              title: string
+              status: number
+              code: string
+              detail?: string
+              requestId: string
+            }
+          }
+        }
+        /** @description Key lacks the submissions:write scope */
+        403: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              type: string
+              title: string
+              status: number
+              code: string
+              detail?: string
+              requestId: string
+            }
+          }
+        }
+      }
+    }
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   "/corrections": {
     parameters: {
       query?: never

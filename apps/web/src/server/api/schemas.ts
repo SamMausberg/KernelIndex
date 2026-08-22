@@ -43,6 +43,7 @@ import type {
   ServingRunPageModel,
   ServingRunSummary,
 } from "../../lib/serving-models.ts"
+import type { Placement, SubmissionReport } from "../catalog/submissions.ts"
 
 export const primaryMetric = z.object({
   metric: z.string(),
@@ -382,6 +383,49 @@ export const recordsResponse = z.object({
   records: z.array(recordHolder),
   nextCursor: z.string().nullable(),
   generatedAt: z.string(),
+})
+
+/** One document in, for preview and submission alike (§15.5): the
+ * multi-manifest YAML or a flat bench record as JSON text. */
+export const submissionDocumentRequest = z.object({
+  document: z.string().min(1).max(262_144),
+})
+
+export const submissionReport = z.object({
+  valid: z.boolean(),
+  issues: z.array(z.string()),
+  objects: z.array(
+    z.object({ kind: z.string(), name: z.string(), digest: z.string() }),
+  ),
+}) satisfies z.ZodType<SubmissionReport>
+
+export const placementRow = z.object({
+  name: z.string(),
+  operation: z.object({ name: z.string(), slug: z.string() }).nullable(),
+  workload: z.string(),
+  cohort: z
+    .object({
+      key: z.string(),
+      size: z.number(),
+      head: z
+        .object({ implementation: z.string(), valueNs: z.number() })
+        .nullable(),
+    })
+    .nullable(),
+  wouldRank: z.number().nullable(),
+  note: z.string(),
+}) satisfies z.ZodType<Placement>
+
+export const previewResponse = z.object({
+  report: submissionReport,
+  placement: z.array(placementRow),
+  generatedAt: z.string(),
+})
+
+export const submissionReceipt = z.object({
+  id: z.string(),
+  state: z.string(),
+  report: submissionReport,
 })
 
 /** RFC 9457 Problem Details with a stable KernelIndex code (§13.5). */

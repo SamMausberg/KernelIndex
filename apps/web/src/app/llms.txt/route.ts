@@ -44,6 +44,12 @@ Claim rules (keep these when quoting results):
 - POST /compare                      up to 8 runs, winner only inside one cohort
 - POST /resolve/serving              objective + constraints -> feasible + Pareto
 - GET  /serving-runs, /serving-configurations
+- POST /submissions/preview          validate a submission (multi-manifest
+                                     YAML or a flat bench record, as
+                                     {"document": <text>}) and preview the
+                                     cohort and rank each run would take
+- POST /submissions                  submit for review (API key with
+                                     submissions:write)
 - API keys (higher quota): sign in at https://kernelindex.com/account
 
 ## MCP

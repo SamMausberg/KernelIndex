@@ -210,6 +210,18 @@ describe("api /v1", () => {
     ])
   })
 
+  it("previews a submission without a key and refuses a keyless submit", async () => {
+    const preview = await post("/submissions/preview", {
+      document: "projects: []\n",
+    })
+    expect(preview.status).toBe(200)
+    const result = await preview.json()
+    expect(result.report.valid).toBe(false)
+    expect(Array.isArray(result.placement)).toBe(true)
+    const submit = await post("/submissions", { document: "projects: []\n" })
+    expect(submit.status).toBe(401)
+  })
+
   it("rejects revalidation without the token", async () => {
     const response = await api.request("/revalidate", { method: "POST" })
     expect(response.status).toBe(401)

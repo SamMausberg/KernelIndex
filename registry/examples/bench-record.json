@@ -1,0 +1,135 @@
+{
+  "project": {
+    "name": "Meridian Kernels",
+    "repository": "https://example.invalid/meridian/kernels"
+  },
+  "operation": {
+    "specDigest": "sha256:7a3b25630f0628b21ed74b6adb588d28f7e29191f9038bed6f56ed393deefb5b"
+  },
+  "workload": {
+    "axes": {
+      "tokens": 2048,
+      "hidden": 4096
+    },
+    "tensors": {
+      "input": {
+        "shape": [2048, 4096],
+        "dtype": "bf16",
+        "strides": [4096, 1],
+        "alignmentBytes": 16,
+        "data": {
+          "generator": "normal",
+          "seed": 230485,
+          "parameters": {
+            "mean": 0.0,
+            "stddev": 1.0
+          }
+        }
+      },
+      "weight": {
+        "shape": [4096],
+        "dtype": "bf16",
+        "strides": [1],
+        "alignmentBytes": 16,
+        "data": {
+          "generator": "normal",
+          "seed": 230486,
+          "parameters": {
+            "mean": 1.0,
+            "stddev": 0.1
+          }
+        }
+      }
+    },
+    "scalars": {
+      "epsilon": {
+        "dtype": "fp32",
+        "value": 1e-6
+      }
+    },
+    "correctness": {
+      "comparator": "elementwise_close",
+      "maxAbsoluteError": 0.01,
+      "maxRelativeError": 0.01,
+      "requiredMatchedRatio": 0.99,
+      "nanPolicy": "reject",
+      "infinityPolicy": "exact_match"
+    }
+  },
+  "implementation": {
+    "name": "meridian-rmsnorm",
+    "commit": "b81d40e0b81d40e0b81d40e0b81d40e0b81d40e0",
+    "language": "triton",
+    "path": "kernels/rmsnorm.py",
+    "symbol": "rmsnorm",
+    "interface": "pytorch",
+    "architectures": ["sm_100"],
+    "dtypes": ["bf16"],
+    "license": "Apache-2.0"
+  },
+  "protocol": {
+    "harness": {
+      "name": "example-harness",
+      "version": "1.0"
+    },
+    "measurement": {
+      "timer": "device_events",
+      "synchronization": "device_sync",
+      "compileIncluded": false,
+      "warmupIterations": 50,
+      "samples": 200,
+      "inputRegeneration": "per_sample",
+      "primaryStatistic": "median"
+    },
+    "correctness": {
+      "reference": "fp32 eager reference",
+      "comparator": "elementwise_close"
+    },
+    "devicePolicy": {
+      "clocksLocked": true,
+      "persistenceMode": true
+    }
+  },
+  "environment": {
+    "hardware": {
+      "vendor": "nvidia",
+      "product": "NVIDIA B200 SXM",
+      "architecture": "sm_100",
+      "memoryBytes": 206158430208,
+      "count": 1
+    },
+    "software": {
+      "operatingSystem": "Ubuntu 24.04",
+      "driver": "580.00",
+      "cudaToolkit": "13.1",
+      "framework": {
+        "name": "pytorch",
+        "version": "2.9"
+      }
+    },
+    "settings": {
+      "clocksLocked": true,
+      "persistenceMode": true
+    }
+  },
+  "run": {
+    "status": "passed",
+    "correctness": {
+      "comparator": "elementwise_close",
+      "maximumAbsoluteError": 0.0042,
+      "maximumRelativeError": 0.0081,
+      "matchedRatio": 1.0
+    },
+    "timing": {
+      "primaryStatistic": "median",
+      "samples": 200,
+      "latencyNs": {
+        "median": 8120,
+        "p05": 8072,
+        "p95": 8151,
+        "confidence95": [8095, 8151]
+      }
+    },
+    "observedAt": "2026-08-01T12:00:00Z"
+  }
+}

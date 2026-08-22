@@ -5,6 +5,12 @@
 import createClient from "openapi-fetch"
 import type { paths } from "./generated/api.d.ts"
 
+type Created<P> = P extends {
+  post: { responses: { 201: { content: { "application/json": infer R } } } }
+}
+  ? R
+  : never
+
 type Ok<P, M extends string = "get"> = M extends keyof P
   ? P[M] extends {
       responses: { 200: { content: { "application/json": infer R } } }
@@ -33,6 +39,8 @@ export type CoverageModel = Ok<paths["/coverage"]>
 export type SourceList = Ok<paths["/sources"]>
 export type ChangeFeed = Ok<paths["/feed"]>
 export type Challenges = Ok<paths["/challenges"]>
+export type SubmissionPreview = Ok<paths["/submissions/preview"], "post">
+export type SubmissionReceipt = Created<paths["/submissions"]>
 export type ServingRunsPage = Ok<paths["/serving-runs"]>
 export type ServingConfigurations = Ok<paths["/serving-configurations"]>
 export type KeyIdentity = Ok<paths["/me"]>
@@ -160,6 +168,17 @@ export function client({
     },
     async sources(): Promise<SourceList> {
       return unwrap(await api.GET("/sources", {}))
+    },
+    /** §15.5: validation plus per-run placement, no key needed. The
+     * document is the multi-manifest YAML or a flat bench record (JSON). */
+    async previewSubmission(document: string): Promise<SubmissionPreview> {
+      return unwrap(
+        await api.POST("/submissions/preview", { body: { document } }),
+      )
+    },
+    /** §15.2: submit for review (API key with submissions:write). */
+    async submitDocument(document: string): Promise<SubmissionReceipt> {
+      return unwrap(await api.POST("/submissions", { body: { document } }))
     },
     /** Where the index has no good answer yet (§2.3). */
     async challenges(): Promise<Challenges> {
