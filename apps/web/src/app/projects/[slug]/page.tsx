@@ -107,7 +107,7 @@ export default async function ProjectPage({ params }: Props) {
         }
       />
 
-      <main className="shell animate-fade-in pb-24">
+      <main className="shell pb-24">
         {claim.state === "unclaimed" && (
           <div className="pt-5">
             <ClaimPanel

@@ -33,7 +33,7 @@ export default async function SignInPage({
   if (user !== null) redirect(next)
 
   return (
-    <main className="animate-fade-in mx-auto w-full max-w-[400px] px-6 pt-[10vh] pb-24">
+    <main className="mx-auto w-full max-w-[400px] px-6 pt-[10vh] pb-24">
       <h1 className="text-center text-title font-medium">Sign in</h1>
       <p className="mt-1.5 text-center text-body text-subtle">
         Reading never needs an account.

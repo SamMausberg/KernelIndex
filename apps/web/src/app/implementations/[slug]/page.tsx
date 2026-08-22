@@ -129,7 +129,7 @@ export default async function ImplementationPage({ params }: Props) {
         }
       />
 
-      <main className="shell animate-fade-in pb-24">
+      <main className="shell pb-24">
         <Section id="use" title="Use it">
           {/* The deployability verdict first (§16.7): can this be used, in
               one neutral line, before any evidence or provenance. */}

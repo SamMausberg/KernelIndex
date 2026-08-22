@@ -84,7 +84,7 @@ function AddRun({ runs }: { runs: string[] }) {
 export function CompareView({ model }: { model: ComparePageModel }) {
   if (model.runs.length === 0) {
     return (
-      <main className="shell animate-fade-in pb-24 pt-10">
+      <main className="shell pb-24 pt-10">
         <p className="max-w-[64ch] text-body text-muted">{model.explanation}</p>
         {model.missingIds.length > 0 && (
           <p className="mt-3 font-mono text-small text-warning">
@@ -108,7 +108,7 @@ export function CompareView({ model }: { model: ComparePageModel }) {
   const json = compareJson(model)
 
   return (
-    <main className="shell animate-fade-in pb-24">
+    <main className="shell pb-24">
       <section
         className={`mt-6 border px-4 py-3 text-body ${
           model.comparable

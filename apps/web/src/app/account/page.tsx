@@ -84,7 +84,7 @@ export default async function AccountPage() {
         ].join(" · ")}
         meta={<SignOutButton />}
       />
-      <main className="shell animate-fade-in pb-24">
+      <main className="shell pb-24">
         {firstRun && (
           <div className="mt-8 border border-border px-5 py-4">
             <div className="font-mono text-label text-faint uppercase">

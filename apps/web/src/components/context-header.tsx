@@ -20,7 +20,7 @@ export function ContextHeader({
 }) {
   return (
     <div className="border-b border-border bg-surface">
-      <div className="shell animate-fade-in pt-4 pb-3.5">
+      <div className="shell pt-4 pb-3.5">
         <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-1">
           <div className="min-w-0">
             <h1 className="text-title font-medium">{title}</h1>

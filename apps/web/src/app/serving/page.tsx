@@ -244,7 +244,7 @@ export default async function ServingPage({
         // serving source lands.
         context={`${facets.totalRuns} results · all from MLPerf Inference, shown as published · ranked only when you pick an objective`}
       />
-      <main className="shell animate-fade-in pb-24">
+      <main className="shell pb-24">
         <form
           method="GET"
           className="flex flex-wrap items-stretch gap-x-6 gap-y-4 border-b border-border py-5"

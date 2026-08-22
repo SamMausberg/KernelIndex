@@ -31,7 +31,7 @@ export default async function SubmitPage() {
           registry/submissions goes through the same review.
         </p>
       </ContextHeader>
-      <main className="shell-narrow animate-fade-in pb-24">
+      <main className="shell-narrow pb-24">
         <SubmitForm signedIn={user !== null} signInAvailable={authConfigured} />
       </main>
     </>

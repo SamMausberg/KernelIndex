@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { FilterChip } from "@/components/chip"
 import { Meter } from "@/components/meter"
 import { Pager } from "@/components/pager"
@@ -148,6 +149,49 @@ const SYNTAX_HINTS = [
   "license:mit",
 ]
 
+const LEAD_FAMILIES = 8
+
+/** Family scope chips: the leads, then the tail expanding into the same
+ * wrapped row behind one toggle chip. */
+function FamilyChips({
+  families,
+  filters,
+}: {
+  families: string[]
+  filters: BrowseFilters
+}) {
+  const [expanded, setExpanded] = useState(false)
+  const lead = families.slice(0, LEAD_FAMILIES)
+  if (filters.family && !lead.includes(filters.family))
+    lead.push(filters.family)
+  const shown = expanded ? families : lead
+  const tail = families.length - lead.length
+  return (
+    <div className="flex flex-wrap items-center gap-2 pt-3 pb-1">
+      {["All families", ...shown].map((label) => {
+        const value = label === "All families" ? null : label
+        return (
+          <FilterChip
+            key={label}
+            href={browseHref(filters, { family: value })}
+            on={filters.family === value}
+            label={label}
+          />
+        )
+      })}
+      {tail > 0 && (
+        <button
+          type="button"
+          onClick={() => setExpanded(!expanded)}
+          className="key cursor-pointer px-2 py-1 text-small text-faint hover:text-fg"
+        >
+          {expanded ? "Fewer families ⌄" : `All ${families.length} families ›`}
+        </button>
+      )}
+    </div>
+  )
+}
+
 /** Empty-query start state (§16.5): the published corpus, ready to browse. */
 export function StartState({
   operations,
@@ -183,7 +227,7 @@ export function StartState({
   const examples = families.slice(0, 2).map((family) => `${family} B200 bf16`)
 
   return (
-    <section className="animate-row-in pt-6">
+    <section className="pt-6">
       <div className="flex flex-wrap items-baseline gap-x-5 gap-y-2 text-body">
         <span className="text-faint">Try</span>
         {examples.map((example) => (
@@ -241,55 +285,10 @@ export function StartState({
       </div>
 
       {/* The taxonomy stays out of the way (§16.5): eight major families
-          lead, the long tail sits behind one native block disclosure. A
-          selected long-tail family surfaces so its active state is never
-          hidden. */}
-      {(() => {
-        const LEAD = 8
-        const lead = families.slice(0, LEAD)
-        if (filters.family && !lead.includes(filters.family))
-          lead.push(filters.family)
-        const tail = families.filter((family) => !lead.includes(family))
-        return (
-          <div className="pt-3 pb-1">
-            <div className="flex flex-wrap items-center gap-2">
-              {["All families", ...lead].map((label) => {
-                const value = label === "All families" ? null : label
-                return (
-                  <FilterChip
-                    key={label}
-                    href={browseHref(filters, { family: value })}
-                    on={filters.family === value}
-                    label={label}
-                  />
-                )
-              })}
-            </div>
-            {tail.length > 0 && (
-              <details className="group mt-2">
-                <summary className="inline-flex cursor-pointer list-none text-small text-faint transition-colors hover:text-fg [&::-webkit-details-marker]:hidden">
-                  <span className="key px-2 py-1 group-open:hidden">
-                    All {families.length} families ›
-                  </span>
-                  <span className="key hidden px-2 py-1 group-open:inline">
-                    Fewer families ⌄
-                  </span>
-                </summary>
-                <div className="mt-2 flex flex-wrap items-center gap-2">
-                  {tail.map((label) => (
-                    <FilterChip
-                      key={label}
-                      href={browseHref(filters, { family: label })}
-                      on={filters.family === label}
-                      label={label}
-                    />
-                  ))}
-                </div>
-              </details>
-            )}
-          </div>
-        )
-      })()}
+          lead and the tail expands in place — one wrapped row, never a
+          detached block below the leads (2026-08-22 founder feedback). A
+          selected long-tail family always surfaces. */}
+      <FamilyChips families={families} filters={filters} />
 
       <OperationList
         entries={rows}

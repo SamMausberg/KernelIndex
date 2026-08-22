@@ -81,7 +81,7 @@ export default function ApiReferencePage() {
         title="API reference"
         context={`${routes.length} routes · ${String((openapi as { info: { version: string } }).info.version)} · problem+json errors`}
       />
-      <main className="shell-narrow animate-fade-in pb-24 text-body leading-relaxed text-muted">
+      <main className="shell-narrow pb-24 text-body leading-relaxed text-muted">
         <p className="mt-2">
           Read API over the catalog. No key needed; a{" "}
           <span className="font-mono text-small">ki_</span> key from{" "}

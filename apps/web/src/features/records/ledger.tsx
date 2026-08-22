@@ -698,7 +698,7 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
         ]}
       />
 
-      <main className="shell animate-fade-in pb-24">
+      <main className="shell pb-24">
         {slice.filters.view === "current" && slice.holders && (
           <>
             {slice.latest && <LatestBreaks latest={slice.latest} />}

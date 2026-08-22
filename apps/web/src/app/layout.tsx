@@ -9,15 +9,21 @@ import "./globals.css"
 
 // Self-hosted via next/font (§16.2); exposed as variables so the token
 // stacks in globals.css can prefer ABC Diatype when it is available.
+// display: optional (2026-08-22): the default swap repainted every page's
+// text when the webfont landed — the "half loaded" first paint. Optional
+// never repaints; next/font's metric-adjusted fallback keeps layout
+// identical on the rare visit that renders it.
 const instrumentSans = Instrument_Sans({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
   variable: "--font-instrument-sans",
+  display: "optional",
 })
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
   variable: "--font-space-grotesk",
+  display: "optional",
 })
 
 export const metadata: Metadata = {

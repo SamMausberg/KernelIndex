@@ -134,7 +134,7 @@ export default async function OperationPage({ params }: Props) {
         )}
       </ContextHeader>
 
-      <main className="shell animate-fade-in pb-24">
+      <main className="shell pb-24">
         <OperationRecords
           slug={operation.slug}
           operationName={operation.name}

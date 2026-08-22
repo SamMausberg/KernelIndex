@@ -53,7 +53,7 @@ export default async function ModelsPage() {
           </>
         }
       />
-      <main className="shell animate-fade-in pt-7 pb-24">
+      <main className="shell pt-7 pb-24">
         <div className="overflow-x-auto">
           <div
             className={`${GRID} items-baseline border-b border-border-strong pb-3 font-mono text-label text-faint uppercase`}
