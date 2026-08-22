@@ -5,6 +5,7 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import {
   getCoveragePage,
+  getFeed,
   getModelPage,
   listHardwareCoverage,
   listModelCoverage,
@@ -14,6 +15,7 @@ import {
 import { CACHE_MEDIUM, CACHE_SHORT, fail, json } from "./http.ts"
 import {
   coverageResponse,
+  feedResponse,
   hardwareResponse,
   modelDossier,
   modelsResponse,
@@ -75,6 +77,41 @@ listRoutes.openapi(
     if (cursor === null) fail(400, "INVALID_CURSOR", raw ?? "")
     c.header("Cache-Control", CACHE_SHORT)
     return c.json(await listRuns({ ...filters, cursor }), 200)
+  },
+)
+
+// What the index learned (§13.11): the bulk change feed agents poll.
+// `since` narrows to entries published after that instant.
+listRoutes.openapi(
+  createRoute({
+    method: "get",
+    path: "/feed",
+    request: {
+      query: z.object({ since: z.iso.datetime({ offset: true }).optional() }),
+    },
+    responses: json(
+      feedResponse,
+      "Record breaks, publication batches, corrections, and accepted claims over the trailing 30 days, newest first, grouped by UTC day",
+    ),
+  }),
+  async (c) => {
+    const { since } = c.req.valid("query")
+    const model = await getFeed()
+    const floor = since === undefined ? null : new Date(since).toISOString()
+    const days =
+      floor === null
+        ? model.days
+        : model.days
+            .map((day) => ({
+              ...day,
+              entries: day.entries.filter((entry) => entry.at > floor),
+            }))
+            .filter((day) => day.entries.length > 0)
+    c.header("Cache-Control", CACHE_SHORT)
+    return c.json(
+      { ...model, days, generatedAt: new Date().toISOString() },
+      200,
+    )
   },
 )
 

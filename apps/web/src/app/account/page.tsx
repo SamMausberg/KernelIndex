@@ -1,4 +1,5 @@
-// Contributor surface (§15.7 minimal): own submissions and project claims.
+// Contributor surface (§15.7 minimal): follows, own submissions, project
+// claims, and API keys. What changed lives on /feed.
 
 import { desc, eq } from "drizzle-orm"
 import type { Metadata } from "next"
@@ -10,15 +11,15 @@ import { listApiKeys } from "@/server/api-keys"
 import { authConfigured } from "@/server/auth"
 import { db } from "@/server/db/client"
 import * as schema from "@/server/db/schema"
+import { listFollows } from "@/server/follows"
 import { sessionUser } from "@/server/policy/authorization"
-import { watchFeed } from "@/server/watches"
 import { DeleteAccountForm } from "./delete-form"
 import { CreateKeyForm, RevokeKeyForm } from "./key-forms"
-import { markSeenAction, unwatchAction } from "./seen-action"
+import { unfollowAction } from "./unfollow-action"
 
-/** Shown once, before the account has any keys, watches, or submissions. */
+/** Shown once, before the account has any keys, follows, or submissions. */
 const FIRST_STEPS = [
-  ["Watch a record", "any operation page has Watch under its record"],
+  ["Follow a cohort", "any operation page has Follow under its record"],
   ["Create an API key", "raises your /api/v1 quota; scoped and revocable"],
   ["Point an agent here", "MCP and CLI setup lives in the docs"],
 ] as const
@@ -51,7 +52,7 @@ export default async function AccountPage() {
       </>
     )
   }
-  const [mine, claims, keys, feed] = await Promise.all([
+  const [mine, claims, keys, follows] = await Promise.all([
     db()
       .select()
       .from(schema.submissions)
@@ -69,11 +70,10 @@ export default async function AccountPage() {
       )
       .where(eq(schema.projectClaims.userId, user.id)),
     listApiKeys(user.id),
-    watchFeed(user.id),
+    listFollows(user.id),
   ])
-  const unseen = feed.records.length + feed.submissions.length
   const firstRun =
-    mine.length === 0 && keys.length === 0 && feed.watched.length === 0
+    mine.length === 0 && keys.length === 0 && follows.length === 0
   return (
     <>
       <ContextHeader
@@ -99,94 +99,42 @@ export default async function AccountPage() {
               ))}
             </dl>
             <p className="mt-3 text-small text-faint">
-              Start from the <a href="/records">records ledger</a>, or read the{" "}
+              Start from the <a href="/feed">feed</a>, or read the{" "}
               <a href="/docs#agents">agent quickstart</a>.
             </p>
           </div>
         )}
-        <Section id="changes" title="Changes">
-          {unseen === 0 && (
+        <Section id="following" title="Following">
+          {follows.length === 0 && (
             <p className="text-body text-faint">
-              Nothing new on your watched cohorts or submissions. Watch a cohort
-              from any operation page.
+              Nothing yet. Follow buttons sit on operation, project, GPU, and
+              model pages, on cohorts, and on search results.
             </p>
           )}
-          {feed.records.map((event) => (
-            <p
-              key={`${event.runId}-${event.cause}`}
-              className="border-b border-line py-2 text-body"
+          {follows.map((follow) => (
+            <form
+              key={`${follow.kind}-${follow.key}`}
+              action={unfollowAction}
+              className="flex items-baseline gap-3 border-b border-line py-2 text-body"
             >
-              <a href={`/operations/${event.operation.slug}`}>
-                {event.operation.name}
-              </a>{" "}
-              <span className="text-subtle">
-                record {event.cause === "retraction" ? "reassigned" : "beaten"}{" "}
-                by {event.implementation}
+              <input type="hidden" name="kind" value={follow.kind} />
+              <input type="hidden" name="key" value={follow.key} />
+              <a href={follow.href}>{follow.label || follow.key}</a>
+              <span className="font-mono text-mini text-faint">
+                {follow.kind}
               </span>
-              {event.value !== null && (
-                <span className="ml-2 font-mono text-small text-fg">
-                  {event.value} {event.unit}
-                </span>
-              )}
-              <span className="ml-2 font-mono text-mini text-faint">
-                {event.at.slice(0, 10)}
-              </span>{" "}
-              <a href={`/runs/${event.runId}`} className="text-small">
-                Run →
-              </a>
-            </p>
-          ))}
-          {feed.submissions.map((submission) => (
-            <p
-              key={submission.id}
-              className="border-b border-line py-2 text-body"
-            >
-              <span className="font-mono text-small">
-                {submission.id.slice(0, 13)}…
-              </span>{" "}
-              <span className="text-subtle">
-                submission moved to {submission.state}
-              </span>
-              <span className="ml-2 font-mono text-mini text-faint">
-                {submission.at.slice(0, 10)}
-              </span>
-            </p>
-          ))}
-          <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-2">
-            {unseen > 0 && (
-              <form action={markSeenAction}>
-                <button
-                  type="submit"
-                  className="key cursor-pointer px-2.5 py-1 text-small text-subtle hover:text-fg"
-                >
-                  Mark all seen
-                </button>
-              </form>
-            )}
-            {feed.watched.map((watch) => (
-              <form
-                key={watch.comparisonKey}
-                action={unwatchAction}
-                className="inline-flex items-center gap-1.5 text-small"
+              <button
+                type="submit"
+                aria-label={`Unfollow ${follow.label || follow.key}`}
+                className="ml-auto cursor-pointer text-faint transition-colors hover:text-fg"
               >
-                <input
-                  type="hidden"
-                  name="comparisonKey"
-                  value={watch.comparisonKey}
-                />
-                <a href={`/operations/${watch.slug}`} className="text-subtle">
-                  {watch.operation}
-                </a>
-                <button
-                  type="submit"
-                  aria-label={`Unwatch ${watch.operation}`}
-                  className="cursor-pointer text-faint transition-colors hover:text-fg"
-                >
-                  ✕
-                </button>
-              </form>
-            ))}
-          </div>
+                ✕
+              </button>
+            </form>
+          ))}
+          <p className="mt-3 text-small">
+            <a href="/feed?following=1">Open your feed →</a>
+          </p>
         </Section>
         <Section id="submissions" title="Your submissions">
           {mine.length === 0 && (

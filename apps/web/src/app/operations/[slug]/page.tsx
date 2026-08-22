@@ -12,6 +12,7 @@ import { KeyValueList } from "@/components/key-value-list"
 import { Link } from "@/components/quiet-link"
 import { Section } from "@/components/section"
 import { SourcesFooter } from "@/components/sources-footer"
+import { FollowButton } from "@/features/follow/follow-button"
 import { ImplementationsTable } from "@/features/implementations/implementations-table"
 import { OperationRecords } from "@/features/operations/operation-records"
 import { operationVariant } from "@/features/operations/variant"
@@ -53,6 +54,13 @@ export default async function OperationPage({ params }: Props) {
               reproducible · {coverage.reported} reported
             </span>
             <ApiLink path={`/operations/${operation.slug}`} />
+            <FollowButton
+              kind="operation"
+              followKey={operation.slug}
+              label={operation.name}
+              href={`/operations/${operation.slug}`}
+              noun="operation"
+            />
           </>
         }
       >

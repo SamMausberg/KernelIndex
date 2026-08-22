@@ -513,22 +513,27 @@ export const userRoles = pgTable(
   (t) => [primaryKey({ columns: [t.userId, t.role] })],
 )
 
-/** Watched comparison cohorts (§13.11): the notification feed derives on
- * read from record_events and submission transitions — no notifications
- * table, no fan-out jobs. */
-export const watches = pgTable(
-  "watches",
+/** Followed entities (§13.11): a comparison cohort, operation, project,
+ * GPU, or model tag, with the label and page it was followed from so the
+ * account list needs no joins. The feed derives on read from record_events
+ * and the audit trail filtered by these keys — no notifications table, no
+ * fan-out jobs. */
+export const follows = pgTable(
+  "follows",
   {
     userId: text("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    comparisonKey: text("comparison_key").notNull(),
+    kind: text("kind").notNull(),
+    key: text("key").notNull(),
+    label: text("label").notNull(),
+    href: text("href").notNull(),
     createdAt: createdAt(),
   },
-  (t) => [primaryKey({ columns: [t.userId, t.comparisonKey] })],
+  (t) => [primaryKey({ columns: [t.userId, t.kind, t.key] })],
 )
 
-/** One seen-watermark per user; everything newer counts as unseen. */
+/** One seen-watermark per user; feed entries newer than it read as new. */
 export const watchMarks = pgTable("watch_marks", {
   userId: text("user_id")
     .primaryKey()

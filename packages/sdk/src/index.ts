@@ -31,6 +31,7 @@ export type HardwareCoverage = Ok<paths["/hardware"]>
 export type ModelCoverage = Ok<paths["/models"]>
 export type CoverageModel = Ok<paths["/coverage"]>
 export type SourceList = Ok<paths["/sources"]>
+export type ChangeFeed = Ok<paths["/feed"]>
 export type ServingRunsPage = Ok<paths["/serving-runs"]>
 export type ServingConfigurations = Ok<paths["/serving-configurations"]>
 export type KeyIdentity = Ok<paths["/me"]>
@@ -158,6 +159,10 @@ export function client({
     },
     async sources(): Promise<SourceList> {
       return unwrap(await api.GET("/sources", {}))
+    },
+    /** What the index learned (§13.11), optionally since an instant. */
+    async feed(query?: { since?: string }): Promise<ChangeFeed> {
+      return unwrap(await api.GET("/feed", { params: { query } }))
     },
     async resolveServing(
       body: ResolveServingRequest,

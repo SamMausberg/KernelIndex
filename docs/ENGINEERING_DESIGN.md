@@ -2699,6 +2699,28 @@ reads-only pass on the places the resolver went quiet:
   holds the hero lists the coverage read uses); serving cohorts state "TTFT
   p99 reported for N of M" before anyone bounds on it.
 
+**Reality note (2026-08-22, feed and follows).** §13.11's notifications are
+a public surface first:
+
+- **`/feed`** states what the index learned over the trailing 30 days,
+  derived on read (`server/catalog/feed-reads.ts`, no stored feed): record
+  breaks from `record_events` dated by publish time, one publication batch
+  per source and UTC day from `benchmark_runs` (first records folded in, so
+  an import day never reads as a wall of firsts), corrections and accepted
+  claims from the audit trail. Day blocks with a mono date gutter, the
+  ledger's history idiom; served at `GET /api/v1/feed?since=` (the bulk
+  change feed agents poll), `ki changes`, MCP `list_changes`.
+- **Follows** generalize watches (migration 0020 renames `watches` to
+  `follows` with `kind` ∈ cohort · operation · project · gpu · model, the
+  label and page the follow came from, and a backfill for existing cohort
+  watches). `FollowButton` (`features/follow/`) sits on the operation page
+  (operation and cohort), project, GPU, and model dossiers, and the search
+  footer. Every feed entry carries private match keys; `/feed?following=1`
+  is an island over the session-authorized `/feed/data` route that narrows
+  the public feed, marks entries newer than the reader's watermark, and
+  advances it. `/account` lists follows; the inline change list moved to
+  the feed. Footer: Feed; the Atom link reads Atom.
+
 ### 16.1 Product character
 
 KernelIndex should feel like a serious technical reference built by kernel engineers, not a generic SaaS dashboard, gaming leaderboard, or GPU marketing site.

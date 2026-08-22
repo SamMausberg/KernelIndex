@@ -12,6 +12,7 @@ import { Link } from "@/components/quiet-link"
 import { Section } from "@/components/section"
 import { SourcesFooter } from "@/components/sources-footer"
 import { EvidenceCell } from "@/components/trust"
+import { FollowButton } from "@/features/follow/follow-button"
 import { MonthlyActivity } from "@/features/hardware/activity"
 import { RecordSpark } from "@/features/records/timeline"
 import { getHardwarePage } from "@/lib/catalog"
@@ -54,12 +55,21 @@ export default async function GpuPage({ params }: Props) {
       <ContextHeader
         title={model.hardware.model}
         meta={
-          <span>
-            {model.stats.runs.toLocaleString("en-US")} runs ·{" "}
-            {model.stats.operations.toLocaleString("en-US")} operations ·{" "}
-            {model.stats.implementations.toLocaleString("en-US")}{" "}
-            implementations
-          </span>
+          <>
+            <span>
+              {model.stats.runs.toLocaleString("en-US")} runs ·{" "}
+              {model.stats.operations.toLocaleString("en-US")} operations ·{" "}
+              {model.stats.implementations.toLocaleString("en-US")}{" "}
+              implementations
+            </span>
+            <FollowButton
+              kind="gpu"
+              followKey={model.hardware.model}
+              label={model.hardware.model}
+              href={`/gpus/${slug}`}
+              noun="GPU"
+            />
+          </>
         }
       >
         {model.hardware.architecture && (
