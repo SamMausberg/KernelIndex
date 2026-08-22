@@ -2,6 +2,7 @@ import Link from "next/link"
 import { releaseSha } from "@/server/env"
 
 const LINKS = [
+  { label: "Feed", href: "/feed" },
   { label: "Models", href: "/models" },
   { label: "Projects", href: "/projects" },
   { label: "Contribute", href: "/submit" },
@@ -41,7 +42,7 @@ export function SiteFooter() {
             href="/records/feed.xml"
             className="text-small text-subtle no-underline transition-colors hover:text-fg"
           >
-            Feed
+            Atom
           </a>
         </span>
         {releaseSha && (

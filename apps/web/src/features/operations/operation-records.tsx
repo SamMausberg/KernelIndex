@@ -10,13 +10,13 @@ import {
   ByLanguage,
   isDeployable,
 } from "@/features/answer/answer-slots"
+import { FollowButton } from "@/features/follow/follow-button"
 import { ResultRowItem, ResultTableHead } from "@/features/search/result-row"
 import type { WorkloadOption } from "@/lib/catalog"
 import { formatDateUTC, formatPrimary } from "@/lib/format"
 import { HERO_GPUS } from "@/lib/priority"
 import { SweepChart } from "./sweep"
 import type { OperationVariant } from "./variant"
-import { WatchButton } from "./watch-button"
 import { WorkloadPicker } from "./workload-picker"
 
 // The operation records island (§16.6, records-island pattern §16.12): the
@@ -235,7 +235,19 @@ export function OperationRecords({
               >
                 Record history →
               </Link>
-              <WatchButton comparisonKey={variant.cohort.comparisonKey} />
+              <div className="mt-3">
+                <FollowButton
+                  kind="cohort"
+                  followKey={variant.cohort.comparisonKey}
+                  label={`${operationName} · ${
+                    variant.cohortOptions.find(
+                      (option) => option.key === variant.cohort?.comparisonKey,
+                    )?.label ?? "cohort"
+                  }`}
+                  href={cohortHref(variant.cohort.comparisonKey)}
+                  noun="cohort"
+                />
+              </div>
             </div>
           )}
         </div>

@@ -13,6 +13,7 @@ import { Metric } from "@/components/metric"
 import { Link } from "@/components/quiet-link"
 import { Section } from "@/components/section"
 import { SourcesFooter } from "@/components/sources-footer"
+import { FollowButton } from "@/features/follow/follow-button"
 import { MonthlyActivity } from "@/features/hardware/activity"
 import { ImplementationsTable } from "@/features/implementations/implementations-table"
 import { RecordSpark } from "@/features/records/timeline"
@@ -95,6 +96,13 @@ export default async function ProjectPage({ params }: Props) {
             )}
             {claim.state === "pending" && <span>Claim pending review</span>}
             <ApiLink path={`/projects/${project.slug}`} />
+            <FollowButton
+              kind="project"
+              followKey={project.slug}
+              label={project.name}
+              href={`/projects/${project.slug}`}
+              noun="project"
+            />
           </>
         }
       />

@@ -13,6 +13,7 @@ import { IllustrativeNotice } from "@/components/illustrative-notice"
 import { Link } from "@/components/quiet-link"
 import { Section } from "@/components/section"
 import { SourcesFooter } from "@/components/sources-footer"
+import { FollowButton } from "@/features/follow/follow-button"
 import { BestKnownTable, GapTable } from "@/features/models/best-known"
 import { getModelPage } from "@/lib/catalog"
 import { countNoun } from "@/lib/format"
@@ -129,6 +130,13 @@ export default async function ModelPage({ params, searchParams }: Props) {
                   ? `?gpu=${encodeURIComponent(model.selectedGpu)}`
                   : ""
               }`}
+            />
+            <FollowButton
+              kind="model"
+              followKey={slug}
+              label={slug}
+              href={`/models/${slug}`}
+              noun="model"
             />
           </>
         }

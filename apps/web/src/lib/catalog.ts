@@ -8,6 +8,7 @@ import { cache } from "react"
 import type {
   ComparePageModel,
   CoveragePageModel,
+  FeedModel,
   HardwareIndexModel,
   HardwarePageModel,
   HomePageModel,
@@ -59,6 +60,8 @@ type CatalogReads = {
   // never merged.
   getModelIndex(): Promise<ModelIndexModel>
   getModelPage(slug: string, gpu?: string): Promise<ModelPageModel | null>
+  // The feed (§13.11): what the index learned, trailing 30 days.
+  getFeed(): Promise<FeedModel>
   // Serving (§8.16): a separate resolver surface behind the same seam.
   getServingFacets(): Promise<ServingFacetsModel>
   getServingOverview(): Promise<ServingOverviewModel>
@@ -317,6 +320,16 @@ export const getModelPage = cache(
       return (await reads()).getModelPage(slug, gpu)
     },
     ["model", BACKEND],
+    { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },
+  ),
+)
+
+export const getFeed = cache(
+  cached(
+    async (): Promise<FeedModel> => {
+      return (await reads()).getFeed()
+    },
+    ["feed", BACKEND],
     { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },
   ),
 )

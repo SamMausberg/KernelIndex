@@ -19,12 +19,12 @@ test("nav reaches the sign-in page; unconfigured auth is stated", async ({
   ).toHaveCount(0)
 })
 
-test("signed-out watch offers a sign-in link that returns to the page", async ({
+test("signed-out follow offers a sign-in link that returns to the page", async ({
   page,
 }) => {
   await page.goto("/operations/rmsnorm-h4096")
-  await page.getByRole("button", { name: "Watch cohort" }).click()
-  const link = page.getByRole("link", { name: "Sign in to watch records" })
+  await page.getByRole("button", { name: "Follow cohort" }).click()
+  const link = page.getByRole("link", { name: "Sign in to follow" })
   await expect(link).toBeVisible()
   await expect(link).toHaveAttribute(
     "href",

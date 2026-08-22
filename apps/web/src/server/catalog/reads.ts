@@ -96,6 +96,7 @@ import { computeSweep } from "./sweep.ts"
 
 // Hardware, project, and model reads live beside this module; the seam
 // resolves them through the same import (§27.5).
+export { getFeed } from "./feed-reads.ts"
 export { getModelIndex, getModelPage } from "./model-reads.ts"
 export {
   getHardwareIndex,
@@ -252,7 +253,18 @@ function opRef(operation: { name: string; slug: string }) {
 }
 
 /** The run's primary measurement in its base unit; null when unmeasured. */
-function primaryOf(run: JoinedRun["run"]): PrimaryMetric | null {
+export function primaryOf(
+  run: Pick<
+    RunRow,
+    | "primaryMetric"
+    | "primaryValue"
+    | "primaryUnit"
+    | "primaryStatistic"
+    | "sampleCount"
+    | "uncertaintyLow"
+    | "uncertaintyHigh"
+  >,
+): PrimaryMetric | null {
   if (run.primaryValue === null) return null
   return {
     metric: run.primaryMetric,

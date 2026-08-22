@@ -13,6 +13,7 @@ import {
   ByLanguage,
   isDeployable,
 } from "@/features/answer/answer-slots"
+import { FollowButton } from "@/features/follow/follow-button"
 import type { ResultRow, SearchPageModel } from "@/lib/catalog"
 import { formatDateUTC, formatPrimary } from "@/lib/format"
 import { meetsTrust, removeToken } from "@/lib/search-query"
@@ -867,6 +868,21 @@ export function SearchResults({
                 </span>
                 <ApiLink path={apiPath(model.query, state.cohort).slice(7)} />
               </>
+            )}
+            {/* Following a cohort never requires finding the operation
+                page (§13.11): the result footer carries the toggle. */}
+            {model.operation && model.cohort && (
+              <FollowButton
+                kind="cohort"
+                followKey={model.cohort.comparisonKey}
+                label={`${model.operation.name} · ${
+                  model.cohortOptions.find(
+                    (option) => option.key === model.cohort?.comparisonKey,
+                  )?.label ?? "cohort"
+                }`}
+                href={`/operations/${model.operation.slug}?cohort=${encodeURIComponent(model.cohort.comparisonKey)}`}
+                noun="cohort"
+              />
             )}
           </div>
         </div>
