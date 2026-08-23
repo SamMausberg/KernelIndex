@@ -320,9 +320,26 @@ function sourceIsPublic(
  */
 export async function refreshWorkloadSummaries(
   database: DbHandle,
-  operationIds?: string[],
+  /** Workloads a bundle touched; their operations are resettled whole. Omit
+   * for the catalog-wide backfill. Ids rather than digests: a bundle whose
+   * workloads all already exist never resolves an operation digest, so
+   * asking the bundle for them threw on every runs-only publication. */
+  touchedWorkloadIds?: string[],
 ): Promise<number> {
-  if (operationIds !== undefined && operationIds.length === 0) return 0
+  if (touchedWorkloadIds !== undefined && touchedWorkloadIds.length === 0)
+    return 0
+  const operationIds = touchedWorkloadIds && [
+    ...new Set(
+      (
+        await inChunks(touchedWorkloadIds, (slice) =>
+          database
+            .select({ operationId: schema.workloads.operationId })
+            .from(schema.workloads)
+            .where(inArray(schema.workloads.id, slice)),
+        )
+      ).map((row) => row.operationId),
+    ),
+  ]
   const rows = await database
     .select({
       id: schema.workloads.id,
@@ -1303,11 +1320,7 @@ export async function publishBundle(
     // A new workload can make a previously-constant axis start varying, so
     // every touched operation resettles its workloads' display identities.
     await refreshWorkloadSummaries(tx, [
-      ...new Set(
-        [...workloadRowByDigest.values()].map((row) =>
-          operationIdFor(row.operationDigest),
-        ),
-      ),
+      ...new Set([...workloadRowByDigest.values()].map((row) => row.id)),
     ])
 
     // Derived ranking may have changed (§11.10): append the record

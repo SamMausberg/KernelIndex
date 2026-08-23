@@ -100,13 +100,19 @@ describe.skipIf(!url)("batched publication", () => {
     // Only the run rides in the bundle; its implementation, workload, and
     // operation must be found in the catalog. A fixed alternate observedAt
     // gives a second deterministic run digest, so re-runs stay idempotent.
+    //
+    // Unpublished on purpose. These files share one database and vitest runs
+    // them in parallel, so a second *eligible* run in the example cohort
+    // raced reads.test.ts, which asserts that cohort's exact composition.
+    // Reference resolution is the same code path either way, and leaving
+    // publishedAt null keeps the row out of every ranked surface.
     const bundle = exampleBundle()
     bundle.projects = []
     bundle.operations = []
     bundle.workloads = []
     bundle.implementations = []
     bundle.runs[0].manifest.spec.observedAt = "2026-01-02T00:00:00Z"
-    const result = await publishBundle(db(), bundle, { publish: true })
+    const result = await publishBundle(db(), bundle, { publish: false })
     expect(result.counts.runs.inserted + result.counts.runs.existing).toBe(1)
     expect(result.runIds[0]).toBeTruthy()
   })
