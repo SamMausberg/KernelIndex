@@ -347,7 +347,7 @@ curl -L https://kernelindex.com/api/v1/exports/catalog.jsonl.zst
             {`ki precedents --op gqa-paged-decode --gpu B200 --dtype bf16 tokens=4096
 curl -X POST https://kernelindex.com/api/v1/precedents \\
   -H "Content-Type: application/json" \\
-  -d '{"operation": {"family": "attention"}, "environment": {"hardwareProduct": "B200"}}'`}
+  -d '{"operation": {"family": "gqa-paged-attention"}, "environment": {"hardwareProduct": "B200"}}'`}
           </pre>
 
           <Sub id="agents" title="Agents" />
