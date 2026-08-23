@@ -11,6 +11,7 @@ import type {
 } from "../../lib/catalog-models.ts"
 import { db } from "../db/client.ts"
 import * as schema from "../db/schema.ts"
+import { recordSequence } from "./present.ts"
 import { eligibleRunFilter } from "./record-events.ts"
 import {
   implementationColumns,
@@ -153,7 +154,13 @@ async function readRecordsPage(): Promise<RecordsPageModel> {
       eq(schema.benchmarkRuns.sourceId, schema.sources.id),
     )
     .where(eligibleRunFilter())
-    .orderBy(asc(schema.recordEvents.at), asc(schema.recordEvents.createdAt))
+    // Run id breaks ties on `at`: a whole-batch insert stamps every event
+    // with one created_at, which left same-instant events in arbitrary order.
+    .orderBy(
+      asc(schema.recordEvents.at),
+      asc(schema.recordEvents.createdAt),
+      asc(schema.benchmarkRuns.id),
+    )
 
   const byCohort = new Map<string, typeof rows>()
   for (const row of rows) {
@@ -165,47 +172,50 @@ async function readRecordsPage(): Promise<RecordsPageModel> {
   const records: RecordHolder[] = []
   const holderRows: (typeof rows)[number][] = []
   for (const [cohortKey, cohortRows] of byCohort) {
+    // The stored events are a hint; the running-minimum replay is the record
+    // (§11.10). Everything below reads off a sequence that improves at every
+    // step, so the holder is the cohort's fastest run and no margin can be
+    // negative.
+    const sequence = recordSequence(cohortRows, (row) => row.run.primaryValue)
     const events: RecordEvent[] = []
-    let previous: (typeof rows)[number] | null = null
-    let previousPrimary: ResultRow["primary"] = null
+    let previousValue: ResultRow["primary"] = null
     let holderRow: ResultRow | null = null
-    for (const row of cohortRows) {
-      const operation = {
+    for (const row of sequence) {
+      const current = resultRow(row, {
         name: row.operation.name,
         slug: row.operation.slug,
-      }
-      const current = resultRow(row, operation)
+      })
       events.unshift({
         at: row.event.at.toISOString(),
         runId: row.run.id,
         implementation: current.implementation,
         value: current.primary as RecordEvent["value"],
-        previousValue: previousPrimary,
+        previousValue,
         improvementPct:
-          previousPrimary && current.primary
-            ? ((previousPrimary.value - current.primary.value) /
-                previousPrimary.value) *
+          previousValue && current.primary
+            ? ((previousValue.value - current.primary.value) /
+                previousValue.value) *
               100
             : null,
       })
-      previous = row
-      previousPrimary = current.primary
+      previousValue = current.primary
       holderRow = current
     }
-    if (previous === null || holderRow === null) continue
-    holderRows.push(previous)
+    const holder = sequence.at(-1)
+    if (holder === undefined || holderRow === null) continue
+    holderRows.push(holder)
     records.push({
       cohortKey,
       operation: holderRow.operation,
-      workloadId: previous.workload.id,
+      workloadId: holder.workload.id,
       workloadSummary: holderRow.workloadSummary,
-      hardware: previous.run.hardwareModel,
-      environmentSummary: previous.run.environmentSummary ?? "",
+      hardware: holder.run.hardwareModel,
+      environmentSummary: holder.run.environmentSummary ?? "",
       current: holderRow,
       since: events[0].at,
       // Eligible ⇒ published; observedAt only satisfies the nullable type.
       indexedAt: (
-        previous.run.publishedAt ?? previous.run.observedAt
+        holder.run.publishedAt ?? holder.run.observedAt
       ).toISOString(),
       history: events,
     })
@@ -221,5 +231,6 @@ async function readRecordsPage(): Promise<RecordsPageModel> {
     illustrative: pageIllustrative(holderRows),
     hardwareOptions: [...new Set(records.map((holder) => holder.hardware))],
     records,
+    asOf: new Date().toISOString(),
   }
 }

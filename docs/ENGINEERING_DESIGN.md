@@ -732,6 +732,23 @@ A concrete case must capture:
 
 A query containing symbolic dimensions such as `[B,S,48,128]` is a **shape pattern**, not an exact workload. The UI can show observed performance surfaces and implementations that cover the pattern, but it must not claim one exact winner until all relevant variables are bound.
 
+**Display identity (2026-08-23).** A shape is not an identity. `shape_summary`
+held the leading tensor shape alone, so one paged-decode operation's sixteen
+cases all rendered as `[1, 32, 128]`: 658 of 5,883 workloads shared a label
+with a sibling, and 508 of 2,603 record cohorts showed one, which made
+correct data read as contradictory measurements of the same workload. The
+column now holds the shape plus the axes that separate a workload from the
+siblings it looks identical to — `[1, 32, 128] · num_pages=18 ·
+num_kv_indices=2`. Axes resolve against the rows sharing a shape and dtypes,
+not the whole operation, so a label carries what distinguishes the rows a
+reader sees side by side and nothing else; an axis the shape already shows is
+constant within that group and never enters. Siblings that differ in nothing
+an axis records (a scalar rounded at float32 and at float64) fall back to a
+digest fragment, so no two ever collide. It is derived, not authored:
+`refreshWorkloadSummaries` owns it, publication calls it for every touched
+operation because a new sibling can make a constant axis start varying, and
+`check-invariants` holds the collision count at zero.
+
 ### 8.6 Software project and revision
 
 A `SoftwareProject` represents the upstream unit a maintainer can claim:
@@ -1028,6 +1045,26 @@ Product bands use policy:
 - **Fastest verified:** highest-trust eligible performance result, regardless of source availability.
 - **Fastest deployable:** fastest result satisfying a selected deployability policy.
 - **Fastest open-source:** fastest result with public source and a policy-approved SPDX expression.
+
+**Deriving the facts (2026-08-23).** Two derivations were losing the answer
+the reader most needs, so the corpus held zero deployable results until
+2026-08-23 and the “fastest deployable” slot had never rendered:
+
+- Sources declare an install *recipe* (`{kind: pip, package: liger-kernel}`)
+  and only rarely the command itself, but publication read `install.command`
+  alone. `installCommandOf` now states the command from the recipe's own
+  fields, so 31 implementations gained a copyable install line.
+- Source is public when the revision mirrors its own file **or its project
+  publishes a repository**. Requiring the revision to carry it read
+  pip-installable, BSD-2-Clause kernels as source-unavailable.
+
+Together these make 565 record holders deployable. Both are derived columns,
+so `refreshAvailability` recomputes them catalog-wide and pushes them onto the
+runs that denormalize them; a reimport would not work, since editing a
+manifest mints a new implementation digest and would duplicate every run under
+it. Where a deployable answer exists it leads the resolution, with the fastest
+known beside it and the gap stated — usability and speed answer different
+questions, but only one of them can be acted on.
 - **Fastest reported:** fastest eligible source-native report, clearly labeled.
 
 ### 8.16 Serving domain
@@ -1823,6 +1860,23 @@ Every time derived ranking changes, append a `record_event` containing:
 - recomputation job ID.
 
 This supports “record beaten” notifications, historical charts, auditability, and contributor attribution without mutating old claims.
+
+**The table is a materialized hint; the read is authoritative (2026-08-23).**
+Because history only grows, `record_events` keeps events that later evidence
+invalidated: a run that was the running minimum when it was appended is not
+one once a run observed earlier, or newly eligible, arrives beneath it. In
+production this left 126 of 5,125 events stale, 141 history steps running
+backwards, and 130 of 2,603 cohorts displaying a “current record” that was not
+the cohort's fastest run — rendered as `−-8.8% · was 98.4 µs`. Every record
+surface therefore replays the running minimum over the stored events
+(`recordSequence`, catalog/present.ts) instead of trusting their order, which
+makes two properties true by construction rather than by assumption: the
+displayed history improves at every step, and the holder is the cohort
+minimum. Project standings apply the same test in SQL so they count the same
+transitions. Nothing is deleted; the drift is reported as a data-quality
+metric in `report-health.ts`. Display code never prefixes a sign onto a
+margin: `formatMargin` / `formatSpeedup` own the notation and state nothing
+when a margin is not an improvement.
 
 Add the `record_events` table in Week 4 when record history first becomes public. Before then, current records are derived on demand and KernelIndex makes no historical-record claim. Add mutation audit tables with the first authenticated write path in Week 6; do not pre-create either subsystem in the twelve-table Week 2 catalog.
 
@@ -2920,6 +2974,26 @@ Sign out
 
 Do not ship a permanent left dashboard sidebar for the public catalog. It wastes width and suggests account-centric software. Public navigation is content-centric.
 
+**Counters (2026-08-23).** For a performance index, two surfaces stating
+counts a reader cannot reconcile costs more trust than the counts are worth.
+Four exist, each named for exactly what it counts, defined once in docs
+(`#counting`) and linked from every line that states one:
+
+- **records** — one per comparison cohort, its fastest eligible run;
+- **operations with ranked runs** — operations holding at least one eligible
+  run (the homepage and the ledger);
+- **operations indexed** — every definition, measured or not; the remainder
+  is stated on browse as *indexed without runs*;
+- **browse rows** — fewer than the operations behind them, because
+  reviewed-equivalent definitions fold into one row (§8.4). The fold used to
+  be silent, which made browse and the ledger disagree by 26 for no reason a
+  reader could infer; a row now states how many it absorbed.
+
+Record counts also carry the ledger snapshot they were read from. Surfaces
+derive from one aggregate but cache on independent ISR clocks, so two can
+legitimately state counts minutes of imports apart; the date makes that a
+stated fact instead of an apparent contradiction.
+
 ### 16.5 Homepage
 
 The homepage is a search product, not a full-screen brand hero.
@@ -2952,7 +3026,27 @@ Lower page sections:
 
 Avoid customer-logo strips, generic testimonials, inflated counters, “trusted by” placeholders, and long product prose before search.
 
-**Revision (2026-08-23).** Directly under the hero search sits one worked example rendered from the live resolver (`features/home/worked-example.tsx`): the most-measured hero-family operation resolved to its fastest deployable implementation, with latency, baseline margin, and a "Use it" link; provenance beneath. The first concrete content is a user outcome, not the record table. Latest records follow with five columns (trust and indexing dates live on the run dossier).
+**Revision (2026-08-23).** Directly under the hero search sits one worked example rendered from the live resolver (`features/home/worked-example.tsx`): a real record resolved to its implementation, with latency, baseline margin, a "Use it" link, and provenance beneath. The first concrete content is a user outcome, not the record table. Latest records follow with five columns (trust and indexing dates live on the run dossier).
+
+**Revision (2026-08-23, later).** The headline drops the imperative the search
+field already implies, and the line under it states what comparability means
+in facts a reader can check against their own workload rather than in the
+abstract: *Same shapes, same dtype, same GPU, same protocol. Anything else is
+not ranked against it.* The example queries and corpus counts merge into one
+quiet line **below** the worked example, so nothing separates the search field
+from the outcome.
+
+The example's subject comes from the records ledger, not from run counts: the
+newest record whose holder passes the deployability policy, hero families
+first. Ranking by run count resolves the most-measured operation, whose winner
+is routinely a contest submission with no package and no license: honest, and
+a bad first impression. A demonstration has to end at "I can use this", so
+where the answer has an install line the example shows it, copyable.
+
+House voice: no em dashes in rendered copy. `check-invariants` holds imported
+descriptions to it, since an importer is the one path by which one can reach a
+page; the `—` glyph standing for "no value" in a table cell is notation, not
+writing, and stays.
 
 ### 16.6 Search interaction
 
@@ -4345,7 +4439,7 @@ This sequence is optimized for a solo founder using strong AI coding assistance.
 
 - `ranking-v1` (`policy/ranking.ts`) is the frozen versioned policy: eligibility returns structured reason codes (`STATUS_*`, `RETRACTED`, `SUPERSEDED`, `MISSING_PRIMARY_METRIC`); dense ranks; without paired samples the conservative tie rule is overlap of declared confidence intervals (equal values tie; source-native cohorts tie only on equal values per §11.5 rule 8). Tie chains are non-transitive; display order inside a tie is trust, recency, stable ID. Deployability is a separate reason-vector policy (`deployability-v1`).
 - Ranked-surface visibility now excludes superseded runs via an anti-join on `supersedes_id` (the previous filter kept the superseded original instead of the correction).
-- `record_events` (§11.10, migration 0002) is appended inside the publication transaction for touched cohorts; a one-off `sync-record-events` script backfilled catalogs published before the table existed and was removed after the backfill completed. The ledger reads events; the current holder is derived only from still-eligible runs. Retraction-cause events arrive with the Week 6 correction write path.
+- `record_events` (§11.10, migration 0002) is appended inside the publication transaction for touched cohorts; a one-off `sync-record-events` script backfilled catalogs published before the table existed and was removed after the backfill completed. The ledger replays the running minimum over those events (§11.10), so the current holder is the cohort's fastest still-eligible run rather than the last event appended. Retraction-cause events arrive with the Week 6 correction write path.
 - `/compare` accepts up to eight runs by ID or digest, aligns cohort-identity fields (material) against context fields, names the first material mismatch, and ranks only when all selections share one cohort and are eligible. Markdown/JSON exports are copy actions rendered from the same model.
 - Corpus: 48 real SOL-ExecBench records across 12 reviewed kernels (norm, GQA/MLA attention, GEMM, RoPE, SwiGLU families; top 4 correct submissions each) plus the one labeled illustrative example pending the §22.15 gold record. Playwright covers search-to-evidence, no-result/parse-error, retracted/superseded states, and comparable/incomparable compare in CI against fixtures. Since expanded (2026-08-16): 7,857 published kernel runs across 449 operations and three sources (SOL-ExecBench 705, GPU MODE KernelBot 5,215, FlashInfer-Bench 1,937), plus 722 MLPerf Inference serving runs in the separate serving tables. The 2026-08-15 10k-corpus push (§22.16) re-imported KernelBot at depth — 29 curated boards across the AMD $100K/$1.1M, NVIDIA NVFP4, PMPP v2, linear-algebra, trimul, and Helion competitions, selecting the top ~50 authors per board × runner cohort plus each leading author's personal-best progression chain, with submission source mirrored as content-addressed artifacts (docs/source-policy.md) and rendered with per-submission diffs on implementation pages.
 

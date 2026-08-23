@@ -105,7 +105,7 @@ export async function reconcileFlashinfer(
       .where(eq(schema.operations.slug, operation.slug))
     if (slugRow && slugRow.semanticDigest !== digest) {
       report.ambiguities.push(
-        `operation slug '${operation.slug}' already maps to ${slugRow.semanticDigest}; import proposes ${digest} — needs review (SOL overlap is expected here)`,
+        `operation slug '${operation.slug}' already maps to ${slugRow.semanticDigest}; import proposes ${digest}; needs review (SOL overlap is expected here)`,
       )
     }
   }

@@ -1,7 +1,7 @@
 import { Metric } from "@/components/metric"
 import { Link } from "@/components/quiet-link"
 import type { RecordHolder } from "@/lib/catalog"
-import { formatPrimary, formatSolScoreCell } from "@/lib/format"
+import { formatMargin, formatPrimary, formatSolScoreCell } from "@/lib/format"
 
 const GRID = "grid grid-cols-[1.3fr_1.3fr_110px_150px_120px] min-w-[860px]"
 
@@ -75,9 +75,9 @@ export function LatestRecords({ rows }: { rows: RecordHolder[] }) {
               />
             </div>
             <div className="truncate px-4 font-mono text-small whitespace-nowrap">
-              {event?.improvementPct !== null && event?.previousValue ? (
+              {formatMargin(event?.improvementPct) && event?.previousValue ? (
                 <span className="text-subtle">
-                  {event.improvementPct.toFixed(1)}%
+                  {formatMargin(event.improvementPct)}
                   <span className="text-faint">
                     {" "}
                     · was {formatPrimary(event.previousValue)}

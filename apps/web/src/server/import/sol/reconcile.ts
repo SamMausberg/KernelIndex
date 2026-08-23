@@ -112,7 +112,7 @@ function selectSubmissions(
         report.skippedSubmissions.reviewedImplausible++
       } else {
         report.ambiguities.push(
-          `submission ${submission.id} (${submission.username}) on '${submission.kernel_name}' reports ${submission.latency_ms} ms, beating the minimum per-case speed-of-light bound ${solBoundMs} ms — skipped pending review`,
+          `submission ${submission.id} (${submission.username}) on '${submission.kernel_name}' reports ${submission.latency_ms} ms, beating the minimum per-case speed-of-light bound ${solBoundMs} ms; skipped pending review`,
         )
       }
     } else {
@@ -212,7 +212,7 @@ export async function reconcile(
         .where(eq(schema.operations.slug, operation.slug))
       if (slugRow && slugRow.semanticDigest !== digest) {
         report.ambiguities.push(
-          `operation slug '${operation.slug}' already maps to ${slugRow.semanticDigest}; import proposes ${digest} — needs review`,
+          `operation slug '${operation.slug}' already maps to ${slugRow.semanticDigest}; import proposes ${digest}; needs review`,
         )
       }
     } catch (error) {

@@ -113,6 +113,10 @@ export const workloads = pgTable(
     workloadDigest: text("workload_digest").notNull(),
     schemaVersion: text("schema_version").notNull(),
     manifest: jsonb("manifest").notNull(),
+    /** Display identity: the leading tensor shape plus the axes that differ
+     * between this operation's own workloads, so two sibling records can
+     * never render the same label. Derived — `refreshWorkloadSummaries` in
+     * catalog/publication.ts owns it, and the manifest stays authoritative. */
     shapeSummary: text("shape_summary").notNull(),
     dtypes: text("dtypes").array().notNull(),
     layoutKeys: text("layout_keys").array().notNull(),

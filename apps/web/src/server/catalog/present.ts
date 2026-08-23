@@ -38,6 +38,31 @@ export function isStale(observedAt: Date): boolean {
   )
 }
 
+/**
+ * One cohort's genuine record sequence, oldest first (§11.10). `record_events`
+ * is append-only, so it keeps events that a later-arriving or newly-eligible
+ * run has since invalidated: a run that was the running minimum under an
+ * older evidence set is not one now. Replaying the running minimum over the
+ * stored events drops exactly those, which is what makes every displayed
+ * margin an improvement and the last entry the cohort's fastest run.
+ *
+ * Callers pass rows already ordered oldest-first; unmeasured rows never rank.
+ */
+export function recordSequence<T>(
+  rows: readonly T[],
+  measure: (row: T) => number | null,
+): T[] {
+  const sequence: T[] = []
+  let best: number | null = null
+  for (const row of rows) {
+    const value = measure(row)
+    if (value === null || (best !== null && value >= best)) continue
+    sequence.push(row)
+    best = value
+  }
+  return sequence
+}
+
 /** The scalar columns trust derivation needs; every run select includes them. */
 export type RunEvidenceInput = Pick<
   RunRow,

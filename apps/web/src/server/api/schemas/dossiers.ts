@@ -256,6 +256,9 @@ export const projectDossier = z.object({
     lastObservedAt: z.string().nullable(),
   }),
   records: z.array(recordHolder),
+  recordsAsOf: z
+    .string()
+    .describe("Ledger snapshot the records were read from."),
   implementations: z.array(
     implementationSummary.extend({
       operation: z.object({ name: z.string(), slug: z.string() }),

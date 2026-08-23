@@ -108,7 +108,15 @@ async function recordBreaks(): Promise<FeedEntry[]> {
   return rows.flatMap((row) => {
     const value = primaryOf(row.run)
     const previous = primaryOf(row.previous)
-    if (value === null || previous === null || row.run.publishedAt === null)
+    // An event whose stored predecessor is no longer the run it displaced
+    // (append-only history, §11.10) would read as a record break that made
+    // things slower. It is not a break; the feed states only real ones.
+    if (
+      value === null ||
+      previous === null ||
+      row.run.publishedAt === null ||
+      value.value >= previous.value
+    )
       return []
     const operation = {
       name: humanizeOperationName(row.operation.name),

@@ -157,6 +157,11 @@ export const operationIndexEntry = z.object({
   aliases: z.array(z.string()),
   runs: z.number(),
   lastObservedAt: z.string().nullable(),
+  folded: z
+    .number()
+    .describe(
+      "Reviewed-equivalent definitions this row absorbed; a row is not an operation.",
+    ),
   match: z
     .object({
       matching: z.number(),

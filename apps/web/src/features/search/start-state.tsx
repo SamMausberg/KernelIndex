@@ -219,11 +219,13 @@ export function StartState({
   const page = Math.min(Math.max(1, filters.page), pageCount)
   const rows = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
   const totalRuns = operations.reduce((n, entry) => n + entry.runs, 0)
-  // The homepage counts measured operations only; the browse index also
-  // lists indexed-but-unmeasured ones. State both so the two numbers can
-  // never read as a bug.
+  // Every counter on this line is named for exactly what it counts, and they
+  // add up (§16.4). A browse row is not an operation: reviewed-equivalent
+  // definitions fold into one row, and stating rows alone made this total
+  // disagree with /records for no reason a reader could infer.
   const measured = scoped.filter((entry) => entry.runs > 0).length
   const awaiting = scoped.length - measured
+  const folded = scoped.reduce((n, entry) => n + entry.folded, 0)
   const examples = families.slice(0, 2).map((family) => `${family} B200 bf16`)
 
   return (
@@ -259,8 +261,16 @@ export function StartState({
         <h2 className="text-body font-medium text-muted">Browse the index</h2>
         <div className="flex flex-wrap items-baseline gap-x-4 text-small">
           <span className="text-faint">
-            {measured} operation{measured === 1 ? "" : "s"} with runs
-            {awaiting > 0 && ` · ${awaiting} more indexed, awaiting runs`} ·{" "}
+            {measured} row{measured === 1 ? "" : "s"} with ranked runs
+            {folded > 0 && (
+              <>
+                {" · "}
+                <Link href="/docs#counting" className="text-small text-faint">
+                  {folded} folded into an equivalent definition
+                </Link>
+              </>
+            )}
+            {awaiting > 0 && ` · ${awaiting} indexed without runs`} ·{" "}
             {totalRuns.toLocaleString("en-US")} kernel runs
           </span>
           <span className="flex items-baseline gap-2.5">

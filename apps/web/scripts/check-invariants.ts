@@ -62,6 +62,33 @@ try {
     sql`select count(*) n from benchmark_runs
         where published_at is not null and status = 'passed' and primary_value is null`,
   )
+  // Two workloads of one operation that render the same label make their
+  // records read as contradictory measurements of the same thing (§8.5).
+  // refreshWorkloadSummaries keeps this at zero by appending the axes that
+  // distinguish them; a violation means an operation binds workloads that
+  // differ in something no axis records.
+  // House voice: em dashes never reach rendered copy. Operation and project
+  // descriptions are imported prose that lands on their pages, so an importer
+  // is the one way one can arrive; editorial metadata is outside the digest,
+  // so rewriting one is a content fix, not a re-identification.
+  await count(
+    "imported descriptions containing an em dash",
+    sql`select
+          (select count(*) from operations
+             where manifest #>> '{metadata,description}' like '%—%')
+        + (select count(*) from projects
+             where manifest #>> '{metadata,description}' like '%—%')
+        + (select count(*) from implementations
+             where manifest #>> '{metadata,description}' like '%—%') n`,
+  )
+  await count(
+    "workloads of one operation sharing a display identity",
+    sql`select coalesce(sum(n) - count(*), 0) n from (
+          select count(*) n from workloads
+          group by operation_id, shape_summary, dtypes
+          having count(*) > 1
+        ) collisions`,
+  )
 
   await count(
     "published serving runs with dangling references",

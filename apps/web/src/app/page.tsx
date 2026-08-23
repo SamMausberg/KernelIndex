@@ -49,13 +49,16 @@ export default async function Home() {
             data-hero
             className="shell flex flex-1 flex-col justify-center pt-6 pb-[4svh]"
           >
-            <h1 className="max-w-[26ch] text-hero font-medium text-pretty">
-              Find the fastest known GPU kernel for your exact workload.
+            <h1 className="max-w-[24ch] text-hero font-medium text-pretty">
+              The fastest known GPU kernel for your exact workload.
             </h1>
             <HeroSearch />
+            {/* What "comparable" actually means, in the facts a reader can
+                check against their own workload — not the abstraction. */}
             <div className="mt-3 flex max-w-[620px] items-baseline justify-between gap-6">
-              <p className="text-small text-faint">
-                Ranked only against runs that measured the same thing.
+              <p className="max-w-[46ch] text-small text-faint">
+                Same shapes, same dtype, same GPU, same protocol. Anything else
+                is not ranked against it.
               </p>
               <Link
                 href="/docs#query-syntax"
@@ -64,37 +67,34 @@ export default async function Home() {
                 Query syntax
               </Link>
             </div>
-            {examples.length > 0 && (
-              <p className="mt-2 flex max-w-[620px] flex-wrap items-baseline gap-x-4 gap-y-1 text-small">
-                <span className="text-faint">Try</span>
-                {examples.map((example) => (
-                  <Link
-                    key={example.query}
-                    href={`/search?q=${encodeURIComponent(example.query)}`}
-                    className="font-mono text-small text-subtle"
-                  >
-                    {example.label}
-                  </Link>
-                ))}
-              </p>
-            )}
+            {/* The outcome comes before the machinery: one resolved workload,
+                then the queries and corpus size on a single quiet line. */}
             <WorkedExample />
-            {/* Corpus stats plus the two doors that matter here; llms.txt
-                and the rest of the machine surface live in the footer. */}
-            <p className="mt-5 font-mono text-small text-faint">
-              <span className="text-subtle">
-                {model.stats.operations.toLocaleString("en-US")} operations ·{" "}
-                {model.stats.runs.toLocaleString("en-US")} runs ·{" "}
+            <p className="mt-5 flex max-w-[620px] flex-wrap items-baseline gap-x-4 gap-y-1 font-mono text-small text-faint">
+              {examples.map((example) => (
+                <Link
+                  key={example.query}
+                  href={`/search?q=${encodeURIComponent(example.query)}`}
+                  className="font-mono text-small text-subtle"
+                >
+                  {example.label}
+                </Link>
+              ))}
+              {/* Named for what it counts, so /search and /records can be
+                  reconciled against it rather than doubted (§16.4). */}
+              <Link href="/docs#counting" className="text-subtle">
+                {model.stats.operations.toLocaleString("en-US")} operations with
+                ranked runs · {model.stats.runs.toLocaleString("en-US")} runs ·{" "}
                 {model.stats.gpus.toLocaleString("en-US")} GPUs
-              </span>{" "}
-              ·{" "}
-              <a href="#trust" className="text-faint">
-                sources
-              </a>{" "}
-              ·{" "}
-              <Link href="/docs/api" className="text-faint">
-                API &amp; MCP
               </Link>
+              <span className="flex items-baseline gap-x-4">
+                <a href="#trust" className="text-faint">
+                  sources
+                </a>
+                <Link href="/docs/api" className="text-faint">
+                  API &amp; MCP
+                </Link>
+              </span>
             </p>
           </div>
         </section>

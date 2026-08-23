@@ -152,6 +152,12 @@ function Slot({
  * The answer, not a ranking (§16.6): the fastest known result and, when it
  * differs, the fastest one that passes the deployability policy — as peer
  * slots with the gap stated. One slot when they coincide.
+ *
+ * The deployable row leads when there is one. Usability is tracked separately
+ * from speed and the two answer different questions, but only one of them can
+ * be acted on today: a reader who takes the lead slot at face value should end
+ * at "I can use this". The faster number is never hidden — it keeps a full
+ * peer slot beside it, and the gap between them is stated on the recommendation.
  */
 export function AnswerSlots({
   top,
@@ -178,12 +184,18 @@ export function AnswerSlots({
   }
   return (
     <div className="grid grid-cols-2 gap-10 max-lg:grid-cols-1">
-      <Slot label={label} row={top} vsBaseline={vsBaseline} />
+      <Slot
+        label="Recommended · deployable"
+        row={deploy}
+        delta={deltaVsFastest(deploy, top)}
+      />
       <div className="border-l border-border pl-9 max-lg:border-l-0 max-lg:pl-0">
+        {/* Why it isn't the recommendation, in the eyebrow — the slot's own
+            action row then states what adopting it would actually take. */}
         <Slot
-          label="Fastest you can deploy"
-          row={deploy}
-          delta={deltaVsFastest(deploy, top)}
+          label={`${label} · not deployable`}
+          row={top}
+          vsBaseline={vsBaseline}
         />
       </div>
     </div>

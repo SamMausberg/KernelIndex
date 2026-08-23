@@ -18,7 +18,12 @@ import { MonthlyActivity } from "@/features/hardware/activity"
 import { ImplementationsTable } from "@/features/implementations/implementations-table"
 import { RecordSpark } from "@/features/records/timeline"
 import { getProjectPage } from "@/lib/catalog"
-import { countNoun, formatDateUTC, formatPrimary } from "@/lib/format"
+import {
+  countNoun,
+  formatDateUTC,
+  formatMargin,
+  formatPrimary,
+} from "@/lib/format"
 import { ClaimPanel } from "./claim-panel"
 
 type Props = { params: Promise<{ slug: string }> }
@@ -83,8 +88,16 @@ export default async function ProjectPage({ params }: Props) {
         }
         meta={
           <>
+            {/* The record count carries its snapshot: this dossier and the
+                projects index cache on separate clocks, so a few minutes of
+                imports can legitimately separate their numbers (§16.4). */}
             <span className={model.records.length > 0 ? "text-fg" : undefined}>
-              {countNoun(model.records.length, "record")} ·{" "}
+              {countNoun(model.records.length, "record")}
+              <span className="text-faint">
+                {" "}
+                as of {formatDateUTC(model.recordsAsOf)}
+              </span>{" "}
+              ·{" "}
               {countNoun(
                 stats.implementations,
                 individual ? "entry" : "kernel",
@@ -159,10 +172,10 @@ export default async function ProjectPage({ params }: Props) {
                         primary={holder.current.primary}
                         valueClassName="font-mono text-body text-fg"
                       />
-                      {holder.history[0]?.improvementPct !== null &&
+                      {formatMargin(holder.history[0]?.improvementPct) &&
                         holder.history[0]?.previousValue && (
                           <div className="font-mono text-mini text-faint">
-                            −{holder.history[0].improvementPct.toFixed(1)}% ·
+                            {formatMargin(holder.history[0].improvementPct)} ·
                             was {formatPrimary(holder.history[0].previousValue)}
                           </div>
                         )}

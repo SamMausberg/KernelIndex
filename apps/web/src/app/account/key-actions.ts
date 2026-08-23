@@ -24,7 +24,7 @@ export async function createKeyAction(
       : ["catalog:read"]
   const { token, prefix } = await createApiKey(user.id, name, scopes)
   return {
-    message: `created ${prefix}… — copy the key now; it is never shown again`,
+    message: `created ${prefix}…: copy the key now, it is never shown again`,
     token,
   }
 }

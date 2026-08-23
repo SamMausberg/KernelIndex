@@ -63,6 +63,29 @@ export function formatRelative(
   return `${(primary.value / best.value).toFixed(2)}×`
 }
 
+/**
+ * One notation for a record margin across every surface (§16.12). A record
+ * only exists because it beat what came before, so a non-positive margin is
+ * not a smaller record — it is a defect upstream. Both helpers return null
+ * there, so a caller renders nothing rather than "−-8.8%" or "0.0% faster".
+ */
+
+/** "−8.8%" — the dense-cell form: latency fell by this much. */
+export function formatMargin(pct: Margin): string | null {
+  return isMargin(pct) ? `−${pct.toFixed(1)}%` : null
+}
+
+/** "8.8% faster" — the prose form, for sentences that state a direction. */
+export function formatSpeedup(pct: Margin): string | null {
+  return isMargin(pct) ? `${pct.toFixed(1)}% faster` : null
+}
+
+/** Optional so callers can pass a missing event's margin without coercing. */
+type Margin = number | null | undefined
+
+const isMargin = (pct: Margin): pct is number =>
+  pct != null && Number.isFinite(pct) && pct > 0
+
 /** Short table label; trust badges stay derived, never chosen (§8.14). */
 export function evidenceLabel(level: EvidenceLevel | null): string {
   switch (level) {

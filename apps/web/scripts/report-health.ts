@@ -89,6 +89,36 @@ try {
     }
   })
 
+  // Ledger drift (§11.10): record_events is append-only, so a later-arriving
+  // or newly-eligible run leaves behind events that are no longer part of the
+  // cohort's running minimum. The record surfaces replay the sequence and
+  // ignore them, so this is a data-quality signal to watch, not a failure —
+  // check-invariants stays for defects that must be zero.
+  const [drift] = (await database.execute(
+    sql`with eligible as (
+          select r.id, r.comparison_key, r.primary_value, r.observed_at
+          from benchmark_runs r
+          where r.status = 'passed' and r.published_at is not null
+            and r.retracted_at is null and r.primary_value is not null
+            and not exists (select 1 from benchmark_runs s
+              where s.supersedes_id = r.id and s.published_at is not null)
+        ), records as (
+          select id, comparison_key from (
+            select id, comparison_key, primary_value,
+                   min(primary_value) over (partition by comparison_key
+                     order by observed_at, id
+                     rows between unbounded preceding and 1 preceding) prior
+            from eligible
+          ) t where prior is null or primary_value < prior
+        )
+        select count(*) total,
+          count(*) filter (where not exists (
+            select 1 from records c
+            where c.id = e.run_id and c.comparison_key = e.comparison_key
+          )) stale
+        from record_events e`,
+  )) as { total: string | number; stale: string | number }[]
+
   // Review slice from import dry-run reports (§14.2 --output files): never
   // the full `proposed` plan, only what a maintainer must look at.
   const reviews: ReviewSlice[] = []
@@ -108,6 +138,10 @@ try {
   const output = {
     generatedAt: new Date().toISOString(),
     sources,
+    recordEvents: {
+      total: Number(drift.total),
+      supersededBySequence: Number(drift.stale),
+    },
     reviews,
     needsReview: reviews.reduce(
       (n, review) => n + review.ambiguities.length + review.issues.length,
@@ -120,7 +154,7 @@ try {
   )
   writeFileSync(target, `${JSON.stringify(output, null, 2)}\n`)
   console.log(
-    `${target}: ${sources.length} sources (${sources.filter((s) => s.state !== "fresh").length} not fresh), ${reviews.length} reviews, ${output.needsReview} items need review`,
+    `${target}: ${sources.length} sources (${sources.filter((s) => s.state !== "fresh").length} not fresh), ${output.recordEvents.supersededBySequence}/${output.recordEvents.total} record events superseded by the sequence, ${reviews.length} reviews, ${output.needsReview} items need review`,
   )
 } finally {
   await client.end()

@@ -20,7 +20,7 @@ import { parse as parseYaml } from "yaml"
 import { formatPrimary, tableLines } from "./render.ts"
 import { vendorPlan } from "./vendor.ts"
 
-const HELP = `ki — KernelIndex command line
+const HELP = `ki · KernelIndex command line
 
 Usage:
   ki search <query…>                 resolver decision for a text query

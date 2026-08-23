@@ -208,7 +208,7 @@ export const EXTRA_KERNELS: LigerKernelSpec[] = [
     family: "neighborhood-attention",
     title: "Fused neighborhood attention",
     description:
-      "Neighborhood attention module over batch×seq×hidden states: q/k/v projections, banded (kernel_size, dilation) softmax attention, and output projection — the projections are inside the timed module.",
+      "Neighborhood attention module over batch×seq×hidden states: q/k/v projections, banded (kernel_size, dilation) softmax attention, and output projection. The projections are inside the timed module.",
     inputs: [
       {
         name: "hidden_states",

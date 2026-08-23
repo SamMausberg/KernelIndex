@@ -153,6 +153,7 @@ export async function getRecordsPage(): Promise<RecordsPageModel> {
     illustrative: ILLUSTRATIVE,
     hardwareOptions: [B200.model],
     records: [holder2048, holder1024],
+    asOf: holder2048.indexedAt,
   }
 }
 
@@ -415,6 +416,7 @@ export async function getProjectIndex(): Promise<ProjectIndexModel> {
   }
   return {
     illustrative: ILLUSTRATIVE,
+    recordsAsOf: FRESH,
     projects: [...bySlug.entries()].map(([slug, entry]) => ({
       slug,
       name: entry.name,
@@ -491,6 +493,7 @@ export async function getProjectPage(
       lastObservedAt: FRESH,
     },
     records: records.filter((h) => h.current.project.slug === slug),
+    recordsAsOf: FRESH,
     implementations: [...byImplementation.values()].map((own) => {
       const row = rowFromRun(own[0])
       return {

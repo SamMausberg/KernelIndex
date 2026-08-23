@@ -9,7 +9,8 @@
 // a remote database. Validation that used to run per row (slug conflicts,
 // digest mismatches, missing references) runs in memory against the
 // prefetched maps, with identical errors.
-import { and, eq, inArray } from "drizzle-orm"
+import { and, eq, inArray, type SQL, sql } from "drizzle-orm"
+import type { PgColumn } from "drizzle-orm/pg-core"
 import type {
   AnyManifest,
   BenchmarkProtocolManifest,
@@ -140,6 +141,20 @@ export async function perChunk<V>(
   }
 }
 
+/** `case <id> when … then … end`, so one statement writes a different value
+ * per row — a catalog-wide refresh is thousands of rows, not thousands of
+ * statements. Pair it with a matching `where id in (…)`. */
+function caseById<U extends { id: string }>(
+  idColumn: PgColumn,
+  updates: U[],
+  value: (update: U) => SQL,
+): SQL {
+  return sql`case ${idColumn}::text ${sql.join(
+    updates.map((update) => sql`when ${update.id} then ${value(update)}`),
+    sql` `,
+  )} end`
+}
+
 /** First entry per key wins; later duplicates are dropped. */
 export function uniqueBy<V>(entries: V[], key: (entry: V) => string): V[] {
   const seen = new Set<string>()
@@ -195,11 +210,290 @@ function revalidated<M extends AnyManifest>(manifest: M): M {
 /** A run can bind an exact case or a source-defined suite (§11.7). */
 export type AnyWorkloadManifest = WorkloadCaseManifest | WorkloadSuiteManifest
 
-function summarizeShape(workload: AnyWorkloadManifest): string {
+/**
+ * The base display identity of a workload: its leading tensor shape, or the
+ * case count for a suite. Two workloads sharing this look identical in a
+ * table, which is what `workloadSummaryOf` then has to separate.
+ */
+export function workloadShapeOf(workload: AnyWorkloadManifest): string {
   if (workload.kind === "WorkloadSuite")
     return `suite of ${workload.spec.cases.length} cases`
   const tensors = Object.values(workload.spec.tensors)
   return tensors.length > 0 ? `[${tensors[0].shape.join(", ")}]` : "[]"
+}
+
+/**
+ * The workload's display identity: its shape plus the axes that separate it
+ * from the siblings it would otherwise be indistinguishable from.
+ *
+ * A shape alone is not an identity. One paged-decode operation binds sixteen
+ * workloads that all shape to `[1, 32, 128]` and differ only in `num_pages`
+ * and `num_kv_indices`; rendered as the shape alone, their records read as
+ * contradictory measurements of one thing.
+ *
+ * `varying` is scoped to the siblings that share this shape, not to the whole
+ * operation, so the label carries what actually separates the rows a reader
+ * sees side by side and nothing else. An axis the shape already shows (a
+ * `batch_size=1` beside `[1, 32, 128]`) is constant within that group and so
+ * never enters. An empty set yields the shape alone.
+ */
+export function workloadSummaryOf(
+  workload: AnyWorkloadManifest,
+  varying: ReadonlySet<string>,
+): string {
+  const shape = workloadShapeOf(workload)
+  if (workload.kind === "WorkloadSuite" || varying.size === 0) return shape
+  const axes = Object.entries(workload.spec.axes)
+    .filter(([name]) => varying.has(name))
+    .map(([name, value]) => `${name}=${value}`)
+  return [shape, ...axes].join(" · ")
+}
+
+/** Axis names bound to more than one value across the given workloads —
+ * exactly the dimensions that distinguish one of them from another. */
+export function varyingAxisNames(
+  workloads: readonly AnyWorkloadManifest[],
+): Set<string> {
+  const seen = new Map<string, number>()
+  for (const workload of workloads)
+    if (workload.kind === "WorkloadCase")
+      for (const [name, value] of Object.entries(workload.spec.axes)) {
+        const first = seen.get(name)
+        if (first === undefined) seen.set(name, value)
+        else if (first !== value) seen.set(name, Number.NaN)
+      }
+  return new Set(
+    [...seen].filter(([, value]) => Number.isNaN(value)).map(([name]) => name),
+  )
+}
+
+export const NO_AXES: ReadonlySet<string> = new Set()
+
+type InstallRecipe = NonNullable<
+  ImplementationRevisionManifest["spec"]["buildVariants"]
+>[number]["install"]
+
+/**
+ * The copyable install line for a build variant (§8.15). Sources declare a
+ * recipe — kind plus package or repository — and only rarely the command
+ * itself, so reading `command` alone left every implementation in the catalog
+ * with no install line and no deployable answer to offer. The recipe's own
+ * fields are enough to state one; a kind that names nothing installable
+ * (`source`, or a variant with no coordinates) still yields null, because
+ * "vendor the source" is a different action and the row says so.
+ */
+export function installCommandOf(
+  recipe: InstallRecipe | undefined,
+): string | null {
+  if (!recipe) return null
+  if (recipe.command) return recipe.command
+  const version = recipe.version ? `==${recipe.version}` : ""
+  if (recipe.kind === "pip" && recipe.package)
+    return `pip install ${recipe.package}${version}`
+  if (recipe.kind === "git" && recipe.repository)
+    return `pip install git+${recipe.repository}${recipe.commit ? `@${recipe.commit}` : ""}`
+  if (recipe.kind === "container" && recipe.package)
+    return `docker pull ${recipe.package}${recipe.version ? `:${recipe.version}` : ""}`
+  return null
+}
+
+/** Public source (§8.15): the revision mirrors its own file, or declares a
+ * repository, or its project publishes one. */
+function sourceIsPublic(
+  manifest: ImplementationRevisionManifest,
+  projectRepository: string | null,
+): boolean {
+  return (
+    manifest.spec.projectRevision.repository !== undefined ||
+    manifest.spec.source !== undefined ||
+    projectRepository !== null
+  )
+}
+
+/**
+ * Settle `shape_summary` for every workload of the given operations (all of
+ * them when omitted — the backfill path). A newly imported sibling can make a
+ * previously-constant axis start varying, so the whole operation is recomputed
+ * rather than the inserted rows alone. Siblings an axis cannot separate fall
+ * back to a digest fragment, so no two ever render the same label. Idempotent:
+ * only changed rows are written. Returns how many that was.
+ */
+export async function refreshWorkloadSummaries(
+  database: DbHandle,
+  operationIds?: string[],
+): Promise<number> {
+  if (operationIds !== undefined && operationIds.length === 0) return 0
+  const rows = await database
+    .select({
+      id: schema.workloads.id,
+      operationId: schema.workloads.operationId,
+      workloadDigest: schema.workloads.workloadDigest,
+      dtypes: schema.workloads.dtypes,
+      manifest: schema.workloads.manifest,
+      shapeSummary: schema.workloads.shapeSummary,
+    })
+    .from(schema.workloads)
+    .where(
+      operationIds
+        ? inArray(schema.workloads.operationId, operationIds)
+        : undefined,
+    )
+  const byOperation = new Map<string, typeof rows>()
+  for (const row of rows) {
+    const bucket = byOperation.get(row.operationId)
+    if (bucket) bucket.push(row)
+    else byOperation.set(row.operationId, [row])
+  }
+  const updates: { id: string; summary: string }[] = []
+  for (const siblings of byOperation.values()) {
+    // Axes are resolved against the rows that look alike, not the whole
+    // operation: a label only has to separate a row from the rows a reader
+    // could confuse it with. Workloads with a shape of their own stay bare.
+    const byShape = new Map<string, typeof siblings>()
+    for (const row of siblings) {
+      const key = `${workloadShapeOf(row.manifest as AnyWorkloadManifest)} ${row.dtypes.join("/")}`
+      const bucket = byShape.get(key)
+      if (bucket) bucket.push(row)
+      else byShape.set(key, [row])
+    }
+    for (const alike of byShape.values()) {
+      const manifests = alike.map((row) => row.manifest as AnyWorkloadManifest)
+      const varying = alike.length > 1 ? varyingAxisNames(manifests) : NO_AXES
+      const summaries = manifests.map((manifest) =>
+        workloadSummaryOf(manifest, varying),
+      )
+      // Last resort. Sources do publish two definitions that differ in
+      // nothing an axis records: the same case with a scalar rounded at
+      // float32 and at float64, say. They are still separate cohorts, so
+      // their records must not share a label; a digest fragment reads as
+      // nothing but is stable and unique, which is what the row needs.
+      const shared = new Map<string, number>()
+      for (const summary of summaries)
+        shared.set(summary, (shared.get(summary) ?? 0) + 1)
+      for (const [index, row] of alike.entries()) {
+        const summary =
+          (shared.get(summaries[index]) ?? 0) > 1
+            ? `${summaries[index]} · #${row.workloadDigest.slice(7, 13)}`
+            : summaries[index]
+        if (summary !== row.shapeSummary) updates.push({ id: row.id, summary })
+      }
+    }
+  }
+  await perChunk(updates, (slice) =>
+    database
+      .update(schema.workloads)
+      .set({
+        shapeSummary: caseById(
+          schema.workloads.id,
+          slice,
+          (update) => sql`${update.summary}::text`,
+        ),
+      })
+      .where(
+        inArray(
+          schema.workloads.id,
+          slice.map((update) => update.id),
+        ),
+      ),
+  )
+  return updates.length
+}
+
+/**
+ * Recompute the availability facts publication derives at insert, across the
+ * whole catalog, then push them onto the runs that denormalize them.
+ *
+ * The backfill path for a derivation change. It exists because the two facts
+ * a reader most needs — can I install this, is the source public — were both
+ * being lost: the install line was read from a `command` field sources rarely
+ * write, and an implementation whose project publishes a repository still
+ * read as source-unavailable. Manifests are never touched; only the derived
+ * columns are. Idempotent, so re-running is a no-op.
+ */
+export async function refreshAvailability(
+  database: DbHandle,
+): Promise<{ implementations: number; runs: number }> {
+  const rows = await database
+    .select({
+      id: schema.implementations.id,
+      manifest: schema.implementations.manifest,
+      installCommand: schema.implementations.installCommand,
+      installKind: schema.implementations.installKind,
+      sourceAvailable: schema.implementations.sourceAvailable,
+      repository: sql<
+        string | null
+      >`${schema.projects.manifest} #>> '{spec,repository}'`,
+    })
+    .from(schema.implementations)
+    .innerJoin(
+      schema.projects,
+      eq(schema.implementations.projectId, schema.projects.id),
+    )
+  const updates = rows.flatMap((row) => {
+    const manifest = row.manifest as ImplementationRevisionManifest
+    const recipe = manifest.spec.buildVariants?.[0]?.install
+    const next = {
+      id: row.id,
+      installCommand: installCommandOf(recipe),
+      installKind: recipe?.kind ?? null,
+      sourceAvailable: sourceIsPublic(manifest, row.repository),
+    }
+    const unchanged =
+      next.installCommand === row.installCommand &&
+      next.installKind === row.installKind &&
+      next.sourceAvailable === row.sourceAvailable
+    return unchanged ? [] : [next]
+  })
+  await perChunk(updates, (slice) =>
+    database
+      .update(schema.implementations)
+      .set({
+        installCommand: caseById(
+          schema.implementations.id,
+          slice,
+          (update) => sql`${update.installCommand}::text`,
+        ),
+        installKind: caseById(
+          schema.implementations.id,
+          slice,
+          (update) => sql`${update.installKind}::text`,
+        ),
+        sourceAvailable: caseById(
+          schema.implementations.id,
+          slice,
+          (update) => sql`${update.sourceAvailable}::boolean`,
+        ),
+      })
+      .where(
+        inArray(
+          schema.implementations.id,
+          slice.map((update) => update.id),
+        ),
+      ),
+  )
+  // Ranked surfaces read these off the run, not the implementation (§11.4),
+  // so the copies have to follow or trust cells contradict the dossier.
+  const runs = await database
+    .update(schema.benchmarkRuns)
+    .set({
+      sourceAvailable: schema.implementations.sourceAvailable,
+      installable: schema.implementations.installable,
+      licenseExpression: schema.implementations.licenseExpression,
+    })
+    .from(schema.implementations)
+    .where(
+      and(
+        eq(schema.benchmarkRuns.implementationId, schema.implementations.id),
+        sql`(${schema.benchmarkRuns.sourceAvailable},
+             ${schema.benchmarkRuns.installable},
+             ${schema.benchmarkRuns.licenseExpression})
+            is distinct from
+            (${schema.implementations.sourceAvailable},
+             ${schema.implementations.installable},
+             ${schema.implementations.licenseExpression})`,
+      ),
+    )
+  return { implementations: updates.length, runs: runs.count ?? 0 }
 }
 
 function layoutKeyOf(tensor: { shape: number[]; strides?: number[] }): string {
@@ -281,7 +575,13 @@ export async function resolveProjects(
   tx: Tx,
   projects: { manifest: SoftwareProjectManifest; slug: string }[],
   counts: EntityCounts,
-): Promise<Map<string, { id: string; slug: string }>> {
+): Promise<Map<string, ProjectRef>> {
+  // The repository rides along: an implementation whose own revision doesn't
+  // mirror a source file still has public source when its project publishes
+  // one (§8.15). A homepage is not source, so only `repository` counts.
+  const repository = sql<
+    string | null
+  >`${schema.projects.manifest} #>> '{spec,repository}'`
   return resolveByKey({
     entries: projects.map((entry) => ({
       ...entry,
@@ -290,7 +590,11 @@ export async function resolveProjects(
     key: (entry) => entry.slug,
     fetch: (slice) =>
       tx
-        .select({ id: schema.projects.id, slug: schema.projects.slug })
+        .select({
+          id: schema.projects.id,
+          slug: schema.projects.slug,
+          repository,
+        })
         .from(schema.projects)
         .where(inArray(schema.projects.slug, slice)),
     rowKey: (row) => row.slug,
@@ -309,11 +613,17 @@ export async function resolveProjects(
               manifest,
             })),
           )
-          .returning({ id: schema.projects.id, slug: schema.projects.slug }),
+          .returning({
+            id: schema.projects.id,
+            slug: schema.projects.slug,
+            repository,
+          }),
       ),
     counts,
   })
 }
+
+export type ProjectRef = { id: string; slug: string; repository: string | null }
 
 /** Publish one validated bundle atomically. Safe to re-run with same input. */
 export async function publishBundle(
@@ -517,7 +827,11 @@ export async function publishBundle(
                       workloadDigest: entry.digest,
                       schemaVersion: API_VERSION,
                       manifest: entry.manifest,
-                      shapeSummary: summarizeShape(entry.manifest),
+                      // Provisional: which axes distinguish this workload
+                      // depends on its siblings, including ones already in
+                      // the catalog. refreshWorkloadSummaries settles it for
+                      // every touched operation once the inserts land.
+                      shapeSummary: workloadSummaryOf(entry.manifest, NO_AXES),
                       dtypes: [...new Set(tensors.map((t) => t.dtype))].sort(),
                       layoutKeys: [...new Set(tensors.map(layoutKeyOf))].sort(),
                     }
@@ -617,15 +931,14 @@ export async function publishBundle(
                   targetArchitectures:
                     manifest.spec.support.hardwareArchitectures,
                   licenseExpression: license.concluded,
-                  sourceAvailable:
-                    manifest.spec.projectRevision.repository !== undefined ||
-                    manifest.spec.source !== undefined,
+                  sourceAvailable: sourceIsPublic(manifest, project.repository),
                   installable: (manifest.spec.buildVariants ?? []).length > 0,
                   title: manifest.metadata.title ?? null,
                   installKind:
                     manifest.spec.buildVariants?.[0]?.install.kind ?? null,
-                  installCommand:
-                    manifest.spec.buildVariants?.[0]?.install.command ?? null,
+                  installCommand: installCommandOf(
+                    manifest.spec.buildVariants?.[0]?.install,
+                  ),
                   licenseDeclared: licensing.declared ?? null,
                   role: manifest.metadata.labels?.role ?? null,
                   manifest,
@@ -986,6 +1299,16 @@ export async function publishBundle(
     await perChunk(sourceLinkRows, (slice) =>
       tx.insert(schema.sourceLinks).values(slice).onConflictDoNothing(),
     )
+
+    // A new workload can make a previously-constant axis start varying, so
+    // every touched operation resettles its workloads' display identities.
+    await refreshWorkloadSummaries(tx, [
+      ...new Set(
+        [...workloadRowByDigest.values()].map((row) =>
+          operationIdFor(row.operationDigest),
+        ),
+      ),
+    ])
 
     // Derived ranking may have changed (§11.10): append the record
     // transitions for every cohort this publication touched.

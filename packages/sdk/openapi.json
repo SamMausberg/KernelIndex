@@ -1791,6 +1791,10 @@
                           "lastObservedAt": {
                             "type": ["string", "null"]
                           },
+                          "folded": {
+                            "type": "number",
+                            "description": "Reviewed-equivalent definitions this row absorbed; a row is not an operation."
+                          },
                           "match": {
                             "type": ["object", "null"],
                             "properties": {
@@ -1830,7 +1834,8 @@
                           "family",
                           "aliases",
                           "runs",
-                          "lastObservedAt"
+                          "lastObservedAt",
+                          "folded"
                         ]
                       }
                     },
@@ -3870,6 +3875,10 @@
                           "lastObservedAt": {
                             "type": ["string", "null"]
                           },
+                          "folded": {
+                            "type": "number",
+                            "description": "Reviewed-equivalent definitions this row absorbed; a row is not an operation."
+                          },
                           "match": {
                             "type": ["object", "null"],
                             "properties": {
@@ -3909,7 +3918,8 @@
                           "family",
                           "aliases",
                           "runs",
-                          "lastObservedAt"
+                          "lastObservedAt",
+                          "folded"
                         ]
                       }
                     },
@@ -5985,6 +5995,10 @@
                                 "lastObservedAt": {
                                   "type": ["string", "null"]
                                 },
+                                "folded": {
+                                  "type": "number",
+                                  "description": "Reviewed-equivalent definitions this row absorbed; a row is not an operation."
+                                },
                                 "match": {
                                   "type": ["object", "null"],
                                   "properties": {
@@ -6024,7 +6038,8 @@
                                 "family",
                                 "aliases",
                                 "runs",
-                                "lastObservedAt"
+                                "lastObservedAt",
+                                "folded"
                               ]
                             }
                           },
@@ -8817,6 +8832,10 @@
                         ]
                       }
                     },
+                    "recordsAsOf": {
+                      "type": "string",
+                      "description": "Ledger snapshot the records were read from."
+                    },
                     "implementations": {
                       "type": "array",
                       "items": {
@@ -8995,6 +9014,7 @@
                     "project",
                     "stats",
                     "records",
+                    "recordsAsOf",
                     "implementations",
                     "claim",
                     "sources"
@@ -10744,7 +10764,7 @@
         },
         "responses": {
           "200": {
-            "description": "Validation report plus, per run, the cohort it would join and the rank it would take under ranking-v1 — never a promise; review decides comparability",
+            "description": "Validation report plus, per run, the cohort it would join and the rank it would take under ranking-v1. Never a promise; review decides comparability",
             "content": {
               "application/json": {
                 "schema": {

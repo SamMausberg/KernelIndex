@@ -205,6 +205,10 @@ export type OperationIndexEntry = {
   runs: number
   /** Newest published run's observation date; null when unmeasured. */
   lastObservedAt: string | null
+  /** Reviewed-equivalent definitions this row absorbed (§8.4). One browse row
+   * can stand for several operations, so a count of rows is not a count of
+   * operations — the surfaces state the difference rather than hide it. */
+  folded: number
   /** Present only on multi-match chooser rows for a faceted query. */
   match?: ChooserMatch | null
 }

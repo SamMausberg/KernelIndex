@@ -156,7 +156,7 @@ export async function reconcileLiger(
         .where(eq(schema.operations.slug, operation.slug))
       if (slugRow && slugRow.semanticDigest !== operationDigest) {
         report.ambiguities.push(
-          `operation slug '${operation.slug}' already maps to ${slugRow.semanticDigest}; import proposes ${operationDigest} — needs review`,
+          `operation slug '${operation.slug}' already maps to ${slugRow.semanticDigest}; import proposes ${operationDigest}; needs review`,
         )
       }
     }

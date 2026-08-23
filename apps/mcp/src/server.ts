@@ -166,7 +166,7 @@ export function buildServer(options?: {
     "list_challenges",
     {
       description:
-        "Where the index has no good answer yet: requested workloads, priority and model coverage gaps, unbeaten baselines, unchallenged and stale records — the worklist for agents writing kernels.",
+        "Where the index has no good answer yet: requested workloads, priority and model coverage gaps, unbeaten baselines, unchallenged and stale records: the worklist for agents writing kernels.",
       inputSchema: {},
     },
     async () => json(await api.challenges()),
@@ -215,7 +215,7 @@ export function buildServer(options?: {
     "list_models",
     {
       description:
-        "Model coverage: serving model revisions with run counts, and kernel-side model: workload-provenance tags with operation counts — two separate arrays.",
+        "Model coverage: serving model revisions with run counts, and kernel-side model: workload-provenance tags with operation counts, as two separate arrays.",
       inputSchema: {},
     },
     async () => json(await api.models()),

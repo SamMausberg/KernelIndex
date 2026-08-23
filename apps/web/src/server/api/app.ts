@@ -578,7 +578,7 @@ api.openapi(
     },
     responses: json(
       previewResponse,
-      "Validation report plus, per run, the cohort it would join and the rank it would take under ranking-v1 — never a promise; review decides comparability",
+      "Validation report plus, per run, the cohort it would join and the rank it would take under ranking-v1. Never a promise; review decides comparability",
     ),
   }),
   async (c) => {

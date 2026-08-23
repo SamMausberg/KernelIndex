@@ -1,23 +1,47 @@
+import { CopyButton } from "@/components/copy-button"
 import { Link } from "@/components/quiet-link"
 import { isDeployable } from "@/features/answer/answer-slots"
-import { getOperationIndex, searchCatalog } from "@/lib/catalog"
+import { getOperationIndex, getRecordsPage, searchCatalog } from "@/lib/catalog"
 import { evidenceLabel, formatDateUTC, formatPrimaryParts } from "@/lib/format"
 import { HERO_FAMILIES } from "@/lib/priority"
 
 /**
  * The homepage's one worked example (§16.5): a real workload resolved to a
- * real answer, straight from the live resolver — never a fixture number.
- * Picks the most-measured operation among the hero families so the first
- * thing a visitor reads is an outcome ("your workload → use this"), not a
- * leaderboard. Renders nothing when the corpus can't answer honestly.
+ * real answer, straight from the live resolver, never a fixture number.
+ * Renders nothing when the corpus can't answer honestly.
+ *
+ * The subject comes from the ledger, not from run counts: the newest record
+ * whose holder is actually deployable, hero families first. Ranking by run
+ * count instead resolves the most-measured operation, whose winner is
+ * routinely a contest submission with no package and no license. That is an
+ * honest result and a bad first impression; a demonstration should end at "I
+ * can use this". Falls back to the most-measured hero operation when nothing
+ * deployable exists at all.
  */
 export async function WorkedExample() {
-  const index = await getOperationIndex()
-  const pick = index
+  const [index, ledger] = await Promise.all([
+    getOperationIndex(),
+    getRecordsPage(),
+  ])
+  const familyOf = new Map(index.map((entry) => [entry.slug, entry.family]))
+  const rank = (slug: string) => {
+    const family = HERO_FAMILIES.indexOf(familyOf.get(slug) ?? "")
+    return family === -1 ? HERO_FAMILIES.length : family
+  }
+  // Ledger order is newest-indexed first, so the first match is also the
+  // freshest evidence among equally-prioritised families.
+  const holder = ledger.records
+    .filter((record) => isDeployable(record.current))
+    .sort((a, b) => rank(a.operation.slug) - rank(b.operation.slug))[0]
+  const fallback = index
     .filter((entry) => HERO_FAMILIES.includes(entry.family) && entry.runs > 0)
     .sort((a, b) => b.runs - a.runs)[0]
+  const pick = holder?.operation ?? fallback
   if (!pick) return null
-  const model = await searchCatalog({ query: `op:${pick.slug}` })
+  const model = await searchCatalog({
+    query: `op:${pick.slug}`,
+    cohort: holder?.cohortKey,
+  })
   const exact = model.groups.exact
   const top = exact.find(isDeployable) ?? exact[0]
   if (!top?.primary || !model.operation) return null
@@ -81,6 +105,15 @@ export async function WorkedExample() {
         {" · "}
         {top.license.concluded ?? top.license.declared ?? "license unknown"}
       </p>
+      {/* The payoff, when the answer has one: the line you actually run. */}
+      {top.install && (
+        <div className="plate mt-2.5 flex max-w-[420px] items-center gap-2.5 py-1.5 pr-1.5 pl-3">
+          <code className="min-w-0 flex-1 truncate font-mono text-small text-muted">
+            {top.install.command}
+          </code>
+          <CopyButton text={top.install.command} event="install_copied" />
+        </div>
+      )}
     </div>
   )
 }

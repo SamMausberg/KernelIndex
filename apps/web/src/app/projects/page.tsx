@@ -143,7 +143,12 @@ export default async function ProjectsPage({
         context="standing per project · records held inside their own cohorts · gained and lost over 30 days"
         meta={
           <span className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
-            <span className="text-faint">sorted by</span>
+            {/* Same ledger as every project dossier, cached on its own ISR
+                clock: the snapshot is what makes a few minutes' difference
+                between the two record counts a fact, not a discrepancy. */}
+            <span className="text-faint">
+              records as of {formatDateUTC(model.recordsAsOf)} · sorted by
+            </span>
             {SORTS.map((option) =>
               option.key === sort ? (
                 <span key={option.key} className="text-fg">

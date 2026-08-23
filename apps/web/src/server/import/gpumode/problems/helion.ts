@@ -112,7 +112,7 @@ export const HELION_PROBLEMS: CuratedProblem[] = [
     title: "Gated DeltaNet chunk_fwd_h",
     family: "gated-deltanet",
     description:
-      "The chunk_fwd_h inter-chunk state recurrence of Gated DeltaNet (arXiv:2412.06464): maintain a [k, v] hidden state across chunks of 64 timesteps — sequential over chunks, parallel over (b, h) — emitting the per-chunk states h and gate-corrected values v_new. All tensors are fp32; t must be a multiple of 64.",
+      "The chunk_fwd_h inter-chunk state recurrence of Gated DeltaNet (arXiv:2412.06464): maintain a [k, v] hidden state across chunks of 64 timesteps (sequential over chunks, parallel over (b, h)), emitting the per-chunk states h and gate-corrected values v_new. All tensors are fp32; t must be a multiple of 64.",
     taskPath: "problems/helion/gated_deltanet_chunk_fwd_h_py/task.yml",
     axes: {
       b: { role: "variable" },

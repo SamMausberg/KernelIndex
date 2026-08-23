@@ -201,7 +201,7 @@ export async function reconcileKernelbot(
       .where(eq(schema.operations.slug, operation.slug))
     if (slugRow && slugRow.semanticDigest !== operationDigest) {
       report.ambiguities.push(
-        `operation slug '${operation.slug}' already maps to ${slugRow.semanticDigest}; import proposes ${operationDigest} — needs review`,
+        `operation slug '${operation.slug}' already maps to ${slugRow.semanticDigest}; import proposes ${operationDigest}; needs review`,
       )
     }
 
@@ -393,7 +393,7 @@ export async function reconcileKernelbot(
       const proposed = proposedBySlug.get(row.slug)
       if (proposed !== undefined && proposed !== row.implementationDigest) {
         report.ambiguities.push(
-          `implementation slug '${row.slug}' already maps to ${row.implementationDigest}; import proposes ${proposed} — the newer row will shadow the older page`,
+          `implementation slug '${row.slug}' already maps to ${row.implementationDigest}; import proposes ${proposed}; the newer row will shadow the older page`,
         )
       }
     }

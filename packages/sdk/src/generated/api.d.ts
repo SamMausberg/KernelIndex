@@ -588,6 +588,8 @@ export interface paths {
                     aliases: string[]
                     runs: number
                     lastObservedAt: string | null
+                    /** @description Reviewed-equivalent definitions this row absorbed; a row is not an operation. */
+                    folded: number
                     match?: {
                       matching: number
                       withSource: number
@@ -1247,6 +1249,8 @@ export interface paths {
                     aliases: string[]
                     runs: number
                     lastObservedAt: string | null
+                    /** @description Reviewed-equivalent definitions this row absorbed; a row is not an operation. */
+                    folded: number
                     match?: {
                       matching: number
                       withSource: number
@@ -1907,6 +1911,8 @@ export interface paths {
                       aliases: string[]
                       runs: number
                       lastObservedAt: string | null
+                      /** @description Reviewed-equivalent definitions this row absorbed; a row is not an operation. */
+                      folded: number
                       match?: {
                         matching: number
                         withSource: number
@@ -2838,6 +2844,8 @@ export interface paths {
                   improvementPct: number | null
                 }[]
               }[]
+              /** @description Ledger snapshot the records were read from. */
+              recordsAsOf: string
               implementations: {
                 slug: string
                 name: string
@@ -3652,7 +3660,7 @@ export interface paths {
         }
       }
       responses: {
-        /** @description Validation report plus, per run, the cohort it would join and the rank it would take under ranking-v1 — never a promise; review decides comparability */
+        /** @description Validation report plus, per run, the cohort it would join and the rank it would take under ranking-v1. Never a promise; review decides comparability */
         200: {
           headers: {
             [name: string]: unknown

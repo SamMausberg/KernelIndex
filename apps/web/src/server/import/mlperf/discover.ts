@@ -88,7 +88,7 @@ export async function discoverMlperf(options: {
       data.issues.push({
         locator: snapshot.locator,
         item: round.round,
-        problem: "summary is not an array — upstream format drift",
+        problem: "summary is not an array; upstream format drift",
       })
       continue
     }

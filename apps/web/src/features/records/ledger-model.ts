@@ -366,9 +366,12 @@ export function ledgerSlice(
   const hardwareCounts: Record<string, number> = {}
   for (const holder of model.records)
     hardwareCounts[holder.hardware] = (hardwareCounts[holder.hardware] ?? 0) + 1
+  // Named for what they count (§16.4): a record is one cohort's fastest run,
+  // and the operations are those with ranked runs — the same number the
+  // homepage states, so no surface disagrees with another.
   const context =
     model.records.length > 0
-      ? `${model.records.length} record${model.records.length === 1 ? "" : "s"} across ${operations} operation${operations === 1 ? "" : "s"} · ${model.hardwareOptions.length} GPU${model.hardwareOptions.length === 1 ? "" : "s"}`
+      ? `${model.records.length} record${model.records.length === 1 ? "" : "s"} across ${operations} operation${operations === 1 ? "" : "s"} with ranked runs · ${model.hardwareOptions.length} GPU${model.hardwareOptions.length === 1 ? "" : "s"} · as of ${model.asOf.slice(0, 10)}`
       : undefined
   const slice: LedgerSlice = {
     filters,

@@ -238,7 +238,7 @@ export async function getProjectIndex(): Promise<ProjectIndexModel> {
     .where(eligibleRunFilter())
     .groupBy(schema.projects.id)
     .orderBy(desc(count()))
-  const [{ records }, transitions] = await Promise.all([
+  const [{ records, asOf }, transitions] = await Promise.all([
     getRecordsPage(),
     recordTransitions(),
   ])
@@ -249,6 +249,7 @@ export async function getProjectIndex(): Promise<ProjectIndexModel> {
   }
   return {
     illustrative: rows.length > 0 && rows.every((row) => row.illustrative),
+    recordsAsOf: asOf,
     projects: rows.map((row) => ({
       slug: row.slug,
       name: row.name,
@@ -274,6 +275,11 @@ export async function getProjectIndex(): Promise<ProjectIndexModel> {
  * every `new_run` event credits the new holder's project and debits the
  * displaced holder's, when they differ. Retraction re-promotions are not
  * counted as gains.
+ *
+ * record_events is append-only, so it also holds events a later-arriving or
+ * newly-eligible run has since invalidated (§11.10). `stillARecord` is the
+ * same running-minimum test the records read replays in memory, so standings
+ * and the ledger count the same transitions.
  */
 async function recordTransitions() {
   const winRun = alias(schema.benchmarkRuns, "win_run")
@@ -282,6 +288,15 @@ async function recordTransitions() {
   const lostRun = alias(schema.benchmarkRuns, "lost_run")
   const lostImpl = alias(schema.implementations, "lost_impl")
   const lostProject = alias(schema.projects, "lost_project")
+  const stillARecord = sql`not exists (
+    select 1 from ${schema.benchmarkRuns} as earlier
+    where earlier.comparison_key = ${winRun.comparisonKey}
+      and earlier.status = 'passed'
+      and earlier.published_at is not null
+      and earlier.retracted_at is null
+      and earlier.primary_value < ${winRun.primaryValue}
+      and (earlier.observed_at, earlier.id) <= (${winRun.observedAt}, ${winRun.id})
+  )`
   const rows = await db()
     .select({ winner: winProject.slug, loser: lostProject.slug })
     .from(schema.recordEvents)
@@ -295,6 +310,7 @@ async function recordTransitions() {
       and(
         eq(schema.recordEvents.cause, "new_run"),
         gte(schema.recordEvents.at, sql`now() - interval '30 days'`),
+        stillARecord,
       ),
     )
   const gained = new Map<string, number>()
@@ -325,78 +341,82 @@ export async function getProjectPage(
     eligibleRunFilter(),
     eq(schema.implementations.projectId, project.id),
   )
-  const [joined, [stats], sources, claims, { records }] = await Promise.all([
-    db()
-      .select({
-        run: runColumns,
-        implementation: implementationColumns,
-        project: projectColumns,
-        workload: {
-          id: schema.workloads.id,
-          dtypes: schema.workloads.dtypes,
-          shapeSummary: schema.workloads.shapeSummary,
-        },
-        source: sourceColumns,
-        operation: {
-          name: schema.operations.name,
-          slug: schema.operations.slug,
-        },
-      })
-      .from(schema.benchmarkRuns)
-      .innerJoin(
-        schema.implementations,
-        eq(schema.benchmarkRuns.implementationId, schema.implementations.id),
-      )
-      .innerJoin(
-        schema.projects,
-        eq(schema.implementations.projectId, schema.projects.id),
-      )
-      .innerJoin(
-        schema.workloads,
-        eq(schema.benchmarkRuns.workloadId, schema.workloads.id),
-      )
-      .innerJoin(
-        schema.operations,
-        eq(schema.workloads.operationId, schema.operations.id),
-      )
-      .innerJoin(
-        schema.sources,
-        eq(schema.benchmarkRuns.sourceId, schema.sources.id),
-      )
-      .where(onProject)
-      .orderBy(schema.benchmarkRuns.primaryValue)
-      .limit(PROJECT_RUNS_LIMIT),
-    db()
-      .select({
-        implementations: sql<number>`count(distinct ${schema.benchmarkRuns.implementationId})::int`,
-        runs: count(),
-        hardware: sql<
-          string[] | null
-        >`array_agg(distinct ${schema.benchmarkRuns.hardwareModel})`,
-        licenses: sql<
-          string[] | null
-        >`array_remove(array_agg(distinct ${schema.implementations.licenseExpression}), null)`,
-        lastObservedAt: max(schema.benchmarkRuns.observedAt),
-        illustrative: illustrativeOnly,
-      })
-      .from(schema.benchmarkRuns)
-      .innerJoin(
-        schema.implementations,
-        eq(schema.benchmarkRuns.implementationId, schema.implementations.id),
-      )
-      .innerJoin(
-        schema.sources,
-        eq(schema.benchmarkRuns.sourceId, schema.sources.id),
-      )
-      .where(onProject),
-    sourcesWhere(onProject),
-    db()
-      .select({ state: schema.projectClaims.state, by: schema.users.name })
-      .from(schema.projectClaims)
-      .leftJoin(schema.users, eq(schema.projectClaims.userId, schema.users.id))
-      .where(eq(schema.projectClaims.projectId, project.id)),
-    getRecordsPage(),
-  ])
+  const [joined, [stats], sources, claims, { records, asOf }] =
+    await Promise.all([
+      db()
+        .select({
+          run: runColumns,
+          implementation: implementationColumns,
+          project: projectColumns,
+          workload: {
+            id: schema.workloads.id,
+            dtypes: schema.workloads.dtypes,
+            shapeSummary: schema.workloads.shapeSummary,
+          },
+          source: sourceColumns,
+          operation: {
+            name: schema.operations.name,
+            slug: schema.operations.slug,
+          },
+        })
+        .from(schema.benchmarkRuns)
+        .innerJoin(
+          schema.implementations,
+          eq(schema.benchmarkRuns.implementationId, schema.implementations.id),
+        )
+        .innerJoin(
+          schema.projects,
+          eq(schema.implementations.projectId, schema.projects.id),
+        )
+        .innerJoin(
+          schema.workloads,
+          eq(schema.benchmarkRuns.workloadId, schema.workloads.id),
+        )
+        .innerJoin(
+          schema.operations,
+          eq(schema.workloads.operationId, schema.operations.id),
+        )
+        .innerJoin(
+          schema.sources,
+          eq(schema.benchmarkRuns.sourceId, schema.sources.id),
+        )
+        .where(onProject)
+        .orderBy(schema.benchmarkRuns.primaryValue)
+        .limit(PROJECT_RUNS_LIMIT),
+      db()
+        .select({
+          implementations: sql<number>`count(distinct ${schema.benchmarkRuns.implementationId})::int`,
+          runs: count(),
+          hardware: sql<
+            string[] | null
+          >`array_agg(distinct ${schema.benchmarkRuns.hardwareModel})`,
+          licenses: sql<
+            string[] | null
+          >`array_remove(array_agg(distinct ${schema.implementations.licenseExpression}), null)`,
+          lastObservedAt: max(schema.benchmarkRuns.observedAt),
+          illustrative: illustrativeOnly,
+        })
+        .from(schema.benchmarkRuns)
+        .innerJoin(
+          schema.implementations,
+          eq(schema.benchmarkRuns.implementationId, schema.implementations.id),
+        )
+        .innerJoin(
+          schema.sources,
+          eq(schema.benchmarkRuns.sourceId, schema.sources.id),
+        )
+        .where(onProject),
+      sourcesWhere(onProject),
+      db()
+        .select({ state: schema.projectClaims.state, by: schema.users.name })
+        .from(schema.projectClaims)
+        .leftJoin(
+          schema.users,
+          eq(schema.projectClaims.userId, schema.users.id),
+        )
+        .where(eq(schema.projectClaims.projectId, project.id)),
+      getRecordsPage(),
+    ])
 
   // One row per measured implementation revision, fastest first (the run
   // order); the row's evidence is the revision's strongest run (§11.4).
@@ -440,6 +460,7 @@ export async function getProjectPage(
       lastObservedAt: stats.lastObservedAt?.toISOString() ?? null,
     },
     records: records.filter((holder) => holder.current.project.slug === slug),
+    recordsAsOf: asOf,
     implementations,
     claim: accepted
       ? { state: "claimed", by: accepted.by }

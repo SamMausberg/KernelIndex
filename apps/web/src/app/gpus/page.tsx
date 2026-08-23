@@ -114,8 +114,11 @@ export default async function GpusPage() {
                       className="text-right font-mono text-small"
                     >
                       {runs === 0 ? (
+                        // The board, not #gap: that section only renders when
+                        // gap-kind challenges exist, so the fragment could
+                        // land on nothing.
                         <Link
-                          href="/challenges#gap"
+                          href="/challenges"
                           prefetch={false}
                           className="text-small text-faint"
                         >

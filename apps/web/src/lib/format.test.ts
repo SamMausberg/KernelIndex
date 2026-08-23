@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest"
-import { formatLatency, formatRelative, formatSpread } from "./format"
+import {
+  formatLatency,
+  formatMargin,
+  formatRelative,
+  formatSpeedup,
+  formatSpread,
+} from "./format"
 
 describe("formatLatency", () => {
   it("keeps sub-microsecond values in nanoseconds", () => {
@@ -42,5 +48,22 @@ describe("formatRelative", () => {
   it("is a ratio against the cohort leader", () => {
     expect(formatRelative(primary(7940), primary(7810))).toBe("1.02×")
     expect(formatRelative(null, primary(7810))).toBe("—")
+  })
+})
+
+describe("record margins", () => {
+  it("carries the minus sign itself, so no call site prefixes one", () => {
+    expect(formatMargin(8.8)).toBe("−8.8%")
+    expect(formatSpeedup(8.8)).toBe("8.8% faster")
+  })
+
+  // A record exists because it beat what came before. A non-positive margin
+  // is a defect upstream, and every surface must state nothing rather than
+  // render "−-8.8%" or call a regression an improvement.
+  it("states nothing for a margin that is not an improvement", () => {
+    for (const pct of [-8.8, 0, null, undefined, Number.NaN]) {
+      expect(formatMargin(pct)).toBeNull()
+      expect(formatSpeedup(pct)).toBeNull()
+    }
   })
 })

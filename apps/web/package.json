@@ -30,6 +30,8 @@
     "import:liger": "node --env-file-if-exists=.env.local scripts/import-liger.ts",
     "check:bundles": "node scripts/check-bundle-budget.ts",
     "relate:operations": "node --env-file-if-exists=.env.local scripts/relate-operations.ts",
+    "backfill:summaries": "node --env-file-if-exists=.env.local scripts/backfill-summaries.ts",
+    "backfill:availability": "node --env-file-if-exists=.env.local scripts/backfill-availability.ts",
     "extract:techniques": "node --env-file-if-exists=.env.local scripts/extract-techniques.ts"
   },
   "dependencies": {

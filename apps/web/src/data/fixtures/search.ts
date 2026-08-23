@@ -85,6 +85,7 @@ export async function getOperationIndex(): Promise<OperationIndexEntry[]> {
       aliases: ["rms_norm", "root mean square norm"],
       runs: 10,
       lastObservedAt: FRESH,
+      folded: 0,
     },
     {
       name: "Fused residual + RMSNorm",
@@ -92,6 +93,7 @@ export async function getOperationIndex(): Promise<OperationIndexEntry[]> {
       family: "fused-residual-rmsnorm",
       aliases: [],
       runs: 0,
+      folded: 0,
       lastObservedAt: null,
     },
   ]

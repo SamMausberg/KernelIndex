@@ -1,6 +1,6 @@
 import { Link } from "@/components/quiet-link"
 import type { FeedEntry, FeedModel } from "@/lib/catalog"
-import { countNoun, formatPrimary } from "@/lib/format"
+import { countNoun, formatPrimary, formatSpeedup } from "@/lib/format"
 
 /** One entry as one line: the fact, then its links. Record breaks lead
  * with the implementation and the number; imports state what the batch
@@ -26,9 +26,9 @@ function FeedLine({ entry, isNew }: { entry: FeedEntry; isNew: boolean }) {
         </span>
         <span className="text-subtle"> at </span>
         <span className="font-mono text-fg">{formatPrimary(entry.value)}</span>
-        {entry.improvementPct !== null && (
+        {formatSpeedup(entry.improvementPct) && (
           <span className="text-subtle">
-            , {entry.improvementPct.toFixed(1)}% faster than{" "}
+            , {formatSpeedup(entry.improvementPct)} than{" "}
             {entry.previous.implementation.name}
           </span>
         )}

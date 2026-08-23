@@ -220,7 +220,7 @@ export const AMD_1_1M_PROBLEMS: CuratedProblem[] = [
     title: "AMD mixed-precision MLA decode",
     family: "mla-attention",
     description:
-      "DeepSeek-R1 forward_absorb MLA decode attention for MI355X: absorbed bf16 queries against a compressed latent KV cache with indptr-based variable-length batching, one decode step (qseqlen 1, kvseqlen up to 8k). The KV buffer is supplied in bf16, fp8, and mxfp4 formats — the full 576 dims act as keys and the first 512 as values; a config dict accompanies the tensors listed here.",
+      "DeepSeek-R1 forward_absorb MLA decode attention for MI355X: absorbed bf16 queries against a compressed latent KV cache with indptr-based variable-length batching, one decode step (qseqlen 1, kvseqlen up to 8k). The KV buffer is supplied in bf16, fp8, and mxfp4 formats; the full 576 dims act as keys and the first 512 as values, and a config dict accompanies the tensors listed here.",
     taskPath: "problems/amd_202602/mixed-mla/task.yml",
     axes: {
       batchsize: { role: "variable" },

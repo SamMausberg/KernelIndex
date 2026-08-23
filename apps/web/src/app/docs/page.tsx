@@ -432,6 +432,48 @@ claude mcp add --transport http kernelindex https://kernelindex.com/mcp`}
             then <span className="font-mono text-small">--send</span> with an
             API key. <Link href="/submit">Contribute →</Link>
           </p>
+
+          <Sub id="counting" title="How we count" />
+          <p>
+            Four counters appear across the site, and they are not
+            interchangeable. Each surface states which one it means, so any two
+            can be reconciled by arithmetic rather than trust.
+          </p>
+          <ul className="mt-3 space-y-2">
+            <li>
+              <strong className="font-medium text-fg">Records.</strong> One per
+              comparison cohort: the fastest eligible run in it. A cohort is
+              narrower than an operation, so records outnumber operations.
+            </li>
+            <li>
+              <strong className="font-medium text-fg">
+                Operations with ranked runs.
+              </strong>{" "}
+              Operations holding at least one eligible run. The homepage and{" "}
+              <Link href="/records">the ledger</Link> state this one.
+            </li>
+            <li>
+              <strong className="font-medium text-fg">
+                Operations indexed.
+              </strong>{" "}
+              Every definition in the catalog, measured or not. The remainder is
+              stated on <Link href="/search">browse</Link> as{" "}
+              <em>indexed without runs</em>: a gap, never a claim about speed.
+            </li>
+            <li>
+              <strong className="font-medium text-fg">Browse rows.</strong> What{" "}
+              <Link href="/search">browse</Link> lists. Fewer than the
+              operations behind them: definitions reviewed as equivalent fold
+              into one row, which states how many it absorbed. Their own pages
+              and cohorts stay separate.
+            </li>
+          </ul>
+          <p className="mt-3">
+            Record counts also carry the ledger snapshot they came from. Pages
+            cache independently, so two surfaces can state counts a few minutes
+            of imports apart; the dates say so rather than leaving it to be read
+            as a contradiction.
+          </p>
         </Section>
 
         <Section id="sources" title="Sources and licensing">

@@ -86,6 +86,7 @@ export async function getOperationIndex(): Promise<OperationIndexEntry[]> {
   // operation pages and cohorts of every member remain intact (§8.4).
   const byId = new Map(operations.map((operation) => [operation.id, operation]))
   const skip = new Set<string>()
+  const foldedInto = new Map<string, number>()
   for (const ids of new Set((await equivalenceGroups()).values())) {
     const members = ids.flatMap((id) => byId.get(id) ?? [])
     if (members.length < 2) continue
@@ -118,6 +119,7 @@ export async function getOperationIndex(): Promise<OperationIndexEntry[]> {
       )
     }
     statsById.set(canonical.id, canonicalStats)
+    foldedInto.set(canonical.id, rest.length)
   }
   return operations
     .filter((operation) => !skip.has(operation.id))
@@ -130,6 +132,7 @@ export async function getOperationIndex(): Promise<OperationIndexEntry[]> {
         aliases: aliasesById.get(operation.id) ?? [],
         runs: stats?.n ?? 0,
         lastObservedAt: stats?.lastObservedAt?.toISOString() ?? null,
+        folded: foldedInto.get(operation.id) ?? 0,
       }
     })
 }

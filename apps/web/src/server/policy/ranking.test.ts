@@ -91,7 +91,7 @@ describe("rankCohort", () => {
     expect(ranked.map((entry) => entry.rank)).toEqual([1, 2])
   })
 
-  it("orders a tie chain by trust, recency, then stable id — display only", () => {
+  it("orders a tie chain by trust, recency, then stable id, display only", () => {
     const ranked = rankCohort(
       [
         run("newer", 100, [95, 105], "reported", "2026-08-02T00:00:00Z"),

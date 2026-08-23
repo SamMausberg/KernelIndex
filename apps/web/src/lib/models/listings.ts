@@ -47,6 +47,10 @@ export type HardwareIndexModel = {
 export type ProjectIndexModel = {
   illustrative: boolean
   projects: ProjectIndexEntry[]
+  /** The ledger snapshot the record counts came from; see
+   * RecordsPageModel.asOf. This index and a project's own dossier cache on
+   * separate clocks, so their counts can differ by a few minutes' imports. */
+  recordsAsOf: string
 }
 
 /** One GPU in the hardware index (§16.4 GPU-first navigation). */
@@ -286,6 +290,8 @@ export type ProjectPageModel = {
   }
   /** Current records held, newest indexed first (ledger order). */
   records: RecordHolder[]
+  /** The ledger snapshot these records came from; see RecordsPageModel.asOf. */
+  recordsAsOf: string
   /** Fastest first; one row per measured implementation revision. */
   implementations: ProjectImplementation[]
   /** Accepted claim → claimed by that user's display name; a pending claim

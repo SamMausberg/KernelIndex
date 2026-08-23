@@ -16,6 +16,7 @@ const entry = (
   aliases,
   runs,
   lastObservedAt: null,
+  folded: 0,
 })
 
 const INDEX = [

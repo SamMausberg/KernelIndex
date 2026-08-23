@@ -13,7 +13,13 @@ import { Pager } from "@/components/pager"
 // the URL kept shareable. Markup is identical to the server-rendered form.
 import { Link } from "@/components/quiet-link"
 import { TrustCell } from "@/components/trust"
-import { formatDateUTC, formatPrimary, formatSolScoreCell } from "@/lib/format"
+import {
+  formatDateUTC,
+  formatMargin,
+  formatPrimary,
+  formatSolScoreCell,
+  formatSpeedup,
+} from "@/lib/format"
 import { TRUST_TIERS, trustTier } from "@/lib/trust-tier"
 import {
   DAY_MS,
@@ -82,9 +88,9 @@ function LatestBreaks({ latest }: { latest: LedgerEvent[] }) {
               </span>{" "}
               <span className="text-ghost">→</span>{" "}
               <span className="text-fg">{formatPrimary(event.value)}</span>
-              {event.improvementPct !== null && (
+              {formatMargin(event.improvementPct) && (
                 <span className="ml-2 text-small text-success">
-                  {event.improvementPct.toFixed(1)}%
+                  {formatMargin(event.improvementPct)}
                 </span>
               )}
             </span>
@@ -110,7 +116,7 @@ function HolderRow({ holder }: { holder: LedgerHolder }) {
     Math.floor(Date.now() / DAY_MS) * DAY_MS -
       new Date(holder.indexedAt).getTime() <
     14 * DAY_MS
-  const margin = holder.history[0].improvementPct
+  const margin = formatMargin(holder.history[0].improvementPct)
   // The full timeline lives in the Record history view; rendering it for
   // every collapsed row made the page's payload (§16.12 payload budget).
   const timeline = holder.history.slice(0, 6)
@@ -146,7 +152,7 @@ function HolderRow({ holder }: { holder: LedgerHolder }) {
           <div className="truncate pr-3 font-mono text-small whitespace-nowrap">
             {margin !== null ? (
               <span className="text-subtle">
-                −{margin.toFixed(1)}%
+                {margin}
                 {holder.history[0]?.previousValue && (
                   <span className="text-faint">
                     {" "}
@@ -240,8 +246,8 @@ function HolderRow({ holder }: { holder: LedgerHolder }) {
               {index === 0
                 ? `current · observed ${formatDateUTC(event.at)}`
                 : `record ${formatDateUTC(event.at)} → ${formatDateUTC(holder.history[index - 1].at)}`}
-              {event.improvementPct !== null &&
-                ` · ${event.improvementPct.toFixed(1)}% faster`}
+              {formatSpeedup(event.improvementPct) &&
+                ` · ${formatSpeedup(event.improvementPct)}`}
             </span>
           </div>
         ))}
@@ -352,9 +358,7 @@ function BrokenRows({ transitions }: { transitions: LedgerEvent[] }) {
               )}
           </div>
           <div className="py-3.5 pr-3 text-body whitespace-nowrap text-fg">
-            {event.improvementPct !== null
-              ? `${event.improvementPct.toFixed(1)}%`
-              : "—"}
+            {formatMargin(event.improvementPct) ?? "—"}
           </div>
           <div className="py-3.5 pr-3 font-mono text-small whitespace-nowrap text-muted">
             {holder.hardware}
@@ -410,8 +414,8 @@ function HistoryRows({ events }: { events: LedgerEvent[] }) {
                     previous.implementation.slug !==
                       event.implementation.slug &&
                     ` held by ${previous.implementation.name}`}
-                  {event.improvementPct !== null &&
-                    ` (${event.improvementPct.toFixed(1)}% faster)`}
+                  {formatSpeedup(event.improvementPct) &&
+                    ` (${formatSpeedup(event.improvementPct)})`}
                 </>
               )}
               {" · "}

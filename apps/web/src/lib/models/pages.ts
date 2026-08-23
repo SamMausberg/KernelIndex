@@ -73,6 +73,11 @@ export type RecordsPageModel = {
   hardwareOptions: string[]
   /** Newest record first. */
   records: RecordHolder[]
+  /** When this ledger was read. Every surface that states a record count
+   * derives it from one aggregate, but each is cached on its own ISR clock,
+   * so two pages can legitimately state counts minutes apart. Printing the
+   * snapshot makes that a fact instead of a discrepancy. */
+  asOf: string
 }
 
 // ---------------------------------------------------------------------------

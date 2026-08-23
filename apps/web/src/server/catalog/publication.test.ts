@@ -3,11 +3,82 @@
 // resolves implementations and workloads that live only in the catalog.
 // Requires DATABASE_URL (migrated database).
 import { describe, expect, it } from "vitest"
+import { parseManifestDocument } from "../../schemas/parse.ts"
 import { db } from "../db/client.ts"
 import { exampleBundle } from "./example-bundle.ts"
-import { publishBundle } from "./publication.ts"
+import {
+  type AnyWorkloadManifest,
+  NO_AXES,
+  publishBundle,
+  varyingAxisNames,
+  workloadSummaryOf,
+} from "./publication.ts"
 
 const url = process.env.DATABASE_URL
+
+// One paged-decode operation binds sixteen cases that all shape to
+// [1, 32, 128] and differ only in num_pages and num_kv_indices. Rendered as
+// the shape alone, their records read as contradictory measurements of one
+// workload — the whole reason the summary carries axes (§8.5).
+const decodeCase = (numPages: number, numKvIndices: number) => {
+  const manifest = parseManifestDocument({
+    apiVersion: "kernelindex.dev/v1alpha1",
+    kind: "WorkloadCase",
+    metadata: { name: `gqa-paged-decode-${numPages}-${numKvIndices}` },
+    spec: {
+      operationSpecDigest: `sha256:${"0".repeat(64)}`,
+      axes: {
+        head_dim: 128,
+        page_size: 1,
+        batch_size: 1,
+        num_qo_heads: 32,
+        num_kv_heads: 8,
+        num_pages: numPages,
+        num_kv_indices: numKvIndices,
+      },
+      tensors: { q: { shape: [1, 32, 128], dtype: "bf16" } },
+      correctness: { comparator: "elementwise_close" },
+    },
+  })
+  if (manifest.kind !== "WorkloadCase") throw new Error("unreachable")
+  return manifest satisfies AnyWorkloadManifest
+}
+
+describe("workload display identity", () => {
+  const siblings = [decodeCase(17, 2), decodeCase(10, 9)]
+
+  it("carries the axes that differ and leaves the constant ones out", () => {
+    const varying = varyingAxisNames(siblings)
+    expect([...varying].sort()).toEqual(["num_kv_indices", "num_pages"])
+    expect(siblings.map((c) => workloadSummaryOf(c, varying))).toEqual([
+      "[1, 32, 128] · num_pages=17 · num_kv_indices=2",
+      "[1, 32, 128] · num_pages=10 · num_kv_indices=9",
+    ])
+  })
+
+  it("is the shape alone when nothing looks like it", () => {
+    expect(varyingAxisNames([siblings[0]]).size).toBe(0)
+    expect(workloadSummaryOf(siblings[0], NO_AXES)).toBe("[1, 32, 128]")
+  })
+
+  it("never repeats what the shape already shows", () => {
+    // batch_size is 1 in both, and the shape leads with 1. Resolving axes
+    // against the rows that look alike — not the whole operation — keeps it
+    // out on its own, with no rule about shapes to get wrong.
+    expect(varyingAxisNames(siblings).has("batch_size")).toBe(false)
+    for (const summary of siblings.map((c) =>
+      workloadSummaryOf(c, varyingAxisNames(siblings)),
+    ))
+      expect(summary).not.toContain("batch_size")
+  })
+
+  it("distinguishes every sibling of a real operation", () => {
+    const cases = Array.from({ length: 16 }, (_, i) => decodeCase(i + 1, i * 3))
+    const varying = varyingAxisNames(cases)
+    const summaries = cases.map((c) => workloadSummaryOf(c, varying))
+    expect(new Set(summaries).size).toBe(cases.length)
+  })
+})
 
 describe.skipIf(!url)("batched publication", () => {
   it("counts in-bundle duplicates as existing, keeping runIds per entry", async () => {

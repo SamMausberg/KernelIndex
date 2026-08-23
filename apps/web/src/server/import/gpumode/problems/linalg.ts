@@ -73,7 +73,7 @@ export const LINALG_PROBLEMS: CuratedProblem[] = [
     title: "Batched symmetric eigendecomposition",
     family: "eigh",
     description:
-      "Batched real symmetric eigendecomposition on B200: from a symmetric fp32 batch×n×n input A, return (Q, L) in the torch.linalg.eigh convention — orthonormal eigenvector columns and ascending eigenvalues. Correctness is gated on the eigen-equation, reconstruction, and orthogonality residuals measured in fp64, and the benchmark set includes mixed and ill-conditioned batches so robustness is ranked, not only gated. cond is a deterministic dynamic-range knob on the generated inputs.",
+      "Batched real symmetric eigendecomposition on B200: from a symmetric fp32 batch×n×n input A, return (Q, L) in the torch.linalg.eigh convention: orthonormal eigenvector columns and ascending eigenvalues. Correctness is gated on the eigen-equation, reconstruction, and orthogonality residuals measured in fp64, and the benchmark set includes mixed and ill-conditioned batches so robustness is ranked, not only gated. cond is a deterministic dynamic-range knob on the generated inputs.",
     taskPath: "problems/linalg/eigh_py/task.yml",
     axes: {
       batch: { role: "variable" },
@@ -136,7 +136,7 @@ export const LINALG_PROBLEMS: CuratedProblem[] = [
     title: "Batched compact-Householder QR",
     family: "qr",
     description:
-      "Batched square compact-Householder QR factorization on B200: from an fp32 batch×n×n input A, return (H, tau) in the torch.geqrf convention — R in the upper triangle of H, Householder vectors below, reflector coefficients in tau. The checker validates the LAPACK-style factor residual and orthogonality of the materialized Q with purely relative fp32-accuracy gates, and the benchmark set includes mixed and ill-conditioned batches so conditioning robustness is ranked. cond is a deterministic column-scaling knob on the generated inputs.",
+      "Batched square compact-Householder QR factorization on B200: from an fp32 batch×n×n input A, return (H, tau) in the torch.geqrf convention: R in the upper triangle of H, Householder vectors below, reflector coefficients in tau. The checker validates the LAPACK-style factor residual and orthogonality of the materialized Q with purely relative fp32-accuracy gates, and the benchmark set includes mixed and ill-conditioned batches so conditioning robustness is ranked. cond is a deterministic column-scaling knob on the generated inputs.",
     taskPath: "problems/linalg/qr_v2/task.yml",
     axes: {
       batch: { role: "variable" },
