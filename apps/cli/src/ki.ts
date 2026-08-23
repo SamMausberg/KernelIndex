@@ -2,7 +2,8 @@
 // ki — the KernelIndex CLI (§13.8). Human-readable tables by default; the
 // --json/--jsonl output is stable machine output with no decorative noise,
 // full units, and untruncated digests. Exit codes: 0 ok, 1 error, 2 usage.
-import { readFileSync } from "node:fs"
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs"
+import { join } from "node:path"
 import { parseArgs } from "node:util"
 import {
   type CompareModel,
@@ -16,6 +17,7 @@ import {
 import { digestManifest, validateManifest } from "@kernelindex/sdk/manifest"
 import { parse as parseYaml } from "yaml"
 import { formatPrimary, tableLines } from "./render.ts"
+import { vendorPlan } from "./vendor.ts"
 
 const HELP = `ki — KernelIndex command line
 
@@ -25,6 +27,9 @@ Usage:
                                      (a list of requests resolves in one call)
   ki resolve serving --manifest <p>  serving resolution: objective or Pareto
   ki show <operation|implementation|run|serving-run> <id-or-slug>
+  ki use <implementation> [--out d]  adopt a kernel: print its install
+                                     command, or vendor the mirrored source
+                                     locally with provenance recorded
   ki compare run <id> <id> [...]     aligned comparison (2–8 runs)
   ki records [--limit n] [--cursor c]   current record holders, newest first
   ki changes [--since <iso>]         what the index learned, newest first
@@ -62,6 +67,7 @@ const { values, positionals } = parseArgs({
     api: { type: "string" },
     "api-key": { type: "string" },
     manifest: { type: "string" },
+    out: { type: "string" },
     json: { type: "boolean", default: false },
     jsonl: { type: "boolean", default: false },
     quiet: { type: "boolean", default: false },
@@ -269,6 +275,48 @@ async function main(): Promise<number> {
     )
     if (emit(dossier)) return 0
     console.log(JSON.stringify(dossier, null, 2))
+    return 0
+  }
+
+  if (command === "use") {
+    const [slug] = rest
+    if (!slug) usage("usage: ki use <implementation> [--out <dir>]")
+    const model = await api.getImplementation(slug, { includeSource: true })
+    const plan = vendorPlan(model, new Date().toISOString().slice(0, 10))
+    if (plan.kind === "none") {
+      if (emit(plan)) return 1
+      console.error(plan.reason)
+      return 1
+    }
+    if (plan.kind === "install") {
+      if (emit(plan)) return 0
+      console.log(plan.command)
+      if (!values.quiet && model.source.commit)
+        console.log(`pinned at ${model.source.commit.slice(0, 12)}`)
+      if (!values.quiet && model.usage.invocationExample)
+        console.log(`\n${model.usage.invocationExample}`)
+      return 0
+    }
+    const dir = values.out ?? join("kernels", model.implementation.slug)
+    const path = join(dir, plan.fileName)
+    mkdirSync(dir, { recursive: true })
+    writeFileSync(path, plan.content)
+    if (
+      emit({
+        written: path,
+        license: plan.license,
+        digest: model.implementation.digest,
+      })
+    )
+      return 0
+    console.log(path)
+    if (!values.quiet) {
+      console.log(
+        `license ${plan.license ?? "unknown"} · digest ${model.implementation.digest}`,
+      )
+      if (model.usage.invocationExample)
+        console.log(`\n${model.usage.invocationExample}`)
+    }
     return 0
   }
 

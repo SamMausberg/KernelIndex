@@ -57,7 +57,8 @@ Claim rules (keep these when quoting results):
   https://github.com/SamMausberg/KernelIndex - run from the checkout.
 
 ## CLI
-- \`ki\` in apps/cli: search, resolve, show, compare, validate, digest;
+- \`ki\` in apps/cli: search, resolve, show, use (vendor a mirrored kernel
+  source locally with provenance), compare, validate, digest;
   \`--json\` output is stable.
 
 ## Data
