@@ -423,17 +423,13 @@ curl -L https://kernelindex.com/api/v1/exports/catalog.jsonl.zst
                 </div>
               </>
             )}
-          <h3 className="mt-8 mb-3 text-lead font-medium text-fg">
-            Known limitations
-          </h3>
+          <Sub id="limitations" title="Known limitations" />
           <ul className="list-disc space-y-2.5 pl-5">
             {LIMITATIONS.map((limitation) => (
               <li key={limitation.slice(0, 24)}>{limitation}</li>
             ))}
           </ul>
-          <h3 className="mt-8 mb-3 text-lead font-medium text-fg">
-            Data quality
-          </h3>
+          <Sub id="data-quality" title="Data quality" />
           <p>
             A weekly job re-imports every source; anything unexpected stops that
             source before it writes, and an invariant checker audits the whole

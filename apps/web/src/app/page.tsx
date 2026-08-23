@@ -80,10 +80,14 @@ export default async function Home() {
             )}
             <WorkedExample />
             <p className="mt-5 font-mono text-small text-faint">
-              <a href="#trust" className="text-subtle">
+              <span className="text-subtle">
                 {model.stats.operations.toLocaleString("en-US")} operations ·{" "}
                 {model.stats.runs.toLocaleString("en-US")} runs ·{" "}
                 {model.stats.gpus.toLocaleString("en-US")} GPUs
+              </span>{" "}
+              ·{" "}
+              <a href="#trust" className="text-faint">
+                sources
               </a>{" "}
               ·{" "}
               <Link href="/docs/api" className="text-faint">

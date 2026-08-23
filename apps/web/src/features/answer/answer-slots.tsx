@@ -108,29 +108,28 @@ function Slot({
         {formatDateUTC(row.lastTestedAt)}.
         {row.caveats.length > 0 ? ` ${row.caveats.join(". ")}.` : ""}
       </p>
-      {row.install ? (
+      {row.install && (
         <div className="plate mt-4 flex max-w-[520px] items-center gap-2.5 py-2 pr-2 pl-3">
           <code className="min-w-0 flex-1 truncate font-mono text-small text-muted">
             {row.install.command}
           </code>
           <CopyButton text={row.install.command} event="install_copied" />
         </div>
-      ) : row.sourceAvailable ? (
-        <p className="mt-4 text-small text-subtle">
-          No package.{" "}
-          <Link
-            href={`/implementations/${row.implementation.slug}#use`}
-            className="text-small"
-          >
-            Vendor the source from the kernel page →
-          </Link>
-        </p>
-      ) : (
-        <p className="mt-4 text-small text-faint">
-          No public source for this result.
-        </p>
       )}
-      <div className="mt-3.5 flex flex-wrap gap-x-5 gap-y-1">
+      {/* One action row: the adoption path and the evidence links share a
+          line instead of stacking three rows under every answer. */}
+      <div className="mt-3.5 flex flex-wrap items-baseline gap-x-5 gap-y-1">
+        {!row.install &&
+          (row.sourceAvailable ? (
+            <Link
+              href={`/implementations/${row.implementation.slug}#use`}
+              className="action"
+            >
+              No package · vendor the source →
+            </Link>
+          ) : (
+            <span className="text-small text-faint">No public source</span>
+          ))}
         {row.sourceAvailable && (
           <Link
             href={`/implementations/${row.implementation.slug}#code`}
