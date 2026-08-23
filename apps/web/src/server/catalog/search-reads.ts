@@ -7,6 +7,7 @@ import { and, eq, inArray, sql } from "drizzle-orm"
 import type {
   NearestCase,
   OperationIndexEntry,
+  ResultRow,
   SearchInput,
   SearchPageModel,
 } from "../../lib/catalog-models.ts"
@@ -23,6 +24,7 @@ import {
 import type { OperationSpecManifest } from "../../schemas/kinds.ts"
 import { db } from "../db/client.ts"
 import * as schema from "../db/schema.ts"
+import { EXTRACTOR_VERSION } from "../enrich/techniques.ts"
 import {
   type ChooserRun,
   chooserFacets,
@@ -47,6 +49,7 @@ import { type AnyWorkloadManifest, workloadLabel } from "./present.ts"
 import { eligibleRunFilter } from "./record-events.ts"
 import { equivalenceGroups, equivalentOperationIds } from "./relations.ts"
 import {
+  type ImplementationRows,
   implementationRows,
   type JoinedRun,
   joinedRunsForOperation,
@@ -313,6 +316,42 @@ function nearestCases(
   return { axis: bracket.axis, requested: bracket.requested, below, above }
 }
 
+/** Implementation slugs carrying every requested trait under the current
+ * extractor; null when no tech: facet is present. */
+async function techniqueFilter(
+  techniques: string[],
+  implRows: ImplementationRows,
+): Promise<Set<string> | null> {
+  if (techniques.length === 0) return null
+  const rows = await db()
+    .select({
+      implementationId: schema.implementationTraits.implementationId,
+      traits: sql<number>`count(distinct ${schema.implementationTraits.trait})::int`,
+    })
+    .from(schema.implementationTraits)
+    .where(
+      and(
+        inArray(
+          schema.implementationTraits.implementationId,
+          implRows.map((row) => row.implementation.id),
+        ),
+        inArray(schema.implementationTraits.trait, techniques),
+        eq(schema.implementationTraits.extractorVersion, EXTRACTOR_VERSION),
+      ),
+    )
+    .groupBy(schema.implementationTraits.implementationId)
+  const complete = new Set(
+    rows
+      .filter((row) => row.traits === techniques.length)
+      .map((row) => row.implementationId),
+  )
+  return new Set(
+    implRows
+      .filter((row) => complete.has(row.implementation.id))
+      .map((row) => row.implementation.slug),
+  )
+}
+
 const EMPTY_GROUPS = {
   exact: [],
   compatible: [],
@@ -348,6 +387,7 @@ export async function searchCatalog(
       license: intent.license,
       requireSource: intent.requireSource,
       requireInstallable: intent.requireInstallable,
+      techniques: intent.techniques,
     },
     operation: null,
     browse: null,
@@ -545,10 +585,18 @@ export async function searchCatalog(
   // Payload guard at corpus scale (§16): every group is capped and the view
   // reports exactly what was cut — nothing is dropped silently.
   const supported = supportedUnmeasuredRows(operation, joined, implRows)
-  const cut = <T>(rows: T[]) => ({
-    rows: rows.slice(0, GROUP_CAP),
-    overflow: Math.max(0, rows.length - GROUP_CAP),
-  })
+  // tech: facets hide rows after ranking, like trust and license (§11.4):
+  // rank numbers keep their cohort meaning under the filter.
+  const allowed = await techniqueFilter(intent.techniques, implRows)
+  const cut = <T extends ResultRow>(rows: T[]) => {
+    const kept = allowed
+      ? rows.filter((row) => allowed.has(row.implementation.slug))
+      : rows
+    return {
+      rows: kept.slice(0, GROUP_CAP),
+      overflow: Math.max(0, kept.length - GROUP_CAP),
+    }
+  }
   const exact = cut(groups.exact)
   const compatible = cut(groups.compatible)
   const supportedCut = cut(supported)

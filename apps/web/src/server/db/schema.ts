@@ -692,6 +692,34 @@ export const attestations = pgTable(
   (t) => [index("attestations_run_idx").on(t.runId, t.createdAt)],
 )
 
+/**
+ * Technique traits extracted statically from mirrored source (§8.7): hard
+ * lexical facts (TMA, WGMMA, split-K, tile sizes) with the matched line as
+ * evidence. Append-only per extractor version; never an LLM description.
+ */
+export const implementationTraits = pgTable(
+  "implementation_traits",
+  {
+    id: id(),
+    implementationId: uuid("implementation_id")
+      .notNull()
+      .references(() => implementations.id),
+    trait: text("trait").notNull(),
+    value: text("value"),
+    evidence: text("evidence").notNull(),
+    extractorVersion: text("extractor_version").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    uniqueIndex("implementation_traits_unique").on(
+      t.implementationId,
+      t.trait,
+      t.extractorVersion,
+    ),
+    index("implementation_traits_trait_idx").on(t.trait, t.extractorVersion),
+  ],
+)
+
 /** Minimal first-party product events (§20.5): event name plus coarse
     facets. Deliberately no user id, no IP, no session key, and no raw
     query text — the answer-quality metrics in §20.4 need nothing more.

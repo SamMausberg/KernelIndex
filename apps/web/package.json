@@ -29,7 +29,8 @@
     "import:mlperf": "node --env-file-if-exists=.env.local scripts/import-mlperf.ts",
     "import:liger": "node --env-file-if-exists=.env.local scripts/import-liger.ts",
     "check:bundles": "node scripts/check-bundle-budget.ts",
-    "relate:operations": "node --env-file-if-exists=.env.local scripts/relate-operations.ts"
+    "relate:operations": "node --env-file-if-exists=.env.local scripts/relate-operations.ts",
+    "extract:techniques": "node --env-file-if-exists=.env.local scripts/extract-techniques.ts"
   },
   "dependencies": {
     "@hono/zod-openapi": "^1.6.0",

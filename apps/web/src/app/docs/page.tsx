@@ -132,14 +132,18 @@ rmsnorm gpu:B200 dtype:bf16 shape:[2048,4096] framework=pytorch trust:verified`}
             or <span className="font-mono text-small">key=value</span>. Keys:{" "}
             <span className="font-mono text-small">
               op family model gpu arch dtype shape layout framework language
-              cuda trust license source installable
+              cuda trust license source installable tech
             </span>
             , plus axis bindings like{" "}
             <span className="font-mono text-small">tokens=2048</span>. Workload
-            and hardware filters decide what counts as an exact match; trust and
-            license filters only hide rows. A typo in a filter gets a correction
-            hint. If nobody measured the exact shape you asked for, the answer
-            shows the nearest measured cases on either side of it.
+            and hardware filters decide what counts as an exact match; trust,
+            license, and technique filters only hide rows.{" "}
+            <span className="font-mono text-small">tech:tma</span> keeps
+            implementations whose mirrored source uses that technique (the
+            traits are extracted by pattern and listed on each implementation
+            page). A typo in a filter gets a correction hint. If nobody measured
+            the exact shape you asked for, the answer shows the nearest measured
+            cases on either side of it.
           </p>
 
           <Sub id="views" title="Views" />

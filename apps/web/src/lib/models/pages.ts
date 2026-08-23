@@ -178,6 +178,8 @@ export type SearchPolicy = {
   license: string | null
   requireSource: boolean
   requireInstallable: boolean
+  /** Statically extracted traits every shown row's implementation carries. */
+  techniques: string[]
 }
 
 /** §16.6: result groups are semantically separate and never interleaved. */
@@ -445,6 +447,9 @@ export type ImplementationPageModel = {
     authors: string[]
     importedAt: string | null
   }
+  /** Statically extracted technique facts (§8.7): each trait with the
+   * source line that proves it. Empty when no source is mirrored. */
+  techniques: { trait: string; value: string | null; evidence: string }[]
   /** Mirrored kernel source (§8.13), when the revision carries one. */
   sourceCode: {
     fileName: string | null

@@ -441,6 +441,48 @@ export default async function ImplementationPage({ params }: Props) {
           </div>
         </Section>
 
+        {model.techniques.length > 0 && (
+          <Section id="techniques" title="Techniques">
+            {/* Hard facts only (§8.7): each trait names the source line that
+                proves it. Searchable as tech:<trait>. */}
+            <p className="mb-3 text-small text-subtle">
+              Extracted from the mirrored source by pattern, never inferred.
+              Each row cites its line.
+            </p>
+            <div className="max-w-[760px]">
+              {model.techniques.map((technique) => (
+                <div
+                  key={technique.trait}
+                  className="grid grid-cols-[170px_minmax(0,1fr)] items-baseline gap-x-4 border-b border-line py-1.5 text-small max-md:grid-cols-1"
+                >
+                  <Link
+                    href={`/search?q=${encodeURIComponent(
+                      [
+                        model.bestResults[0]
+                          ? `op:${model.bestResults[0].operation.slug}`
+                          : null,
+                        `tech:${technique.trait}`,
+                      ]
+                        .filter(Boolean)
+                        .join(" "),
+                    )}`}
+                    prefetch={false}
+                    className="font-mono text-small"
+                  >
+                    {technique.trait}
+                    {technique.value !== null && (
+                      <span className="text-subtle"> = {technique.value}</span>
+                    )}
+                  </Link>
+                  <code className="truncate font-mono text-mini text-faint">
+                    {technique.evidence}
+                  </code>
+                </div>
+              ))}
+            </div>
+          </Section>
+        )}
+
         {model.sourceCode && (
           <Section id="code" title="Kernel source">
             <SourceCodeView code={model.sourceCode} />

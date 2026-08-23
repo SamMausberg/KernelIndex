@@ -35,6 +35,8 @@ export type SearchIntent = {
   license: string | null
   requireSource: boolean
   requireInstallable: boolean
+  /** Technique traits every shown implementation must carry (tech:tma). */
+  techniques: string[]
   facets: QueryFacet[]
   issues: QueryIssue[]
 }
@@ -123,6 +125,8 @@ const KEY_ALIASES: Record<string, string> = {
   source: "source",
   source_available: "source",
   installable: "installable",
+  tech: "tech",
+  technique: "tech",
 }
 
 function parseShape(value: string): number[] | null {
@@ -183,6 +187,7 @@ export function parseQuery(query: string): SearchIntent {
     license: null,
     requireSource: false,
     requireInstallable: false,
+    techniques: [],
     facets: [],
     issues: [],
   }
@@ -308,6 +313,12 @@ export function parseQuery(query: string): SearchIntent {
           )
         intent.requireInstallable = flag
         facet(token, "installable", flag ? "installable" : "any install state")
+        return
+      }
+      case "tech": {
+        const trait = lower.replaceAll("_", "-")
+        if (!intent.techniques.includes(trait)) intent.techniques.push(trait)
+        facet(token, "tech", `uses ${trait}`)
         return
       }
     }

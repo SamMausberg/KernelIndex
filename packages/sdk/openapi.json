@@ -7775,6 +7775,24 @@
                       },
                       "required": ["source", "authors", "importedAt"]
                     },
+                    "techniques": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "trait": {
+                            "type": "string"
+                          },
+                          "value": {
+                            "type": ["string", "null"]
+                          },
+                          "evidence": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["trait", "value", "evidence"]
+                      }
+                    },
                     "sourceCode": {
                       "type": ["object", "null"],
                       "properties": {
@@ -7854,6 +7872,7 @@
                     "bestResults",
                     "limitations",
                     "provenance",
+                    "techniques",
                     "sourceCode"
                   ]
                 }

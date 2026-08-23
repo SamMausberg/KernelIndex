@@ -2472,6 +2472,11 @@ export interface paths {
                 authors: string[]
                 importedAt: string | null
               }
+              techniques: {
+                trait: string
+                value: string | null
+                evidence: string
+              }[]
               sourceCode: {
                 fileName: string | null
                 /** @enum {string} */

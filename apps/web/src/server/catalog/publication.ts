@@ -25,6 +25,7 @@ import { API_VERSION } from "../../schemas/kinds.ts"
 import { parseManifestDocument } from "../../schemas/parse.ts"
 import type { Db } from "../db/client.ts"
 import * as schema from "../db/schema.ts"
+import { traitRows } from "../enrich/techniques.ts"
 import { type Digest, specDigest } from "../identity/digest.ts"
 import {
   comparisonKey,
@@ -33,6 +34,7 @@ import {
 } from "../policy/comparison.ts"
 import { concludeLicense } from "../policy/licensing.ts"
 import { syncRecordEvents } from "./record-events.ts"
+import { sourceLanguage } from "./run-rows.ts"
 
 export type BundleArtifact = {
   role: string
@@ -686,6 +688,28 @@ export async function publishBundle(
             ),
         })),
       ].map(([digest, row]) => [digest, row.id]),
+    )
+
+    // Technique traits (§8.7) from inline source artifacts, extracted once
+    // per implementation and extractor version; re-publishing is a no-op.
+    const traits = implementations.flatMap((entry) => {
+      const source = entry.manifest.spec.source
+      const artifact = entry.artifacts?.find(
+        (candidate) => candidate.digest === source?.contentDigest,
+      )
+      if (!source || !artifact?.content) return []
+      const row = implementationRowByDigest.get(entry.digest) as { id: string }
+      return traitRows(
+        row.id,
+        sourceLanguage(artifact.mediaType, source.fileName ?? null),
+        artifact.content,
+      )
+    })
+    await perChunk(traits, (slice) =>
+      tx
+        .insert(schema.implementationTraits)
+        .values(slice)
+        .onConflictDoNothing(),
     )
 
     // Append-only benchmark runs (§10.7). Revalidate and digest every run,

@@ -8,6 +8,7 @@ import type { ImplementationRevisionManifest } from "../../schemas/kinds.ts"
 import { attestationCounts } from "../attestations.ts"
 import { db } from "../db/client.ts"
 import * as schema from "../db/schema.ts"
+import { EXTRACTOR_VERSION } from "../enrich/techniques.ts"
 import { cohortRanks } from "./cohorts.ts"
 import { getRecordsPage } from "./home-reads.ts"
 import { bestEvidence } from "./present.ts"
@@ -229,7 +230,7 @@ export async function getImplementationPage(
   const evidence = bestEvidence(joined.map((j) => j.run))
   // Independent round trips: source refs, the source-code bundle, the
   // cohort ranks behind every evidence row, and the ledger for standing.
-  const [refs, sourceCode, ranks, ledger] = await Promise.all([
+  const [refs, sourceCode, ranks, ledger, techniques] = await Promise.all([
     sourceRefs(joined),
     implementationSourceCode(
       database,
@@ -244,6 +245,20 @@ export async function getImplementationPage(
       ),
     ),
     getRecordsPage(),
+    database
+      .select({
+        trait: schema.implementationTraits.trait,
+        value: schema.implementationTraits.value,
+        evidence: schema.implementationTraits.evidence,
+      })
+      .from(schema.implementationTraits)
+      .where(
+        and(
+          eq(schema.implementationTraits.implementationId, implementation.id),
+          eq(schema.implementationTraits.extractorVersion, EXTRACTOR_VERSION),
+        ),
+      )
+      .orderBy(schema.implementationTraits.trait),
   ])
   const bestResults = joined.map((j) =>
     resultRow(
@@ -336,6 +351,7 @@ export async function getImplementationPage(
         .filter((author): author is string => author !== undefined),
       importedAt: implementation.createdAt.toISOString(),
     },
+    techniques,
     sourceCode,
   }
 }

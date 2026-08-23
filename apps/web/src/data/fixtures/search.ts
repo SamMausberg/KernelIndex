@@ -116,6 +116,7 @@ export async function searchCatalog(
       license: intent.license,
       requireSource: intent.requireSource,
       requireInstallable: intent.requireInstallable,
+      techniques: intent.techniques,
     },
     overflow: { exact: 0, compatible: 0, supportedUnmeasured: 0, reported: 0 },
   }

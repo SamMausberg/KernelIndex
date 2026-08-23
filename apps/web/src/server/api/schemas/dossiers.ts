@@ -189,6 +189,13 @@ export const implementationDossier = z.object({
     authors: z.array(z.string()),
     importedAt: z.string().nullable(),
   }),
+  techniques: z.array(
+    z.object({
+      trait: z.string(),
+      value: z.string().nullable(),
+      evidence: z.string(),
+    }),
+  ),
   sourceCode: z
     .object({
       fileName: z.string().nullable(),

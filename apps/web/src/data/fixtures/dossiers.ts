@@ -96,6 +96,7 @@ const IMPLEMENTATIONS: Record<string, ImplementationPageModel> = {
       authors: ["fictional-author"],
       importedAt: FRESH,
     },
+    techniques: [],
     sourceCode: null,
   },
   "ionflux-rmsnorm": {
@@ -149,6 +150,18 @@ const IMPLEMENTATIONS: Record<string, ImplementationPageModel> = {
       authors: [],
       importedAt: FRESH,
     },
+    techniques: [
+      {
+        trait: "persistent-kernel",
+        value: null,
+        evidence: "for tile in range(pid, num_tiles, tl.num_programs(0)):",
+      },
+      {
+        trait: "tile-m",
+        value: "128",
+        evidence: "BLOCK_M: tl.constexpr = 128",
+      },
+    ],
     sourceCode: {
       fileName: "submission.py",
       language: "python",
