@@ -79,6 +79,8 @@ export default async function Home() {
               </p>
             )}
             <WorkedExample />
+            {/* Corpus stats plus the two doors that matter here; llms.txt
+                and the rest of the machine surface live in the footer. */}
             <p className="mt-5 font-mono text-small text-faint">
               <span className="text-subtle">
                 {model.stats.operations.toLocaleString("en-US")} operations ·{" "}
@@ -91,16 +93,8 @@ export default async function Home() {
               </a>{" "}
               ·{" "}
               <Link href="/docs/api" className="text-faint">
-                API
-              </Link>{" "}
-              ·{" "}
-              <Link href="/docs#agents" className="text-faint">
-                MCP
-              </Link>{" "}
-              ·{" "}
-              <a href="/llms.txt" className="text-faint">
-                llms.txt
-              </a>
+                API &amp; MCP
+              </Link>
             </p>
           </div>
         </section>

@@ -104,7 +104,12 @@ function LatestBreaks({ latest }: { latest: LedgerEvent[] }) {
 function HolderRow({ holder }: { holder: LedgerHolder }) {
   const record = holder.current
   // "New" means newly indexed, not newly observed by the source (§16.5).
-  const isNew = Date.now() - new Date(holder.indexedAt).getTime() < 14 * DAY_MS
+  // Day-quantized clock, like the timeline's `now` below: identical between
+  // server render and hydration except across a UTC day boundary.
+  const isNew =
+    Math.floor(Date.now() / DAY_MS) * DAY_MS -
+      new Date(holder.indexedAt).getTime() <
+    14 * DAY_MS
   const margin = holder.history[0].improvementPct
   // The full timeline lives in the Record history view; rendering it for
   // every collapsed row made the page's payload (§16.12 payload budget).

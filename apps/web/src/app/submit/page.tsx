@@ -30,7 +30,7 @@ export default async function SubmitPage() {
           <a href="https://github.com/SamMausberg/KernelIndex/blob/main/registry/examples/bench-record.json">
             example
           </a>
-          ) — the record assembles into the same manifests with every digest
+          ); the record assembles into the same manifests with every digest
           computed. Validate shows what was parsed and where each run would
           land; Submit queues it for review. From the terminal:{" "}
           <span className="font-mono text-small">ki submit record.json</span>.

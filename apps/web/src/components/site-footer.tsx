@@ -49,6 +49,12 @@ export function SiteFooter({ showServing = true }: { showServing?: boolean }) {
           >
             Atom
           </a>
+          <a
+            href="/llms.txt"
+            className="text-small text-subtle no-underline transition-colors hover:text-fg"
+          >
+            llms.txt
+          </a>
         </span>
         {releaseSha && (
           <span className="font-mono text-mini text-faint">
