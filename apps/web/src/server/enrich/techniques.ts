@@ -166,8 +166,11 @@ export function extractTechniques(
       // short token by accident; long unbroken runs are scrubbed before any
       // detector sees the line.
       const line = raw.trim().replace(/[A-Za-z0-9+/=]{40,}/g, "…")
-      // Comments never count as a technique in use.
-      if (/^(\/\/|#|\*|\/\*)/.test(line)) continue
+      // Comments never count as a technique in use — but '#' introduces
+      // preprocessor directives in C++/CUDA (#define SPLIT_K 4 is a real
+      // technique declaration), so it is a comment marker only in Python.
+      if (/^(\/\/|\*|\/\*)/.test(line)) continue
+      if (language === "python" && line.startsWith("#")) continue
       const match = detector.pattern.exec(line)
       if (!match) continue
       // The cited line is bounded, windowed around the match so the proof

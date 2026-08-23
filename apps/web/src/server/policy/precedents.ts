@@ -8,6 +8,13 @@ import { MEMORY_PATTERN_TRAITS } from "../enrich/techniques.ts"
 
 export const PRECEDENT_POLICY_VERSION = "precedents-v1"
 
+/** One authority for the answer size: both backends and the wire schema. */
+export const PRECEDENT_DEFAULT_LIMIT = 10
+export const PRECEDENT_MAX_LIMIT = 25
+
+export const clampPrecedentLimit = (limit: number | undefined) =>
+  Math.min(PRECEDENT_MAX_LIMIT, Math.max(1, limit ?? PRECEDENT_DEFAULT_LIMIT))
+
 const WEIGHTS: PrecedentDimensions = {
   computation: 0.35,
   hardware: 0.25,

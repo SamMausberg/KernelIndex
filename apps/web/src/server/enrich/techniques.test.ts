@@ -51,6 +51,15 @@ def kernel(a_ptr, BLOCK_SIZE_M: tl.constexpr = 64, BLOCK_SIZE_K: tl.constexpr = 
     expect(byTrait('asm volatile("")', "python").has("inline-ptx")).toBe(false)
   })
 
+  it("reads C++ preprocessor macros but not C++ comments", () => {
+    const traits = byTrait(
+      "#define SPLIT_K_SLICES 4\n// persistent kernel planned later\nint x;",
+      "cpp",
+    )
+    expect(traits.get("split-k")?.evidence).toContain("#define SPLIT_K")
+    expect(traits.has("persistent-kernel")).toBe(false)
+  })
+
   it("distinguishes bulk TMA from plain cp.async and stays silent otherwise", () => {
     const plain = byTrait(
       'asm("cp.async.cg.shared.global [%0], [%1], 16;");',

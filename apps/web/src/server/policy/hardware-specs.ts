@@ -109,6 +109,14 @@ export const HARDWARE_SPECS: HardwareSpec[] = [
 ]
 
 export function hardwareSpec(model: string): HardwareSpec | null {
-  const lower = model.toLowerCase()
-  return HARDWARE_SPECS.find((spec) => lower.includes(spec.match)) ?? null
+  // Word-boundary match ("b300" never hits a future "GB300") with the
+  // longest match winning ("h100 pcie" beats "h100"), so lookup never
+  // depends on table order.
+  return (
+    HARDWARE_SPECS.filter((spec) =>
+      new RegExp(`(?:^|[^a-z0-9])${spec.match}(?:[^a-z0-9]|$)`, "i").test(
+        model,
+      ),
+    ).sort((a, b) => b.match.length - a.match.length)[0] ?? null
+  )
 }

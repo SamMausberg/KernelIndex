@@ -3,6 +3,7 @@
 // backend. The page readers live beside it:
 //
 //   run-rows.ts        shared joined-run projections and ResultRow assembly
+//                      (internals: siblings import it directly, not via here)
 //   cohorts.ts         grouping, cohort facts, and cohort-wide ranking
 //   search-reads.ts    query resolution, chooser, bracketing (§12)
 //   operation-reads.ts operation index and dossier (§16.5, §16.8)
@@ -21,17 +22,6 @@ export { getModelIndex, getModelPage } from "./model-reads.ts"
 export { getOperationIndex, getOperationPage } from "./operation-reads.ts"
 export { findPrecedents } from "./precedent-reads.ts"
 export { getRunPage } from "./run-page-reads.ts"
-export {
-  implementationColumns,
-  type JoinedRun,
-  primaryOf,
-  projectColumns,
-  rankInputOf,
-  resultRow,
-  runColumns,
-  sourceColumns,
-  sourceRefs,
-} from "./run-rows.ts"
 export { searchCatalog } from "./search-reads.ts"
 // Serving reads (§8.16, Week 9) live in their own module; re-exported so
 // the seam's dynamic import of this file satisfies one interface.

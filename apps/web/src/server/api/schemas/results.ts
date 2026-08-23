@@ -22,6 +22,7 @@ import type {
   SourceRef,
 } from "../../../lib/catalog-models.ts"
 import type { Placement, SubmissionReport } from "../../catalog/submissions.ts"
+import { PRECEDENT_MAX_LIMIT } from "../../policy/precedents.ts"
 
 export const primaryMetric = z.object({
   metric: z.string(),
@@ -453,7 +454,7 @@ export const precedentsRequest = z.object({
   query: resolveKernelRequest.shape.query,
   operation: resolveKernelRequest.shape.operation,
   environment: resolveKernelRequest.shape.environment,
-  limit: z.number().int().min(1).max(25).optional(),
+  limit: z.number().int().min(1).max(PRECEDENT_MAX_LIMIT).optional(),
   includeUnsourced: z.boolean().optional(),
 }) satisfies z.ZodType<PrecedentInput>
 

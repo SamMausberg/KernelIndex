@@ -9,6 +9,7 @@ import type {
 } from "@/lib/catalog-models"
 import { composeQuery, describeIntent, parseQuery } from "@/lib/search-query"
 import {
+  clampPrecedentLimit,
   PRECEDENT_POLICY_VERSION,
   scorePrecedent,
 } from "@/server/policy/precedents"
@@ -115,10 +116,7 @@ export async function findPrecedents(
   precedents.sort((a, b) => b.score - a.score)
   return {
     ...base,
-    precedents: precedents.slice(
-      0,
-      Math.min(25, Math.max(1, input.limit ?? 10)),
-    ),
+    precedents: precedents.slice(0, clampPrecedentLimit(input.limit)),
     considered: precedents.length,
   }
 }

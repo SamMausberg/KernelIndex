@@ -19,6 +19,7 @@ import * as schema from "../db/schema.ts"
 import { EXTRACTOR_VERSION } from "../enrich/techniques.ts"
 import {
   type ComputationRelation,
+  clampPrecedentLimit,
   gpuMatches,
   PRECEDENT_POLICY_VERSION,
   type PrecedentCandidate,
@@ -37,16 +38,14 @@ import {
 } from "./run-rows.ts"
 import { resolveOperation } from "./search-reads.ts"
 
-const DEFAULT_LIMIT = 10
-const MAX_LIMIT = 25
-/** Eligible runs loaded per search, fastest first. */
+/** Eligible runs loaded per search. */
 const CANDIDATE_RUNS = 4000
 const RANKED_COHORTS = 300
 
 export async function findPrecedents(
   input: PrecedentInput,
 ): Promise<PrecedentsModel> {
-  const limit = Math.min(MAX_LIMIT, Math.max(1, input.limit ?? DEFAULT_LIMIT))
+  const limit = clampPrecedentLimit(input.limit)
   const intent = parseQuery(composeQuery(input))
   const database = db()
 
@@ -122,7 +121,6 @@ export async function findPrecedents(
       workload: {
         id: schema.workloads.id,
         dtypes: schema.workloads.dtypes,
-        manifest: schema.workloads.manifest,
         operationId: schema.workloads.operationId,
       },
       operation: { name: schema.operations.name, slug: schema.operations.slug },
@@ -212,7 +210,9 @@ export async function findPrecedents(
     group.best = better(group.best, row)
   }
 
-  const [ranks, traitRows] = await Promise.all([
+  // Workload axes load once per distinct workload, never as per-run JSONB
+  // (run-rows.ts: the manifests dominate transfer cost at corpus scale).
+  const [ranks, traitRows, workloadRows] = await Promise.all([
     cohortRanks(
       [
         ...new Set([...groups.values()].map((g) => g.best.run.comparisonKey)),
@@ -232,7 +232,23 @@ export async function findPrecedents(
           eq(schema.implementationTraits.extractorVersion, EXTRACTOR_VERSION),
         ),
       ),
+    database
+      .select({ id: schema.workloads.id, manifest: schema.workloads.manifest })
+      .from(schema.workloads)
+      .where(
+        inArray(schema.workloads.id, [
+          ...new Set(rows.map((row) => row.workload.id)),
+        ]),
+      ),
   ])
+  const axesByWorkload = new Map(
+    workloadRows.flatMap((row) => {
+      const manifest = row.manifest as AnyWorkloadManifest
+      return manifest.kind === "WorkloadCase"
+        ? [[row.id, numericAxes(manifest.spec.axes)] as const]
+        : []
+    }),
+  )
   const traitsById = new Map<string, string[]>()
   for (const row of traitRows)
     traitsById.set(row.implementationId, [
@@ -280,11 +296,9 @@ export async function findPrecedents(
         ...new Set(group.rows.map((r) => r.run.hardwareArchitecture)),
       ],
       dtypes: [...new Set(group.rows.flatMap((r) => r.workload.dtypes))],
-      axes: group.rows.flatMap((r) => {
-        const manifest = r.workload.manifest as AnyWorkloadManifest
-        return manifest.kind === "WorkloadCase"
-          ? [numericAxes(manifest.spec.axes)]
-          : []
+      axes: [...new Set(group.rows.map((r) => r.workload.id))].flatMap((id) => {
+        const axes = axesByWorkload.get(id)
+        return axes ? [axes] : []
       }),
       bestRank: rank?.rank ?? null,
       bestEvidence: runEvidence(best.run),

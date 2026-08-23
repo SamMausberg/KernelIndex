@@ -58,7 +58,8 @@ Claim rules (keep these when quoting results):
 
 ## MCP
 - Hosted (Streamable HTTP): https://kernelindex.com/mcp - one URL, no install
-- Stdio: npx -y @kernelindex/mcp
+- Stdio: node apps/mcp/src/server.ts from a checkout
+  (npx -y @kernelindex/mcp once published to npm)
 - 18 read-only tools (including find_precedents); source in apps/mcp of
   https://github.com/SamMausberg/KernelIndex - run from the checkout.
 
