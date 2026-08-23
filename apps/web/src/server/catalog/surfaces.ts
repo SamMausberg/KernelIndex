@@ -17,16 +17,16 @@ import { hardwareSlug } from "../../lib/names.ts"
 import type { SoftwareProjectManifest } from "../../schemas/kinds.ts"
 import { db } from "../db/client.ts"
 import * as schema from "../db/schema.ts"
+import { getRecordsPage } from "./home-reads.ts"
 import { bestEvidence } from "./present.ts"
+import { eligibleRunFilter } from "./record-events.ts"
 import {
-  getRecordsPage,
   implementationColumns,
   projectColumns,
   resultRow,
   runColumns,
   sourceColumns,
-} from "./reads.ts"
-import { eligibleRunFilter } from "./record-events.ts"
+} from "./run-rows.ts"
 
 /** Evidence tier in SQL, mirroring policy/trust.ts evidenceLevel exactly
  * (identity is complete on every published row). */

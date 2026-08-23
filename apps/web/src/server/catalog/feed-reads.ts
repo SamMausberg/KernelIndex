@@ -20,13 +20,13 @@ import { dtypeLabel } from "@/lib/format"
 import { humanizeOperationName, implementationDisplayName } from "@/lib/names"
 import { db } from "../db/client.ts"
 import * as schema from "../db/schema.ts"
+import { eligibleRunFilter } from "./record-events.ts"
 import {
   implementationColumns,
   primaryOf,
   projectColumns,
   runColumns,
-} from "./reads.ts"
-import { eligibleRunFilter } from "./record-events.ts"
+} from "./run-rows.ts"
 
 const WINDOW = sql`now() - interval '30 days'`
 const ENTRY_CAP = 300

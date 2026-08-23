@@ -12,7 +12,7 @@ import { HERO_GPUS } from "@/lib/priority"
 import { db } from "../db/client.ts"
 import * as schema from "../db/schema.ts"
 import { getCoveragePage } from "./coverage-reads.ts"
-import { getRecordsPage } from "./reads.ts"
+import { getRecordsPage } from "./home-reads.ts"
 import { eligibleRunFilter } from "./record-events.ts"
 
 const PER_KIND_CAP = 60

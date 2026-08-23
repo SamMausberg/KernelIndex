@@ -289,67 +289,84 @@ describe("api /v1", () => {
 // Corpus enumeration surfaces (§13.2 at 20k records). /coverage and /sources
 // read through the seam (fixtures here); the listing reads are database-only
 // and run against whatever DATABASE_URL holds, so cases assert contract
-// shape and filter/paging invariants, never counts.
+// shape and filter/paging invariants, never counts — and skip without a
+// database, like every other database-backed suite.
+const databased = it.skipIf(!process.env.DATABASE_URL)
 describe("api /v1 enumeration", () => {
-  it("pages runs by keyset, newest first, and 400s a bad cursor", async () => {
-    const first = await get("/runs?limit=2")
-    expect(first.status).toBe(200)
-    const page = await first.json()
-    expect(page.generatedAt).toMatch(/Z$/)
-    for (const run of page.runs) {
-      expect(run.digest).toMatch(/^sha256:[0-9a-f]{64}$/)
-      expect(run.status).toBe("passed")
-    }
-    const observed = page.runs.map((run: { observedAt: string }) =>
-      Date.parse(run.observedAt),
-    )
-    expect(observed).toEqual([...observed].sort((a, b) => b - a))
-    if (page.nextCursor !== null) {
-      const second = await (
-        await get(`/runs?limit=2&cursor=${encodeURIComponent(page.nextCursor)}`)
-      ).json()
-      const firstIds = page.runs.map((run: { id: string }) => run.id)
-      for (const run of second.runs) expect(firstIds).not.toContain(run.id)
-    }
-    expect((await get("/runs?cursor=bm9wZQ")).status).toBe(400)
-  })
+  databased(
+    "pages runs by keyset, newest first, and 400s a bad cursor",
+    async () => {
+      const first = await get("/runs?limit=2")
+      expect(first.status).toBe(200)
+      const page = await first.json()
+      expect(page.generatedAt).toMatch(/Z$/)
+      for (const run of page.runs) {
+        expect(run.digest).toMatch(/^sha256:[0-9a-f]{64}$/)
+        expect(run.status).toBe("passed")
+      }
+      const observed = page.runs.map((run: { observedAt: string }) =>
+        Date.parse(run.observedAt),
+      )
+      expect(observed).toEqual([...observed].sort((a, b) => b - a))
+      if (page.nextCursor !== null) {
+        const second = await (
+          await get(
+            `/runs?limit=2&cursor=${encodeURIComponent(page.nextCursor)}`,
+          )
+        ).json()
+        const firstIds = page.runs.map((run: { id: string }) => run.id)
+        for (const run of second.runs) expect(firstIds).not.toContain(run.id)
+      }
+      expect((await get("/runs?cursor=bm9wZQ")).status).toBe(400)
+    },
+  )
 
-  it("lists operations with tags and honors the family filter", async () => {
-    const all = await (await get("/operations")).json()
-    for (const entry of all.operations) {
-      expect(entry.slug).toBeTruthy()
-      expect(Array.isArray(entry.tags)).toBe(true)
-      expect(entry.workloads).toBeGreaterThanOrEqual(0)
-    }
-    const family = all.operations[0]?.family
-    if (family) {
-      const filtered = await (
-        await get(`/operations?family=${encodeURIComponent(family)}`)
-      ).json()
-      expect(filtered.operations.length).toBeGreaterThan(0)
-      for (const entry of filtered.operations) expect(entry.family).toBe(family)
-    }
-  })
+  databased(
+    "lists operations with tags and honors the family filter",
+    async () => {
+      const all = await (await get("/operations")).json()
+      for (const entry of all.operations) {
+        expect(entry.slug).toBeTruthy()
+        expect(Array.isArray(entry.tags)).toBe(true)
+        expect(entry.workloads).toBeGreaterThanOrEqual(0)
+      }
+      const family = all.operations[0]?.family
+      if (family) {
+        const filtered = await (
+          await get(`/operations?family=${encodeURIComponent(family)}`)
+        ).json()
+        expect(filtered.operations.length).toBeGreaterThan(0)
+        for (const entry of filtered.operations)
+          expect(entry.family).toBe(family)
+      }
+    },
+  )
 
-  it("reports per-GPU kernel and serving coverage as separate counts", async () => {
-    const { hardware } = await (await get("/hardware")).json()
-    for (const gpu of hardware) {
-      expect(typeof gpu.kernelRuns).toBe("number")
-      expect(typeof gpu.servingRuns).toBe("number")
-      expect(typeof gpu.families).toBe("number")
-      expect(gpu.slug).toBeTruthy()
-    }
-  })
+  databased(
+    "reports per-GPU kernel and serving coverage as separate counts",
+    async () => {
+      const { hardware } = await (await get("/hardware")).json()
+      for (const gpu of hardware) {
+        expect(typeof gpu.kernelRuns).toBe("number")
+        expect(typeof gpu.servingRuns).toBe("number")
+        expect(typeof gpu.families).toBe("number")
+        expect(gpu.slug).toBeTruthy()
+      }
+    },
+  )
 
-  it("keeps serving models and kernel model tags in separate arrays", async () => {
-    const coverage = await (await get("/models")).json()
-    expect(Array.isArray(coverage.serving)).toBe(true)
-    expect(Array.isArray(coverage.kernel)).toBe(true)
-    for (const tag of coverage.kernel) {
-      expect(tag.model).not.toMatch(/^model:/)
-      expect(tag.operations).toBeGreaterThan(0)
-    }
-  })
+  databased(
+    "keeps serving models and kernel model tags in separate arrays",
+    async () => {
+      const coverage = await (await get("/models")).json()
+      expect(Array.isArray(coverage.serving)).toBe(true)
+      expect(Array.isArray(coverage.kernel)).toBe(true)
+      for (const tag of coverage.kernel) {
+        expect(tag.model).not.toMatch(/^model:/)
+        expect(tag.operations).toBeGreaterThan(0)
+      }
+    },
+  )
 
   it("serves the model dossier and 404s an unknown slug", async () => {
     const response = await get("/models/llama-3.1-8b")

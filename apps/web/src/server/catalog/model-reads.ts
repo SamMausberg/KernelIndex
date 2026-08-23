@@ -16,6 +16,7 @@ import * as schema from "../db/schema.ts"
 import { deployability } from "../policy/deployability.ts"
 import { RANKING_POLICY_VERSION, rankCohort } from "../policy/ranking.ts"
 import { listModelCoverage } from "./api-reads.ts"
+import { eligibleRunFilter } from "./record-events.ts"
 import {
   implementationColumns,
   projectColumns,
@@ -24,8 +25,7 @@ import {
   runColumns,
   sourceColumns,
   sourceRefs,
-} from "./reads.ts"
-import { eligibleRunFilter } from "./record-events.ts"
+} from "./run-rows.ts"
 import { eligibleServingRuns } from "./serving-reads.ts"
 
 type KernelIndexRow = {
