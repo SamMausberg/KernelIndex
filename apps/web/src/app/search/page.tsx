@@ -8,6 +8,7 @@ import { SkeletonRows } from "@/components/skeleton"
 import {
   type ResultMode,
   type ResultSort,
+  SearchBand,
   SearchResults,
 } from "@/features/search/results"
 import type { BrowseSort } from "@/features/search/start-state"
@@ -111,11 +112,19 @@ export default async function SearchPage({
 }) {
   const params = await searchParams
   return (
+    // Only the result body streams. The band carrying the search field is
+    // rendered from the query alone, so a cold search keeps the field a
+    // visitor just typed into exactly where it was instead of replacing the
+    // whole surface with a differently-shaped skeleton and swapping back.
     <Suspense
+      key={params.q ?? ""}
       fallback={
-        <main className="shell pt-6">
-          <SkeletonRows />
-        </main>
+        <>
+          <SearchBand query={params.q ?? ""} />
+          <main className="shell pt-6">
+            <SkeletonRows />
+          </main>
+        </>
       }
     >
       <Results params={params} />

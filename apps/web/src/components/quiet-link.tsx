@@ -38,6 +38,13 @@ export function Link(props: ComponentProps<typeof NextLink>) {
     props.onPointerLeave?.(event)
     if (timer.current !== null) clearTimeout(timer.current)
   }
+  // Press is the last moment worth acting on, and on touch it is the only
+  // one: a tap has no hover, so hover intent alone left every mobile
+  // navigation cold. Pointer-down still lands a few frames before the click.
+  const down = (event: React.PointerEvent<HTMLAnchorElement>) => {
+    props.onPointerDown?.(event)
+    if (!done.current) prefetch()
+  }
   const focus = (event: React.FocusEvent<HTMLAnchorElement>) => {
     props.onFocus?.(event)
     if (!done.current) prefetch()
@@ -49,6 +56,7 @@ export function Link(props: ComponentProps<typeof NextLink>) {
       {...props}
       onPointerEnter={enter}
       onPointerLeave={leave}
+      onPointerDown={down}
       onFocus={focus}
     />
   )

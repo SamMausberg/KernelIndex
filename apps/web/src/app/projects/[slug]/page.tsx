@@ -21,7 +21,8 @@ import { getProjectPage } from "@/lib/catalog"
 import {
   countNoun,
   formatDateUTC,
-  formatMargin,
+  formatImprovement,
+  formatInstantUTC,
   formatPrimary,
 } from "@/lib/format"
 import { ClaimPanel } from "./claim-panel"
@@ -43,7 +44,7 @@ const KIND_LABEL = {
 } as const
 
 const RECORD_GRID =
-  "grid grid-cols-[minmax(240px,1.5fr)_92px_150px_minmax(180px,1.1fr)_minmax(140px,0.9fr)_96px] items-center gap-x-4 min-w-[960px]"
+  "grid grid-cols-[minmax(230px,1.5fr)_92px_180px_minmax(175px,1.1fr)_minmax(135px,0.9fr)_96px] items-center gap-x-4 min-w-[980px]"
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
@@ -95,7 +96,7 @@ export default async function ProjectPage({ params }: Props) {
               {countNoun(model.records.length, "record")}
               <span className="text-faint">
                 {" "}
-                as of {formatDateUTC(model.recordsAsOf)}
+                as of {formatInstantUTC(model.recordsAsOf)}
               </span>{" "}
               ·{" "}
               {countNoun(
@@ -172,11 +173,14 @@ export default async function ProjectPage({ params }: Props) {
                         primary={holder.current.primary}
                         valueClassName="font-mono text-body text-fg"
                       />
-                      {formatMargin(holder.history[0]?.improvementPct) &&
+                      {formatImprovement(holder.history[0]?.improvementPct) &&
                         holder.history[0]?.previousValue && (
                           <div className="font-mono text-mini text-faint">
-                            {formatMargin(holder.history[0].improvementPct)} ·
-                            was {formatPrimary(holder.history[0].previousValue)}
+                            {formatImprovement(
+                              holder.history[0].improvementPct,
+                            )}{" "}
+                            · was{" "}
+                            {formatPrimary(holder.history[0].previousValue)}
                           </div>
                         )}
                     </div>

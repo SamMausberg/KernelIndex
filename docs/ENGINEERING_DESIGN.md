@@ -3043,6 +3043,25 @@ is routinely a contest submission with no package and no license: honest, and
 a bad first impression. A demonstration has to end at "I can use this", so
 where the answer has an install line the example shows it, copyable.
 
+**Navigation must never blank the page (2026-08-23).** A root
+`app/loading.tsx` wraps every route in a Suspense boundary, so Next unmounted
+the whole page body on navigation and painted the fallback. That file returned
+`null`, so the header sat over an empty document, the footer rode up into the
+gap, and the destination then appeared all at once. There is deliberately no
+root loading file: without one the previous page stays visible until the next
+RSC payload arrives. Suspense belongs inside the pages that genuinely stream,
+around the part that streams, and its fallback must preserve the surrounding
+geometry — `/search` suspends only the result body, and the band carrying the
+search field renders from the query alone so the field a visitor just typed
+into never moves. Structurally, `body` is a full-height flex column with
+`#main` growing, so no route can collapse the page around itself.
+
+Prefetch follows the same rule (`components/quiet-link.tsx`): viewport
+prefetch is off because it re-rendered dynamic routes dozens of times per
+scroll, hover intent warms an intended click, and pointer-down covers the
+press — which on touch is the only signal there is, so taps are no longer
+uniformly cold.
+
 House voice: no em dashes in rendered copy. `check-invariants` holds imported
 descriptions to it, since an importer is the one path by which one can reach a
 page; the `—` glyph standing for "no value" in a table cell is notation, not

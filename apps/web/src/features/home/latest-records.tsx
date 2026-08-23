@@ -1,9 +1,13 @@
 import { Metric } from "@/components/metric"
 import { Link } from "@/components/quiet-link"
 import type { RecordHolder } from "@/lib/catalog"
-import { formatMargin, formatPrimary, formatSolScoreCell } from "@/lib/format"
+import {
+  formatImprovement,
+  formatPrimary,
+  formatSolScoreCell,
+} from "@/lib/format"
 
-const GRID = "grid grid-cols-[1.3fr_1.3fr_110px_150px_120px] min-w-[860px]"
+const GRID = "grid grid-cols-[1.3fr_1.2fr_110px_195px_120px] min-w-[900px]"
 
 /** Homepage table of the newest record breaks (§16.5), five columns; trust
  * and indexing dates live on the run dossier a row opens. Each row is a
@@ -75,9 +79,10 @@ export function LatestRecords({ rows }: { rows: RecordHolder[] }) {
               />
             </div>
             <div className="truncate px-4 font-mono text-small whitespace-nowrap">
-              {formatMargin(event?.improvementPct) && event?.previousValue ? (
+              {formatImprovement(event?.improvementPct) &&
+              event?.previousValue ? (
                 <span className="text-subtle">
-                  {formatMargin(event.improvementPct)}
+                  {formatImprovement(event.improvementPct)}
                   <span className="text-faint">
                     {" "}
                     · was {formatPrimary(event.previousValue)}

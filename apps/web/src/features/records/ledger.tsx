@@ -15,10 +15,9 @@ import { Link } from "@/components/quiet-link"
 import { TrustCell } from "@/components/trust"
 import {
   formatDateUTC,
-  formatMargin,
+  formatImprovement,
   formatPrimary,
   formatSolScoreCell,
-  formatSpeedup,
 } from "@/lib/format"
 import { TRUST_TIERS, trustTier } from "@/lib/trust-tier"
 import {
@@ -54,7 +53,7 @@ function loadModel(): Promise<LedgerModel | null> {
 }
 
 const CURRENT_GRID =
-  "grid grid-cols-[minmax(240px,1.4fr)_92px_170px_170px_minmax(200px,1fr)_28px] min-w-[960px]"
+  "grid grid-cols-[minmax(230px,1.4fr)_92px_160px_205px_minmax(190px,1fr)_28px] min-w-[980px]"
 
 /** The lead story (§16.12): the newest broken records under the filters —
  * hairline rows in the page's own table idiom, no cards or lifted surfaces.
@@ -68,7 +67,7 @@ function LatestBreaks({ latest }: { latest: LedgerEvent[] }) {
         {latest.map(({ holder, event }) => (
           <div
             key={event.runId}
-            className="relative grid min-w-[900px] grid-cols-[minmax(240px,1.2fr)_260px_minmax(200px,1fr)_92px] items-baseline gap-x-6 border-b border-line py-2.5 transition-colors hover:bg-raised"
+            className="relative grid min-w-[950px] grid-cols-[minmax(230px,1.2fr)_310px_minmax(190px,1fr)_92px] items-baseline gap-x-6 border-b border-line py-2.5 transition-colors hover:bg-raised"
           >
             <Link
               href={`/runs/${event.runId}`}
@@ -88,9 +87,9 @@ function LatestBreaks({ latest }: { latest: LedgerEvent[] }) {
               </span>{" "}
               <span className="text-ghost">→</span>{" "}
               <span className="text-fg">{formatPrimary(event.value)}</span>
-              {formatMargin(event.improvementPct) && (
+              {formatImprovement(event.improvementPct) && (
                 <span className="ml-2 text-small text-success">
-                  {formatMargin(event.improvementPct)}
+                  {formatImprovement(event.improvementPct)}
                 </span>
               )}
             </span>
@@ -116,7 +115,7 @@ function HolderRow({ holder }: { holder: LedgerHolder }) {
     Math.floor(Date.now() / DAY_MS) * DAY_MS -
       new Date(holder.indexedAt).getTime() <
     14 * DAY_MS
-  const margin = formatMargin(holder.history[0].improvementPct)
+  const margin = formatImprovement(holder.history[0].improvementPct)
   // The full timeline lives in the Record history view; rendering it for
   // every collapsed row made the page's payload (§16.12 payload budget).
   const timeline = holder.history.slice(0, 6)
@@ -246,8 +245,8 @@ function HolderRow({ holder }: { holder: LedgerHolder }) {
               {index === 0
                 ? `current · observed ${formatDateUTC(event.at)}`
                 : `record ${formatDateUTC(event.at)} → ${formatDateUTC(holder.history[index - 1].at)}`}
-              {formatSpeedup(event.improvementPct) &&
-                ` · ${formatSpeedup(event.improvementPct)}`}
+              {formatImprovement(event.improvementPct) &&
+                ` · ${formatImprovement(event.improvementPct)}`}
             </span>
           </div>
         ))}
@@ -310,7 +309,7 @@ function HolderRow({ holder }: { holder: LedgerHolder }) {
 }
 
 const BROKEN_GRID =
-  "grid grid-cols-[minmax(230px,1.4fr)_200px_minmax(160px,0.9fr)_96px_140px_minmax(180px,1fr)_92px] min-w-[1098px]"
+  "grid grid-cols-[minmax(220px,1.4fr)_200px_minmax(155px,0.9fr)_125px_135px_minmax(175px,1fr)_92px] min-w-[1120px]"
 
 function BrokenRows({ transitions }: { transitions: LedgerEvent[] }) {
   if (transitions.length === 0) {
@@ -358,7 +357,7 @@ function BrokenRows({ transitions }: { transitions: LedgerEvent[] }) {
               )}
           </div>
           <div className="py-3.5 pr-3 text-body whitespace-nowrap text-fg">
-            {formatMargin(event.improvementPct) ?? "—"}
+            {formatImprovement(event.improvementPct) ?? "—"}
           </div>
           <div className="py-3.5 pr-3 font-mono text-small whitespace-nowrap text-muted">
             {holder.hardware}
@@ -414,8 +413,8 @@ function HistoryRows({ events }: { events: LedgerEvent[] }) {
                     previous.implementation.slug !==
                       event.implementation.slug &&
                     ` held by ${previous.implementation.name}`}
-                  {formatSpeedup(event.improvementPct) &&
-                    ` (${formatSpeedup(event.improvementPct)})`}
+                  {formatImprovement(event.improvementPct) &&
+                    ` (${formatImprovement(event.improvementPct)})`}
                 </>
               )}
               {" · "}

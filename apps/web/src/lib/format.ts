@@ -12,9 +12,20 @@ function scaleFor(ns: number) {
   return LATENCY_SCALES.find((scale) => ns < scale.limit)
 }
 
-/** "3 cohorts", "1 issue": counted noun for summary lines. */
+/**
+ * "3 cohorts", "1 issue", "300 entries": counted noun for summary lines.
+ * Appending "s" alone published "300 entrys" on the feed, so the two English
+ * spelling rules the catalog's nouns actually hit are handled: a consonant
+ * before a final "y" becomes "ies", and sibilant endings take "es".
+ */
 export const countNoun = (n: number, noun: string) =>
-  `${n} ${noun}${n === 1 ? "" : "s"}`
+  `${n.toLocaleString("en-US")} ${n === 1 ? noun : plural(noun)}`
+
+function plural(noun: string): string {
+  if (/[^aeiou]y$/.test(noun)) return `${noun.slice(0, -1)}ies`
+  if (/(s|x|z|ch|sh)$/.test(noun)) return `${noun}es`
+  return `${noun}s`
+}
 
 /** "7.81 µs" from integer nanoseconds: two decimals under 10, one above. */
 export function formatLatency(ns: number): string {
@@ -64,27 +75,25 @@ export function formatRelative(
 }
 
 /**
- * One notation for a record margin across every surface (§16.12). A record
- * only exists because it beat what came before, so a non-positive margin is
- * not a smaller record — it is a defect upstream. Both helpers return null
- * there, so a caller renders nothing rather than "−-8.8%" or "0.0% faster".
+ * The one notation for a record margin, everywhere (§16.12). It states the
+ * direction rather than implying it: a bare "−22.0%" in a cell reads as
+ * easily as a regression as an improvement, and the surfaces that showed it
+ * beside "22.0% faster" elsewhere made the same number look like two facts.
+ *
+ * A record only exists because it beat what came before, so a non-positive
+ * margin is not a smaller record, it is a defect upstream. Null there, so a
+ * caller renders nothing rather than "−-8.8%" or "0.0% faster".
+ *
+ * The argument is optional so callers can pass a missing event's margin
+ * without coercing it first.
  */
-
-/** "−8.8%" — the dense-cell form: latency fell by this much. */
-export function formatMargin(pct: Margin): string | null {
-  return isMargin(pct) ? `−${pct.toFixed(1)}%` : null
+export function formatImprovement(
+  pct: number | null | undefined,
+): string | null {
+  return pct != null && Number.isFinite(pct) && pct > 0
+    ? `${pct.toFixed(1)}% faster`
+    : null
 }
-
-/** "8.8% faster" — the prose form, for sentences that state a direction. */
-export function formatSpeedup(pct: Margin): string | null {
-  return isMargin(pct) ? `${pct.toFixed(1)}% faster` : null
-}
-
-/** Optional so callers can pass a missing event's margin without coercing. */
-type Margin = number | null | undefined
-
-const isMargin = (pct: Margin): pct is number =>
-  pct != null && Number.isFinite(pct) && pct > 0
 
 /** Short table label; trust badges stay derived, never chosen (§8.14). */
 export function evidenceLabel(level: EvidenceLevel | null): string {
@@ -154,6 +163,13 @@ export function formatSourceNativeMetrics(
  * use it too: a year-less "10-21" across a year boundary misleads. */
 export function formatDateUTC(iso: string | null): string {
   return iso ? iso.slice(0, 10) : "—"
+}
+
+/** "2026-08-23 14:32 UTC" — for a snapshot two surfaces must be reconciled
+ * against. The date alone left same-day counts looking contradictory when
+ * the difference was minutes of imports between two ISR renders. */
+export function formatInstantUTC(iso: string | null): string {
+  return iso ? `${iso.slice(0, 10)} ${iso.slice(11, 16)} UTC` : "—"
 }
 
 /** "62% of SOL" from a source-published SOL-Score fraction (SOL-ExecBench):

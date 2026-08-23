@@ -13,7 +13,7 @@ import { IllustrativeNotice } from "@/components/illustrative-notice"
 import { Link } from "@/components/quiet-link"
 import { Section } from "@/components/section"
 import { getProjectIndex, type ProjectIndexEntry } from "@/lib/catalog"
-import { evidenceLabel, formatDateUTC } from "@/lib/format"
+import { evidenceLabel, formatDateUTC, formatInstantUTC } from "@/lib/format"
 
 export const metadata: Metadata = { title: "Projects" }
 
@@ -147,7 +147,7 @@ export default async function ProjectsPage({
                 clock: the snapshot is what makes a few minutes' difference
                 between the two record counts a fact, not a discrepancy. */}
             <span className="text-faint">
-              records as of {formatDateUTC(model.recordsAsOf)} · sorted by
+              records as of {formatInstantUTC(model.recordsAsOf)} · sorted by
             </span>
             {SORTS.map((option) =>
               option.key === sort ? (

@@ -7,6 +7,7 @@ import type {
   RecordsPageModel,
   ResultRow,
 } from "@/lib/catalog"
+import { formatInstantUTC } from "@/lib/format"
 
 /**
  * The web payload boundary (§16.12 payload budget): the catalog model keeps
@@ -371,7 +372,7 @@ export function ledgerSlice(
   // homepage states, so no surface disagrees with another.
   const context =
     model.records.length > 0
-      ? `${model.records.length} record${model.records.length === 1 ? "" : "s"} across ${operations} operation${operations === 1 ? "" : "s"} with ranked runs · ${model.hardwareOptions.length} GPU${model.hardwareOptions.length === 1 ? "" : "s"} · as of ${model.asOf.slice(0, 10)}`
+      ? `${model.records.length} record${model.records.length === 1 ? "" : "s"} across ${operations} operation${operations === 1 ? "" : "s"} with ranked runs · ${model.hardwareOptions.length} GPU${model.hardwareOptions.length === 1 ? "" : "s"} · as of ${formatInstantUTC(model.asOf)}`
       : undefined
   const slice: LedgerSlice = {
     filters,

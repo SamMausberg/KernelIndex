@@ -2,20 +2,31 @@
 
 import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
-import { CommandK } from "./command-k"
+import { CommandK, useShortcutHint } from "./command-k"
 import { Link } from "./quiet-link"
 
 // Five items (§16.4): the primary surfaces only. Serving, Projects, and
 // Contribute live in the global footer and the search browse — reachable
-// everywhere, competing for attention nowhere. GPUs yields on narrow
-// screens. Models is primary: the whole-model question is the wedge.
+// everywhere, competing for attention nowhere. Models is primary: the
+// whole-model question is the wedge.
+//
+// The nav sheds items as the viewport narrows rather than crushing: five at
+// full width, four below md, and below sm only Search and Models, with the
+// rest behind a plain "More" disclosure. A word, never a hamburger glyph —
+// the header has no icons anywhere else.
 const NAV = [
-  { label: "Search", href: "/search" },
-  { label: "Models", href: "/models" },
-  { label: "Records", href: "/records" },
-  { label: "GPUs", href: "/gpus", desktopOnly: true },
-  { label: "Docs", href: "/docs" },
+  { label: "Search", href: "/search", from: 0 },
+  { label: "Models", href: "/models", from: 0 },
+  { label: "Records", href: "/records", from: 1 },
+  { label: "GPUs", href: "/gpus", from: 2 },
+  { label: "Docs", href: "/docs", from: 1 },
 ]
+
+/** In the bar: hidden until the viewport is wide enough to carry the item. */
+const VISIBLE_FROM = ["", "max-sm:hidden", "max-md:hidden"]
+/** In the More menu: the exact inverse, so an item is in one place or the
+ * other at every width and never in both or neither. */
+const MENU_UNTIL = ["hidden", "sm:hidden", "md:hidden"]
 
 /**
  * Sticky site header (§16.4), mounted once in the root layout so it survives
@@ -60,6 +71,7 @@ export function SiteHeader({
   const pathname = usePathname() ?? ""
   const onSearch = pathname.startsWith("/search")
   const sessionName = useSessionName(authConfigured)
+  const shortcut = useShortcutHint()
   return (
     <div className="sticky top-0 z-50 border-b border-border bg-canvas">
       <div className="shell flex h-14 items-center gap-7 max-md:gap-4 max-md:px-4">
@@ -69,7 +81,7 @@ export function SiteHeader({
         >
           KernelIndex
         </Link>
-        <nav className="flex gap-6 text-body max-md:gap-3">
+        <nav className="flex items-center gap-6 text-body max-md:gap-3.5">
           {/* Hover-intent prefetch via quiet-link: no viewport prefetch —
               the header is on every page — but a rested pointer warms the
               target before the click. */}
@@ -77,13 +89,40 @@ export function SiteHeader({
             <Link
               key={item.href}
               href={item.href}
-              className={`transition-colors hover:text-fg no-underline ${
+              className={`whitespace-nowrap transition-colors hover:text-fg no-underline ${
                 pathname.startsWith(item.href) ? "text-fg" : "text-subtle"
-              }${item.desktopOnly ? " max-md:hidden" : ""}`}
+              } ${VISIBLE_FROM[item.from]}`}
             >
               {item.label}
             </Link>
           ))}
+          {/* The shed items, on narrow screens only. A details disclosure so
+              it works before hydration and closes on blur like the ledger's
+              hardware picker. */}
+          <details
+            className="relative md:hidden"
+            onBlurCapture={(event) => {
+              if (!event.currentTarget.contains(event.relatedTarget))
+                event.currentTarget.removeAttribute("open")
+            }}
+          >
+            <summary className="cursor-pointer list-none whitespace-nowrap text-subtle transition-colors hover:text-fg [&::-webkit-details-marker]:hidden">
+              More
+            </summary>
+            <div className="absolute top-[calc(100%+10px)] left-0 z-50 min-w-[150px] overflow-hidden rounded-md border border-edge bg-raised py-1">
+              {NAV.filter((item) => item.from > 0).map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`block px-3 py-1.5 text-body no-underline hover:bg-accent-soft ${
+                    pathname.startsWith(item.href) ? "text-fg" : "text-subtle"
+                  } ${MENU_UNTIL[item.from]}`}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+          </details>
         </nav>
         <div className="flex-1" />
         {!onSearch && (
@@ -93,7 +132,7 @@ export function SiteHeader({
           >
             Search
             <kbd className="key ml-auto px-1.5 py-0.5 font-mono text-mini">
-              ⌘K
+              {shortcut}
             </kbd>
           </Link>
         )}

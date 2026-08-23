@@ -160,6 +160,31 @@ function SearchField({ query }: { query: string }) {
   )
 }
 
+/**
+ * The band the search field lives in. Shared with the page's Suspense
+ * fallback so a cold query never swaps geometry: the field a visitor just
+ * typed into keeps its position and its value while the resolver works, and
+ * only the body beneath it is replaced by skeleton rows. Everything derived
+ * from the resolved model rides in as children.
+ */
+export function SearchBand({
+  query,
+  children,
+}: {
+  query: string
+  children?: React.ReactNode
+}) {
+  return (
+    // z-30: the suggest popup must paint above the result sections.
+    <div className="relative z-30 border-b border-border bg-surface">
+      <div className="shell pt-4 pb-3.5">
+        <SearchField query={query} />
+        {children}
+      </div>
+    </div>
+  )
+}
+
 /** Quiet labeled rule between trust tiers in the recommended order. */
 function TierDivider({ label, count }: { label: string; count: number }) {
   return (
@@ -270,10 +295,8 @@ export function SearchResults({
 
   return (
     <>
-      {/* z-30: the suggest popup must paint above the result sections. */}
-      <div className="relative z-30 border-b border-border bg-surface">
-        <div className="shell pt-4 pb-3.5">
-          <SearchField query={model.query} />
+      <SearchBand query={model.query}>
+        <>
           {(model.facets.length > 0 || model.queryIssues.length > 0) && (
             <div className="mt-2.5 flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
               {model.facets.map((facet) => (
@@ -398,8 +421,8 @@ export function SearchResults({
               )}
             </>
           )}
-        </div>
-      </div>
+        </>
+      </SearchBand>
 
       <main className="shell pb-24">
         {model.browse ? (

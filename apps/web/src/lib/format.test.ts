@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest"
 import {
+  countNoun,
+  formatImprovement,
   formatLatency,
-  formatMargin,
   formatRelative,
-  formatSpeedup,
   formatSpread,
 } from "./format"
 
@@ -51,19 +51,31 @@ describe("formatRelative", () => {
   })
 })
 
+describe("countNoun", () => {
+  it("spells the plural, rather than appending s to anything", () => {
+    expect(countNoun(300, "entry")).toBe("300 entries")
+    expect(countNoun(1, "entry")).toBe("1 entry")
+    expect(countNoun(2, "match")).toBe("2 matches")
+    expect(countNoun(3, "cohort")).toBe("3 cohorts")
+    expect(countNoun(2, "GPU")).toBe("2 GPUs")
+    expect(countNoun(1200, "run")).toBe("1,200 runs")
+  })
+})
+
 describe("record margins", () => {
-  it("carries the minus sign itself, so no call site prefixes one", () => {
-    expect(formatMargin(8.8)).toBe("−8.8%")
-    expect(formatSpeedup(8.8)).toBe("8.8% faster")
+  // One notation, stated in words. A bare "−8.8%" reads as easily as a
+  // regression as an improvement, and no call site can prefix a sign of its
+  // own, which is what produced "−-8.8%".
+  it("states the direction rather than implying it with a sign", () => {
+    expect(formatImprovement(8.8)).toBe("8.8% faster")
+    expect(formatImprovement(22)).toBe("22.0% faster")
   })
 
   // A record exists because it beat what came before. A non-positive margin
   // is a defect upstream, and every surface must state nothing rather than
-  // render "−-8.8%" or call a regression an improvement.
+  // call a regression an improvement.
   it("states nothing for a margin that is not an improvement", () => {
-    for (const pct of [-8.8, 0, null, undefined, Number.NaN]) {
-      expect(formatMargin(pct)).toBeNull()
-      expect(formatSpeedup(pct)).toBeNull()
-    }
+    for (const pct of [-8.8, 0, null, undefined, Number.NaN])
+      expect(formatImprovement(pct)).toBeNull()
   })
 })

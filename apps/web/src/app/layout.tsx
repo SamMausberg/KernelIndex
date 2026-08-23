@@ -80,6 +80,14 @@ export default function RootLayout({
           Skip to content
         </a>
         <SiteHeader authConfigured={authConfigured} />
+        {/* There is deliberately no app/loading.tsx. A root loading file
+            wraps every route in a Suspense boundary, so Next unmounted the
+            whole page body on navigation and painted the fallback — which
+            rendered null, leaving the header over an empty document with the
+            footer riding up into it, then the destination appearing at once.
+            Without it the previous page stays visible until the next RSC
+            payload arrives. Suspense belongs inside the pages that genuinely
+            stream (search, serving), around the part that streams. */}
         <div id="main">{children}</div>
         <SiteFooter showServing={servingEnabled} />
         {/* Cookieless page-view counts (same-origin /_vercel/insights, so

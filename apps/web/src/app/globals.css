@@ -109,10 +109,21 @@
   :root {
     color-scheme: dark;
   }
+  /* The document is a column that always fills the viewport, so the footer
+     rests at the bottom of a short page instead of riding up under the
+     header. Structural, not decorative: a route whose content is briefly
+     shorter (a streaming section, an empty filter result) can no longer
+     collapse the page around it. */
   body {
     @apply bg-canvas font-sans text-fg antialiased;
     line-height: 1.5;
     font-variant-numeric: tabular-nums;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+  #main {
+    flex: 1;
   }
   /* Matte finish: static film grain over the whole page. A fixed composited
      layer — painted once, never repainted, no scroll cost. */
