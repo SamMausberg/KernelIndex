@@ -29,7 +29,10 @@ import { parse as parseYaml } from "yaml"
 // without one they fail closed.
 let schemasDir: string | null | undefined
 function locateSchemasDir(): string | null {
-  const here: string | undefined = import.meta.dirname
+  // A bundler may rewrite import.meta.dirname away; the process working
+  // directory then anchors the walk (on a server deployment it sits inside
+  // the traced filesystem, with registry/schemas above it).
+  const here: string | undefined = import.meta.dirname ?? process.cwd()
   if (!here) return null
   // A published package ships the generated schemas beside this file; a
   // checkout finds them by walking up to registry/schemas.
