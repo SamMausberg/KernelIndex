@@ -1828,9 +1828,20 @@ function submissionNumber(version: string | undefined): number | null {
   return match ? Number(match[1]) : null
 }
 
-function sourceLanguage(mediaType: string): "python" | "cpp" | "text" {
-  if (mediaType === "text/x-python") return "python"
-  if (mediaType === "text/x-cuda") return "cpp"
+/** Highlight grammar for a mirrored source file. Importers are inconsistent
+ * about media types (FlashInfer stores C++/CUDA as text/plain), so the file
+ * extension decides whenever the media type is unhelpful. */
+function sourceLanguage(
+  mediaType: string,
+  fileName: string | null,
+): "python" | "cpp" | "text" {
+  if (mediaType === "text/x-python" || fileName?.endsWith(".py"))
+    return "python"
+  if (
+    mediaType === "text/x-cuda" ||
+    /\.(cu|cuh|cpp|cc|cxx|c|h|hpp)$/.test(fileName ?? "")
+  )
+    return "cpp"
   return "text"
 }
 
@@ -1945,7 +1956,7 @@ async function implementationSourceCode(
 
   return {
     fileName: spec.fileName ?? null,
-    language: sourceLanguage(artifact.mediaType),
+    language: sourceLanguage(artifact.mediaType, spec.fileName ?? null),
     content: artifact.content,
     license: artifact.license
       ? (LICENSE_DISPLAY[artifact.license] ?? artifact.license)
