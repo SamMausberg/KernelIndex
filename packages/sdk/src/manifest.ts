@@ -8,9 +8,14 @@ import ajv2020 from "ajv/dist/2020.js"
 import ajvFormats from "ajv-formats"
 import canonicalizeModule from "canonicalize"
 
-// CJS interop under NodeNext: the callable/constructable lives on .default.
-const Ajv2020 = ajv2020.default
-const addFormats = ajvFormats.default
+// CJS interop: under NodeNext the constructable sits on .default, under an
+// esModuleInterop consumer (the web app hosting /mcp) it is the export
+// itself. The runtime picks whichever exists; the type comes from the ESM
+// namespace, which both configurations agree on.
+const Ajv2020 = ((ajv2020 as { default?: unknown }).default ??
+  ajv2020) as typeof import("ajv/dist/2020.js").default
+const addFormats = ((ajvFormats as { default?: unknown }).default ??
+  ajvFormats) as typeof import("ajv-formats").default
 const canonicalize = canonicalizeModule as unknown as (
   value: unknown,
 ) => string | undefined
@@ -19,20 +24,31 @@ import { parse as parseYaml } from "yaml"
 
 // Located by walking up from this file, so the tooling keeps working from a
 // build output directory or a moved file — not just the exact src/ layout.
-const SCHEMAS_DIR = (() => {
+// Resolved lazily: a bundler that rewrites import.meta must not break the
+// module at load time; only the schema-reading functions need the path, and
+// without one they fail closed.
+let schemasDir: string | null | undefined
+function locateSchemasDir(): string | null {
+  const here: string | undefined = import.meta.dirname
+  if (!here) return null
   // A published package ships the generated schemas beside this file; a
   // checkout finds them by walking up to registry/schemas.
-  const bundled = path.join(import.meta.dirname, "schemas")
+  const bundled = path.join(here, "schemas")
   if (existsSync(bundled)) return bundled
-  let dir = import.meta.dirname
+  let dir = here
   while (true) {
     const candidate = path.join(dir, "registry", "schemas")
     if (existsSync(candidate)) return candidate
     const parent = path.dirname(dir)
-    if (parent === dir) return candidate // unreachable in a checkout; reads fail closed
+    // No checkout above us: reads fail closed.
+    if (parent === dir) return null
     dir = parent
   }
-})()
+}
+function resolveSchemasDir(): string | null {
+  if (schemasDir === undefined) schemasDir = locateSchemasDir()
+  return schemasDir
+}
 
 const kebab = (kind: string) =>
   kind.replaceAll(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase()
@@ -64,10 +80,12 @@ function load(file: string): ManifestDocument {
 
 /** The generated JSON Schema for a manifest kind, or null when unknown. */
 export function readManifestSchema(kind: string): object | null {
+  const dir = resolveSchemasDir()
+  if (dir === null) return null
   try {
     return JSON.parse(
       readFileSync(
-        path.join(SCHEMAS_DIR, `${kebab(kind)}.v1alpha1.schema.json`),
+        path.join(dir, `${kebab(kind)}.v1alpha1.schema.json`),
         "utf8",
       ),
     )

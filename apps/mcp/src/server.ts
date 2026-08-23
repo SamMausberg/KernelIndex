@@ -26,17 +26,24 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod"
 
-const api = client({
-  baseUrl: process.env.KI_API ?? "https://kernelindex.com/api/v1",
-  apiKey: process.env.KI_API_KEY,
-})
-
 /** Every tool returns one JSON text block: stable machine output. */
 const json = (value: unknown) => ({
   content: [{ type: "text" as const, text: JSON.stringify(value, null, 2) }],
 })
 
-export function buildServer(): McpServer {
+/** Build the tool server over one API base: the stdio entry below uses the
+ * environment, the hosted /mcp route passes its own deployment's origin. */
+export function buildServer(options?: {
+  baseUrl?: string
+  apiKey?: string
+}): McpServer {
+  const api = client({
+    baseUrl:
+      options?.baseUrl ??
+      process.env.KI_API ??
+      "https://kernelindex.com/api/v1",
+    apiKey: options?.apiKey ?? process.env.KI_API_KEY,
+  })
   const server = new McpServer({ name: "kernelindex", version: "1.0.0" })
 
   server.registerTool(

@@ -353,21 +353,24 @@ curl -X POST https://kernelindex.com/api/v1/precedents \\
           <Sub id="agents" title="Agents" />
           <p>
             Point an agent at <a href="/llms.txt">/llms.txt</a>: one page
-            listing what this index can claim and every machine surface.
-            One-paste MCP setup from a repository checkout:
+            listing what this index can claim and every machine surface. MCP is
+            hosted; one URL is the whole setup:
           </p>
           <pre className="plate mt-4 overflow-x-auto px-4 py-3 font-mono text-small leading-relaxed text-muted">
-            {`{
-  "mcpServers": {
-    "kernelindex": {
-      "command": "node",
-      "args": ["apps/mcp/src/server.ts"],
-      "cwd": "/path/to/KernelIndex",
-      "env": { "KI_API": "https://kernelindex.com/api/v1" }
-    }
-  }
-}`}
+            {`{ "mcpServers": { "kernelindex": { "url": "https://kernelindex.com/mcp" } } }
+
+claude mcp add --transport http kernelindex https://kernelindex.com/mcp`}
           </pre>
+          <p className="mt-3">
+            Over stdio instead:{" "}
+            <span className="font-mono text-small">
+              npx -y @kernelindex/mcp
+            </span>{" "}
+            (<span className="font-mono text-small">KI_API</span> overrides the
+            API base, <span className="font-mono text-small">KI_API_KEY</span>{" "}
+            raises the quota). Both run the same eighteen read-only tools over
+            the public REST API.
+          </p>
           <p className="mt-4">
             REST, the CLI, MCP, the bulk export, the{" "}
             <a href="/records/feed.xml">Atom feed</a>, and the change feed (

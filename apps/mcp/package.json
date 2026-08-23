@@ -23,6 +23,12 @@
     "access": "public",
     "bin": {
       "kernelindex-mcp": "./dist/server.js"
+    },
+    "exports": {
+      "./server": {
+        "types": "./dist/server.d.ts",
+        "default": "./dist/server.js"
+      }
     }
   },
   "scripts": {
@@ -39,5 +45,8 @@
     "typescript": "6.0.3",
     "@types/node": "24.13.3",
     "vitest": "^4.1.10"
+  },
+  "exports": {
+    "./server": "./src/server.ts"
   }
 }

@@ -57,7 +57,9 @@ Claim rules (keep these when quoting results):
 - API keys (higher quota): sign in at https://kernelindex.com/account
 
 ## MCP
-- Read-only stdio server (18 tools, including find_precedents) in apps/mcp of
+- Hosted (Streamable HTTP): https://kernelindex.com/mcp - one URL, no install
+- Stdio: npx -y @kernelindex/mcp
+- 18 read-only tools (including find_precedents); source in apps/mcp of
   https://github.com/SamMausberg/KernelIndex - run from the checkout.
 
 ## CLI
