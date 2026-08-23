@@ -1266,9 +1266,14 @@ export async function searchCatalog(
       },
     }
   }
-  // Several plausible operations and no dominant hit: the user chooses.
-  // With environment/dtype facets in the query, each candidate row states
-  // its evidence under them (§16.6) and evidence-bearing candidates lead.
+  // Several plausible operations and no dominant hit: answer with the
+  // most-measured candidate, interpretation stated (§12.1), and keep the
+  // full list one click away (`choose`). With environment/dtype facets in
+  // the query, each candidate row states its evidence under them (§16.6);
+  // a tie, an evidence-free field, or an explicit `choose` shows the
+  // chooser instead — never a silent guess.
+  let operation = hits[0].operation
+  let alternates: OperationIndexEntry[] | null = null
   if (!dominates(hits)) {
     const bySlug = new Map(
       (await getOperationIndex()).map((entry) => [entry.slug, entry]),
@@ -1327,12 +1332,31 @@ export async function searchCatalog(
         })),
       )
     }
-    return { ...base, matches, noResult: null }
+    // Clear leader: strictly the most matching evidence (or, unfaceted,
+    // the most runs). matched runs count under the query's facets.
+    const count = (entry: OperationIndexEntry) =>
+      entry.match?.matching ?? entry.runs
+    const ordered = [...matches].sort((a, b) => count(b) - count(a))
+    const lead =
+      ordered.length > 0 &&
+      count(ordered[0]) > 0 &&
+      (ordered.length === 1 || count(ordered[0]) > count(ordered[1]))
+        ? ordered[0]
+        : null
+    const chosen =
+      lead === null
+        ? null
+        : hits.find((hit) => hit.operation.slug === lead.slug)
+    if (input.choose === true || chosen === undefined || chosen === null) {
+      return { ...base, matches, noResult: null }
+    }
+    operation = chosen.operation
+    alternates = matches.filter((entry) => entry.slug !== operation.slug)
   }
-  const operation = hits[0].operation
   const equivalentIds = await equivalentOperationIds(operation.id)
   const nearMisses = hits
-    .slice(1, 6)
+    .filter((hit) => hit.operation.id !== operation.id)
+    .slice(0, 5)
     .map((hit) => hit.operation)
     .filter((op) => !equivalentIds.includes(op.id))
 
@@ -1416,6 +1440,7 @@ export async function searchCatalog(
       humanizeOperationName(operation.name),
     ),
     operation: opRef(operation),
+    matches: alternates,
     cohort: groups.cohort,
     cohortOptions: groups.cohortOptions,
     overflow: {

@@ -147,8 +147,10 @@ export type CohortContext = {
 }
 
 /** `cohort` pins the comparison cohort shown for the resolved operation
- * (URL state, never query text); absent, the largest cohort leads. */
-export type SearchInput = { query: string; cohort?: string }
+ * (URL state, never query text); absent, the largest cohort leads.
+ * `choose` forces the full chooser for a multi-match query instead of
+ * resolving its most-measured candidate (§12.1). */
+export type SearchInput = { query: string; cohort?: string; choose?: boolean }
 
 /** One measured case beside an unmeasured request (§12.5 bracketing). */
 export type NearestCase = {
@@ -390,8 +392,10 @@ export type SearchPageModel = {
   /** Populated only for the empty query: browse the index instead of failing. */
   browse: OperationIndexEntry[] | null
   /**
-   * Populated when the query plausibly names several operations and none
-   * dominates: the chooser list, in match order. `operation` is null.
+   * Populated when the query plausibly names several operations. With
+   * `operation` null it is the chooser (no clear leader, or `choose`
+   * requested). Beside a resolved `operation` it lists the other candidates:
+   * the most-measured match answered, interpretation stated (§12.1).
    */
   matches: OperationIndexEntry[] | null
   cohort: CohortContext | null

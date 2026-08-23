@@ -4,15 +4,8 @@ import { Fragment, startTransition, useState } from "react"
 import { ApiLink } from "@/components/api-link"
 import { FilterChip } from "@/components/chip"
 import { CopyButton } from "@/components/copy-button"
-import { KeyValueList } from "@/components/key-value-list"
 import { Pager } from "@/components/pager"
 import { Link } from "@/components/quiet-link"
-import {
-  AnswerSlots,
-  answerLabel,
-  ByLanguage,
-  isDeployable,
-} from "@/features/answer/answer-slots"
 import { FollowButton } from "@/features/follow/follow-button"
 import type { ResultRow, SearchPageModel } from "@/lib/catalog"
 import { formatDateUTC, formatPrimary } from "@/lib/format"
@@ -20,6 +13,7 @@ import { meetsTrust, removeToken } from "@/lib/search-query"
 import { TRUST_TIERS, trustTier } from "@/lib/trust-tier"
 import { licenseMatches } from "@/server/policy/deployability"
 import { NearestMeasured } from "./nearest"
+import { Recommendation } from "./recommendation"
 import { RequestWorkload } from "./request-button"
 import { ResultRowItem, ResultTableHead } from "./result-row"
 import { type BrowseFilters, OperationList, StartState } from "./start-state"
@@ -174,136 +168,6 @@ function TierDivider({ label, count }: { label: string; count: number }) {
       <span className="h-px flex-1 self-center bg-line" />
       <span className="font-mono text-mini text-faint">{count}</span>
     </div>
-  )
-}
-
-function Recommendation({
-  top,
-  fastest,
-  kept,
-  model,
-  hiddenFaster = null,
-}: {
-  top: ResultRow
-  /** The cohort's pure-latency leader; differs from `top` when a stronger
-   * tier surfaced first (§12: the faster number is stated, never hidden). */
-  fastest: ResultRow | null
-  /** The exact rows under the active filters, in cohort rank order. */
-  kept: ResultRow[]
-  model: SearchPageModel
-  /** Cohort leader hidden by the default source filter: the faster number
-   * is still stated (§12), just marked as source-less. */
-  hiddenFaster?: ResultRow | null
-}) {
-  const deployable = isDeployable(top)
-    ? null
-    : (model.groups.exact.find(isDeployable) ?? null)
-  const fasterElsewhere = [
-    ...model.groups.reported,
-    ...model.groups.compatible,
-  ].find(
-    (row) =>
-      row.primary !== null &&
-      top.primary !== null &&
-      row.primary.value < top.primary.value,
-  )
-  const fasterInCohort =
-    fastest &&
-    fastest.runId !== top.runId &&
-    fastest.primary &&
-    top.primary &&
-    fastest.primary.value < top.primary.value
-      ? fastest
-      : null
-  // Baseline context (§8.14): an unbeaten source baseline is stated as such,
-  // never presented as a competitive record; rows that beat one say by how
-  // much — the two numbers experts actually think in.
-  const exactBaseline = model.groups.exact.find((row) => row.baseline) ?? null
-  const allBaseline =
-    model.groups.exact.length > 0 && model.groups.exact.every((r) => r.baseline)
-  const vsBaseline =
-    !top.baseline &&
-    exactBaseline?.primary &&
-    top.primary &&
-    top.primary.value > 0 &&
-    exactBaseline.primary.value !== top.primary.value
-      ? exactBaseline.primary.value / top.primary.value
-      : null
-  return (
-    <section className="grid grid-cols-[minmax(0,2.2fr)_minmax(260px,1fr)] gap-10 border-b border-border py-6 max-lg:grid-cols-1">
-      <div>
-        <AnswerSlots
-          top={top}
-          topLabel={
-            (allBaseline ? "Source baseline · unbeaten" : answerLabel(top)) +
-            (fasterInCohort ? " with source" : "")
-          }
-          deploy={deployable}
-          vsBaseline={vsBaseline}
-        />
-        <ByLanguage rows={kept} />
-        {fasterInCohort?.primary && (
-          <p className="mt-3.5 text-body text-subtle">
-            Fastest overall in this comparison:{" "}
-            <Link
-              href={`/implementations/${fasterInCohort.implementation.slug}`}
-              className="font-mono text-body"
-            >
-              {fasterInCohort.implementation.name}
-            </Link>{" "}
-            at{" "}
-            <span className="font-mono text-fg">
-              {formatPrimary(fasterInCohort.primary)}
-            </span>{" "}
-            · {TRUST_TIERS[rowTier(fasterInCohort)].toLowerCase()} · row #
-            {fasterInCohort.rank ?? "—"}
-          </p>
-        )}
-        {hiddenFaster?.primary && (
-          <p className="mt-2 text-body text-subtle">
-            Fastest known without source:{" "}
-            <span className="font-mono text-fg">
-              {formatPrimary(hiddenFaster.primary)}
-            </span>
-            {hiddenFaster.runId && (
-              <>
-                {" "}
-                <Link href={`/runs/${hiddenFaster.runId}`}>View →</Link>
-              </>
-            )}
-          </p>
-        )}
-        {fasterElsewhere?.primary && (
-          <p className="mt-2 text-body text-subtle">
-            A faster result exists outside this comparison group:{" "}
-            <span className="font-mono text-fg">
-              {formatPrimary(fasterElsewhere.primary)}
-            </span>
-            , not comparable under this protocol.{" "}
-            {fasterElsewhere.runId && (
-              <Link href={`/runs/${fasterElsewhere.runId}`}>View →</Link>
-            )}
-          </p>
-        )}
-      </div>
-      {model.cohort && (
-        <div className="border-l border-border pl-9 max-lg:border-l-0 max-lg:pl-0">
-          <div className="flex items-baseline justify-between gap-4 text-small">
-            <span className="text-subtle">
-              {model.cohort.profile === "source_native"
-                ? "Source-native comparison"
-                : "Exact comparison"}
-            </span>
-            <Link href="/docs#comparability" className="text-small text-faint">
-              Why comparable?
-            </Link>
-          </div>
-          <div className="mt-2.5">
-            <KeyValueList items={model.cohort.facts} />
-          </div>
-        </div>
-      )}
-    </section>
   )
 }
 
@@ -485,6 +349,22 @@ export function SearchResults({
               <div className="mt-1 font-mono text-small text-subtle">
                 {contextLine(model)}
               </div>
+              {/* §12.1: a multi-match query answers with its most-measured
+                  candidate; the interpretation is stated, never silent, and
+                  the full match list is one click away. */}
+              {model.matches && model.matches.length > 0 && (
+                <p className="mt-1.5 text-small text-subtle">
+                  Most-measured of {model.matches.length + 1} matching
+                  operations.{" "}
+                  <Link
+                    href={`/search?q=${encodeURIComponent(model.query)}&choose=1`}
+                    prefetch={false}
+                    className="text-small"
+                  >
+                    All matches →
+                  </Link>
+                </p>
+              )}
               {/* Every measured cohort for this workload, one chip each
                   (§16.6): switching hardware is a link, never a syntax
                   lesson. The selection is URL state (`cohort`), so the
@@ -527,7 +407,7 @@ export function SearchResults({
             operations={model.browse}
             filters={browse ?? { sort: "indexed", family: null, page: 1 }}
           />
-        ) : model.matches ? (
+        ) : model.matches && !model.operation ? (
           <section className="pt-6">
             <div className="flex flex-wrap items-baseline justify-between gap-4 border-b border-border-strong pb-3">
               <h1 className="text-lead font-medium">
@@ -587,16 +467,17 @@ export function SearchResults({
               <Recommendation
                 top={top}
                 fastest={fastest}
-                kept={exactKept}
                 model={model}
                 hiddenFaster={hiddenBySourceFilter}
               />
             )}
 
             <div className="mt-7 flex flex-wrap items-baseline gap-x-6 gap-y-2 border-b border-border-strong">
+              {/* Empty views render nothing, not a dead tab. */}
               {MODES.map((mode) => {
                 const total = groupsByMode[mode.key].length
                 const selected = mode.key === view
+                if (total === 0 && !selected) return null
                 return (
                   <Link
                     key={mode.key}
@@ -681,9 +562,9 @@ export function SearchResults({
               )}
             </div>
 
+            {/* One note line: view semantics, cap, and tie notation. */}
             <p className="mt-2.5 text-small text-faint">
-              {modeNote ??
-                "Ranked by latency within one cohort. Tied ranks share a number."}
+              {modeNote ?? "Ranked by latency within one cohort."}
               {(() => {
                 const cut =
                   model.overflow[
@@ -693,6 +574,13 @@ export function SearchResults({
                   ? ` ${cut} more rows past the cap. Narrow the workload to see them.`
                   : null
               })()}
+              {anyTie && (
+                <>
+                  {" "}
+                  N= means tied: too close to call.{" "}
+                  <Link href="/docs#ranking">How ranking works →</Link>
+                </>
+              )}
             </p>
 
             <div className="mt-1 overflow-x-auto">
@@ -810,13 +698,6 @@ export function SearchResults({
               onNavigate={(target) => apply({ view, page: target })}
             />
 
-            {anyTie && (
-              <p className="mt-3.5 text-small text-faint">
-                N= means tied: too close to call.{" "}
-                <Link href="/docs#ranking">How ranking works →</Link>
-              </p>
-            )}
-
             {model.related.length > 0 && (
               <section className="mt-12">
                 <h2 className="text-body font-medium text-muted">Related</h2>
@@ -844,40 +725,13 @@ export function SearchResults({
           </>
         )}
 
-        <div className="mt-12 flex flex-wrap items-baseline justify-between gap-5 border-t border-border pt-5">
-          <p className="text-small text-subtle">
-            {model.operation
-              ? "Missing a kernel here? Evidence submissions open with the contribution beta."
-              : "Ranked only against runs that measured the same thing."}
-          </p>
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-            {model.cohort && (
-              <span className="flex items-center gap-2.5">
-                <span className="font-mono text-small text-faint">
-                  comparison key {model.cohort.comparisonKey.slice(0, 23)}…
-                </span>
-                <CopyButton text={model.cohort.comparisonKey} />
-              </span>
-            )}
-            {/* The same request as a machine call (§16.6 "copy API
-                request"): the resolver, never scraped HTML. */}
-            {model.operation && (
-              <>
-                <span className="flex items-center gap-1.5 font-mono text-small text-faint">
-                  curl
-                  <CopyButton
-                    text={`curl "https://kernelindex.com${apiPath(model.query, state.cohort)}"`}
-                  />
-                </span>
-                <span className="flex items-center gap-1.5 font-mono text-small text-faint">
-                  ki
-                  <CopyButton
-                    text={`ki search ${JSON.stringify(model.query)} --json`}
-                  />
-                </span>
-                <ApiLink path={apiPath(model.query, state.cohort).slice(7)} />
-              </>
-            )}
+        <div className="mt-12 border-t border-border pt-5">
+          <div className="flex flex-wrap items-baseline justify-between gap-5">
+            <p className="text-small text-subtle">
+              {model.operation
+                ? "Missing a kernel here? Evidence submissions open with the contribution beta."
+                : "Ranked only against runs that measured the same thing."}
+            </p>
             {/* Following a cohort never requires finding the operation
                 page (§13.11): the result footer carries the toggle. */}
             {model.operation && model.cohort && (
@@ -894,6 +748,39 @@ export function SearchResults({
               />
             )}
           </div>
+          {/* The same request as a machine call (§16.6): one disclosure on
+              its own line holds every copyable form — curl, ki, comparison
+              key — instead of a four-item strip. */}
+          {model.operation && (
+            <details className="group mt-2">
+              <summary className="cursor-pointer list-none text-small text-faint transition-colors hover:text-fg [&::-webkit-details-marker]:hidden">
+                This search as an API call
+              </summary>
+              <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1.5">
+                <span className="flex items-center gap-1.5 font-mono text-small text-faint">
+                  curl
+                  <CopyButton
+                    text={`curl "https://kernelindex.com${apiPath(model.query, state.cohort)}"`}
+                  />
+                </span>
+                <span className="flex items-center gap-1.5 font-mono text-small text-faint">
+                  ki
+                  <CopyButton
+                    text={`ki search ${JSON.stringify(model.query)} --json`}
+                  />
+                </span>
+                {model.cohort && (
+                  <span className="flex items-center gap-2.5">
+                    <span className="font-mono text-small text-faint">
+                      comparison key {model.cohort.comparisonKey.slice(0, 23)}…
+                    </span>
+                    <CopyButton text={model.cohort.comparisonKey} />
+                  </span>
+                )}
+                <ApiLink path={apiPath(model.query, state.cohort).slice(7)} />
+              </div>
+            </details>
+          )}
         </div>
         {model.sources.length > 0 && (
           <p className="mt-2 font-mono text-mini text-faint">

@@ -101,9 +101,9 @@ const cached: typeof unstable_cache = process.env.NEXT_RUNTIME
   : (fn) => fn
 // Bump when a read model changes shape: the deployed data cache outlives a
 // deploy, and an old-shape entry must never deserialize into new readers
-// (v6: `nearest` on the search model — the bracketed answer for an
-// unmeasured case).
-const MODEL_VERSION = "v6"
+// (v7: `matches` may accompany a resolved `operation` — the interpreted
+// multi-match answer).
+const MODEL_VERSION = "v7"
 // The database identity is part of the namespace too: two local servers on
 // different databases share .next/cache and must never trade entries.
 const BACKEND = `${

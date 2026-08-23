@@ -911,10 +911,13 @@ export async function searchCatalog(
   }
 
   const matched = /rms[\s_-]?norm/i.test(query)
-  if (!matched) {
-    const empty = query === ""
-    // "norm" alone plausibly names both fixture operations: the chooser.
-    const ambiguous = !empty && intent.text.includes("norm")
+  const empty = query === ""
+  // "norm" alone plausibly names both fixture operations. Mirroring the
+  // postgres backend (§12.1), the most-measured candidate answers with the
+  // interpretation stated; `choose` shows the full chooser.
+  const ambiguous = !matched && !empty && intent.text.includes("norm")
+  const autoResolve = ambiguous && input.choose !== true
+  if (!matched && !autoResolve) {
     return {
       illustrative: ILLUSTRATIVE,
       query,
@@ -956,6 +959,11 @@ export async function searchCatalog(
     }
   }
 
+  const alternates = autoResolve
+    ? (await annotatedMatches(intent)).filter(
+        (entry) => entry.slug !== "rmsnorm-h4096",
+      )
+    : null
   const resolved: SearchPageModel = {
     illustrative: ILLUSTRATIVE,
     query,
@@ -963,7 +971,7 @@ export async function searchCatalog(
     ...shared,
     operation: { name: "RMSNorm, hidden 4096", slug: "rmsnorm-h4096" },
     browse: null,
-    matches: null,
+    matches: alternates,
     cohort: COHORT_2048,
     cohortOptions: COHORT_OPTIONS_2048,
     groups: {

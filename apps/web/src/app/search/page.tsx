@@ -20,6 +20,8 @@ type Params = {
   q?: string
   /** Pins one measured cohort of the resolved workload (hardware chips). */
   cohort?: string
+  /** Forces the full chooser for a multi-match query (§12.1). */
+  choose?: string
   view?: string
   verified?: string
   source?: string
@@ -38,7 +40,11 @@ const BROWSE_SORTS = new Set(["indexed", "active", "az"])
 
 async function Results({ params }: { params: Params }) {
   const query = params.q ?? ""
-  const model = await searchCatalog({ query, cohort: params.cohort })
+  const model = await searchCatalog({
+    query,
+    cohort: params.cohort,
+    choose: params.choose === "1",
+  })
   // §20.5 answer-quality counters, after the response; empty = browse.
   if (query.trim() !== "")
     after(() =>
