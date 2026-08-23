@@ -42,6 +42,12 @@ jobs:
       - name: migrate
         run: pnpm --filter @kernelindex/web db:migrate
 
+      # Technique traits (§8.7): idempotent per extractor version — a no-op
+      # once every mirrored source is extracted; new imports are covered by
+      # the publication transaction itself.
+      - name: extract techniques
+        run: pnpm --filter @kernelindex/web extract:techniques
+
       # Each source: dry-run → machine gate (no unexpected issues or
       # ambiguities) → publish. A failed gate uploads the report and stops
       # that source without touching the catalog.
