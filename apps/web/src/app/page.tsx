@@ -2,6 +2,7 @@ import Link from "next/link"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
 import { HeroSearch } from "@/features/home/hero-search"
 import { LatestRecords } from "@/features/home/latest-records"
+import { WorkedExample } from "@/features/home/worked-example"
 import { TrustBlock } from "@/features/trust/sources"
 import { getCoveragePage, getHomePage, getModelIndex } from "@/lib/catalog"
 
@@ -77,34 +78,25 @@ export default async function Home() {
                 ))}
               </p>
             )}
-            <p className="mt-5 font-mono text-small text-subtle">
-              {model.stats.operations.toLocaleString("en-US")} operations ·{" "}
-              {model.stats.runs.toLocaleString("en-US")} kernel runs
-              {model.stats.servingRuns > 0 &&
-                ` · ${model.stats.servingRuns.toLocaleString("en-US")} serving results`}{" "}
-              · {model.stats.gpus.toLocaleString("en-US")} GPUs ·{" "}
+            <WorkedExample />
+            <p className="mt-5 font-mono text-small text-faint">
               <a href="#trust" className="text-subtle">
-                what's inside →
-              </a>
-            </p>
-            <p className="mt-1.5 font-mono text-small text-faint">
-              for agents:{" "}
-              <Link href="/docs#agents" className="text-faint">
-                MCP
-              </Link>{" "}
+                {model.stats.operations.toLocaleString("en-US")} operations ·{" "}
+                {model.stats.runs.toLocaleString("en-US")} runs ·{" "}
+                {model.stats.gpus.toLocaleString("en-US")} GPUs
+              </a>{" "}
               ·{" "}
               <Link href="/docs/api" className="text-faint">
                 API
               </Link>{" "}
               ·{" "}
-              <Link href="/docs#data" className="text-faint">
-                CLI
+              <Link href="/docs#agents" className="text-faint">
+                MCP
               </Link>{" "}
               ·{" "}
               <a href="/llms.txt" className="text-faint">
                 llms.txt
-              </a>{" "}
-              · the same resolver, never scraped HTML
+              </a>
             </p>
           </div>
         </section>
@@ -119,8 +111,7 @@ export default async function Home() {
           </div>
           <LatestRecords rows={model.latest} />
           <p className="mt-3 text-small text-faint">
-            Results are shown exactly as their source published them, not rerun
-            here.{" "}
+            Shown as published by their sources.{" "}
             <Link href="/docs#evidence" className="text-faint">
               Evidence levels →
             </Link>

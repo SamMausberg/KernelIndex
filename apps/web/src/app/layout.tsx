@@ -79,12 +79,9 @@ export default function RootLayout({
         >
           Skip to content
         </a>
-        <SiteHeader
-          showServing={servingEnabled}
-          authConfigured={authConfigured}
-        />
+        <SiteHeader authConfigured={authConfigured} />
         <div id="main">{children}</div>
-        <SiteFooter />
+        <SiteFooter showServing={servingEnabled} />
         {/* Cookieless page-view counts (same-origin /_vercel/insights, so
             the CSP needs no change); disclosed under /docs#privacy. */}
         <Analytics />

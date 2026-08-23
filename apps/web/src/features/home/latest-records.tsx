@@ -1,14 +1,13 @@
 import { Metric } from "@/components/metric"
 import { Link } from "@/components/quiet-link"
-import { TrustCell } from "@/components/trust"
 import type { RecordHolder } from "@/lib/catalog"
-import { formatDateUTC, formatPrimary, formatSolScoreCell } from "@/lib/format"
+import { formatPrimary, formatSolScoreCell } from "@/lib/format"
 
-const GRID =
-  "grid grid-cols-[1.2fr_1.2fr_110px_150px_120px_minmax(180px,1fr)_92px] min-w-[1040px]"
+const GRID = "grid grid-cols-[1.3fr_1.3fr_110px_150px_120px] min-w-[860px]"
 
-/** Homepage table of the newest record breaks (§16.5). Each row is a record
- * holder; the margin column states what the run displaced. */
+/** Homepage table of the newest record breaks (§16.5), five columns; trust
+ * and indexing dates live on the run dossier a row opens. Each row is a
+ * record holder; the margin column states what the run displaced. */
 export function LatestRecords({ rows }: { rows: RecordHolder[] }) {
   if (rows.length === 0) {
     return (
@@ -27,8 +26,6 @@ export function LatestRecords({ rows }: { rows: RecordHolder[] }) {
         <div className="px-4 py-2.5 text-right">Latency</div>
         <div className="px-4 py-2.5">Margin</div>
         <div className="px-4 py-2.5">Hardware</div>
-        <div className="px-4 py-2.5">Trust</div>
-        <div className="px-4 py-2.5 text-right">Indexed</div>
       </div>
       {rows.map((holder) => {
         const row = holder.current
@@ -92,12 +89,6 @@ export function LatestRecords({ rows }: { rows: RecordHolder[] }) {
             </div>
             <div className="truncate px-4 font-mono text-small text-muted">
               {holder.hardware}
-            </div>
-            <div className="px-4">
-              <TrustCell row={row} />
-            </div>
-            <div className="px-4 text-right font-mono text-small text-faint">
-              {formatDateUTC(holder.indexedAt)}
             </div>
           </div>
         )

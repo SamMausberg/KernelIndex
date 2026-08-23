@@ -5,14 +5,15 @@ import { useEffect, useState } from "react"
 import { CommandK } from "./command-k"
 import { Link } from "./quiet-link"
 
-// Five items (§16.4): the primary surfaces only. Projects and Contribute
-// live in the global footer and the search browse — reachable everywhere,
-// competing for attention nowhere. GPUs yields on narrow screens.
+// Five items (§16.4): the primary surfaces only. Serving, Projects, and
+// Contribute live in the global footer and the search browse — reachable
+// everywhere, competing for attention nowhere. GPUs yields on narrow
+// screens. Models is primary: the whole-model question is the wedge.
 const NAV = [
   { label: "Search", href: "/search" },
+  { label: "Models", href: "/models" },
   { label: "Records", href: "/records" },
   { label: "GPUs", href: "/gpus", desktopOnly: true },
-  { label: "Serving", href: "/serving" },
   { label: "Docs", href: "/docs" },
 ]
 
@@ -52,16 +53,13 @@ function useSessionName(enabled: boolean): string | null {
 }
 
 export function SiteHeader({
-  showServing = true,
   authConfigured = false,
 }: {
-  showServing?: boolean
   authConfigured?: boolean
 }) {
   const pathname = usePathname() ?? ""
   const onSearch = pathname.startsWith("/search")
   const sessionName = useSessionName(authConfigured)
-  const nav = showServing ? NAV : NAV.filter((item) => item.href !== "/serving")
   return (
     <div className="sticky top-0 z-50 border-b border-border bg-canvas">
       <div className="shell flex h-14 items-center gap-7 max-md:gap-4 max-md:px-4">
@@ -75,7 +73,7 @@ export function SiteHeader({
           {/* Hover-intent prefetch via quiet-link: no viewport prefetch —
               the header is on every page — but a rested pointer warms the
               target before the click. */}
-          {nav.map((item) => (
+          {NAV.map((item) => (
             <Link
               key={item.href}
               href={item.href}
