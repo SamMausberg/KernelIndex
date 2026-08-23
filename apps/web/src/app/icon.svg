@@ -1,14 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <title>KernelIndex</title>
-  <!-- House palette: canvas fill, border-strong hairline, fg/accent text,
-       and the calibrated rule — the site's measurement mark — beneath. -->
-  <rect width="64" height="64" rx="12" fill="#020309"/>
-  <rect x="1" y="1" width="62" height="62" rx="11" fill="none" stroke="#1f2538" stroke-width="2"/>
-  <text x="32" y="40" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="30" font-weight="500" text-anchor="middle" fill="#f2f4f9">k<tspan fill="#8fb0ef">i</tspan></text>
-  <g>
-    <rect x="14" y="49" width="36" height="1" fill="#293049"/>
-    <rect x="14" y="46.5" width="1.5" height="6" fill="#293049"/>
-    <rect x="48.5" y="46.5" width="1.5" height="6" fill="#293049"/>
-    <rect x="14" y="48" width="23" height="3" fill="#52699f"/>
-  </g>
+  <!-- The record staircase (§16.12): a latency record falling twice, the
+       same step line the ledger draws. Black tile, white mark, nothing else;
+       8-unit strokes hold a clean 2px at 16px. -->
+  <rect width="64" height="64" rx="14" fill="#000"/>
+  <path d="M8 17H25V31H39V45H56" fill="none" stroke="#fff" stroke-width="8" stroke-linejoin="miter" stroke-linecap="butt"/>
 </svg>
