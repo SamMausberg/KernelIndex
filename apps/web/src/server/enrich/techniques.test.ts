@@ -65,5 +65,8 @@ def kernel(a_ptr, BLOCK_SIZE_M: tl.constexpr = 64, BLOCK_SIZE_K: tl.constexpr = 
     expect(bulk.has("tma")).toBe(true)
     expect(bulk.has("async-copy")).toBe(false)
     expect(extractTechniques("return x * 2", "python")).toEqual([])
+    // Embedded blobs contain every short token by accident; they never count.
+    const blob = `_ACF_B64 = "dxWiJfp4YWCSCKQhmxe4m3uRcanucsplitkeCqhxDM2nM22IiPuEVMdEW4UsGPBXBUMu4"`
+    expect(extractTechniques(blob, "python")).toEqual([])
   })
 })

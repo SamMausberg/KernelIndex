@@ -42,7 +42,7 @@ const DETECTORS: Detector[] = [
   {
     trait: "mma",
     pattern:
-      /mma\.sync|wmma::|nvcuda::wmma|SM80_16x8x\d+|MMA_Atom|tl\.dot\(|@triton.*dot/,
+      /mma\.sync|wmma::|nvcuda::wmma|SM80_16x8x\d+|MMA_Atom|tl\.dot\([^)]|@triton.*dot/,
   },
   // Producer/consumer warp roles with register reallocation.
   {
@@ -121,9 +121,10 @@ const DETECTORS: Detector[] = [
   // FP8 / FP4 tensor-core datatypes.
   {
     trait: "fp8",
-    pattern: /__nv_fp8|float_e4m3|float_e5m2|fp8e4|e4m3|e5m2|tl\.float8/,
+    pattern:
+      /__nv_fp8|float_e4m3|float_e5m2|\bfp8e4\w*\b|\be4m3\b|\be5m2\b|tl\.float8/,
   },
-  { trait: "fp4", pattern: /nvfp4|mxfp4|float_e2m1|fp4/i },
+  { trait: "fp4", pattern: /\b(?:nvfp4|mxfp4|fp4)\b|float_e2m1/i },
   // Triton autotune search space present.
   {
     trait: "autotune",
@@ -161,15 +162,25 @@ export function extractTechniques(
     )
       continue
     for (const raw of lines) {
-      const line = raw.trim()
+      // Embedded data blobs (base64 payloads, packed configs) contain every
+      // short token by accident; long unbroken runs are scrubbed before any
+      // detector sees the line.
+      const line = raw.trim().replace(/[A-Za-z0-9+/=]{40,}/g, "…")
       // Comments never count as a technique in use.
       if (/^(\/\/|#|\*|\/\*)/.test(line)) continue
       const match = detector.pattern.exec(line)
       if (!match) continue
+      // The cited line is bounded, windowed around the match so the proof
+      // itself is never cut off by a long prefix.
+      const start = Math.max(0, match.index - 60)
+      const evidence =
+        line.length <= 200
+          ? line
+          : `${start > 0 ? "…" : ""}${line.slice(start, start + 180)}…`
       traits.push({
         trait: detector.trait,
         value: match[1] ?? null,
-        evidence: line.slice(0, 200),
+        evidence,
       })
       break
     }

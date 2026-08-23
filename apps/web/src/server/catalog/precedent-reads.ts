@@ -2,7 +2,7 @@
 // published corpus. The request may name an operation nobody has indexed;
 // candidates then come from reviewed relations, the family, and fuzzy
 // hits, with the fallback stated in the interpretation.
-import { and, eq, inArray, or } from "drizzle-orm"
+import { and, eq, inArray, or, sql } from "drizzle-orm"
 import type {
   Precedent,
   PrecedentInput,
@@ -158,7 +158,30 @@ export async function findPrecedents(
     )
     .orderBy(schema.benchmarkRuns.primaryValue)
     .limit(CANDIDATE_RUNS)
-  if (rows.length === 0) return base
+  // An empty answer states its cause (§16: nothing dropped silently): when
+  // the source constraint filtered every candidate, say so and name the way
+  // to widen.
+  if (rows.length === 0) {
+    if (input.includeUnsourced) return base
+    const [unsourced] = await database
+      .select({ n: sql<number>`count(*)::int` })
+      .from(schema.benchmarkRuns)
+      .innerJoin(
+        schema.workloads,
+        eq(schema.benchmarkRuns.workloadId, schema.workloads.id),
+      )
+      .where(
+        and(
+          inArray(schema.workloads.operationId, [...relations.keys()]),
+          eligibleRunFilter(),
+        ),
+      )
+    if (!unsourced || unsourced.n === 0) return base
+    return {
+      ...base,
+      interpretation: `${interpretation}; ${unsourced.n} eligible runs exist only without public source (includeUnsourced widens)`,
+    }
+  }
 
   // Aggregate per implementation: rows arrive fastest first, so the first
   // row on the requested GPU (else the first row at all) is its best run.
