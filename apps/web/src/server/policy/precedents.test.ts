@@ -57,6 +57,23 @@ describe("precedents-v1", () => {
     expect(sameOpOtherGpu.score).toBeGreaterThan(familyOnlySameGpu.score)
   })
 
+  it("never mistakes GB200 for B200 or H200 for H20", () => {
+    const gb200 = scorePrecedent(
+      request,
+      candidate({
+        hardwareModels: ["NVIDIA GB200 NVL72"],
+        architectures: ["sm_100"],
+      }),
+    )
+    expect(gb200.reasons).not.toContain("same GPU (GB200 NVL72)")
+    expect(gb200.reasons).toContain("same architecture (sm_100)")
+    const h20 = scorePrecedent(
+      { ...request, gpu: "H20", architecture: null },
+      candidate({ hardwareModels: ["NVIDIA H200"], architectures: ["sm_90"] }),
+    )
+    expect(h20.reasons.some((r) => r.startsWith("same GPU"))).toBe(false)
+  })
+
   it("stays neutral on dimensions the request did not bind", () => {
     const open = {
       ...request,

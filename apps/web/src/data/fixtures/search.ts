@@ -5,6 +5,7 @@ import type {
   OperationIndexEntry,
   OperationPageModel,
   PrimaryMetric,
+  ResultRow,
   SearchInput,
   SearchPageModel,
 } from "@/lib/catalog-models"
@@ -45,6 +46,7 @@ import {
   WORKLOADS,
   type WorkloadId,
 } from "./data"
+import { IMPLEMENTATIONS } from "./dossiers"
 
 /** Chooser annotation via the same pure helpers as the postgres backend:
  * every measured fixture run sits on the rmsnorm operation (B200, bf16). */
@@ -187,13 +189,24 @@ export async function searchCatalog(
     matches: alternates,
     cohort: COHORT_2048,
     cohortOptions: COHORT_OPTIONS_2048,
+    // tech: facets hide rows here exactly like the postgres backend, so
+    // the technique links on implementation pages behave in fixture mode.
     groups: {
-      exact: RANKED.map(rowFromRun),
-      compatible: RUNS.filter((r) => r.match === "compatible").map(rowFromRun),
-      supportedUnmeasured: [SUPPORTED_UNMEASURED],
-      reported: RUNS.filter(
-        (r) => r.evidence === "reported" && !r.retracted,
-      ).map(rowFromRun),
+      exact: techFilter(RANKED.map(rowFromRun), intent.techniques),
+      compatible: techFilter(
+        RUNS.filter((r) => r.match === "compatible").map(rowFromRun),
+        intent.techniques,
+      ),
+      supportedUnmeasured: techFilter(
+        [SUPPORTED_UNMEASURED],
+        intent.techniques,
+      ),
+      reported: techFilter(
+        RUNS.filter((r) => r.evidence === "reported" && !r.retracted).map(
+          rowFromRun,
+        ),
+        intent.techniques,
+      ),
     },
     related: [
       {
@@ -288,6 +301,19 @@ export async function searchCatalog(
             above: side(bracket.above),
           },
   }
+}
+
+/** Rows whose implementation carries every requested trait (§11.4: a
+ * row-hiding policy facet, like trust). */
+function techFilter(rows: ResultRow[], techniques: string[]): ResultRow[] {
+  if (techniques.length === 0) return rows
+  return rows.filter((row) => {
+    const traits =
+      IMPLEMENTATIONS[row.implementation.slug]?.techniques.map(
+        (t) => t.trait,
+      ) ?? []
+    return techniques.every((trait) => traits.includes(trait))
+  })
 }
 
 /** The fixture workload as a WorkloadCase manifest, enough for headroom. */

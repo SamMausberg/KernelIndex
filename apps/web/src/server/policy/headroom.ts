@@ -162,12 +162,13 @@ export function estimateHeadroom(input: {
   if (spec === null) return null
   const tensors = Object.values(workload.spec.tensors)
   let bytes = 0
-  let widest: string | null = null
+  const classes = new Set<NonNullable<ReturnType<typeof computeClass>>>()
   for (const tensor of tensors) {
     const width = DTYPE_BYTES[tensor.dtype]
     if (width === undefined) continue
     bytes += width * tensor.shape.reduce((product, dim) => product * dim, 1)
-    if (widest === null || width > DTYPE_BYTES[widest]) widest = tensor.dtype
+    const cls = computeClass(tensor.dtype)
+    if (cls !== null) classes.add(cls)
   }
   if (bytes === 0) return null
   const dramFloorNs = bytes / spec.dramGBs
@@ -175,7 +176,16 @@ export function estimateHeadroom(input: {
     `every declared tensor crosses HBM exactly once (${spec.dramGBs.toLocaleString("en-US")} GB/s, ${spec.label} datasheet)`,
   ]
   const formula = familyFlops(input.family, workload.spec.axes, tensors)
-  const dtypeClass = widest ? computeClass(widest) : null
+  // The fastest peak any declared dtype could run at keeps the floor a
+  // lower bound: a bf16 GEMM with an fp32 accumulator tensor must not be
+  // floored at the tf32 peak.
+  const dtypeClass = [...classes].reduce<ReturnType<typeof computeClass>>(
+    (best, cls) =>
+      best === null || (spec.tflops[cls] ?? 0) > (spec.tflops[best] ?? 0)
+        ? cls
+        : best,
+    null,
+  )
   const peak = dtypeClass ? spec.tflops[dtypeClass] : undefined
   let computeFloorNs: number | null = null
   if (formula && peak !== undefined && dtypeClass) {

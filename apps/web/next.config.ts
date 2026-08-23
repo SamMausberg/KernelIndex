@@ -52,6 +52,13 @@ const nextConfig: NextConfig = {
   // that window instead of the multi-hour default, so users stop seeing
   // mixed build ids after a deploy.
   expireTime: 600,
+  // The hosted /mcp route's manifest tools read the generated registry
+  // schemas at runtime through a dynamic path the file tracer cannot see;
+  // include them so validate_manifest answers on the deployment, not only
+  // from a checkout.
+  outputFileTracingIncludes: {
+    "/mcp": ["../../registry/schemas/**"],
+  },
   experimental: {
     // Back/forward navigation reuses the client router cache briefly instead
     // of refetching every dynamic page.

@@ -3,7 +3,7 @@
 import { describe, expect, it } from "vitest"
 
 process.env.CATALOG_BACKEND = "fixtures"
-const { POST } = await import("./route.ts")
+const { POST, GET } = await import("./route.ts")
 
 const rpc = (body: unknown) =>
   POST(
@@ -30,5 +30,13 @@ describe("/mcp", () => {
     expect(names).toContain("search_catalog")
     expect(names).toContain("find_precedents")
     expect(names).toHaveLength(18)
+  })
+
+  it("refuses GET instead of holding an SSE stream open", async () => {
+    const response = GET()
+    expect(response.status).toBe(405)
+    expect(response.headers.get("Allow")).toBe("POST")
+    const body = await response.json()
+    expect(body.error.code).toBe(-32000)
   })
 })

@@ -30,13 +30,21 @@ export async function POST(request: Request): Promise<Response> {
 }
 
 // Streamable HTTP also defines GET (server-initiated stream) and DELETE
-// (session teardown); both are meaningless without sessions, and the
-// transport answers them with the proper JSON-RPC error itself.
-export async function GET(request: Request): Promise<Response> {
-  return new WebStandardStreamableHTTPServerTransport({
-    sessionIdGenerator: undefined,
-    enableJsonResponse: true,
-  }).handleRequest(request)
+// (session teardown); both are meaningless without sessions. Answered
+// directly with 405 — the stateless transport would otherwise hold an SSE
+// stream open forever, pinning a serverless invocation per client.
+export function GET(): Response {
+  return Response.json(
+    {
+      jsonrpc: "2.0",
+      error: {
+        code: -32000,
+        message: "Method not allowed: stateless transport, POST only",
+      },
+      id: null,
+    },
+    { status: 405, headers: { Allow: "POST" } },
+  )
 }
 
 export const DELETE = GET

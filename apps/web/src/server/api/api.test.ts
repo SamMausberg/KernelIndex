@@ -42,7 +42,7 @@ describe("api /v1", () => {
         environment: { hardwareProduct: "B200", dtype: "bf16" },
         policy: { minimumTrust: "verified", sourceRequired: true },
       }),
-    ).toBe("rmsnorm tokens=2048 B200 dtype:bf16 trust:verified source:true")
+    ).toBe("rmsnorm tokens=2048 gpu:B200 dtype:bf16 trust:verified source:true")
   })
 
   it("resolves a structured request end to end", async () => {

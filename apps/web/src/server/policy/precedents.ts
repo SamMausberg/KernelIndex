@@ -64,6 +64,13 @@ const ADJACENT: Record<string, string[]> = {
 
 const label = (gpu: string) => gpu.replace("NVIDIA ", "").replace("AMD ", "")
 
+/** Word-boundary product match: "B200" finds "NVIDIA B200 SXM" but never
+ * "GB200 NVL72"; "H20" never finds "H200". */
+export function gpuMatches(wanted: string, model: string): boolean {
+  const escaped = wanted.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+  return new RegExp(`(?:^|[^a-z0-9])${escaped}(?:[^a-z0-9]|$)`, "i").test(model)
+}
+
 function computation(relation: ComputationRelation): [number, string | null] {
   switch (relation.kind) {
     case "same":
@@ -86,9 +93,9 @@ function hardware(
   candidate: PrecedentCandidate,
 ): [number, string | null] {
   if (request.gpu === null && request.architecture === null) return [0.6, null]
-  const wanted = request.gpu?.toLowerCase() ?? null
+  const wanted = request.gpu
   const model = candidate.hardwareModels.find(
-    (entry) => wanted !== null && entry.toLowerCase().includes(wanted),
+    (entry) => wanted !== null && gpuMatches(wanted, entry),
   )
   if (model) return [1, `same GPU (${label(model)})`]
   // The read seam fills `architecture` from the corpus when only a GPU was

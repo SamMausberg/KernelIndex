@@ -29,18 +29,20 @@ describe("headroom-v1", () => {
         {
           a: { shape: [m, m], dtype: "bf16" },
           b: { shape: [m, m], dtype: "bf16" },
-          c: { shape: [m, m], dtype: "bf16" },
+          // The fp32 accumulator must not drop the floor to the tf32 peak.
+          c: { shape: [m, m], dtype: "fp32" },
         },
       ),
       best: { value: 120_000, unit: "ns" },
     })
     expect(estimate).not.toBeNull()
-    // 3 × 4096² × 2 bytes over 8 TB/s; 2·4096³ FLOPs at 2250 TFLOP/s.
-    expect(estimate?.dramFloorNs).toBe(Math.round((3 * m * m * 2) / 8000))
+    // (2×2 + 4) bytes × 4096² over 8 TB/s; 2·4096³ FLOPs at 2250 TFLOP/s.
+    expect(estimate?.dramFloorNs).toBe(Math.round((8 * m * m) / 8000))
     expect(estimate?.computeFloorNs).toBe(Math.round((2 * m ** 3) / 2.25e6))
     expect(estimate?.floorNs).toBe(estimate?.computeFloorNs)
     expect(estimate?.ratio).toBeCloseTo(120_000 / (estimate?.floorNs ?? 1), 1)
     expect(estimate?.basis).toBe("estimate")
+    expect(estimate?.computeDtype).toBe("bf16")
     expect(estimate?.assumptions[1]).toContain("2·M·N·K with M=4096")
   })
 

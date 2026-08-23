@@ -19,6 +19,7 @@ import * as schema from "../db/schema.ts"
 import { EXTRACTOR_VERSION } from "../enrich/techniques.ts"
 import {
   type ComputationRelation,
+  gpuMatches,
   PRECEDENT_POLICY_VERSION,
   type PrecedentCandidate,
   scorePrecedent,
@@ -183,15 +184,23 @@ export async function findPrecedents(
     }
   }
 
-  // Aggregate per implementation: rows arrive fastest first, so the first
-  // row on the requested GPU (else the first row at all) is its best run.
-  const wantedGpu = intent.gpu?.toLowerCase() ?? null
+  // Aggregate per implementation. "Best run": requested GPU beats other
+  // hardware; within that, the metric's own direction decides — lower wins
+  // for time units, higher for throughput metrics.
+  const wantedGpu = intent.gpu
   const onWantedGpu = (model: string) =>
-    wantedGpu !== null && model.toLowerCase().includes(wantedGpu)
-  type Group = {
-    rows: typeof rows
-    best: (typeof rows)[number]
+    wantedGpu !== null && gpuMatches(wantedGpu, model)
+  const lowerIsBetter = (unit: string | null) =>
+    unit === null || ["ns", "us", "ms", "s"].includes(unit)
+  type Row = (typeof rows)[number]
+  const better = (a: Row, b: Row): Row => {
+    const aGpu = onWantedGpu(a.run.hardwareModel)
+    if (aGpu !== onWantedGpu(b.run.hardwareModel)) return aGpu ? a : b
+    const [av, bv] = [a.run.primaryValue, b.run.primaryValue]
+    if (av === null || bv === null) return av !== null ? a : b
+    return (lowerIsBetter(a.run.primaryUnit) ? av <= bv : av >= bv) ? a : b
   }
+  type Group = { rows: Row[]; best: Row }
   const groups = new Map<string, Group>()
   for (const row of rows) {
     const group = groups.get(row.implementation.id)
@@ -200,11 +209,7 @@ export async function findPrecedents(
       continue
     }
     group.rows.push(row)
-    if (
-      !onWantedGpu(group.best.run.hardwareModel) &&
-      onWantedGpu(row.run.hardwareModel)
-    )
-      group.best = row
+    group.best = better(group.best, row)
   }
 
   const [ranks, traitRows] = await Promise.all([
@@ -317,12 +322,21 @@ export async function findPrecedents(
       techniques: candidate.techniques,
     }
   })
-  precedents.sort(
-    (a, b) =>
-      b.score - a.score ||
-      (a.bestRun?.primary?.value ?? Number.POSITIVE_INFINITY) -
-        (b.bestRun?.primary?.value ?? Number.POSITIVE_INFINITY),
-  )
+  // Score decides; equal scores break ties by primary value only when the
+  // two runs measured the same thing in a lower-is-better unit.
+  precedents.sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score
+    const [pa, pb] = [a.bestRun?.primary, b.bestRun?.primary]
+    if (
+      pa &&
+      pb &&
+      pa.metric === pb.metric &&
+      pa.unit === pb.unit &&
+      lowerIsBetter(pa.unit)
+    )
+      return pa.value - pb.value
+    return 0
+  })
   return {
     ...base,
     illustrative: rows.every((row) => row.source.kind === "illustrative"),

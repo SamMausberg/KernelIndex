@@ -436,8 +436,10 @@ export function composeQuery(request: StructuredRequest): string {
   for (const [axis, value] of Object.entries(request.operation?.axes ?? {})) {
     parts.push(`${axis}=${value}`)
   }
+  // As a facet, not a bare token: a GPU outside the bare-word list (H20,
+  // T4, L4…) must still bind hardware instead of polluting the text terms.
   if (request.environment?.hardwareProduct)
-    parts.push(request.environment.hardwareProduct)
+    parts.push(`gpu:${request.environment.hardwareProduct}`)
   if (request.environment?.dtype)
     parts.push(`dtype:${request.environment.dtype}`)
   if (request.policy?.minimumTrust)
