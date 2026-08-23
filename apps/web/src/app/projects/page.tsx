@@ -211,8 +211,8 @@ export default async function ProjectsPage({
         <p className="mt-8 text-small text-faint">
           {sort === "presence"
             ? "Ordered by corpus presence, not merit."
-            : "Records are counted inside their own cohorts; cohorts are never ranked against each other."}{" "}
-          <Link href="/docs#comparability">Why? →</Link>
+            : "Records are counted inside their own cohorts."}{" "}
+          <Link href="/docs#comparability">How comparison works →</Link>
         </p>
       </main>
     </>

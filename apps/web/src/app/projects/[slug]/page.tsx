@@ -192,8 +192,6 @@ export default async function ProjectPage({ params }: Props) {
             </p>
           )}
           <p className="mt-3 text-small text-faint">
-            Records are held inside their own cohorts and never ranked against
-            each other.{" "}
             <Link href={`/records?f=${encodeURIComponent(project.name)}`}>
               Open in the records ledger →
             </Link>

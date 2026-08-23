@@ -82,9 +82,9 @@ export default async function ModelPage({ params, searchParams }: Props) {
         />
         <main className="shell pt-7 pb-24">
           <p className="max-w-[76ch] text-body text-muted">
-            No indexed operation declares workload provenance for{" "}
-            <span className="font-mono">model:{slug}</span>. Model tags are
-            exact; a close variant may be indexed under its own tag.
+            No operation is tagged{" "}
+            <span className="font-mono">model:{slug}</span> yet. Tags are exact;
+            a close variant may be indexed under its own tag.
           </p>
           <div className="mt-4 space-y-2">
             {model.model.relatedTags.length > 0 && (
@@ -115,7 +115,7 @@ export default async function ModelPage({ params, searchParams }: Props) {
       {model.illustrative && <IllustrativeNotice />}
       <ContextHeader
         title={<span className="font-mono">{slug}</span>}
-        context="best known per operation on the selected GPU · workload provenance declared by sources"
+        context="best known per operation on the selected GPU"
         meta={
           <>
             <span>
@@ -172,10 +172,11 @@ export default async function ModelPage({ params, searchParams }: Props) {
         {model.groups.length > 0 && model.selectedGpu !== null && (
           <Section id="best" title={`Best known on ${model.selectedGpu}`}>
             <p className="mb-4 max-w-[76ch] text-small text-faint">
-              Each row resolves inside one comparison cohort: same workload,
-              protocol, and environment throughout. Numbers from different
-              cohorts are never merged. Open a row for the cohort, the
-              fastest-versus-deployable gap, and the adoption path.
+              One best-known implementation per operation, each inside its own
+              comparison cohort.{" "}
+              <Link href="/docs#comparability" className="text-faint">
+                How comparison works →
+              </Link>
             </p>
             <BestKnownTable groups={model.groups} />
           </Section>
@@ -196,8 +197,8 @@ export default async function ModelPage({ params, searchParams }: Props) {
               selectedGpu={model.selectedGpu ?? ""}
             />
             <p className="mt-3 text-small text-faint">
-              A gap is a stated absence of eligible evidence, not a claim about
-              performance. <Link href="/challenges">Challenges →</Link>{" "}
+              No eligible evidence yet for these operations.{" "}
+              <Link href="/challenges">Challenges →</Link>{" "}
               <Link href="/submit">Contribute evidence →</Link>
             </p>
           </Section>

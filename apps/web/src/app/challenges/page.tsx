@@ -22,35 +22,32 @@ const KINDS: { kind: ChallengeKind; title: string; caption: string }[] = [
   {
     kind: "requested",
     title: "Requested workloads",
-    caption:
-      "asked for on the no-answer search states · coarse facets only, counted over 90 days",
+    caption: "asked for on no-answer searches over 90 days",
   },
   {
     kind: "gap",
     title: "Priority gaps",
-    caption:
-      "the families inference engineers ask about first, with zero eligible runs on a priority GPU",
+    caption: "high-demand families with zero runs on a priority GPU",
   },
   {
     kind: "model_gap",
     title: "Model gaps",
-    caption:
-      "operations models need, measured on one priority GPU but not the other",
+    caption: "measured on one priority GPU but not the other",
   },
   {
     kind: "unbeaten_baseline",
     title: "Unbeaten baselines",
-    caption: "the source's own reference stands; nobody has entered against it",
+    caption: "the source's own reference; nobody has entered against it",
   },
   {
     kind: "unchallenged",
     title: "Unchallenged records",
-    caption: "cohorts holding a single entry · a record nobody has contested",
+    caption: "single-entry cohorts",
   },
   {
     kind: "stale",
     title: "Stale records",
-    caption: "records not re-observed in 180 days",
+    caption: "not re-observed in 180 days",
   },
 ]
 
@@ -111,7 +108,7 @@ export default async function ChallengesPage() {
       {model.illustrative && <IllustrativeNotice />}
       <ContextHeader
         title="Challenges"
-        context="what the index has no good answer for yet · a zero stated is a fact, never a claim"
+        context="what the index has no good answer for yet"
         meta={
           <>
             <span>{countNoun(model.challenges.length, "open challenge")}</span>
