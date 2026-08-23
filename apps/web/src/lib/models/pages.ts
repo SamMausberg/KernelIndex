@@ -351,6 +351,30 @@ export type OperationSweep = {
   overflow: number
 }
 
+/**
+ * headroom-v1 (§11.9): a coarse roofline under one cohort's record. An
+ * estimate of a lower bound from declared tensors and datasheet peaks;
+ * `basis` rides along so no surface can present it as a measurement.
+ */
+export type HeadroomEstimate = {
+  basis: "estimate"
+  policyVersion: string
+  hardware: string
+  /** Bytes the workload's declared tensors occupy, crossed once. */
+  bytes: number
+  /** Arithmetic the family formula counts; null when none applies. */
+  flops: number | null
+  computeDtype: string | null
+  dramFloorNs: number
+  computeFloorNs: number | null
+  /** The binding floor: the larger of the two. */
+  floorNs: number
+  bestNs: number
+  /** best / floor; 1.0 would put the record on the roofline. */
+  ratio: number
+  assumptions: string[]
+}
+
 /** §16.8: operation page as one scrollable document. */
 export type OperationPageModel = {
   illustrative: boolean
@@ -387,6 +411,9 @@ export type OperationPageModel = {
   records: ResultRow[]
   /** Scaling sweep across the workload family, when one exists. */
   sweep: OperationSweep | null
+  /** Roofline estimate under the shown cohort's record; null when the GPU,
+   * workload kind, or metric gives no basis for one. */
+  headroom: HeadroomEstimate | null
   implementations: ImplementationSummary[]
   coverage: {
     verified: number

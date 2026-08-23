@@ -7351,6 +7351,65 @@
                         "overflow"
                       ]
                     },
+                    "headroom": {
+                      "type": ["object", "null"],
+                      "properties": {
+                        "basis": {
+                          "type": "string",
+                          "enum": ["estimate"]
+                        },
+                        "policyVersion": {
+                          "type": "string"
+                        },
+                        "hardware": {
+                          "type": "string"
+                        },
+                        "bytes": {
+                          "type": "number"
+                        },
+                        "flops": {
+                          "type": ["number", "null"]
+                        },
+                        "computeDtype": {
+                          "type": ["string", "null"]
+                        },
+                        "dramFloorNs": {
+                          "type": "number"
+                        },
+                        "computeFloorNs": {
+                          "type": ["number", "null"]
+                        },
+                        "floorNs": {
+                          "type": "number"
+                        },
+                        "bestNs": {
+                          "type": "number"
+                        },
+                        "ratio": {
+                          "type": "number"
+                        },
+                        "assumptions": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": [
+                        "basis",
+                        "policyVersion",
+                        "hardware",
+                        "bytes",
+                        "flops",
+                        "computeDtype",
+                        "dramFloorNs",
+                        "computeFloorNs",
+                        "floorNs",
+                        "bestNs",
+                        "ratio",
+                        "assumptions"
+                      ]
+                    },
                     "implementations": {
                       "type": "array",
                       "items": {
@@ -7531,6 +7590,7 @@
                     "cohort",
                     "records",
                     "sweep",
+                    "headroom",
                     "implementations",
                     "coverage",
                     "sources"

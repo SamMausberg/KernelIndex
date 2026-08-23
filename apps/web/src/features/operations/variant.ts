@@ -20,6 +20,7 @@ export type OperationVariant = {
   records: ResultRow[]
   recordsTotal: number
   sweep: OperationSweep | null
+  headroom: OperationPageModel["headroom"]
 }
 
 export function operationVariant(model: OperationPageModel): OperationVariant {
@@ -30,5 +31,6 @@ export function operationVariant(model: OperationPageModel): OperationVariant {
     records: model.records.slice(0, RECORDS_CAP),
     recordsTotal: model.records.length,
     sweep: model.sweep,
+    headroom: model.headroom,
   }
 }

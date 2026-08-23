@@ -14,6 +14,7 @@ import { parseQuery } from "../../lib/search-query.ts"
 import type { OperationSpecManifest } from "../../schemas/kinds.ts"
 import { db } from "../db/client.ts"
 import * as schema from "../db/schema.ts"
+import { estimateHeadroom } from "../policy/headroom.ts"
 import { defaultWorkloadId, fillCohortFacts, groupRuns } from "./cohorts.ts"
 import {
   type AnyWorkloadManifest,
@@ -318,6 +319,17 @@ export async function getOperationPage(
     cohort: groups.cohort,
     records: groups.exact,
     sweep,
+    headroom:
+      anchor && selectedWorkloadId
+        ? estimateHeadroom({
+            family: operation.family,
+            hardwareModel: anchor.run.hardwareModel,
+            workload: manifestById.get(
+              selectedWorkloadId,
+            ) as AnyWorkloadManifest,
+            best: groups.exact[0]?.primary ?? null,
+          })
+        : null,
     implementations,
     coverage: {
       verified: evidence.filter(

@@ -14,6 +14,7 @@ import {
   removeToken,
   type SearchIntent,
 } from "@/lib/search-query"
+import type { WorkloadCaseManifest } from "@/schemas/kinds"
 import {
   type ChooserRun,
   chooserFacets,
@@ -26,6 +27,7 @@ import {
   bracketQuery,
 } from "@/server/catalog/match"
 import { computeSweep } from "@/server/catalog/sweep"
+import { estimateHeadroom } from "@/server/policy/headroom"
 import {
   APACHE,
   B200,
@@ -288,6 +290,29 @@ export async function searchCatalog(
   }
 }
 
+/** The fixture workload as a WorkloadCase manifest, enough for headroom. */
+function fixtureWorkloadCase(axes: {
+  tokens: number
+  hidden: number
+}): WorkloadCaseManifest {
+  const shape = [axes.tokens, axes.hidden]
+  return {
+    apiVersion: "kernelindex.dev/v1alpha1",
+    kind: "WorkloadCase",
+    metadata: { name: `rmsnorm-${axes.tokens}` },
+    spec: {
+      operationSpecDigest: digest("operation:rmsnorm-h4096"),
+      axes: { ...axes },
+      tensors: {
+        input: { shape, dtype: "bf16" },
+        weight: { shape: [axes.hidden], dtype: "bf16" },
+        output: { shape, dtype: "bf16" },
+      },
+      correctness: { comparator: "elementwise_close" },
+    },
+  } as WorkloadCaseManifest
+}
+
 export async function getOperationPage(
   slug: string,
   workload?: string,
@@ -388,6 +413,15 @@ export async function getOperationPage(
     cohort: selected === "wl-2048" ? COHORT_2048 : null,
     records,
     sweep,
+    headroom:
+      selected === "wl-2048"
+        ? estimateHeadroom({
+            family: "rmsnorm",
+            hardwareModel: B200.model,
+            workload: fixtureWorkloadCase(WORKLOADS[selected].axes),
+            best: records[0]?.primary ?? null,
+          })
+        : null,
     implementations: [
       {
         slug: "meridian-rmsnorm",

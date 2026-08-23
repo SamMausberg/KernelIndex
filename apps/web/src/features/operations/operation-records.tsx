@@ -12,8 +12,8 @@ import {
 } from "@/features/answer/answer-slots"
 import { FollowButton } from "@/features/follow/follow-button"
 import { ResultRowItem, ResultTableHead } from "@/features/search/result-row"
-import type { WorkloadOption } from "@/lib/catalog"
-import { formatDateUTC, formatPrimary } from "@/lib/format"
+import type { HeadroomEstimate, WorkloadOption } from "@/lib/catalog"
+import { formatDateUTC, formatLatency, formatPrimary } from "@/lib/format"
 import { HERO_GPUS } from "@/lib/priority"
 import { SweepChart } from "./sweep"
 import type { OperationVariant } from "./variant"
@@ -46,6 +46,48 @@ function loadVariant(slug: string, search: URLSearchParams) {
 
 const ENV_GRID =
   "grid grid-cols-[minmax(150px,1.2fr)_110px_minmax(150px,1fr)_48px] items-baseline gap-x-4"
+
+/** headroom-v1 (§11.9): the roofline estimate under the cohort record,
+ * labeled as an estimate in the same breath as the numbers. The
+ * assumptions open on demand; nothing here is evidence. */
+function HeadroomNote({ headroom }: { headroom: HeadroomEstimate }) {
+  const binding =
+    headroom.computeFloorNs !== null &&
+    headroom.computeFloorNs >= headroom.dramFloorNs
+      ? "compute"
+      : "bandwidth"
+  return (
+    <details className="group mt-3 border-t border-line pt-2.5">
+      <summary className="cursor-pointer list-none text-small [&::-webkit-details-marker]:hidden">
+        <span className="text-subtle">Estimated floor</span>{" "}
+        <span className="font-mono text-fg">
+          {formatLatency(headroom.floorNs)}
+        </span>{" "}
+        <span className="font-mono text-subtle">
+          · record {headroom.ratio}× above it
+        </span>
+        <span className="ml-2 text-mini text-faint">
+          estimate, not evidence ›
+        </span>
+      </summary>
+      <div className="mt-2 space-y-1 text-mini text-faint">
+        <div className="font-mono text-subtle">
+          DRAM {formatLatency(headroom.dramFloorNs)}
+          {headroom.computeFloorNs !== null &&
+            ` · compute ${formatLatency(headroom.computeFloorNs)}`}{" "}
+          · {binding}-bound on {headroom.hardware}
+        </div>
+        {headroom.assumptions.map((assumption) => (
+          <div key={assumption}>{assumption}</div>
+        ))}
+        <div>
+          {headroom.policyVersion}: a lower bound from declared tensors and
+          datasheet peaks. A kernel can sit well above it for good reasons.
+        </div>
+      </div>
+    </details>
+  )
+}
 
 export function OperationRecords({
   slug,
@@ -235,6 +277,7 @@ export function OperationRecords({
                     : []),
                 ]}
               />
+              {variant.headroom && <HeadroomNote headroom={variant.headroom} />}
               <Link
                 href={`/records?view=history&f=${encodeURIComponent(operationName)}`}
                 prefetch={false}

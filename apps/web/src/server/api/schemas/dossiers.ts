@@ -116,6 +116,22 @@ export const operationDossier = z.object({
       overflow: z.number(),
     })
     .nullable(),
+  headroom: z
+    .object({
+      basis: z.literal("estimate"),
+      policyVersion: z.string(),
+      hardware: z.string(),
+      bytes: z.number(),
+      flops: z.number().nullable(),
+      computeDtype: z.string().nullable(),
+      dramFloorNs: z.number(),
+      computeFloorNs: z.number().nullable(),
+      floorNs: z.number(),
+      bestNs: z.number(),
+      ratio: z.number(),
+      assumptions: z.array(z.string()),
+    })
+    .nullable(),
   implementations: z.array(implementationSummary),
   coverage: z.object({
     verified: z.number(),

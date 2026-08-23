@@ -195,6 +195,22 @@ rmsnorm gpu:B200 dtype:bf16 shape:[2048,4096] framework=pytorch trust:verified`}
             .
           </p>
 
+          <Sub id="headroom" title="Headroom" />
+          <p>
+            Beside a cohort record the operation page states an{" "}
+            <em>estimated floor</em>: the time the workload's declared tensors
+            need to cross HBM once at the GPU's datasheet bandwidth, and, for
+            GEMM and attention families, the time their arithmetic needs at the
+            dense tensor-core peak. The larger of the two is the floor; the
+            record's distance above it says whether there is room left. It is a
+            coarse lower bound under{" "}
+            <span className="font-mono text-body">headroom-v1</span>, carried
+            with <span className="font-mono text-small">basis: estimate</span>{" "}
+            everywhere it appears, and never evidence: a kernel can sit well
+            above it for good reasons, and a GPU outside the datasheet table
+            gets no estimate at all.
+          </p>
+
           <Sub id="evidence" title="Evidence levels" />
           <div className="mt-1">
             {EVIDENCE_LEVELS.map(([label, description]) => (

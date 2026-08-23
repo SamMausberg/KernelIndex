@@ -2356,6 +2356,21 @@ export interface paths {
                 }[]
                 overflow: number
               } | null
+              headroom: {
+                /** @enum {string} */
+                basis: "estimate"
+                policyVersion: string
+                hardware: string
+                bytes: number
+                flops: number | null
+                computeDtype: string | null
+                dramFloorNs: number
+                computeFloorNs: number | null
+                floorNs: number
+                bestNs: number
+                ratio: number
+                assumptions: string[]
+              } | null
               implementations: {
                 slug: string
                 name: string
