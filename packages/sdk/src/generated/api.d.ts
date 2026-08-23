@@ -2012,6 +2012,142 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  "/precedents": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description Implementations most likely to contain transferable optimization ideas for the requested kernel problem, ranked by transferability (same computation, same or adjacent hardware, adjacent shape, proven standing, shared techniques), each with its reasons. Not a compatibility answer: the problem need not be indexed. */
+    post: {
+      parameters: {
+        query?: never
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody?: {
+        content: {
+          "application/json": {
+            query?: string
+            operation?: {
+              family?: string
+              name?: string
+              axes?: {
+                [key: string]: number
+              }
+            }
+            environment?: {
+              hardwareProduct?: string
+              dtype?: string
+            }
+            limit?: number
+            includeUnsourced?: boolean
+          }
+        }
+      }
+      responses: {
+        /** @description Ranked precedents with reasons */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              illustrative: boolean
+              interpretation: string
+              target: {
+                name: string
+                slug: string
+                family: string
+              } | null
+              policyVersion: string
+              precedents: {
+                implementation: {
+                  name: string
+                  slug: string
+                }
+                project: {
+                  name: string
+                  slug: string
+                }
+                operation: {
+                  name: string
+                  slug: string
+                }
+                score: number
+                reasons: string[]
+                dimensions: {
+                  computation: number
+                  hardware: number
+                  workload: number
+                  quality: number
+                  techniques: number
+                }
+                bestRun: {
+                  runId: string
+                  hardware: string
+                  primary: {
+                    metric: string
+                    unit: string
+                    statistic: string
+                    value: number
+                    sampleCount: number | null
+                    uncertainty: {
+                      low: number
+                      high: number
+                    } | null
+                  } | null
+                  rank: number | null
+                  cohortSize: number | null
+                  /** @enum {string} */
+                  evidence:
+                    | "verified"
+                    | "replicated"
+                    | "reproducible"
+                    | "reported"
+                } | null
+                language: string | null
+                framework: string | null
+                license: {
+                  declared: string | null
+                  concluded: string | null
+                }
+                sourceAvailable: boolean
+                techniques: string[]
+              }[]
+              considered: number
+              generatedAt: string
+            }
+          }
+        }
+        /** @description Not found */
+        404: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              type: string
+              title: string
+              status: number
+              code: string
+              detail?: string
+              requestId: string
+            }
+          }
+        }
+      }
+    }
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   "/operations/{idOrSlug}": {
     parameters: {
       query?: never

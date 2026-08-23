@@ -8,6 +8,8 @@
 //   models/rows.ts     vocabulary and row primitives (ResultRow, cohorts)
 //   models/pages.ts    page models: search, records, dossiers, compare
 //   models/listings.ts coverage, hardware, models, enumeration, projects
+//   models/precedents.ts precedent search (§12.8)
 export type * from "./models/listings.ts"
 export type * from "./models/pages.ts"
+export type * from "./models/precedents.ts"
 export type * from "./models/rows.ts"

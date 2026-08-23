@@ -6334,6 +6334,345 @@
         }
       }
     },
+    "/precedents": {
+      "post": {
+        "description": "Implementations most likely to contain transferable optimization ideas for the requested kernel problem, ranked by transferability (same computation, same or adjacent hardware, adjacent shape, proven standing, shared techniques), each with its reasons. Not a compatibility answer: the problem need not be indexed.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "query": {
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "operation": {
+                    "type": "object",
+                    "properties": {
+                      "family": {
+                        "type": "string",
+                        "maxLength": 100
+                      },
+                      "name": {
+                        "type": "string",
+                        "maxLength": 200
+                      },
+                      "axes": {
+                        "type": "object",
+                        "additionalProperties": {
+                          "type": "number"
+                        }
+                      }
+                    }
+                  },
+                  "environment": {
+                    "type": "object",
+                    "properties": {
+                      "hardwareProduct": {
+                        "type": "string",
+                        "maxLength": 100
+                      },
+                      "dtype": {
+                        "type": "string",
+                        "maxLength": 50
+                      }
+                    }
+                  },
+                  "limit": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 25
+                  },
+                  "includeUnsourced": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Ranked precedents with reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "illustrative": {
+                      "type": "boolean"
+                    },
+                    "interpretation": {
+                      "type": "string"
+                    },
+                    "target": {
+                      "type": ["object", "null"],
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "slug": {
+                          "type": "string"
+                        },
+                        "family": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["name", "slug", "family"]
+                    },
+                    "policyVersion": {
+                      "type": "string"
+                    },
+                    "precedents": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "implementation": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "slug": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["name", "slug"]
+                          },
+                          "project": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "slug": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["name", "slug"]
+                          },
+                          "operation": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "slug": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["name", "slug"]
+                          },
+                          "score": {
+                            "type": "number"
+                          },
+                          "reasons": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "dimensions": {
+                            "type": "object",
+                            "properties": {
+                              "computation": {
+                                "type": "number"
+                              },
+                              "hardware": {
+                                "type": "number"
+                              },
+                              "workload": {
+                                "type": "number"
+                              },
+                              "quality": {
+                                "type": "number"
+                              },
+                              "techniques": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "computation",
+                              "hardware",
+                              "workload",
+                              "quality",
+                              "techniques"
+                            ]
+                          },
+                          "bestRun": {
+                            "type": ["object", "null"],
+                            "properties": {
+                              "runId": {
+                                "type": "string"
+                              },
+                              "hardware": {
+                                "type": "string"
+                              },
+                              "primary": {
+                                "type": ["object", "null"],
+                                "properties": {
+                                  "metric": {
+                                    "type": "string"
+                                  },
+                                  "unit": {
+                                    "type": "string"
+                                  },
+                                  "statistic": {
+                                    "type": "string"
+                                  },
+                                  "value": {
+                                    "type": "number"
+                                  },
+                                  "sampleCount": {
+                                    "type": ["number", "null"]
+                                  },
+                                  "uncertainty": {
+                                    "type": ["object", "null"],
+                                    "properties": {
+                                      "low": {
+                                        "type": "number"
+                                      },
+                                      "high": {
+                                        "type": "number"
+                                      }
+                                    },
+                                    "required": ["low", "high"]
+                                  }
+                                },
+                                "required": [
+                                  "metric",
+                                  "unit",
+                                  "statistic",
+                                  "value",
+                                  "sampleCount",
+                                  "uncertainty"
+                                ]
+                              },
+                              "rank": {
+                                "type": ["number", "null"]
+                              },
+                              "cohortSize": {
+                                "type": ["number", "null"]
+                              },
+                              "evidence": {
+                                "type": "string",
+                                "enum": [
+                                  "verified",
+                                  "replicated",
+                                  "reproducible",
+                                  "reported"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "runId",
+                              "hardware",
+                              "primary",
+                              "rank",
+                              "cohortSize",
+                              "evidence"
+                            ]
+                          },
+                          "language": {
+                            "type": ["string", "null"]
+                          },
+                          "framework": {
+                            "type": ["string", "null"]
+                          },
+                          "license": {
+                            "type": "object",
+                            "properties": {
+                              "declared": {
+                                "type": ["string", "null"]
+                              },
+                              "concluded": {
+                                "type": ["string", "null"]
+                              }
+                            },
+                            "required": ["declared", "concluded"]
+                          },
+                          "sourceAvailable": {
+                            "type": "boolean"
+                          },
+                          "techniques": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "required": [
+                          "implementation",
+                          "project",
+                          "operation",
+                          "score",
+                          "reasons",
+                          "dimensions",
+                          "bestRun",
+                          "language",
+                          "framework",
+                          "license",
+                          "sourceAvailable",
+                          "techniques"
+                        ]
+                      }
+                    },
+                    "considered": {
+                      "type": "number"
+                    },
+                    "generatedAt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "illustrative",
+                    "interpretation",
+                    "target",
+                    "policyVersion",
+                    "precedents",
+                    "considered",
+                    "generatedAt"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "number"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["type", "title", "status", "code", "requestId"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/operations/{idOrSlug}": {
       "get": {
         "parameters": [

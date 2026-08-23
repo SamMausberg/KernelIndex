@@ -9,6 +9,7 @@
 //   implementation-reads.ts implementation dossier and mirrored source
 //   run-page-reads.ts  run dossier (§16.7)
 //   compare-reads.ts   aligned comparison (§16.11)
+//   precedent-reads.ts transferability search (§12.8)
 //   home-reads.ts      homepage and the memoized records ledger
 export { getChallenges } from "./challenge-reads.ts"
 export { getComparePage } from "./compare-reads.ts"
@@ -18,6 +19,7 @@ export { getHomePage, getRecordsPage } from "./home-reads.ts"
 export { getImplementationPage } from "./implementation-reads.ts"
 export { getModelIndex, getModelPage } from "./model-reads.ts"
 export { getOperationIndex, getOperationPage } from "./operation-reads.ts"
+export { findPrecedents } from "./precedent-reads.ts"
 export { getRunPage } from "./run-page-reads.ts"
 export {
   implementationColumns,

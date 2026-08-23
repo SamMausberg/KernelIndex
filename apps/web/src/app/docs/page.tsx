@@ -315,6 +315,25 @@ curl -L https://kernelindex.com/api/v1/exports/catalog.jsonl.zst
             revocable anytime.
           </p>
 
+          <Sub id="precedents" title="Precedents" />
+          <p>
+            Two different questions. <em>Resolve</em> asks which indexed
+            implementation could serve your workload as it stands.{" "}
+            <em>Precedents</em> asks what code to study before writing a new
+            one: for a problem the index may never have seen, it returns the
+            implementations most likely to carry transferable optimization
+            ideas, ranked by transferability (same computation, same or adjacent
+            GPU architecture, adjacent shape, record standing, shared
+            techniques) with the reasons stated. It is a study priority, never a
+            benchmark ranking.
+          </p>
+          <pre className="plate mt-3 overflow-x-auto px-4 py-3 font-mono text-small leading-relaxed text-muted">
+            {`ki precedents --op gqa-paged-decode --gpu B200 --dtype bf16 tokens=4096
+curl -X POST https://kernelindex.com/api/v1/precedents \\
+  -H "Content-Type: application/json" \\
+  -d '{"operation": {"family": "attention"}, "environment": {"hardwareProduct": "B200"}}'`}
+          </pre>
+
           <Sub id="agents" title="Agents" />
           <p>
             Point an agent at <a href="/llms.txt">/llms.txt</a>: one page

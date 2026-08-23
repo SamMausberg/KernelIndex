@@ -71,6 +71,33 @@ describe("api /v1", () => {
     expect(tooMany.status).toBe(400)
   })
 
+  it("ranks precedents by transferability with stated reasons", async () => {
+    const response = await post("/precedents", {
+      operation: { name: "rmsnorm", axes: { tokens: 2048 } },
+      environment: { hardwareProduct: "B200", dtype: "bf16" },
+      limit: 3,
+    })
+    expect(response.status).toBe(200)
+    const model = await response.json()
+    expect(model.policyVersion).toMatch(/^precedents-v/)
+    expect(model.target.slug).toBe("rmsnorm-h4096")
+    expect(model.precedents.length).toBeGreaterThan(0)
+    expect(model.precedents.length).toBeLessThanOrEqual(3)
+    const scores = model.precedents.map((p: { score: number }) => p.score)
+    expect(scores).toEqual([...scores].sort((a, b) => b - a))
+    for (const entry of model.precedents) {
+      expect(entry.sourceAvailable).toBe(true)
+      expect(entry.reasons).toContain("same computation")
+    }
+    // An unseen problem answers with no target and says so.
+    const unseen = await (
+      await post("/precedents", { query: "zzz-none" })
+    ).json()
+    expect(unseen.target).toBeNull()
+    expect(unseen.precedents).toEqual([])
+    expect((await post("/precedents", { limit: 99 })).status).toBe(400)
+  })
+
   it("brackets an unmeasured case with its measured neighbours", async () => {
     const response = await get("/search?q=rmsnorm%20tokens%3D3000")
     const envelope = await response.json()

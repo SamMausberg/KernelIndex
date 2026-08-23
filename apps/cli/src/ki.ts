@@ -8,6 +8,7 @@ import { parseArgs } from "node:util"
 import {
   type CompareModel,
   client,
+  type PrecedentsRequest,
   type ResolveEnvelope,
   type ResolveKernelRequest,
   type ResolveServingRequest,
@@ -30,6 +31,9 @@ Usage:
   ki use <implementation> [--out d]  adopt a kernel: print its install
                                      command, or vendor the mirrored source
                                      locally with provenance recorded
+  ki precedents <problem…>           what to study for a (possibly unseen)
+                                     problem: implementations ranked by
+                                     transferability, with reasons
   ki compare run <id> <id> [...]     aligned comparison (2–8 runs)
   ki records [--limit n] [--cursor c]   current record holders, newest first
   ki changes [--since <iso>]         what the index learned, newest first
@@ -56,6 +60,10 @@ Flags:
   --limit <n>      page size for listings
   --cursor <c>     pagination cursor from a previous listing
 
+ki precedents flags:
+  --op <name>  --family <name>  --gpu <model>  --dtype <dtype>
+  --limit <n>  --include-unsourced   axis bindings as tokens=2048
+
 ki runs filters:
   --operation <id-or-slug>  --hardware <model>  --source <slug>
   --status <status>         --since <iso timestamp>
@@ -80,6 +88,11 @@ const { values, positionals } = parseArgs({
     source: { type: "string" },
     status: { type: "string" },
     since: { type: "string" },
+    op: { type: "string" },
+    family: { type: "string" },
+    gpu: { type: "string" },
+    dtype: { type: "string" },
+    "include-unsourced": { type: "boolean", default: false },
   },
 })
 
@@ -232,6 +245,46 @@ async function main(): Promise<number> {
     const envelope = await api.search(rest.join(" "))
     if (emit(envelope, envelope.groups.exact)) return 0
     printEnvelope(envelope)
+    return 0
+  }
+
+  if (command === "precedents") {
+    // Free text plus flags compose one structured request; bare axis
+    // bindings (tokens=2048) ride along in the query string.
+    const request: PrecedentsRequest = {
+      query: rest.join(" ") || undefined,
+      operation:
+        values.op || values.family
+          ? { name: values.op, family: values.family }
+          : undefined,
+      environment:
+        values.gpu || values.dtype
+          ? { hardwareProduct: values.gpu, dtype: values.dtype }
+          : undefined,
+      limit: pageOptions().limit,
+      includeUnsourced: values["include-unsourced"] || undefined,
+    }
+    if (!request.query && !request.operation)
+      usage("precedents needs a problem: text, --op, or --family")
+    const model = await api.precedents(request)
+    if (emit(model, model.precedents)) return 0
+    if (!values.quiet)
+      console.log(`${model.interpretation} · ${model.policyVersion}`)
+    table([
+      ["score", "implementation", "operation", "best", "hardware", "why"],
+      ...model.precedents.map((entry) => [
+        entry.score.toFixed(2),
+        entry.implementation.name,
+        entry.operation.slug,
+        formatPrimary(entry.bestRun?.primary ?? null),
+        entry.bestRun?.hardware.replace("NVIDIA ", "") ?? "—",
+        entry.reasons.join("; "),
+      ]),
+    ])
+    if (!values.quiet && model.considered > model.precedents.length)
+      console.log(
+        `${model.considered - model.precedents.length} more considered; --limit raises the cut`,
+      )
     return 0
   }
 

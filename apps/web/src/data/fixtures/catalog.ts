@@ -41,6 +41,7 @@ export {
   getImplementationPage,
   getRunPage,
 } from "./dossiers"
+export { findPrecedents } from "./precedents"
 export {
   getOperationIndex,
   getOperationPage,

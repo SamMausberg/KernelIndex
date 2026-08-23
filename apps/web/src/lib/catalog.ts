@@ -26,6 +26,7 @@ import type {
   SearchInput,
   SearchPageModel,
 } from "./catalog-models"
+import type { PrecedentInput, PrecedentsModel } from "./models/precedents"
 import type {
   ServingConfigurationSummary,
   ServingFacetsModel,
@@ -65,6 +66,8 @@ type CatalogReads = {
   getFeed(): Promise<FeedModel>
   // Challenges (§2.3): what the index has no good answer for yet.
   getChallenges(): Promise<ChallengesModel>
+  // Precedents (§12.8): what to study for a possibly unseen problem.
+  findPrecedents(input: PrecedentInput): Promise<PrecedentsModel>
   // Serving (§8.16): a separate resolver surface behind the same seam.
   getServingFacets(): Promise<ServingFacetsModel>
   getServingOverview(): Promise<ServingOverviewModel>
@@ -343,6 +346,16 @@ export const getChallenges = cache(
       return (await reads()).getChallenges()
     },
     ["challenges", BACKEND],
+    { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },
+  ),
+)
+
+export const findPrecedents = cache(
+  cached(
+    async (input: PrecedentInput): Promise<PrecedentsModel> => {
+      return (await reads()).findPrecedents(input)
+    },
+    ["precedents", BACKEND],
     { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },
   ),
 )

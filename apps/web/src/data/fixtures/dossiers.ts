@@ -23,7 +23,7 @@ import {
   WORKLOADS,
 } from "./data"
 
-const IMPLEMENTATIONS: Record<string, ImplementationPageModel> = {
+export const IMPLEMENTATIONS: Record<string, ImplementationPageModel> = {
   "meridian-rmsnorm": {
     illustrative: ILLUSTRATIVE,
     implementation: {

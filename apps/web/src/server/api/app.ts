@@ -7,6 +7,7 @@ import { cors } from "hono/cors"
 import { HTTPException } from "hono/http-exception"
 import { revalidateTag } from "next/cache.js"
 import {
+  findPrecedents,
   getComparePage,
   getImplementationPage,
   getOperationPage,
@@ -20,6 +21,7 @@ import {
   searchCatalog,
 } from "../../lib/catalog.ts"
 import type { ResultRow, SearchPageModel } from "../../lib/catalog-models.ts"
+import { composeQuery } from "../../lib/search-query.ts"
 import { deployability } from "../policy/deployability.ts"
 import { RANKING_POLICY_VERSION } from "../policy/ranking.ts"
 import { listRoutes } from "./catalog-routes.ts"
@@ -32,6 +34,8 @@ import {
   implementationDossier,
   meResponse,
   operationDossier,
+  precedentsRequest,
+  precedentsResponse,
   previewResponse,
   problemDetails,
   projectDossier,
@@ -88,26 +92,7 @@ function resolveEnvelope(model: SearchPageModel) {
   }
 }
 
-/** Compose the search grammar from a structured resolve request (§12.6). */
-export function composeQuery(request: ResolveKernelRequest): string {
-  const parts: string[] = []
-  if (request.query) parts.push(request.query)
-  if (request.operation?.name) parts.push(request.operation.name)
-  else if (request.operation?.family) parts.push(request.operation.family)
-  for (const [axis, value] of Object.entries(request.operation?.axes ?? {})) {
-    parts.push(`${axis}=${value}`)
-  }
-  if (request.environment?.hardwareProduct)
-    parts.push(request.environment.hardwareProduct)
-  if (request.environment?.dtype)
-    parts.push(`dtype:${request.environment.dtype}`)
-  if (request.policy?.minimumTrust)
-    parts.push(`trust:${request.policy.minimumTrust}`)
-  if (request.policy?.license) parts.push(`license:${request.policy.license}`)
-  if (request.policy?.sourceRequired) parts.push("source:true")
-  if (request.policy?.installableRequired) parts.push("installable:true")
-  return parts.join(" ").trim()
-}
+export { composeQuery }
 
 export const api = new OpenAPIHono<{
   Variables: { apiKey?: import("../api-keys.ts").ApiKeyIdentity }
@@ -287,6 +272,29 @@ api.openapi(
       results: models.map(resolveEnvelope),
       generatedAt: new Date().toISOString(),
     })
+  },
+)
+
+// Precedents (§12.8): what to study for a possibly unseen problem. Ranked
+// by transferability under precedents-v1, never a benchmark ranking.
+api.openapi(
+  createRoute({
+    method: "post",
+    path: "/precedents",
+    description:
+      "Implementations most likely to contain transferable optimization ideas for the requested kernel problem, ranked by transferability (same computation, same or adjacent hardware, adjacent shape, proven standing, shared techniques), each with its reasons. Not a compatibility answer: the problem need not be indexed.",
+    request: {
+      body: {
+        content: { "application/json": { schema: precedentsRequest } },
+      },
+    },
+    responses: json(precedentsResponse, "Ranked precedents with reasons"),
+  }),
+  async (c) => {
+    const request = c.req.valid("json")
+    const model = await findPrecedents(request)
+    c.header("Cache-Control", CACHE_SHORT)
+    return c.json({ ...model, generatedAt: new Date().toISOString() })
   },
 )
 

@@ -3,6 +3,7 @@ import { realpathSync } from "node:fs"
 import { pathToFileURL } from "node:url"
 import {
   client,
+  type PrecedentsRequest,
   type ResolveKernelRequest,
   type ResolveServingRequest,
   type RunsQuery,
@@ -78,6 +79,23 @@ export function buildServer(): McpServer {
     },
     async ({ requests }) =>
       json(await api.resolveKernels(requests as ResolveKernelRequest[])),
+  )
+
+  server.registerTool(
+    "find_precedents",
+    {
+      description:
+        "Given a kernel problem that may not be indexed, retrieve the implementations most likely to contain transferable optimization ideas, ranked by transferability (same computation, same or adjacent GPU architecture, adjacent shape, record standing, shared techniques) with the reasons stated. Use this to decide what code to study before writing a new kernel; use resolve_kernel to find what could serve the workload as-is.",
+      inputSchema: {
+        request: z
+          .record(z.string(), z.unknown())
+          .describe(
+            "PrecedentsRequest per /openapi.json: query, operation{name|family,axes}, environment{hardwareProduct,dtype}, limit, includeUnsourced",
+          ),
+      },
+    },
+    async ({ request }) =>
+      json(await api.precedents(request as PrecedentsRequest)),
   )
 
   server.registerTool(

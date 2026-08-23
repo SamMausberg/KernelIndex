@@ -11,6 +11,9 @@ export function diffSource(
   previous: string,
   current: string,
 ): SourceDiffLine[] {
+  // Myers' search is bounded by the edit distance it may explore: a rewrite
+  // of every line gives up in O((n+m)·MAX_LINES) instead of filling the
+  // whole table, so a 3000-line rewrite costs milliseconds, not seconds.
   const patch = structuredPatch(
     "previous",
     "current",
@@ -18,10 +21,15 @@ export function diffSource(
     current,
     "",
     "",
-    {
-      context: 3,
-    },
+    { context: 3, maxEditLength: MAX_LINES },
   )
+  if (patch === undefined)
+    return [
+      {
+        kind: "ctx",
+        text: "⋯ diff truncated: revisions differ almost entirely",
+      },
+    ]
   const lines: SourceDiffLine[] = []
   let lastEnd: number | null = null
   for (const hunk of patch.hunks) {

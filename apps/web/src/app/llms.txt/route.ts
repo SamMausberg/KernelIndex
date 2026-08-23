@@ -28,6 +28,10 @@ Claim rules (keep these when quoting results):
                                      the measured cases on either side of it
 - POST /resolve/kernel               exact resolution for a structured workload
 - POST /resolve/kernel/batch         up to 20 structured requests in one call
+- POST /precedents                   what to STUDY for a possibly unseen
+                                     problem: implementations ranked by
+                                     transferability with reasons (not a
+                                     compatibility answer)
 - GET  /operations/{idOrSlug}        semantics, cohorts, records
 - GET  /models/{slug}?gpu=           best known per operation for one model on one GPU, plus gaps
 - GET  /implementations/{idOrSlug}   source, install, license, revisions
@@ -53,11 +57,11 @@ Claim rules (keep these when quoting results):
 - API keys (higher quota): sign in at https://kernelindex.com/account
 
 ## MCP
-- Read-only stdio server (11 tools) in apps/mcp of
+- Read-only stdio server (18 tools, including find_precedents) in apps/mcp of
   https://github.com/SamMausberg/KernelIndex - run from the checkout.
 
 ## CLI
-- \`ki\` in apps/cli: search, resolve, show, use (vendor a mirrored kernel
+- \`ki\` in apps/cli: search, resolve, precedents, show, use (vendor a mirrored kernel
   source locally with provenance), compare, validate, digest;
   \`--json\` output is stable.
 

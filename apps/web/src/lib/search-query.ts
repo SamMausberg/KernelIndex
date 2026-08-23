@@ -413,3 +413,37 @@ export function describeIntent(
   if (parts.length === 0) return "Search the index"
   return parts.join(" · ")
 }
+
+/** The structured request shape shared by resolve and precedent calls. */
+export type StructuredRequest = {
+  query?: string
+  operation?: { family?: string; name?: string; axes?: Record<string, number> }
+  environment?: { hardwareProduct?: string; dtype?: string }
+  policy?: {
+    minimumTrust?: EvidenceLevel
+    sourceRequired?: boolean
+    installableRequired?: boolean
+    license?: string
+  }
+}
+
+/** Compose the search grammar from a structured resolve request (§12.6). */
+export function composeQuery(request: StructuredRequest): string {
+  const parts: string[] = []
+  if (request.query) parts.push(request.query)
+  if (request.operation?.name) parts.push(request.operation.name)
+  else if (request.operation?.family) parts.push(request.operation.family)
+  for (const [axis, value] of Object.entries(request.operation?.axes ?? {})) {
+    parts.push(`${axis}=${value}`)
+  }
+  if (request.environment?.hardwareProduct)
+    parts.push(request.environment.hardwareProduct)
+  if (request.environment?.dtype)
+    parts.push(`dtype:${request.environment.dtype}`)
+  if (request.policy?.minimumTrust)
+    parts.push(`trust:${request.policy.minimumTrust}`)
+  if (request.policy?.license) parts.push(`license:${request.policy.license}`)
+  if (request.policy?.sourceRequired) parts.push("source:true")
+  if (request.policy?.installableRequired) parts.push("installable:true")
+  return parts.join(" ").trim()
+}

@@ -21,6 +21,7 @@ type Ok<P, M extends string = "get"> = M extends keyof P
 
 export type ResolveEnvelope = Ok<paths["/search"]>
 export type ResolveBatch = Ok<paths["/resolve/kernel/batch"], "post">
+export type PrecedentsModel = Ok<paths["/precedents"], "post">
 export type CompareModel = Ok<paths["/compare"], "post">
 export type ServingResolveModel = Ok<paths["/resolve/serving"], "post">
 export type OperationDossier = Ok<paths["/operations/{idOrSlug}"]>
@@ -46,6 +47,9 @@ export type ServingConfigurations = Ok<paths["/serving-configurations"]>
 export type KeyIdentity = Ok<paths["/me"]>
 export type ResolveKernelRequest = NonNullable<
   paths["/resolve/kernel"]["post"]["requestBody"]
+>["content"]["application/json"]
+export type PrecedentsRequest = NonNullable<
+  paths["/precedents"]["post"]["requestBody"]
 >["content"]["application/json"]
 export type ResolveServingRequest = NonNullable<
   paths["/resolve/serving"]["post"]["requestBody"]
@@ -107,6 +111,10 @@ export function client({
       return unwrap(
         await api.POST("/resolve/kernel/batch", { body: { requests } }),
       )
+    },
+    /** What to study for a (possibly unseen) kernel problem (§12.8). */
+    async precedents(request: PrecedentsRequest): Promise<PrecedentsModel> {
+      return unwrap(await api.POST("/precedents", { body: request }))
     },
     async getOperation(
       idOrSlug: string,

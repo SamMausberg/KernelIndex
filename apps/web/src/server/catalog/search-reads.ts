@@ -79,7 +79,7 @@ const SEARCH_STOPWORDS = new Set([
 
 type OperationRow = typeof schema.operations.$inferSelect
 /** The columns operation resolution carries forward into result assembly. */
-type ResolvedOperation = Pick<
+export type ResolvedOperation = Pick<
   OperationRow,
   "id" | "slug" | "family" | "name" | "manifest"
 >
@@ -95,7 +95,7 @@ type ResolvedOperation = Pick<
  * its score, best first — the caller decides whether the top hit dominates
  * or the user should choose.
  */
-async function resolveOperation(
+export async function resolveOperation(
   intent: SearchIntent,
 ): Promise<{ operation: ResolvedOperation; score: number }[]> {
   const terms = [

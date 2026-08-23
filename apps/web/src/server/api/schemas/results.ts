@@ -13,6 +13,9 @@ import type {
   FeedModel,
   NearestCase,
   OperationIndexEntry,
+  Precedent,
+  PrecedentInput,
+  PrecedentsModel,
   PrimaryMetric,
   RecordHolder,
   ResultRow,
@@ -443,3 +446,55 @@ export type ResolveKernelRequest = z.output<typeof resolveKernelRequest>
 export const resolveKernelBatchRequest = z.object({
   requests: z.array(resolveKernelRequest).min(1).max(20),
 })
+
+/** Precedent search request (§12.8): the resolve shape without policy
+ * facets, plus the cut and the unsourced opt-in. */
+export const precedentsRequest = z.object({
+  query: resolveKernelRequest.shape.query,
+  operation: resolveKernelRequest.shape.operation,
+  environment: resolveKernelRequest.shape.environment,
+  limit: z.number().int().min(1).max(25).optional(),
+  includeUnsourced: z.boolean().optional(),
+}) satisfies z.ZodType<PrecedentInput>
+
+const precedent = z.object({
+  implementation: z.object({ name: z.string(), slug: z.string() }),
+  project: z.object({ name: z.string(), slug: z.string() }),
+  operation: z.object({ name: z.string(), slug: z.string() }),
+  score: z.number(),
+  reasons: z.array(z.string()),
+  dimensions: z.object({
+    computation: z.number(),
+    hardware: z.number(),
+    workload: z.number(),
+    quality: z.number(),
+    techniques: z.number(),
+  }),
+  bestRun: z
+    .object({
+      runId: z.string(),
+      hardware: z.string(),
+      primary: primaryMetric.nullable(),
+      rank: z.number().nullable(),
+      cohortSize: z.number().nullable(),
+      evidence: evidenceLevel,
+    })
+    .nullable(),
+  language: z.string().nullable(),
+  framework: z.string().nullable(),
+  license: licenseInfo,
+  sourceAvailable: z.boolean(),
+  techniques: z.array(z.string()),
+}) satisfies z.ZodType<Precedent>
+
+export const precedentsResponse = z.object({
+  illustrative: z.boolean(),
+  interpretation: z.string(),
+  target: z
+    .object({ name: z.string(), slug: z.string(), family: z.string() })
+    .nullable(),
+  policyVersion: z.string(),
+  precedents: z.array(precedent),
+  considered: z.number(),
+  generatedAt: z.string(),
+}) satisfies z.ZodType<PrecedentsModel & { generatedAt: string }>
