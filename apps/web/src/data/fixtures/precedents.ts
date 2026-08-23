@@ -42,6 +42,7 @@ export async function findPrecedents(
       r.status === "passed" &&
       !r.retracted &&
       !r.supersededById &&
+      !r.disputed &&
       (input.includeUnsourced || r.sourceAvailable),
   )
   const byImplementation = new Map<string, FxRun[]>()
@@ -101,7 +102,9 @@ export async function findPrecedents(
           cohortSize: best.rank === null ? null : RANKED.length,
           evidence: best.evidence,
         },
-        language: slug.includes("triton") ? "triton" : "cuda",
+        language:
+          IMPLEMENTATIONS[slug]?.interface.language ??
+          (slug.includes("triton") ? "triton" : "cuda"),
         framework: "pytorch",
         license: best.license,
         sourceAvailable: best.sourceAvailable,
