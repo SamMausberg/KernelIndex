@@ -786,6 +786,8 @@ An `ImplementationRevision` is immutable and links:
 
 An implementation can dispatch among several internal kernels. KernelIndex benchmarks the public callable as submitted and may additionally index internal variants when they are independently addressable.
 
+**Revision (2026-08-23, technique traits).** Implementations with an inline mirrored source carry statically extracted technique traits in `implementation_traits` (migration 0022): hard lexical facts — TMA, WGMMA, tcgen05, mma, warp specialization, split-K, persistent kernels, async copy, stages/warps/tile sizes as values, vector width, shared memory, mbarrier, clusters, fused epilogues, fp8/fp4, autotune, inline PTX, online softmax — each with the matched source line as evidence and an extractor version (`techniques-v1`, `server/enrich/techniques.ts`). Extraction runs inside the publication transaction; `extract:techniques` backfills. No LLM output ever enters the record: a detector that does not fire stays silent. Surfaced on the implementation dossier (`techniques`), searchable as `tech:<trait>` (a row-hiding policy facet like trust), and an input to precedent scoring (§12 revision below).
+
 ### 8.8 Build variant and compatibility
 
 A `BuildVariant` describes a consumable build or source configuration:
@@ -1780,6 +1782,8 @@ A deployment policy can require:
 
 Return both `eligible: boolean` and a reason vector. Users and organizations can save their own policy.
 
+**Revision (2026-08-23, headroom estimates).** Operation cohorts carry a deliberately coarse roofline under `headroom-v1` (`server/policy/headroom.ts`): the DRAM floor from the workload's declared tensors at the GPU's datasheet bandwidth, and, for GEMM and attention families, a compute floor from closed-form FLOP counts at the dense tensor-core peak (`server/policy/hardware-specs.ts`; a GPU outside the table gets no estimate). The larger floor and the record's ratio above it appear on the operation page, dossier, and API, always with `basis: "estimate"` and the assumptions listed — an estimate of a lower bound, never evidence, and never a rank input. Memory-bound families get the bandwidth floor only by design.
+
 ### 11.9 Serving ranking
 
 There is no single “best serving stack.” The resolver accepts an objective and constraints, for example:
@@ -1977,6 +1981,8 @@ Response shape:
 ```
 
 Every returned candidate includes `whyEligible`, `whyRanked`, `compatibility`, `trust`, `license`, `installation`, `evidence`, and `caveats`.
+
+**Revision (2026-08-23, precedent search — §12.8).** A second question joined the resolver: not "what could serve this workload?" but "what code should I study to invent a new solution?" `POST /precedents` (SDK `api.precedents`, MCP `find_precedents`, CLI `ki precedents`) takes the resolve request shape — the problem may be entirely unseen — and returns implementations ranked by transferability under `precedents-v1` (`server/policy/precedents.ts`): computation proximity (same operation > reviewed-equivalent > reviewed relation with its stored rationale > family > fuzzy), hardware proximity (same GPU > same architecture > adjacent generation), workload adjacency (dtype, log-distance over shared axes), proven standing (cohort rank, evidence tier), and technique overlap with the target's own leaders. Every hit lists its reasons in words; unsourced implementations are excluded by default (code you cannot read cannot be studied). Deterministic, policy-versioned, never a benchmark ranking across cohorts.
 
 ### 12.7 Serving resolver request
 
@@ -2223,6 +2229,8 @@ get_manifest_schema
 ```
 
 Responses include digests, trust facts, compatibility, evidence links, and caveats. Initial MCP tools are read-only and never run submitted code.
+
+**Revision (2026-08-23, hosted MCP).** The server now reaches agents with zero setup friction: `https://kernelindex.com/mcp` runs the same 18-tool server over Streamable HTTP (stateless, JSON responses) from a Next route handler (`app/mcp/route.ts`), answering through the deployment's own public `/api/v1` — the §13.10 transport-over-REST posture unchanged; a bearer key passes through for quota. `@kernelindex/mcp` is npx-ready (`npx -y @kernelindex/mcp`, pack-verified against a clean install) once the founder publishes `@kernelindex/sdk` and `@kernelindex/mcp` to npm; `buildServer(options)` takes the API base so stdio and hosted share one tool server. The tool count grew from the original eight to eighteen with the corpus surfaces and `find_precedents`.
 
 ### 13.11 Notifications and webhooks
 
@@ -4502,6 +4510,15 @@ API keys, webhooks, the multi-step wizard, watch notifications
 - **Beyond-plan surfaces chosen by the founder:** `/coverage` (live per-source counts, snapshot freshness against declared intervals, upstream license terms, an explicit known-limitations list), "cite this record" copy actions on both dossier classes (permalink + digest + access date), `/llms.txt` plus a `/docs` Agents section (one-paste MCP config), and an Atom feed of record changes at `/records/feed.xml` advertised via `rel=alternate`.
 - **Identity refinements:** `/signin` honors a validated same-site `?next=` return path and contextual CTAs carry it (signed-out watch offers a real link back); first-run guidance on `/account`; self-service account deletion that removes identity and cascades ownership rows while submissions, claims, and audit events survive with the user reference detached (migration 0012).
 - The targeted launch itself and the demand-driven roadmap (§22.16) are founder actions, not code, and remain open.
+
+**Improvement-pass implementation notes (2026-08-23).** A whole-codebase pass, recorded here:
+
+- **Module splits (§0.4 file-size hygiene):** every non-generated file over 1000 lines was split 1:1 behind its existing import path — `server/catalog/reads.ts` into `run-rows`/`cohorts`/`search-reads`/`operation-reads`/`implementation-reads`/`run-page-reads`/`compare-reads`/`home-reads` (reads.ts stays as the barrel the seam imports), `server/api/schemas.ts` into `schemas/{results,serving,dossiers,listings}.ts`, `lib/catalog-models.ts` into `lib/models/{rows,pages,listings,precedents}.ts`, and `data/fixtures/catalog.ts` into `data`/`search`/`dossiers`/`precedents` beside the barrel. Zero behavior change; importers unchanged.
+- **Features:** technique traits (§8.7 revision), precedent search (§12.8), headroom estimates (§11 revision), hosted MCP (§13.10 revision).
+- **Fixes:** source diffs are bounded by edit distance (`maxEditLength`), so a whole-file rewrite costs milliseconds instead of an O(n·m) table; the records ledger's "new" badge uses a day-quantized clock so server render and hydration agree; the database-only enumeration API tests skip without `DATABASE_URL` like every other database suite; the SDK's schema-directory lookup resolves lazily and fails closed so bundlers cannot break module load.
+- **Site:** favicon replaced with the record-staircase mark (black tile, white descending step line — the ledger's own motif); the homepage mono line trimmed to stats + sources + one API & MCP door with `llms.txt` moved to the footer; the one rendered em-dash removed from site copy.
+- **Dependency note:** `apps/web` now depends on `@kernelindex/mcp` (which depends on `packages/sdk`) to host `/mcp`; the direction stays acyclic and the tools still answer over public REST, never server-runtime imports (§6.4).
+- **Open founder actions:** publish `@kernelindex/sdk@0.1.0` and `@kernelindex/mcp@0.1.0` to npm; run `db:migrate` (0022) and `extract:techniques` against production.
 
 ### 22.14 Recommended first corpus
 
