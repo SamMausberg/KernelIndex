@@ -1835,6 +1835,8 @@ KernelIndex supports four explicit modes:
 
 One search box can route to these modes, but the result page states which mode was inferred and lets the user correct it.
 
+**Revision (2026-08-23).** A multi-match query no longer forks to a chooser by default. When the candidates have a clear leader by matching evidence (facet-matched runs; total runs when unfaceted), the leader answers immediately and the page states the interpretation ("Most-measured of N matching operations") with the full list one click away (`choose=1`). A tie, an evidence-free field, or the explicit `choose` parameter still shows the chooser. The interpretation is always stated, never silent.
+
 ### 12.2 Query syntax
 
 Plain text works. Power users and agents can use deterministic filters:
@@ -2176,6 +2178,8 @@ ki api-key use <name>
 ```
 
 Add browser/device login only when a secure flow is implemented. Add serving commands in Week 9 and exports/completions when users need them.
+
+**Revision (2026-08-23).** `ki use <implementation> [--out dir]` closes the find-to-use loop: it prints the verified install command when a package exists, otherwise vendors the mirrored source locally with provenance (source URL, commit, revision digest, license, attribution, retrieval date) in a header comment. No public source refuses; nothing is fabricated. Planned next in this direction: `ki bench` (local A/B harness whose output is a submittable flat bench record) and `ki audit` (batch resolve a model's operations into a dispatch manifest).
 
 CLI behavior:
 
@@ -2893,6 +2897,8 @@ KernelIndex | Search | Records | Docs | GitHub | [search field]
 
 Add `Serving`, `Contributors`, and `Submit` only when their live surfaces exist. The logo returns to search. The search field may collapse to an icon on narrow screens.
 
+**Revision (2026-08-23).** The shipped primary nav is `Search | Models | Records | GPUs | Docs`. Serving moved to the global footer: the kernel wedge leads, and the serving corpus stays reachable without competing for attention. Models is primary because the whole-model question is the sharpest user job.
+
 Authenticated menu later:
 
 ```text
@@ -2937,6 +2943,8 @@ Lower page sections:
 - contribution call to submit, correct, or replicate evidence.
 
 Avoid customer-logo strips, generic testimonials, inflated counters, “trusted by” placeholders, and long product prose before search.
+
+**Revision (2026-08-23).** Directly under the hero search sits one worked example rendered from the live resolver (`features/home/worked-example.tsx`): the most-measured hero-family operation resolved to its fastest deployable implementation, with latency, baseline margin, and a "Use it" link; provenance beneath. The first concrete content is a user outcome, not the record table. Latest records follow with five columns (trust and indexing dates live on the run dossier).
 
 ### 16.6 Search interaction
 
@@ -3280,6 +3288,8 @@ Avoid:
 - ambiguous “verified” labels without naming who reran what;
 - confidence percentages that are not statistical quantities;
 - green checkmarks for unknown license or installability.
+
+**Revision (2026-08-23, copy pass).** Methodology is stated once, in /docs, and linked elsewhere: pages carry at most one methodology line ("How comparison works →"), never restated policy prose ("never merged", "a zero stated is a fact"). /docs itself was rewritten task-first (Get started, Searching, Reading a result, Using a kernel, API and agents, Contributing, Sources, Versions, Privacy) in short declarative sentences; legacy anchors are kept on subheadings. The search answer renders at most one qualifier line beside the headline; the machine-call strip is one disclosure. Site copy avoids em-dashes.
 
 ### 16.17 Responsive behavior and accessibility
 
