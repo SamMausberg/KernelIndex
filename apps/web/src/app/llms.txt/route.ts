@@ -57,15 +57,20 @@ Claim rules (keep these when quoting results):
 - API keys (higher quota): sign in at https://kernelindex.com/account
 
 ## MCP
-- Hosted (Streamable HTTP): https://kernelindex.com/mcp - one URL, no install
-- Stdio: node apps/mcp/src/server.ts from a checkout
-  (npx -y @kernelindex/mcp once published to npm)
-- 18 read-only tools (including find_precedents); source in apps/mcp of
-  https://github.com/SamMausberg/KernelIndex - run from the checkout.
+- Hosted (Streamable HTTP): https://kernelindex.com/mcp - one URL, no install.
+  This is the recommended path.
+- Stdio: node apps/mcp/src/server.ts from a checkout of
+  https://github.com/SamMausberg/KernelIndex. KI_API overrides the API base,
+  KI_API_KEY raises the quota.
+- Not on npm: @kernelindex/mcp, @kernelindex/cli and @kernelindex/sdk are not
+  published yet, so \`npx -y @kernelindex/mcp\` does not resolve. Use the
+  hosted URL or the checkout.
+- 18 read-only tools (including find_precedents), the same set on both paths.
 
 ## CLI
-- \`ki\` in apps/cli: search, resolve, precedents, show, use (vendor a mirrored kernel
-  source locally with provenance), compare, validate, digest;
+- \`ki\` in apps/cli, run from a checkout (\`node apps/cli/src/ki.ts\`); not on
+  npm yet. Commands: search, resolve, precedents, show, use (vendor a mirrored
+  kernel source locally with provenance), compare, validate, digest;
   \`--json\` output is stable.
 
 ## Data

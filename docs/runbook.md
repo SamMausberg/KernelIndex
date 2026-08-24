@@ -12,6 +12,32 @@
 - Secrets: `DATABASE_URL` (pooled prod), `REVALIDATE_TOKEN`; variable
   `SITE_ORIGIN`.
 
+## Long backfills
+
+GPU MODE and SOL publish one window per transaction — a board and a group of
+kernels respectively — so a deep run holds one window's rows at a time and
+survives being interrupted. Run them nice'd in the background with a cursor:
+
+```bash
+cd apps/web
+nice -n 10 node --env-file=.env.production.local scripts/import-gpumode.ts \
+  --cursor-file /tmp/gm.cursor --publish >> /tmp/gm.log 2>&1 &
+nice -n 10 node --env-file=.env.production.local scripts/import-sol.ts \
+  --cursor-file /tmp/sol.cursor --publish >> /tmp/sol.log 2>&1 &
+```
+
+Re-running with the same cursor file skips what already published. Both are
+idempotent, so a lost cursor costs time, not correctness.
+
+**GPU MODE source mirroring depends on the upstream `datasets-server` filter
+index**, which is frequently rebuilding and has been observed permanently
+broken for a config (`helion_b200_nebius`, 2026-08-24: `"Unexpected error."`).
+When it cannot answer, the selected submissions it would have mirrored are
+**held back** with an issue rather than published without their source, which
+would republish their pages under a new digest. That fails the gate by design:
+re-run the source once the index is warm. Discovery itself does not use the
+filter API and is unaffected.
+
 ## Disabling one source
 
 Run the workflow manually with `sources` set to the remainder, or set the

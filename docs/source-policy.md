@@ -36,8 +36,20 @@ legalnotices@ the project contact removes the contested records immediately
   code is published upstream). Never store: anything from the HF dataset.
 - **Attribution.** Source name "NVIDIA SOL-ExecBench" on every derived page;
   trademarks used descriptively only.
-- **Load.** Sequential fetches with spacing (`FETCH_SPACING_MS`), one
-  list + two calls per kernel per import; scheduled imports at most daily.
+- **Load.** Sequential fetches with spacing (`FETCH_SPACING_MS`), one list
+  plus a detail call and one to two submission pages per kernel per import.
+  The submissions endpoint answers with the newest 20 unless `limit` is
+  given, caps a page at 50, and serves nothing past offset 50, so a full
+  walk of 235 kernels is roughly 700 requests — still trivial load.
+  Re-verified 2026-08-24: `research.nvidia.com/robots.txt` disallows
+  `/core/`, `/profiles/`, `/admin/`, `/search/` and similar, and nothing
+  under `/benchmarks/`. SOL stays **manual-only** (no scheduled growth), per
+  the 2026-08-20 decision.
+- **Selection (2026-08-24).** A kernel's records are its distinct
+  submitters' personal bests first, then next-best attempts if `--top`
+  leaves room. Ranking the raw list instead let one prolific submitter fill
+  the whole quota, which is the opposite of what a leaderboard index is
+  for.
 - **Risk note.** The website ToS also contains a broad non-commercial
   clause. Current use (free public index, attribution, facts only, robots
   respected, trivial load, instant takedown) is a good-faith posture, not a
@@ -47,11 +59,29 @@ legalnotices@ the project contact removes the contested records immediately
 ## GPU MODE KernelBot (active — `gpumode-kernelbot`)
 
 - **Data.** HF dataset `GPUMODE/kernelbot-data` under the **June 9
-  Researcher Reciprocity License v1.0** (verified 2026-08-14): explicit
-  grant to reproduce, publicly display, and distribute the dataset and
-  derivatives; conditions are notice retention and attribution ("GPU Mode
-  and the KernelBot dataset", link to the dataset). The use-based
-  restriction covers AI training only — not indexing.
+  Researcher Reciprocity License v1.0** (verified 2026-08-14, re-verified
+  2026-08-24 against the repo's `LICENSE`): explicit grant to reproduce,
+  publicly display, and distribute the dataset and derivatives; conditions
+  are notice retention and attribution ("GPU Mode and the KernelBot
+  dataset", link to the dataset). The use-based restriction covers AI
+  training only — not indexing.
+- **Channels (2026-08-24).** Two, both the same rows under the same licence:
+  1. The dataset's parquet files on the Hugging Face-generated
+     `refs/convert/parquet` branch, read column-wise over HTTP byte ranges
+     at a revision pinned per import. This is the discovery channel. It
+     exists because mirrored submission source is 80–99.7% of every config's
+     bytes (`nvidia_nvfp4_submissions`: 2,239 MB of `code` against 6 MB of
+     every other column across 231,307 rows), so reading the ranking facts
+     alone is ~10 MB for the whole 532k-row corpus instead of 8 GB.
+     Byte-range reads redirect to signed CDN hosts under `*.hf.co`, which
+     the fetch allowlist admits by suffix; every other §14.9 guard (HTTPS
+     only, no IP literals, private-range rejection, redirect revalidation)
+     still applies per hop.
+  2. `datasets-server` `/filter`, used only to pull mirrored source for the
+     submissions selection kept. Parquet cannot serve this: these files
+     carry no page index, so plucking two scattered rows out of the `code`
+     column costs the whole 2.2 GB column chunk (measured 2026-08-24).
+     `robots.txt` on `huggingface.co` is `Allow: /`.
 - **Store vs link.** Store: per-submission metrics, protocol/system
   metadata, normalized manifests, and — decided 2026-08-15, reversing the
   earlier link-only stance — **submission source code mirrored inline as
@@ -61,6 +91,14 @@ legalnotices@ the project contact removes the contested records immediately
   license remains unknown and is never inferred; artifacts record
   `LicenseRef-GPUMode-Reciprocity-1.0` as KernelIndex's display right.
   Truncated code cells are never stored.
+- **Mirroring scope (2026-08-24).** Source is mirrored for each author's
+  personal best per cohort, and for any submission the catalog already
+  mirrors. Progression milestones are metadata-only. Source presence is part
+  of an implementation's digest, so the second clause is not a courtesy: a
+  row republished without the code it was published with would shadow its
+  own page. For the same reason a selected submission whose source cannot be
+  fetched is **held back with an issue** rather than imported in a degraded
+  shape — the record waits for a run that can mirror it.
 - **Attribution.** "GPU Mode and the KernelBot dataset" with dataset link,
   rendered on every page displaying imported data or mirrored code
   (`sources.policy` drives the read layer).
@@ -70,8 +108,28 @@ legalnotices@ the project contact removes the contested records immediately
   broken for the `amd_1_1m_competition` and `nvidia_nvfp4_submissions`
   configs (parquet scan limit); use `/filter`, whose first query per config
   builds an index upstream (minutes of 500s — retry generously).
-- **Parser owner / review.** `import/gpumode` (parser v2), reviewed
-  2026-08-15.
+- **Parser owner / review.** `import/gpumode` (parser v3: column-wise
+  parquet discovery over the whole population, source mirrored per kept row;
+  v2 paged the rows API and saw a ranked slice). Row facts and every derived
+  digest are unchanged between v2 and v3. Reviewed 2026-08-24.
+- **Curation gate.** A board's curated `gpus` list is the review record for
+  its runner fleets. Discovery now sees every runner label in the data, so
+  an unlisted one is counted into a drift warning and its rows are skipped —
+  never minted into an environment with an `unknown` architecture.
+- **Known modelling limit (2026-08-24).** An implementation's slug is
+  per-submission, but its manifest states the hardware the submission ran
+  on, so a submission evaluated on several runners cannot be one page. Those
+  submissions are skipped with a drift warning. Measured across the whole
+  corpus: 9 of 5,026 trimul submissions (the one board fielded on four GPU
+  types) and none in any other config. The real fix is to separate
+  implementation identity from the runner, which would move every existing
+  digest — a deliberate migration, not a side effect of an import.
+- **Digest stability (verified 2026-08-24).** Rebuilding the implementation
+  manifests of already-published submissions from the parquet channel and
+  the source the catalog already mirrors reproduced the stored digests for
+  447 of 447 submissions across `trimul_submissions`, `pmpp_v2_submissions`
+  and `nvidia_nvfp4_submissions`, with the multi-runner submissions above
+  excluded. v2 and v3 describe the same rows.
 
 ## FlashInfer-Bench (active — `flashinfer-bench`)
 
@@ -122,6 +180,12 @@ legalnotices@ the project contact removes the contested records immediately
 - **HF dataset `nvidia/SOL-ExecBench`** — license forbids redistribution
   (see above). Never fetch in leaderboard mode.
 - **Artificial Analysis** — redistribution requires a commercial contract.
+- **KernelBench (`ScalingIntelligence/KernelBench`)** — MIT verified
+  2026-08-24, and `results/timing/` publishes H100 baselines (mean/std/min/
+  max, 100 trials, torch 2.5.0+cu124) for 250 problems in both eager and
+  inductor form: the most complete protocol metadata of any candidate, and
+  a direct fill for the empty H100 hero cells. Deferred, not rejected —
+  admitting it means deriving 250 operation specs from the problem files.
 - **HF LLM-perf leaderboard** — stale (2024), no data license.
 - **PyTorch HUD / ClickHouse benchmark DB** — best-in-class operator data
   but credential-gated with no data license; revisit after requesting
@@ -167,8 +231,17 @@ legalnotices@ the project contact removes the contested records immediately
   later: `llama2-70b-interactive-99/-99.9` are distinct benchmark names,
   not a Scenario value, and need BENCHMARKS entries mapping to the base
   Llama-2-70B model.
+- **Edge suite (reviewed 2026-08-24, not admitted).** The closed edge suite
+  is 55 rows in `_v5.1` and 53 in `_v6.0`, of which exactly **one** is
+  token-throughput LLM (`llama3.1-8b-edge`, Offline, Intel, v5.1); the rest
+  report Latency (ms) or Samples/s for benchmarks outside the serving
+  domain. Admitting it properly would need a suite dimension in workload
+  identity (edge and datacenter both run an "Offline" scenario and must
+  never share a cohort) plus edge SLO facts transcribed from the inference
+  rules — a cited-facts change, for one record. Not worth it; revisit if a
+  later round submits edge LLM results in numbers.
 - **Parser owner / review.** `import/mlperf` (parser v1), reviewed
-  2026-08-16.
+  2026-08-16; scope re-reviewed 2026-08-24.
 
 ## Serving-domain candidates (Phase 3, §8.16)
 - **InferenceX (SemiAnalysis)** — reviewed 2026-08-20: weekly Postgres
@@ -181,5 +254,12 @@ legalnotices@ the project contact removes the contested records immediately
   1.5–3.9 GB pg_restore custom-format and need a local-snapshot path; the
   metric fit is excellent (per-GPU throughput, median/p99 TTFT, TPOT, E2E
   latency across TP/concurrency/ISL/OSL sweeps).
+- **Modal LLM Almanac / `modal-labs/stopwatch`** — reviewed 2026-08-24:
+  the harness repo is MIT, but that covers the code, not the results. The
+  almanac publishes serving benchmarks across engines, GPUs and
+  concurrencies with no data license stated anywhere — no DATA_LICENSE, no
+  terms on the results pages. **Blocked** until Modal states one; public
+  availability is never inferred as a redistribution right. Metric fit is
+  good, so it is worth asking.
 - **vLLM / SGLang HUD data** — right metrics, no sanctioned bulk access and
   no data license today; do not scrape.

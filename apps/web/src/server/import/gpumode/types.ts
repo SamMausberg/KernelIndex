@@ -7,6 +7,12 @@ import { z } from "zod"
 export const DATASET = "GPUMODE/kernelbot-data"
 export const DATASETS_SERVER = "https://datasets-server.huggingface.co"
 export const DATASET_URL = `https://huggingface.co/datasets/${DATASET}`
+
+/** Hugging Face's generated parquet mirror of the dataset: the same rows
+ * under the same license, in the column layout the rows API serves. Reading
+ * it needs a pinned revision, which the revision API resolves per import. */
+export const PARQUET_BRANCH = "refs/convert/parquet"
+export const PARQUET_REVISION_API = `https://huggingface.co/api/datasets/${DATASET}/revision/${encodeURIComponent(PARQUET_BRANCH)}`
 export const REFERENCE_KERNELS_REPO = "gpu-mode/reference-kernels"
 
 export const GPUMODE_SOURCE = {
@@ -25,8 +31,10 @@ export const GPUMODE_SOURCE = {
   },
 } as const
 
-/** version 2: flat aggregate configs + mirrored submission source code. */
-export const PARSER = { name: "gpumode-kernelbot", version: "2" } as const
+/** version 3: column-wise parquet discovery over the whole population, with
+ * source mirrored per kept row. v2 paged the rows API and saw a ranked
+ * slice. Row facts and derived digests are unchanged between the two. */
+export const PARSER = { name: "gpumode-kernelbot", version: "3" } as const
 
 /** The only config publishing per-shape timings plus system info today. */
 export const SUBMISSIONS_CONFIG = "amd_successful_submissions"

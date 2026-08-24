@@ -80,6 +80,15 @@ export function gmHardware(name: string) {
   return { vendor, product: name, architecture: "unknown" }
 }
 
+/** Page identity for one submission; also how discovery asks the catalog
+ * which submissions it already mirrors source for. */
+export function implementationSlug(
+  leaderboard: string,
+  submissionId: number,
+): string {
+  return kebab(`kernelbot-${leaderboard}-${submissionId}`)
+}
+
 /** Curated problem → immutable OperationSpec manifest. */
 export function operationFromProblem(problem: CuratedProblem): {
   manifest: OperationSpecManifest
@@ -355,7 +364,7 @@ export function implementationFromRow(
   if (manifest.kind !== "ImplementationRevision") throw new Error("unreachable")
   return {
     manifest,
-    slug: kebab(`kernelbot-${problem.leaderboard}-${candidate.submissionId}`),
+    slug: implementationSlug(problem.leaderboard, candidate.submissionId),
     projectSlug: `kernelbot-user-${kebab(candidate.userId)}`,
     externalId: `submission/${candidate.submissionId}`,
     artifacts:

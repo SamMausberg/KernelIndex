@@ -6,11 +6,15 @@
 //   pnpm --filter @kernelindex/web import:sol -- --kernels a,b --publish
 //   pnpm --filter @kernelindex/web import:sol -- --snapshot ./sol-data --dry-run
 //
+// Leaderboard mode publishes in windows of --window kernels, each in its own
+// transaction, so a deep walk holds one window's rows at a time and can be
+// interrupted: --cursor-file records where to resume.
+//
 // Flags: --dry-run --publish --snapshot <dir> --kernels <a,b> --tag <tag>
-//        --limit <n> --top <n> --resume <kernel> --source-revision <stack>
-//        --output <file>
+//        --limit <n> --top <n|all> --window <n> --resume <kernel>
+//        --cursor-file <path> --source-revision <stack> --output <file>
 // Dry-run is the default; nothing is written without --publish.
-import { writeFileSync } from "node:fs"
+import { existsSync, readFileSync, writeFileSync } from "node:fs"
 import { parseArgs } from "node:util"
 import { drizzle } from "drizzle-orm/postgres-js"
 import postgres from "postgres"
@@ -19,8 +23,13 @@ import * as schema from "../src/server/db/schema.ts"
 import {
   discoverLeaderboard,
   discoverLocal,
+  type SolImportData,
 } from "../src/server/import/sol/discover.ts"
-import { reconcile } from "../src/server/import/sol/reconcile.ts"
+import {
+  type ImportReport,
+  mergeSolReports,
+  reconcile,
+} from "../src/server/import/sol/reconcile.ts"
 
 // pnpm forwards the literal "--" separator, which would make parseArgs treat
 // every following flag as a positional; strip it.
@@ -34,8 +43,10 @@ const { values } = parseArgs({
     kernels: { type: "string" },
     tag: { type: "string" },
     limit: { type: "string" },
-    top: { type: "string", default: "3" },
+    top: { type: "string", default: "all" },
+    window: { type: "string", default: "10" },
     resume: { type: "string" },
+    "cursor-file": { type: "string" },
     "source-revision": { type: "string" },
     output: { type: "string" },
   },
@@ -56,35 +67,83 @@ if (!url) {
 const client = postgres(url, { max: 1 })
 const database = drizzle(client, { schema })
 
+const cursorFile = values["cursor-file"]
+const stackVersion = values["source-revision"]
+const topPerKernel = values.top === "all" ? null : Number(values.top)
+const totalLimit = values.limit !== undefined ? Number(values.limit) : undefined
+
 try {
-  const data = values.snapshot
-    ? discoverLocal(values.snapshot, process.env.SOL_EXAMPLES_COMMIT)
-    : await discoverLeaderboard({
+  const reports: ImportReport[] = []
+  const counts = { runs: 0, implementations: 0, workloads: 0 }
+  const publishWindow = async (data: SolImportData) => {
+    const { bundle, report } = await reconcile(database, data, {
+      topPerKernel,
+      stackVersion,
+    })
+    reports.push(report)
+    if (!values.publish) return
+    const result = await publishBundle(database, bundle, { publish: true })
+    counts.runs += result.counts.runs.inserted
+    counts.implementations += result.counts.implementations.inserted
+    counts.workloads += result.counts.workloads.inserted
+    console.error(
+      `published ${data.definitions.size} kernel(s): ${result.counts.runs.inserted} runs`,
+    )
+  }
+
+  if (values.snapshot) {
+    await publishWindow(
+      discoverLocal(values.snapshot, process.env.SOL_EXAMPLES_COMMIT),
+    )
+  } else {
+    // A window is a transaction: discovery, reconciliation, and publication
+    // for a handful of kernels, then the next window starts from the cursor.
+    const windowSize = Number(values.window)
+    let resume =
+      cursorFile && existsSync(cursorFile)
+        ? readFileSync(cursorFile, "utf8").trim() || undefined
+        : values.resume
+    if (resume && resume !== values.resume)
+      console.error(`resuming the walk at ${resume}`)
+    let walked = 0
+    for (;;) {
+      const remaining =
+        totalLimit === undefined
+          ? windowSize
+          : Math.min(windowSize, totalLimit - walked)
+      if (remaining <= 0) break
+      const data = await discoverLeaderboard({
         kernels: values.kernels
           ? values.kernels.split(",").map((k) => k.trim())
           : undefined,
         tag: values.tag,
-        limit: values.limit !== undefined ? Number(values.limit) : undefined,
-        resume: values.resume,
+        limit: remaining,
+        resume,
       })
+      walked += data.definitions.size
+      await publishWindow(data)
+      if (!data.nextResume) break
+      resume = data.nextResume
+      if (values.publish && cursorFile) writeFileSync(cursorFile, `${resume}\n`)
+    }
+  }
 
-  const { bundle, report } = await reconcile(database, data, {
-    topPerKernel: Number(values.top),
-    stackVersion: values["source-revision"],
-  })
-
-  if (values.publish) {
-    const result = await publishBundle(database, bundle, { publish: true })
-    console.log(JSON.stringify({ report, published: result.counts }, null, 2))
-  } else {
-    console.log(JSON.stringify({ report, published: null }, null, 2))
+  const report = mergeSolReports(reports)
+  console.log(
+    JSON.stringify(
+      { report, published: values.publish ? counts : null },
+      null,
+      2,
+    ),
+  )
+  if (!values.publish) {
     console.log(
       `\ndry run: no writes performed. Re-run with --publish to execute the plan above.`,
     )
   }
   if (values.output) {
     writeFileSync(values.output, `${JSON.stringify(report, null, 2)}\n`)
-    console.log(`report written to ${values.output}`)
+    console.error(`report written to ${values.output}`)
   }
 } finally {
   await client.end()

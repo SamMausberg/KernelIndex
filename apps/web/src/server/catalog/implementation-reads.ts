@@ -12,6 +12,7 @@ import { EXTRACTOR_VERSION } from "../enrich/techniques.ts"
 import { cohortRanks } from "./cohorts.ts"
 import { getRecordsPage } from "./home-reads.ts"
 import { bestEvidence } from "./present.ts"
+import { installCommandOf } from "./publication.ts"
 import { eligibleRunFilter } from "./record-events.ts"
 import {
   implementationColumns,
@@ -273,6 +274,8 @@ export async function getImplementationPage(
       holder.current.runId !== null && runIds.has(holder.current.runId),
   ).length
 
+  const install = installCommandOf(variant?.install)
+
   // §16.10: community attestations on each evidence row, one grouped count.
   const notes = await attestationCounts(
     bestResults.flatMap((row) => (row.runId === null ? [] : [row.runId])),
@@ -297,9 +300,14 @@ export async function getImplementationPage(
       repositoryUrl: project.canonicalUrl,
     },
     usage: {
-      install: variant?.install.command
-        ? { kind: variant.install.kind, command: variant.install.command }
-        : null,
+      // Sources declare a recipe (kind plus package or repository) far more
+      // often than a literal command, so the line is synthesized the same way
+      // every ranked row synthesizes it. Reading `command` alone left this
+      // page denying an install recipe the row beside it was already showing.
+      install:
+        variant && install
+          ? { kind: variant.install.kind, command: install }
+          : null,
       invocationExample: null,
       requirements: Object.entries(variant?.requirements ?? {}).map(
         ([name, constraint]) => ({

@@ -62,20 +62,19 @@ describe.skipIf(!url)("corrections (database)", () => {
           cohorts: new Map([
             ["MI300", [rows[0], rival, ...rows.slice(1)].map(candidateOf)],
           ]),
-          histories: new Map(),
         },
       ],
       snapshots: [],
+      cohorts: [],
+      discoveredRows: 0,
+      invalidRows: 0,
+      deferredRows: 0,
       issues: [],
       driftWarnings: [],
     }
     await db()
       .transaction(async (tx) => {
-        const { bundle } = await reconcileKernelbot(tx, data, {
-          topPerBoard: 6,
-          authors: 0,
-          maxPerAuthor: 0,
-        })
+        const { bundle } = await reconcileKernelbot(tx, data)
         const published = await publishBundle(tx, bundle, { publish: true })
         // Retract a run from a cohort with at least two published test runs.
         const cohorts = await tx

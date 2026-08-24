@@ -1,12 +1,13 @@
 // SSRF controls of the restricted fetcher (§14.9, §18.1): scheme/host/IP
 // gates, private and reserved ranges (v4, v6, v4-mapped, metadata),
-// DNS-rebinding shape, redirect revalidation and caps, and the byte cap.
-// DNS and fetch are mocked — no live network.
+// DNS-rebinding shape, redirect revalidation and caps, the byte cap, the
+// suffix allowlist that admits a source's CDN, ranged reads, and throttle
+// backoff. DNS and fetch are mocked — no live network.
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 vi.mock("node:dns/promises", () => ({ lookup: vi.fn() }))
 const { lookup } = await import("node:dns/promises")
-const { fetchSnapshot } = await import("./fetch.ts")
+const { fetchRange, fetchSnapshot, hostAllowed } = await import("./fetch.ts")
 
 const publicAddress = { address: "140.82.112.3", family: 4 }
 const resolveTo = (...addresses: string[]) =>
@@ -123,6 +124,81 @@ describe("restricted fetch (§14.9)", () => {
     await expect(
       fetchSnapshot("https://raw.githubusercontent.com/big"),
     ).rejects.toThrow(/exceeds/)
+  })
+
+  it("admits a source's CDN by suffix and nothing else", () => {
+    // Hugging Face signs dataset blobs onto region-suffixed hosts that
+    // cannot be enumerated; look-alikes must still fail.
+    expect(hostAllowed("us.aws.cdn.hf.co")).toBe(true)
+    expect(hostAllowed("cdn-lfs-us-1.hf.co")).toBe(true)
+    expect(hostAllowed("datasets-server.huggingface.co")).toBe(true)
+    expect(hostAllowed("hf.co.evil.example")).toBe(false)
+    expect(hostAllowed("nothf.co")).toBe(false)
+    expect(hostAllowed("evil.example.com")).toBe(false)
+  })
+
+  it("still checks a CDN host's resolved addresses", async () => {
+    resolveTo("10.0.0.5")
+    await expect(
+      fetchRange("https://us.aws.cdn.hf.co/blob", 0, 16),
+    ).rejects.toThrow(/private or reserved/)
+  })
+
+  it("reads a byte range and refuses one the host ignored", async () => {
+    vi.mocked(lookup).mockResolvedValue([publicAddress] as never)
+    const seen: string[] = []
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url: URL, init: RequestInit) => {
+        seen.push((init.headers as Record<string, string>).range)
+        return body("0123", { status: 206 })
+      }),
+    )
+    const bytes = await fetchRange("https://us.aws.cdn.hf.co/blob", 8, 12)
+    expect(seen).toEqual(["bytes=8-11"])
+    expect(new TextDecoder().decode(bytes)).toBe("0123")
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => body("whole file", { status: 200 })),
+    )
+    await expect(
+      fetchRange("https://us.aws.cdn.hf.co/blob", 8, 12),
+    ).rejects.toThrow(/ignored the range request/)
+  })
+
+  it("waits out a throttling host, then gives up", async () => {
+    vi.mocked(lookup).mockResolvedValue([publicAddress] as never)
+    vi.useFakeTimers()
+    try {
+      let calls = 0
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async () => {
+          calls += 1
+          return calls === 1
+            ? body("", { status: 429, headers: { "retry-after": "0" } })
+            : body("ok")
+        }),
+      )
+      const snapshot = fetchSnapshot("https://huggingface.co/x")
+      await vi.runAllTimersAsync()
+      expect((await snapshot).body).toBe("ok")
+      expect(calls).toBe(2)
+
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async () =>
+          body("", { status: 429, headers: { "retry-after": "0" } }),
+        ),
+      )
+      const exhausted = fetchSnapshot("https://huggingface.co/y")
+      const assertion = expect(exhausted).rejects.toThrow(/failed with 429/)
+      await vi.runAllTimersAsync()
+      await assertion
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it("digests a good response into an immutable snapshot", async () => {

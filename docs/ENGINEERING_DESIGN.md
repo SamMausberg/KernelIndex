@@ -2371,6 +2371,15 @@ terms/license notes
 
 Never parse directly from a mutable URL and discard the fetched bytes or digest. For Git sources, prefer commit SHAs. For APIs, retain response identity, ETag/Last-Modified where available, and the body digest.
 
+**Column-oriented sources.** A parquet file read over byte ranges never has a
+whole body to digest, and digesting only the ranges a given run happened to
+read would make the snapshot depend on the selection rather than the source.
+The snapshot is therefore the file's **footer** — the trailing metadata block
+that carries the schema and every row-group and column-chunk offset, so no two
+files share one — with the locator pinned to the dataset revision, the file's
+full size, and the ranges read recorded as HTTP metadata. Footer digest plus
+pinned revision identify the bytes as tightly as a body digest would.
+
 ### 14.4 Idempotency and reconciliation
 
 Use unique source identity `(source, entity_kind, external_id)` plus canonical digests.
@@ -2462,10 +2471,11 @@ Start with one restricted fetch module, not a network service.
 
 It must:
 
-- accept only source-configured HTTPS hosts and Git providers;
+- accept only source-configured HTTPS hosts and Git providers, by exact name or by an explicitly configured suffix where a source's blobs are served from signed, non-enumerable CDN hostnames;
 - resolve DNS and reject loopback, private, link-local, metadata, and reserved ranges;
 - revalidate every redirect target;
-- cap redirects, bytes, decompression ratio, content type, and duration;
+- cap redirects, bytes, decompression ratio, content type, and duration, with ranged reads carrying their own larger byte cap;
+- back off and retry when a host throttles (429/503 with `Retry-After`), a bounded number of times;
 - avoid ambient credentials and cookies;
 - log locator, resolved address, digest, status, and policy decision;
 - never fetch an arbitrary contributor-supplied URL during a web request.

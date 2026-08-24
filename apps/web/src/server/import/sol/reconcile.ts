@@ -63,8 +63,8 @@ export type ImportReport = {
 }
 
 export type ReconcileOptions = {
-  /** Best N correct submissions per kernel become records. */
-  topPerKernel: number
+  /** Distinct submitters kept per kernel; null keeps every submitter. */
+  topPerKernel: number | null
   /** Restrict to one evaluation stack version (--source-revision). */
   stackVersion?: string
 }
@@ -76,6 +76,14 @@ const REVIEWED_IMPLAUSIBLE = new Map<number, string>([
   [
     36950,
     "2026-08-18: 1.913 ms on 012_moe_expert_batched_execution_with_capacity_factor beats the 1.974 ms minimum per-case SOL bound",
+  ],
+  [
+    6549,
+    "2026-08-24: 1.715685 ms on 012_moe_expert_batched_execution_with_capacity_factor beats the 1.97381363 ms minimum per-case SOL bound — same kernel and same class as 36950",
+  ],
+  [
+    16818,
+    "2026-08-24: 0.001805 ms on 002_fp8_attention_qkv_projection is 11x under the 0.01979811 ms minimum per-case SOL bound; no measurement of this computation can be that fast",
   ],
 ])
 
@@ -119,9 +127,26 @@ function selectSubmissions(
       usable.push(submission)
     }
   }
-  return usable
-    .sort((a, b) => (b.sol_score ?? 0) - (a.sol_score ?? 0))
-    .slice(0, options.topPerKernel)
+  // Breadth before depth: a kernel's records are its distinct submitters'
+  // personal bests, then the next-best attempts if room remains. Ranking the
+  // raw list instead would let one prolific submitter fill the whole quota.
+  const ranked = usable.sort((a, b) => (b.sol_score ?? 0) - (a.sol_score ?? 0))
+  // Username is the submitter's identity everywhere else in this importer
+  // (it is what projectForUser resolves), so it is the grouping key here.
+  const seen = new Set<string>()
+  const bests: SolSubmission[] = []
+  const rest: SolSubmission[] = []
+  for (const submission of ranked) {
+    if (seen.has(submission.username)) rest.push(submission)
+    else {
+      seen.add(submission.username)
+      bests.push(submission)
+    }
+  }
+  const selected = [...bests, ...rest]
+  return options.topPerKernel === null
+    ? selected
+    : selected.slice(0, options.topPerKernel)
 }
 
 /**
@@ -437,4 +462,40 @@ export async function reconcile(
   ).length
   report.plan = `publish ${inserts} new objects (${report.proposed.length - inserts} already present) into source '${SOL_SOURCE.slug}' via the idempotent publication transaction`
   return { bundle, report }
+}
+
+/**
+ * One report for a windowed run: each window of kernels publishes in its own
+ * transaction, and the reports it produced are folded back into the single
+ * document the import gate and the operator read.
+ */
+export function mergeSolReports(reports: ImportReport[]): ImportReport {
+  const merged = reports[0]
+  if (!merged) throw new Error("no reports to merge")
+  for (const report of reports.slice(1)) {
+    for (const key of Object.keys(
+      merged.discovered,
+    ) as (keyof ImportReport["discovered"])[]) {
+      merged.discovered[key] += report.discovered[key]
+    }
+    for (const key of Object.keys(
+      merged.skippedSubmissions,
+    ) as (keyof ImportReport["skippedSubmissions"])[]) {
+      merged.skippedSubmissions[key] += report.skippedSubmissions[key]
+    }
+    merged.selectedSubmissions += report.selectedSubmissions
+    for (const [family, count] of Object.entries(report.operationsByFamily)) {
+      merged.operationsByFamily[family] =
+        (merged.operationsByFamily[family] ?? 0) + count
+    }
+    merged.proposed.push(...report.proposed)
+    merged.ambiguities.push(...report.ambiguities)
+    merged.issues.push(...report.issues)
+    merged.licenseWarnings.push(...report.licenseWarnings)
+    for (const warning of report.driftWarnings) {
+      if (!merged.driftWarnings.includes(warning))
+        merged.driftWarnings.push(warning)
+    }
+  }
+  return merged
 }

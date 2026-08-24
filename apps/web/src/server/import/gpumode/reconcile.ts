@@ -1,16 +1,16 @@
-// Reconciliation (§14.4): curated problems and ranked rows onto canonical
-// identity. Per cohort (board × runner) the best submission of the top N
-// distinct authors is selected, plus each leading author's personal-best
-// progression chain — the "how the record fell" evidence. Names alone never
-// merge identity; slug conflicts and unparseable evidence become review
-// items, not overwrites.
+// Reconciliation (§14.4): the selected candidates of each curated board onto
+// canonical identity. Which submissions those are is discovery's decision
+// (select.ts), because the source column is only worth fetching for rows that
+// survive it; this module maps what came back. Names alone never merge
+// identity; slug conflicts and unparseable evidence become review items, not
+// overwrites.
 import { eq, inArray } from "drizzle-orm"
 import type { DbHandle, ImportBundle } from "../../catalog/publication.ts"
 import * as schema from "../../db/schema.ts"
 import { specDigest } from "../../identity/digest.ts"
 import { snapshotRow } from "../fetch.ts"
 import { type ProposedObject, proposedObjects } from "../report.ts"
-import { cohortAuthorKey, type GmImportData } from "./discover.ts"
+import type { GmImportData } from "./discover.ts"
 import {
   aggregateRunFromRow,
   benchmarkKey,
@@ -25,19 +25,14 @@ import {
   suiteFromProblem,
 } from "./normalize.ts"
 import { parseRunResult } from "./parse.ts"
-import {
-  type GmCandidate,
-  type GmSubmissionRow,
-  GPUMODE_SOURCE,
-  PARSER,
-} from "./types.ts"
+import { type GmSubmissionRow, GPUMODE_SOURCE, PARSER } from "./types.ts"
 
 export type GmImportReport = {
   source: string
   parserVersion: string
   discovered: { boards: number; rows: number; snapshots: number }
   selectedSubmissions: number
-  skippedSubmissions: { invalid: number }
+  skippedSubmissions: { invalid: number; deferred: number }
   /** Selection counts per board × runner cohort (dry-run tuning input). */
   cohorts: {
     leaderboard: string
@@ -56,111 +51,24 @@ export type GmImportReport = {
   plan: string
 }
 
-export type GmReconcileOptions = {
-  /** Best N distinct authors per cohort become records. */
-  topPerBoard: number
-  /** Leading authors per cohort whose improving chain is kept. */
-  authors: number
-  /** Progression steps kept per author (evenly spaced, first and best). */
-  maxPerAuthor: number
-}
-
-/** Keep at most `max` entries, always including the first and the last. */
-function evenlySpaced<T>(list: T[], max: number): T[] {
-  if (list.length <= max) return list
-  const out: T[] = []
-  for (let index = 0; index < max; index++) {
-    out.push(list[Math.round((index * (list.length - 1)) / (max - 1))])
-  }
-  return [...new Set(out)]
-}
-
-/**
- * One cohort's selection: best-per-author top N (rank order), plus each
- * leading author's strictly-improving submission chain from their fetched
- * history, capped and deduplicated by submission.
- */
-function selectCohort(input: {
-  ranked: GmCandidate[]
-  histories: GmImportData["boards"][number]["histories"]
-  runner: string
-  options: GmReconcileOptions
-  valid: (candidate: GmCandidate) => boolean
-  report: GmImportReport
-  leaderboard: string
-}): GmCandidate[] {
-  const { ranked, histories, runner, options, valid, report } = input
-  const bestByUser: GmCandidate[] = []
-  const seenUsers = new Set<string>()
-  for (const candidate of ranked) {
-    if (seenUsers.has(candidate.userId)) continue
-    if (!valid(candidate)) {
-      report.skippedSubmissions.invalid++
-      continue
-    }
-    seenUsers.add(candidate.userId)
-    bestByUser.push(candidate)
-    if (bestByUser.length >= options.topPerBoard) break
-  }
-
-  const selected = new Map<number, GmCandidate>()
-  for (const candidate of bestByUser) {
-    selected.set(candidate.submissionId, candidate)
-  }
-
-  let progression = 0
-  for (const leader of bestByUser.slice(0, options.authors)) {
-    const history = histories.get(cohortAuthorKey(runner, leader.userId)) ?? []
-    let best = Number.POSITIVE_INFINITY
-    const chain: GmCandidate[] = []
-    for (const candidate of history) {
-      if (!valid(candidate) || candidate.score >= best) continue
-      best = candidate.score
-      chain.push(candidate)
-    }
-    // A truncated history may not reach the author's known best; the chain
-    // must still end there so the cohort's record story is complete.
-    if (leader.score < best) chain.push(leader)
-    for (const candidate of evenlySpaced(chain, options.maxPerAuthor)) {
-      if (!selected.has(candidate.submissionId)) {
-        selected.set(candidate.submissionId, candidate)
-        progression++
-      }
-    }
-  }
-
-  const all = [...selected.values()]
-  report.cohorts.push({
-    leaderboard: input.leaderboard,
-    runner,
-    top: bestByUser.length,
-    progression,
-    withCode: all.filter((c) => c.code !== null && c.code.length > 0).length,
-  })
-  return all
-}
-
 export async function reconcileKernelbot(
   database: DbHandle,
   data: GmImportData,
-  options: GmReconcileOptions,
 ): Promise<{ bundle: ImportBundle; report: GmImportReport }> {
   const report: GmImportReport = {
     source: GPUMODE_SOURCE.slug,
     parserVersion: PARSER.version,
     discovered: {
       boards: data.boards.length,
-      rows: data.boards.reduce(
-        (n, board) =>
-          n +
-          [...board.cohorts.values()].reduce((m, list) => m + list.length, 0),
-        0,
-      ),
+      rows: data.discoveredRows,
       snapshots: data.snapshots.length,
     },
     selectedSubmissions: 0,
-    skippedSubmissions: { invalid: 0 },
-    cohorts: [],
+    skippedSubmissions: {
+      invalid: data.invalidRows,
+      deferred: data.deferredRows,
+    },
+    cohorts: data.cohorts,
     code: { submissionsWithCode: 0, uniqueBlobs: 0, totalBytes: 0 },
     operationsByFamily: {},
     proposed: [],
@@ -189,7 +97,7 @@ export async function reconcileKernelbot(
   const seenProjects = new Set<string>()
   const codeDigests = new Set<string>()
 
-  for (const { problem, cohorts, histories } of data.boards) {
+  for (const { problem, cohorts } of data.boards) {
     const operation = operationFromProblem(problem)
     const operationDigest = specDigest(operation.manifest)
     bundle.operations.push(operation)
@@ -247,28 +155,7 @@ export async function reconcileKernelbot(
       return environment
     }
 
-    const valid = (candidate: GmCandidate): boolean => {
-      if (problem.scoring === "aggregate") return true
-      try {
-        const raw = candidate.raw as GmSubmissionRow
-        if (!raw.run_result) return false
-        parseRunResult(raw.run_result)
-        return true
-      } catch {
-        return false
-      }
-    }
-
-    for (const [runner, ranked] of cohorts) {
-      const selected = selectCohort({
-        ranked,
-        histories,
-        runner,
-        options,
-        valid,
-        report,
-        leaderboard: problem.leaderboard,
-      })
+    for (const selected of cohorts.values()) {
       report.selectedSubmissions += selected.length
 
       for (const candidate of selected) {
@@ -405,4 +292,35 @@ export async function reconcileKernelbot(
   ).length
   report.plan = `publish ${inserts} new objects (${report.proposed.length - inserts} already present) into source '${GPUMODE_SOURCE.slug}' via the idempotent publication transaction`
   return { bundle, report }
+}
+
+/**
+ * One report for a windowed run: each board publishes in its own transaction,
+ * so the reports it produced are folded back into the single document the
+ * import gate and the operator read.
+ */
+export function mergeGmReports(reports: GmImportReport[]): GmImportReport {
+  const merged = reports[0]
+  if (!merged) throw new Error("no reports to merge")
+  for (const report of reports.slice(1)) {
+    merged.discovered.boards += report.discovered.boards
+    merged.selectedSubmissions += report.selectedSubmissions
+    merged.cohorts.push(...report.cohorts)
+    merged.code.submissionsWithCode += report.code.submissionsWithCode
+    merged.code.uniqueBlobs += report.code.uniqueBlobs
+    merged.code.totalBytes += report.code.totalBytes
+    for (const [family, count] of Object.entries(report.operationsByFamily)) {
+      merged.operationsByFamily[family] =
+        (merged.operationsByFamily[family] ?? 0) + count
+    }
+    merged.proposed.push(...report.proposed)
+    merged.ambiguities.push(...report.ambiguities)
+    merged.issues.push(...report.issues)
+    merged.licenseWarnings.push(...report.licenseWarnings)
+    for (const warning of report.driftWarnings) {
+      if (!merged.driftWarnings.includes(warning))
+        merged.driftWarnings.push(warning)
+    }
+  }
+  return merged
 }

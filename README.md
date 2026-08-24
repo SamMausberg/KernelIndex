@@ -1,14 +1,17 @@
 # KernelIndex
 
-**[kernelindex.com](https://kernelindex.com)** — find the fastest verified
-GPU kernel for your exact workload.
+**[kernelindex.com](https://kernelindex.com)** — find the fastest known GPU
+kernel for your exact workload.
 
 KernelIndex is the public performance index for GPU software. It resolves an
 exact workload (operation, shape, dtype, layout, hardware, framework) to the
 fastest currently known compatible implementation, with source, license,
 environment, benchmark protocol, raw evidence, and an explicit trust level.
 
-Results are ranked only inside comparable workloads and environments.
+Results are ranked only inside comparable workloads and environments. Every
+record in the index today is **Reported** — preserved exactly as its source
+published it, not rerun by KernelIndex. Nothing is labeled verified until a
+KernelIndex-controlled runner has reproduced it.
 
 ## Development
 

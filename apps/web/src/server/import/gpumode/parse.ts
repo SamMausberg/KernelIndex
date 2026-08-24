@@ -1,6 +1,8 @@
-// Parsing datasets-server responses into typed rows plus unfolding the
-// flattened run_result benchmark map. Invalid items become structured issues;
-// unknown fields become drift warnings (§14.8).
+// Parsing source rows into typed rows plus unfolding the flattened
+// run_result benchmark map. Rows arrive either as a datasets-server response
+// body or already decoded from a parquet column read; validation is the same
+// either way. Invalid items become structured issues; unknown fields become
+// drift warnings (§14.8).
 import type { z } from "zod"
 import {
   type GmBenchmark,
@@ -18,9 +20,10 @@ export type GmParseOutcome<T> = {
   driftWarnings: string[]
 }
 
-function parseRows<S extends z.ZodType>(
+/** Validate already-decoded rows; the transport is the caller's problem. */
+function validateRows<S extends z.ZodType>(
   schema: S,
-  body: string,
+  rows: { row: unknown; truncated_cells?: string[] }[],
   locator: string,
   label: string,
 ): GmParseOutcome<z.output<S>> {
@@ -29,18 +32,7 @@ function parseRows<S extends z.ZodType>(
     issues: [],
     driftWarnings: [],
   }
-  let document: { rows?: { row: unknown; truncated_cells?: string[] }[] }
-  try {
-    document = JSON.parse(body)
-  } catch (error) {
-    outcome.issues.push({
-      locator,
-      item: label,
-      problem: `invalid JSON (${(error as Error).message})`,
-    })
-    return outcome
-  }
-  for (const [index, entry] of (document.rows ?? []).entries()) {
+  for (const [index, entry] of rows.entries()) {
     const truncated = entry.truncated_cells ?? []
     if (truncated.length > 0) {
       outcome.driftWarnings.push(
@@ -65,6 +57,32 @@ function parseRows<S extends z.ZodType>(
     outcome.values.push(result.data)
   }
   return outcome
+}
+
+/** Decode a datasets-server rows/filter body, then validate its rows. */
+function parseRows<S extends z.ZodType>(
+  schema: S,
+  body: string,
+  locator: string,
+  label: string,
+): GmParseOutcome<z.output<S>> {
+  let document: { rows?: { row: unknown; truncated_cells?: string[] }[] }
+  try {
+    document = JSON.parse(body)
+  } catch (error) {
+    return {
+      values: [],
+      issues: [
+        {
+          locator,
+          item: label,
+          problem: `invalid JSON (${(error as Error).message})`,
+        },
+      ],
+      driftWarnings: [],
+    }
+  }
+  return validateRows(schema, document.rows ?? [], locator, label)
 }
 
 export function parseLeaderboards(
@@ -139,4 +157,81 @@ export function parseRunResult(
     })
   }
   return benchmarks
+}
+
+/** Validate rows read from a parquet column scan (no transport envelope). */
+export function parseSubmissionObjects(
+  rows: unknown[],
+  locator: string,
+): GmParseOutcome<GmSubmissionRow> {
+  return validateRows(
+    gmSubmissionRow,
+    rows.map((row) => ({ row })),
+    locator,
+    "submission",
+  )
+}
+
+export function parseFlatObjects(
+  rows: unknown[],
+  locator: string,
+): GmParseOutcome<GmFlatRow> {
+  return validateRows(
+    gmFlatRow,
+    rows.map((row) => ({ row })),
+    locator,
+    "submission",
+  )
+}
+
+export function parseLeaderboardObjects(
+  rows: unknown[],
+  locator: string,
+): GmParseOutcome<GmLeaderboard> {
+  return validateRows(
+    gmLeaderboard,
+    rows.map((row) => ({ row })),
+    locator,
+    "leaderboard",
+  )
+}
+
+/**
+ * Mirrored source for a batch of submissions, keyed by submission id. Only
+ * the code column matters here, so the row shape is not re-validated; a
+ * truncated blob is dropped rather than stored (§14.10).
+ */
+export function parseCodeRows(
+  body: string,
+  locator: string,
+): GmParseOutcome<{ submissionId: number; code: string }> {
+  const outcome: GmParseOutcome<{ submissionId: number; code: string }> = {
+    values: [],
+    issues: [],
+    driftWarnings: [],
+  }
+  let document: { rows?: { row: unknown; truncated_cells?: string[] }[] }
+  try {
+    document = JSON.parse(body)
+  } catch (error) {
+    outcome.issues.push({
+      locator,
+      item: "code",
+      problem: `invalid JSON (${(error as Error).message})`,
+    })
+    return outcome
+  }
+  for (const entry of document.rows ?? []) {
+    const row = entry.row as { submission_id?: unknown; code?: unknown }
+    if (entry.truncated_cells?.includes("code")) {
+      outcome.driftWarnings.push(
+        `code: datasets-server truncated submission ${row.submission_id} (${locator})`,
+      )
+      continue
+    }
+    if (typeof row.submission_id !== "number" || typeof row.code !== "string")
+      continue
+    outcome.values.push({ submissionId: row.submission_id, code: row.code })
+  }
+  return outcome
 }

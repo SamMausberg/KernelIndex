@@ -44,6 +44,9 @@ export type SolImportData = {
   snapshots: FetchedSnapshot[]
   issues: ImportIssue[]
   driftWarnings: string[]
+  /** Leaderboard mode: the first kernel `--limit` left unwalked, so a
+   * windowed run knows where to resume. Undefined once the walk is done. */
+  nextResume?: string
 }
 
 function emptyData(): SolImportData {
@@ -70,6 +73,8 @@ export type LeaderboardOptions = {
 
 /** Politeness delay between per-kernel API fetches (ToS §3.2(g)). */
 const FETCH_SPACING_MS = 120
+/** The submissions endpoint's maximum page; larger asks are clamped to it. */
+const SUBMISSION_PAGE = 50
 
 /** Leaderboard mode: definitions, workload lists, and submissions. */
 export async function discoverLeaderboard(
@@ -110,7 +115,10 @@ export async function discoverLeaderboard(
     )
     if (resumeIndex >= 0) wanted = wanted.slice(resumeIndex)
   }
-  if (options.limit !== undefined) wanted = wanted.slice(0, options.limit)
+  if (options.limit !== undefined) {
+    data.nextResume = wanted[options.limit]?.name
+    wanted = wanted.slice(0, options.limit)
+  }
 
   // Definitions plus workload lists from the public kernel-detail endpoint,
   // then the published evaluation results per kernel.
@@ -131,15 +139,24 @@ export async function discoverLeaderboard(
     data.definitions.set(definition.name, definition)
     data.workloadEntries.set(definition.name, definition.workloads ?? [])
 
-    const snapshot = await fetchSnapshot(
-      `${LEADERBOARD_BASE}/submissions?kernel_id=${kernel.id}`,
-    )
-    data.snapshots.push(snapshot)
-    const submissions = parseSubmissions(snapshot.body, snapshot.locator)
-    data.issues.push(...submissions.issues)
-    data.driftWarnings.push(...submissions.driftWarnings)
-    data.submissions.set(definition.name, submissions.values)
-    await new Promise((resolve) => setTimeout(resolve, FETCH_SPACING_MS))
+    // The endpoint pages: without an explicit limit it answers with the
+    // newest 20 of a kernel's submissions, and it caps a page at
+    // SUBMISSION_PAGE. Walk it until it runs out, so selection sees every
+    // submitter the leaderboard exposes rather than the last handful.
+    const submissions: SolSubmission[] = []
+    for (let offset = 0; ; offset += SUBMISSION_PAGE) {
+      const snapshot = await fetchSnapshot(
+        `${LEADERBOARD_BASE}/submissions?kernel_id=${kernel.id}&limit=${SUBMISSION_PAGE}&offset=${offset}`,
+      )
+      data.snapshots.push(snapshot)
+      const page = parseSubmissions(snapshot.body, snapshot.locator)
+      data.issues.push(...page.issues)
+      data.driftWarnings.push(...page.driftWarnings)
+      submissions.push(...page.values)
+      await new Promise((resolve) => setTimeout(resolve, FETCH_SPACING_MS))
+      if (page.values.length < SUBMISSION_PAGE) break
+    }
+    data.submissions.set(definition.name, submissions)
   }
 
   data.driftWarnings = [...new Set(data.driftWarnings)]

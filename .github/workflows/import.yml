@@ -51,18 +51,21 @@ jobs:
       # Each source: dry-run → machine gate (no unexpected issues or
       # ambiguities) → publish. A failed gate uploads the report and stops
       # that source without touching the catalog.
-      # --top 10 (default 3) deepens every B200 cohort with the next-best
-      # leaderboard submissions per kernel; the walk already covers them all.
+      # Defaults keep every distinct submitter's personal best per kernel and
+      # publish a window of kernels per transaction.
       - name: import sol
         if: contains(env.SOURCES, 'sol')
         run: |
           cd apps/web
-          node scripts/import-sol.ts --top 10 --dry-run --output /tmp/sol.json
+          node scripts/import-sol.ts --dry-run --output /tmp/sol.json
           node -e '
             const r = require("/tmp/sol.json");
             const bad = r.issues.length + r.ambiguities.length;
             if (bad > 0) { console.error("gate failed:", bad, "items"); process.exit(1) }'
-          node scripts/import-sol.ts --top 10 --publish
+          node scripts/import-sol.ts --publish
+      # Discovery reads the dataset's parquet columns, so the working set is
+      # one board's rows rather than every page's mirrored source: the
+      # 12 GB heap this step used to need is gone.
       - name: import gpumode
         if: contains(env.SOURCES, 'gpumode') && always() && !cancelled()
         run: |
@@ -71,9 +74,9 @@ jobs:
             node scripts/import-gpumode.ts --group "$GROUP" --dry-run --output "/tmp/gm-$GROUP.json"
             node -e '
               const r = require(process.argv[1]);
-              const bad = r.issues.filter(i => i.locator !== "history").length + r.ambiguities.length;
+              const bad = r.issues.length + r.ambiguities.length;
               if (bad > 0) { console.error("gate failed:", bad, "items"); process.exit(1) }' "/tmp/gm-$GROUP.json"
-            NODE_OPTIONS=--max-old-space-size=12288 node scripts/import-gpumode.ts --group "$GROUP" --publish
+            node scripts/import-gpumode.ts --group "$GROUP" --publish
           done
       # Baseline plus the reviewed llm-generated author directories
       # (docs/source-policy.md 2026-08-20); a new upstream author directory
@@ -115,16 +118,24 @@ jobs:
             if (bad > 0) { console.error("gate failed:", bad, "items"); process.exit(1) }'
           node scripts/import-liger.ts --publish
 
+      # A source that fails its gate publishes nothing, but the sources that
+      # already published still need their invariants checked, their export
+      # refreshed, and the caches revalidated — otherwise one upstream outage
+      # leaves the site serving a stale catalog it did successfully import.
       - name: data-quality invariants
+        if: always() && !cancelled()
         run: cd apps/web && node scripts/check-invariants.ts
 
       - name: prune product events past retention
+        if: always() && !cancelled()
         run: cd apps/web && node scripts/prune-events.ts
 
       - name: source health report
+        if: always() && !cancelled()
         run: cd apps/web && node scripts/report-health.ts $(ls /tmp/*.json 2>/dev/null || true)
 
       - name: refresh catalog export
+        if: always() && !cancelled()
         run: |
           cd apps/web && node scripts/export-catalog.ts
           cd ../..
@@ -136,7 +147,7 @@ jobs:
 
       # Step-level env is not visible to its own `if`; gate on vars directly.
       - name: revalidate caches
-        if: vars.SITE_ORIGIN != ''
+        if: vars.SITE_ORIGIN != '' && always() && !cancelled()
         run: |
           curl -sf -X POST "${{ vars.SITE_ORIGIN }}/api/v1/revalidate" \
             -H "Authorization: Bearer ${{ secrets.REVALIDATE_TOKEN }}"

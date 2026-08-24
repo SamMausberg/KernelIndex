@@ -1,6 +1,6 @@
 // GPU MODE importer goldens (§21.3): parsing and normalization stability
-// against committed real snapshots, per-user selection, and (with a
-// database) reconcile → publish inside a rolled-back transaction.
+// against committed real snapshots, breadth-first cohort selection, and (with
+// a database) reconcile → publish inside a rolled-back transaction.
 import { readFileSync } from "node:fs"
 import path from "node:path"
 import { eq } from "drizzle-orm"
@@ -30,6 +30,7 @@ import {
 } from "./parse.ts"
 import { CURATED_PROBLEMS, type CuratedProblem } from "./problems.ts"
 import { reconcileKernelbot } from "./reconcile.ts"
+import { selectCohort } from "./select.ts"
 import type { GmCandidate, GmSubmissionRow } from "./types.ts"
 
 const fixtures = path.resolve(import.meta.dirname, "__fixtures__")
@@ -247,47 +248,135 @@ describe("gpumode normalization", () => {
   })
 })
 
+describe("gpumode cohort selection", () => {
+  const candidate = (
+    submissionId: number,
+    userId: string,
+    score: number,
+    minute: number,
+  ): GmCandidate => ({
+    submissionId,
+    userId,
+    submissionTime: `2026-03-14T00:${String(minute).padStart(2, "0")}:00`,
+    fileName: "submission.py",
+    score,
+    code: null,
+    runner: "MI300",
+    raw: {} as GmSubmissionRow,
+  })
+
+  const cohort = [
+    candidate(4, "ana", 1, 4),
+    candidate(5, "bo", 2, 5),
+    candidate(6, "cy", 3, 6),
+  ]
+  const chains: Record<string, GmCandidate[]> = {
+    ana: [candidate(1, "ana", 9, 1), candidate(2, "ana", 5, 2), cohort[0]],
+    bo: [candidate(3, "bo", 7, 3), cohort[1]],
+    cy: [cohort[2]],
+  }
+
+  it("keeps every distinct author's personal best when uncapped", () => {
+    const selection = selectCohort({
+      ranked: cohort,
+      history: () => [],
+      runner: "MI300",
+      options: { top: null, authors: null, maxPerAuthor: 1 },
+      valid: () => true,
+    })
+    expect(selection.top).toBe(3)
+    expect(selection.progression).toBe(0)
+    expect(selection.selected.map((c) => c.userId)).toEqual(["ana", "bo", "cy"])
+  })
+
+  it("adds each author's improving chain, capped per author", () => {
+    const selection = selectCohort({
+      ranked: cohort,
+      history: (userId) => chains[userId] ?? [],
+      runner: "MI300",
+      options: { top: null, authors: null, maxPerAuthor: 2 },
+      valid: () => true,
+    })
+    // ana's three-step chain collapses to its ends; bo keeps both of its own.
+    expect(selection.progression).toBe(2)
+    expect(selection.selected.map((c) => c.submissionId).sort()).toEqual([
+      1, 3, 4, 5, 6,
+    ])
+  })
+
+  it("falls back to an author's next-best when the best will not parse", () => {
+    const broken = candidate(7, "ana", 0.5, 7)
+    const selection = selectCohort({
+      ranked: [broken, ...cohort],
+      history: () => [],
+      runner: "MI300",
+      options: { top: null, authors: null, maxPerAuthor: 1 },
+      valid: (entry) => entry.submissionId !== 7,
+    })
+    expect(selection.invalid).toBe(1)
+    expect(selection.selected.map((c) => c.submissionId)).toEqual([4, 5, 6])
+  })
+
+  it("honours a distinct-author cap", () => {
+    const selection = selectCohort({
+      ranked: cohort,
+      history: () => [],
+      runner: "MI300",
+      options: { top: 2, authors: null, maxPerAuthor: 1 },
+      valid: () => true,
+    })
+    expect(selection.selected.map((c) => c.userId)).toEqual(["ana", "bo"])
+  })
+})
+
 const url = process.env.DATABASE_URL
 
 describe.skipIf(!url)("gpumode import pipeline (database)", () => {
   class Rollback extends Error {}
 
-  it("reconciles, dedupes users, and publishes idempotently", async () => {
+  it("reconciles a selected cohort and publishes idempotently", async () => {
     const rows = parseSubmissionRows(read("api/fp8-mm-top.json"), "fx").values
     const code = "import torch\n\ndef custom_kernel(data):\n    return data\n"
     const candidates = rows.map((row, index) =>
       candidateOf(row, "MI300", index === 0 ? code : null),
     )
+    // Both fixture rows are one user: selection keeps the best submission.
+    const selection = selectCohort({
+      ranked: [...candidates].sort((a, b) => a.score - b.score),
+      history: () => [],
+      runner: "MI300",
+      options: { top: null, authors: null, maxPerAuthor: 4 },
+      valid: () => true,
+    })
+    expect(selection.selected).toHaveLength(1)
     const data: GmImportData = {
       boards: [
         {
           problem: fp8,
-          cohorts: new Map([["MI300", candidates]]),
-          histories: new Map(),
+          cohorts: new Map([["MI300", selection.selected]]),
         },
       ],
       snapshots: [],
+      cohorts: [
+        {
+          leaderboard: "amd-fp8-mm",
+          runner: "MI300",
+          top: 1,
+          progression: 0,
+          withCode: 1,
+        },
+      ],
+      discoveredRows: rows.length,
+      invalidRows: 0,
+      deferredRows: 0,
       issues: [],
       driftWarnings: [],
     }
     await db()
       .transaction(async (tx) => {
-        const { bundle, report } = await reconcileKernelbot(tx, data, {
-          topPerBoard: 5,
-          authors: 5,
-          maxPerAuthor: 12,
-        })
-        // Both fixture rows are one user: dedupe keeps the best submission.
+        const { bundle, report } = await reconcileKernelbot(tx, data)
         expect(report.selectedSubmissions).toBe(1)
-        expect(report.cohorts).toEqual([
-          {
-            leaderboard: "amd-fp8-mm",
-            runner: "MI300",
-            top: 1,
-            progression: 0,
-            withCode: 1,
-          },
-        ])
+        expect(report.discovered.rows).toBe(rows.length)
         expect(report.code.uniqueBlobs).toBe(1)
         expect(report.licenseWarnings).toHaveLength(1)
         expect(report.issues).toHaveLength(0)

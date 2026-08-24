@@ -302,7 +302,11 @@ curl "https://kernelindex.com/api/v1/records?limit=50"
 # what the index learned since you last polled:
 curl "https://kernelindex.com/api/v1/feed?since=2026-08-01T00:00:00Z"
 
-# the ki CLI (apps/cli): stable --json for machines:
+# the ki CLI, from a checkout (not on npm yet):
+git clone https://github.com/SamMausberg/KernelIndex && cd KernelIndex
+pnpm install --frozen-lockfile
+alias ki="node apps/cli/src/ki.ts"
+
 ki search "gemm b200 nvfp4" --json | jq '.groups.exact[0]'
 ki use <implementation>   # vendor a mirrored kernel source locally
 ki manifest digest my-run.yaml
@@ -362,14 +366,16 @@ curl -X POST https://kernelindex.com/api/v1/precedents \\
 claude mcp add --transport http kernelindex https://kernelindex.com/mcp`}
           </pre>
           <p className="mt-3">
-            Over stdio instead:{" "}
+            Over stdio instead, from a checkout:{" "}
             <span className="font-mono text-small">
-              npx -y @kernelindex/mcp
+              node apps/mcp/src/server.ts
             </span>{" "}
             (<span className="font-mono text-small">KI_API</span> overrides the
             API base, <span className="font-mono text-small">KI_API_KEY</span>{" "}
-            raises the quota). Both run the same eighteen read-only tools over
-            the public REST API.
+            raises the quota). The published package{" "}
+            <span className="font-mono text-small">@kernelindex/mcp</span> is
+            not on npm yet, so prefer the hosted URL above. Both paths run the
+            same eighteen read-only tools over the public REST API.
           </p>
           <p className="mt-4">
             REST, the CLI, MCP, the bulk export, the{" "}
