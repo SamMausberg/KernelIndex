@@ -15,6 +15,19 @@ if (!url) {
   process.exit(1)
 }
 
+// "Never run against production" used to be a comment. It cost a fictional
+// vendor appearing in the public index, owning the `rmsnorm` alias, until it
+// was noticed and removed. A local host is the only thing this seeds.
+const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "postgres"])
+const host = new URL(url).hostname
+if (!LOCAL_HOSTS.has(host)) {
+  console.error(
+    `Refusing to seed illustrative examples into '${host}': this database is not local.\n` +
+      "Point DATABASE_URL at the compose database, or set SEED_ALLOW_REMOTE=1 if you really mean it.",
+  )
+  if (process.env.SEED_ALLOW_REMOTE !== "1") process.exit(1)
+}
+
 const client = postgres(url, { max: 1 })
 const result = await publishBundle(
   drizzle(client, { schema }),

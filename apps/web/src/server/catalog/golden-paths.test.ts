@@ -13,15 +13,11 @@ import { getImplementationPage } from "./implementation-reads.ts"
 import { getRunPage } from "./run-page-reads.ts"
 import { searchCatalog } from "./search-reads.ts"
 
-/**
- * Query, expected winner, and the rival it has to beat outright. Each query
- * names its operation unambiguously: the bare word "rmsnorm" still resolves
- * to the seeded illustrative operation, which owns that alias.
- */
+/** Query, expected winner, and the rival it has to beat outright. */
 const PATHS = [
   {
     name: "rmsnorm on A100",
-    query: "liger-rms-norm gpu:A100 dtype:bf16",
+    query: "rms norm gpu:A100 dtype:bf16",
     implementation: "liger-bench-rms-norm-liger",
     project: "liger-kernel",
     install: "pip install liger-kernel",
