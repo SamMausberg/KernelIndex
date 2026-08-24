@@ -48,12 +48,12 @@ export const SOURCE_FACTS: Record<
 }
 
 export const LIMITATIONS = [
-  "Nothing here has been rerun by KernelIndex. Every number is shown exactly as its source published it, so no record is Verified yet.",
-  "SOL-ExecBench leaderboard rows are suite averages, not per-case traces. They never answer an exact-case request.",
-  "FlashInfer-Bench imports are pinned-revision library baselines plus explicitly labeled LLM-generated solutions; the label and generating model ride every such record.",
-  "Liger-Kernel rows record no CUDA, driver, or torch version. Environments carry hardware only, and only kernels whose benchmark-script semantics were verified import.",
-  "MLPerf serving rows measure one thing: token throughput. The TTFT/TPOT bounds shown are the benchmark's rules, not measurements.",
-  "Hardware coverage follows the sources, not a survey. A GPU or kernel missing here says nothing about its speed.",
+  "No result in the index has been reproduced by KernelIndex. Each measurement is presented as its source published it, and no record has therefore reached the Verified evidence level.",
+  "SOL-ExecBench leaderboard rows report an average across a kernel's full case suite rather than individual cases, and are not used to answer a request for one specific case.",
+  "FlashInfer-Bench imports consist of library baselines taken at a pinned dataset revision, together with model-generated solutions. Each model-generated record is labeled as such and names the model that produced it.",
+  "Liger-Kernel rows do not record CUDA, driver, or PyTorch versions, so their environments describe hardware only. A kernel is imported only once the semantics of its benchmark script have been reviewed.",
+  "MLPerf serving rows report token throughput, which is the only quantity they measure. The TTFT and TPOT bounds shown beside them are thresholds set by the benchmark rules, and were not observed in the run.",
+  "Hardware coverage reflects what the indexed sources have published and is not a systematic survey. The absence of a GPU or a kernel indicates only that no indexed source has published a result for it.",
 ]
 
 export function sourceIsStale(row: CoverageSource): boolean {
