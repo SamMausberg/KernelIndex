@@ -28,17 +28,17 @@ const PATHS = [
     license: "BSD-2-Clause",
   },
   {
-    name: "fused MoE on H100",
-    query: "fused moe gpu:H100",
-    implementation: "liger-bench-fused-moe-liger",
+    name: "KL divergence on H100",
+    query: "liger-kl-div gpu:H100 dtype:fp32",
+    implementation: "liger-bench-kl-div-liger",
     project: "liger-kernel",
     install: "pip install liger-kernel",
     license: "BSD-2-Clause",
   },
   {
-    name: "group norm on B200",
-    query: "group norm gpu:B200 dtype:fp32",
-    implementation: "liger-bench-group-norm-liger",
+    name: "JSD on B200",
+    query: "liger-jsd gpu:B200",
+    implementation: "liger-bench-jsd-liger",
     project: "liger-kernel",
     install: "pip install liger-kernel",
     license: "BSD-2-Clause",
@@ -57,24 +57,19 @@ describe.skipIf(!url)("golden paths (database)", () => {
       expect(winner.implementation.slug).toBe(path.implementation)
       expect(winner.project.slug).toBe(path.project)
 
-      // 2. Unambiguous: it beats the next row outright rather than resting on
-      //    a statistical tie, and the cohort holds a rival from another
-      //    project, so the comparison means something.
+      // 2. Unambiguous: the runner-up is a different project and loses by a
+      //    margin no measurement noise explains, so the answer never rests on
+      //    a near-tie a reader would have to arbitrate.
       expect(
         runnerUp,
         "a winner needs something to have won against",
       ).toBeDefined()
+      expect(runnerUp.project.slug).not.toBe(winner.project.slug)
       expect(winner.primary?.value).toBeGreaterThan(0)
       expect(runnerUp.primary?.value).toBeGreaterThan(
-        (winner.primary?.value ?? 0) * 1.05,
+        (winner.primary?.value ?? 0) * 2,
       )
       expect(winner.tiedWithPrevious).toBe(false)
-      expect(
-        model.groups.exact.some(
-          (row) => row.project.slug !== winner.project.slug,
-        ),
-        "the cohort has no rival project to compare against",
-      ).toBe(true)
 
       // 3. The row offers a real install line and passes the policy.
       expect(isDeployable(winner)).toBe(true)
