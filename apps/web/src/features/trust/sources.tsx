@@ -152,7 +152,7 @@ export function TrustBlock({
       color: "var(--color-viz-1)",
     },
     {
-      label: "Reproducible",
+      label: "Reproduction-ready",
       count: evidence.reproducible,
       color: "var(--color-accent-dim)",
     },

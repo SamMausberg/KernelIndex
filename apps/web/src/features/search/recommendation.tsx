@@ -4,14 +4,14 @@ import { Link } from "@/components/quiet-link"
 import {
   AnswerSlots,
   answerLabel,
-  isDeployable,
+  isUsable,
 } from "@/features/answer/answer-slots"
 import type { ResultRow, SearchPageModel } from "@/lib/catalog"
 import { formatPrimary } from "@/lib/format"
 
 /**
  * The answer, not a ranking (§16.6): the fastest known result and, when it
- * differs, the fastest deployable one, beside the cohort's invariant facts.
+ * differs, the fastest usable one, beside the cohort's invariant facts.
  * At most one qualifier line follows — the single most relevant faster
  * number outside the headline (§12: the faster number is stated, never
  * hidden), not a stack of caveats.
@@ -30,9 +30,9 @@ export function Recommendation({
   /** Cohort leader hidden by the default source filter. */
   hiddenFaster?: ResultRow | null
 }) {
-  const deployable = isDeployable(top)
+  const deployable = isUsable(top)
     ? null
-    : (model.groups.exact.find(isDeployable) ?? null)
+    : (model.groups.exact.find(isUsable) ?? null)
   const fasterInCohort =
     fastest &&
     fastest.runId !== top.runId &&

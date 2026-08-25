@@ -103,7 +103,7 @@ export function evidenceLabel(level: EvidenceLevel | null): string {
     case "replicated":
       return "Replicated"
     case "reproducible":
-      return "Reproducible"
+      return "Reproduction-ready"
     case "reported":
       return "Reported"
     default:

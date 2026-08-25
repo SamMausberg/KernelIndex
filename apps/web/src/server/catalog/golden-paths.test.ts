@@ -8,19 +8,22 @@
 // install recipe that the result row beside it was already printing, because
 // the two sides derived the command differently.
 import { describe, expect, it } from "vitest"
-import { isDeployable } from "../../features/answer/answer-slots.tsx"
+import { isUsable } from "../../features/answer/answer-slots.tsx"
 import { getImplementationPage } from "./implementation-reads.ts"
 import { getRunPage } from "./run-page-reads.ts"
 import { searchCatalog } from "./search-reads.ts"
 
-/** Query, expected winner, and the rival it has to beat outright. */
+/** Query, expected winner, and the rival it has to beat outright. The
+ * install line must pin to a measured release (§8.15): the row pins to its
+ * own run's version, the page to the newest measured one — both match this
+ * pattern, and an unpinned `pip install liger-kernel` fails the path. */
 const PATHS = [
   {
     name: "rmsnorm on A100",
     query: "rms norm gpu:A100 dtype:bf16",
     implementation: "liger-bench-rms-norm-liger",
     project: "liger-kernel",
-    install: "pip install liger-kernel",
+    install: /^pip install "liger-kernel==\d[\w.]*"$/,
     license: "BSD-2-Clause",
   },
   {
@@ -28,7 +31,7 @@ const PATHS = [
     query: "liger-kl-div gpu:H100 dtype:fp32",
     implementation: "liger-bench-kl-div-liger",
     project: "liger-kernel",
-    install: "pip install liger-kernel",
+    install: /^pip install "liger-kernel==\d[\w.]*"$/,
     license: "BSD-2-Clause",
   },
   {
@@ -36,7 +39,7 @@ const PATHS = [
     query: "liger-jsd gpu:B200",
     implementation: "liger-bench-jsd-liger",
     project: "liger-kernel",
-    install: "pip install liger-kernel",
+    install: /^pip install "liger-kernel==\d[\w.]*"$/,
     license: "BSD-2-Clause",
   },
 ] as const
@@ -77,16 +80,18 @@ describe.skipIf(!seeded)("golden paths (database)", () => {
       )
       expect(winner.tiedWithPrevious).toBe(false)
 
-      // 3. The row offers a real install line and passes the policy.
-      expect(isDeployable(winner)).toBe(true)
-      expect(winner.install?.command).toBe(path.install)
+      // 3. The row offers a pinned install line and passes the policy.
+      expect(isUsable(winner)).toBe(true)
+      expect(winner.install?.command).toMatch(path.install)
+      expect(winner.install?.pinned).toBe(true)
       expect(winner.license.concluded).toBe(path.license)
 
       // 4. The implementation page agrees with the row it came from. These
       //    two derived the install line separately once, and disagreed.
       const page = await getImplementationPage(path.implementation)
       expect(page).not.toBeNull()
-      expect(page?.usage.install?.command).toBe(path.install)
+      expect(page?.usage.install?.command).toMatch(path.install)
+      expect(page?.usage.install?.pinned).toBe(true)
       expect(page?.license.concluded).toBe(path.license)
       expect(page?.source.available).toBe(true)
 

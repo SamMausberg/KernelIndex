@@ -29,14 +29,16 @@ const GAP_GRID =
 const REASON_WORDS: Record<string, string> = {
   NO_PUBLIC_SOURCE: "no public source",
   NO_INSTALL_RECIPE: "no install recipe",
+  INSTALL_UNPINNED: "install not pinned to the measured build",
   LICENSE_UNKNOWN: "license unknown",
 }
 
-/** The deployability verdict for one row, in words. */
+/** The usability verdict for one row, in words. */
 function reasonsOf(row: ResultRow): string {
   return deployability({
     sourceAvailable: row.sourceAvailable,
     installable: row.installable,
+    installPinned: row.install?.pinned ?? false,
     licenseConcluded: row.license.concluded,
   })
     .reasons.map((code) => REASON_WORDS[code] ?? code)
@@ -50,21 +52,21 @@ function expansionLine(entry: ModelBestKnown): string {
   const parts: string[] = []
   if (deployable === null) {
     parts.push(
-      `No entry in this cohort passes the deployability policy (${reasonsOf(fastest)}); the fastest known is shown.`,
+      `No entry in this cohort passes the usability policy (${reasonsOf(fastest)}); the fastest known is shown.`,
     )
   } else if (deployable.runId !== fastest.runId) {
     const delta = deltaVsFastest(deployable, fastest)
     parts.push(
       `Fastest known in this cohort as of ${formatDateUTC(fastest.lastTestedAt)}: ${displayImplementationName(fastest.implementation.name)}${
         fastest.primary ? ` at ${formatPrimary(fastest.primary)}` : ""
-      }, not deployable (${reasonsOf(fastest)}).${
+      }, not usable as-is (${reasonsOf(fastest)}).${
         delta
           ? ` ${displayImplementationName(deployable.implementation.name)} runs ${delta}.`
           : ""
       }`,
     )
   } else {
-    parts.push("Fastest known in this cohort, and deployable.")
+    parts.push("Fastest known in this cohort, and usable today.")
   }
   parts.push(entry.cohort.description)
   if (entry.alternatives > 0)
@@ -111,7 +113,7 @@ function EntryRow({ entry }: { entry: ModelBestKnown }) {
           </Link>
           {entry.deployable === null ? (
             <span className="ml-2 font-mono text-label text-faint uppercase">
-              not deployable
+              not usable
             </span>
           ) : (
             <>
@@ -282,7 +284,7 @@ export function GapTable({
           entry.operation.slug,
           entry.operation.name,
           entry.family,
-          `measured · no deployable entry (${reasonsOf(entry.fastest)})`,
+          `measured · no usable entry (${reasonsOf(entry.fastest)})`,
         ),
       )}
     </div>

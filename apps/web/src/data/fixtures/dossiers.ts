@@ -44,6 +44,7 @@ export const IMPLEMENTATIONS: Record<string, ImplementationPageModel> = {
         kind: "git",
         command:
           "pip install git+https://example.invalid/meridian/kernels@b81d40e",
+        pinned: true,
       },
       invocationExample:
         "from meridian_kernels import rmsnorm\noutput = rmsnorm(input, weight, epsilon=1e-6)",
@@ -79,7 +80,7 @@ export const IMPLEMENTATIONS: Record<string, ImplementationPageModel> = {
     },
     trust: {
       evidence: "verified",
-      summary: "Fastest deployable result in the illustrative RMSNorm cohort",
+      summary: "Fastest usable result in the illustrative RMSNorm cohort",
     },
     standing: { records: 1 },
     bestResults: [rowFromRun(RUNS[1]), rowFromRun(RUNS[4])],
@@ -133,7 +134,7 @@ export const IMPLEMENTATIONS: Record<string, ImplementationPageModel> = {
     trust: {
       evidence: "verified",
       summary:
-        "Fastest verified result in the illustrative cohort, but not deployable: no public source and unknown license",
+        "Fastest verified result in the illustrative cohort, but not usable as-is: no public source and unknown license",
     },
     standing: { records: 1 },
     bestResults: [rowFromRun(RUNS[0])],

@@ -132,6 +132,7 @@ describe("deployability", () => {
       deployability({
         sourceAvailable: false,
         installable: false,
+        installPinned: false,
         licenseConcluded: null,
       }).reasons,
     ).toEqual(["NO_PUBLIC_SOURCE", "NO_INSTALL_RECIPE", "LICENSE_UNKNOWN"])
@@ -139,9 +140,20 @@ describe("deployability", () => {
       deployability({
         sourceAvailable: true,
         installable: true,
+        installPinned: true,
         licenseConcluded: "Apache-2.0",
       }).eligible,
     ).toBe(true)
+    // v2: an install that cannot be shown to resolve to the measured code
+    // is a stated command, not a usable answer.
+    expect(
+      deployability({
+        sourceAvailable: true,
+        installable: true,
+        installPinned: false,
+        licenseConcluded: "Apache-2.0",
+      }).reasons,
+    ).toEqual(["INSTALL_UNPINNED"])
   })
 
   it("matches license filters case-insensitively with a permissive class", () => {

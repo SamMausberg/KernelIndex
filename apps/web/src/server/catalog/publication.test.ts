@@ -8,6 +8,7 @@ import { db } from "../db/client.ts"
 import { exampleBundle } from "./example-bundle.ts"
 import {
   type AnyWorkloadManifest,
+  installCommandOf,
   NO_AXES,
   publishBundle,
   varyingAxisNames,
@@ -43,6 +44,32 @@ const decodeCase = (numPages: number, numKvIndices: number) => {
   if (manifest.kind !== "WorkloadCase") throw new Error("unreachable")
   return manifest satisfies AnyWorkloadManifest
 }
+
+describe("install line synthesis", () => {
+  it("pins a version-less pip recipe with the measured version (§8.15)", () => {
+    const recipe = { kind: "pip", package: "liger-kernel" } as const
+    expect(installCommandOf(recipe)).toBe("pip install liger-kernel")
+    expect(installCommandOf(recipe, "0.8.1")).toBe(
+      'pip install "liger-kernel==0.8.1"',
+    )
+    // A recipe's own version outranks the measured one.
+    expect(installCommandOf({ ...recipe, version: "0.6.2" }, "0.8.1")).toBe(
+      'pip install "liger-kernel==0.6.2"',
+    )
+  })
+  it("keeps git and container forms pinned by their own coordinates", () => {
+    expect(
+      installCommandOf(
+        {
+          kind: "git",
+          repository: "https://x.invalid/r",
+          commit: "b81d40e",
+        },
+        "9.9.9",
+      ),
+    ).toBe("pip install git+https://x.invalid/r@b81d40e")
+  })
+})
 
 describe("workload display identity", () => {
   const siblings = [decodeCase(17, 2), decodeCase(10, 9)]

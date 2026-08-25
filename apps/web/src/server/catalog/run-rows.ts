@@ -10,6 +10,7 @@ import type {
   SourceRef,
 } from "../../lib/catalog-models.ts"
 import { dtypeLabel } from "../../lib/format.ts"
+import { installIsPinned, pinPipCommand } from "../../lib/install.ts"
 import {
   humanizeOperationName,
   implementationDisplayName,
@@ -54,6 +55,7 @@ export const runColumns = {
   sourceNative: schema.benchmarkRuns.sourceNative,
   environmentSummary: schema.benchmarkRuns.environmentSummary,
   solScore: schema.benchmarkRuns.solScore,
+  packageVersion: schema.benchmarkRuns.packageVersion,
 }
 export const implementationColumns = {
   id: schema.implementations.id,
@@ -212,6 +214,15 @@ export function resultRow(
   > = {},
 ): ResultRow {
   const { run, implementation, project, workload } = joined
+  // The install line pins to this run's measured version when it carries
+  // one (§8.15) — the implementation column pins to the newest measured
+  // release, which may postdate the evidence this row states.
+  const command =
+    implementation.installKind === "pip" &&
+    run.packageVersion !== null &&
+    implementation.installCommand !== null
+      ? pinPipCommand(implementation.installCommand, run.packageVersion)
+      : implementation.installCommand
   return {
     runId: run.id,
     implementation: {
@@ -223,11 +234,11 @@ export function resultRow(
       slug: implementation.slug,
     },
     install:
-      implementation.installCommand !== null &&
-      implementation.installKind !== null
+      command !== null && implementation.installKind !== null
         ? {
             kind: implementation.installKind,
-            command: implementation.installCommand,
+            command,
+            pinned: installIsPinned(implementation.installKind, command),
           }
         : null,
     project: { name: project.name, slug: project.slug },
@@ -324,7 +335,14 @@ export function supportedUnmeasuredRows(
           slug: implementation.slug,
         },
         install: variant?.install.command
-          ? { kind: variant.install.kind, command: variant.install.command }
+          ? {
+              kind: variant.install.kind,
+              command: variant.install.command,
+              pinned: installIsPinned(
+                variant.install.kind,
+                variant.install.command,
+              ),
+            }
           : null,
         project: { name: project.name, slug: project.slug },
         revision: implementation.sourceRevision?.slice(0, 7) ?? null,

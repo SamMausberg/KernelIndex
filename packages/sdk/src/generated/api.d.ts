@@ -143,6 +143,7 @@ export interface paths {
                 install: {
                   kind: string
                   command: string
+                  pinned: boolean
                 } | null
                 project: {
                   name: string
@@ -216,6 +217,7 @@ export interface paths {
                 install: {
                   kind: string
                   command: string
+                  pinned: boolean
                 } | null
                 project: {
                   name: string
@@ -290,6 +292,7 @@ export interface paths {
                   install: {
                     kind: string
                     command: string
+                    pinned: boolean
                   } | null
                   project: {
                     name: string
@@ -363,6 +366,7 @@ export interface paths {
                   install: {
                     kind: string
                     command: string
+                    pinned: boolean
                   } | null
                   project: {
                     name: string
@@ -436,6 +440,7 @@ export interface paths {
                   install: {
                     kind: string
                     command: string
+                    pinned: boolean
                   } | null
                   project: {
                     name: string
@@ -509,6 +514,7 @@ export interface paths {
                   install: {
                     kind: string
                     command: string
+                    pinned: boolean
                   } | null
                   project: {
                     name: string
@@ -804,6 +810,7 @@ export interface paths {
                 install: {
                   kind: string
                   command: string
+                  pinned: boolean
                 } | null
                 project: {
                   name: string
@@ -877,6 +884,7 @@ export interface paths {
                 install: {
                   kind: string
                   command: string
+                  pinned: boolean
                 } | null
                 project: {
                   name: string
@@ -951,6 +959,7 @@ export interface paths {
                   install: {
                     kind: string
                     command: string
+                    pinned: boolean
                   } | null
                   project: {
                     name: string
@@ -1024,6 +1033,7 @@ export interface paths {
                   install: {
                     kind: string
                     command: string
+                    pinned: boolean
                   } | null
                   project: {
                     name: string
@@ -1097,6 +1107,7 @@ export interface paths {
                   install: {
                     kind: string
                     command: string
+                    pinned: boolean
                   } | null
                   project: {
                     name: string
@@ -1170,6 +1181,7 @@ export interface paths {
                   install: {
                     kind: string
                     command: string
+                    pinned: boolean
                   } | null
                   project: {
                     name: string
@@ -1466,6 +1478,7 @@ export interface paths {
                   install: {
                     kind: string
                     command: string
+                    pinned: boolean
                   } | null
                   project: {
                     name: string
@@ -1539,6 +1552,7 @@ export interface paths {
                   install: {
                     kind: string
                     command: string
+                    pinned: boolean
                   } | null
                   project: {
                     name: string
@@ -1613,6 +1627,7 @@ export interface paths {
                     install: {
                       kind: string
                       command: string
+                      pinned: boolean
                     } | null
                     project: {
                       name: string
@@ -1686,6 +1701,7 @@ export interface paths {
                     install: {
                       kind: string
                       command: string
+                      pinned: boolean
                     } | null
                     project: {
                       name: string
@@ -1759,6 +1775,7 @@ export interface paths {
                     install: {
                       kind: string
                       command: string
+                      pinned: boolean
                     } | null
                     project: {
                       name: string
@@ -1832,6 +1849,7 @@ export interface paths {
                     install: {
                       kind: string
                       command: string
+                      pinned: boolean
                     } | null
                     project: {
                       name: string
@@ -2280,6 +2298,7 @@ export interface paths {
                 install: {
                   kind: string
                   command: string
+                  pinned: boolean
                 } | null
                 project: {
                   name: string
@@ -2499,6 +2518,7 @@ export interface paths {
                 install: {
                   kind: string
                   command: string
+                  pinned: boolean
                 } | null
                 invocationExample: string | null
                 requirements: {
@@ -2552,6 +2572,7 @@ export interface paths {
                 install: {
                   kind: string
                   command: string
+                  pinned: boolean
                 } | null
                 project: {
                   name: string
@@ -2746,6 +2767,7 @@ export interface paths {
                   install: {
                     kind: string
                     command: string
+                    pinned: boolean
                   } | null
                   project: {
                     name: string
@@ -3298,6 +3320,7 @@ export interface paths {
                   install: {
                     kind: string
                     command: string
+                    pinned: boolean
                   } | null
                   project: {
                     name: string
@@ -3536,6 +3559,7 @@ export interface paths {
                 install: {
                   kind: string
                   command: string
+                  pinned: boolean
                 } | null
                 sourceAvailable: boolean
                 observedAt: string
@@ -4987,6 +5011,7 @@ export interface paths {
                     install: {
                       kind: string
                       command: string
+                      pinned: boolean
                     } | null
                     project: {
                       name: string
@@ -5060,6 +5085,7 @@ export interface paths {
                     install: {
                       kind: string
                       command: string
+                      pinned: boolean
                     } | null
                     project: {
                       name: string

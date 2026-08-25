@@ -21,8 +21,8 @@ const EVIDENCE_LEVELS = [
     "The result was published by a source. KernelIndex stores the snapshot as published and does not rerun it.",
   ],
   [
-    "Reproducible",
-    "Every input required to rerun the measurement is present: code, revision, workload, protocol, environment, and raw evidence.",
+    "Reproduction-ready",
+    "Every input required to rerun the measurement is present: code, revision, workload, protocol, environment, and raw evidence. Nobody has necessarily rerun it yet.",
   ],
   [
     "Verified",
@@ -234,7 +234,7 @@ rmsnorm gpu:B200 dtype:bf16 shape:[2048,4096] framework=pytorch trust:verified`}
             Levels are derived from stored facts and cannot be chosen by a
             submitter. Whether a kernel can be used in practice, which depends
             on its license, install recipe, and hardware, is tracked separately;
-            the fastest result and the fastest deployable result are frequently
+            the fastest result and the fastest usable result are frequently
             different rows.
           </p>
           <p className="mt-3">
@@ -255,8 +255,10 @@ rmsnorm gpu:B200 dtype:bf16 shape:[2048,4096] framework=pytorch trust:verified`}
           <ul className="mt-3 list-disc space-y-2.5 pl-5">
             <li>
               A package exists, so the install command can be copied directly.
-              The revision is pinned, which means the installed version is the
-              one that was measured.
+              When the evidence records a measured release, the command pins to
+              it, so the installed version is the one that was measured. A
+              command that cannot be pinned is labeled unpinned and never
+              counted as usable.
             </li>
             <li>
               No package exists, but the source is mirrored and can be vendored.
@@ -565,7 +567,7 @@ claude mcp add --transport http kernelindex https://kernelindex.com/mcp`}
             </a>
             ), ranking <span className="font-mono text-small">ranking-v1</span>,
             deployability{" "}
-            <span className="font-mono text-small">deployability-v1</span>, and
+            <span className="font-mono text-small">deployability-v2</span>, and
             serving <span className="font-mono text-small">serving-v1</span>.
             Each response states the version under which it was ranked, and each
             import records its parser version. Published runs and their digests

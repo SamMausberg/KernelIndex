@@ -1065,6 +1065,28 @@ manifest mints a new implementation digest and would duplicate every run under
 it. Where a deployable answer exists it leads the resolution, with the fastest
 known beside it and the gap stated — usability and speed answer different
 questions, but only one of them can be acted on.
+
+**Pinned installation (2026-08-25).** A stated install command must resolve to
+the measured code, or say that it cannot. The measured package version rides
+each run's manifest label `package_version` (legacy spelling `liger_version`)
+and is denormalized to the scalar `benchmark_runs.package_version`; the Liger
+corpus alone spans fifteen measured releases (0.1.1–0.8.1), so pinning is
+per-run, never per-implementation:
+
+- `installCommandOf(recipe, measuredVersion)` completes a version-less pip
+  recipe as `pip install "pkg==version"`; git and container recipes pin by
+  their own commit or tag.
+- `implementations.install_command` pins to the implementation's newest
+  measured version (`settleInstallPins`, called by every publication for the
+  touched implementations and by `refreshAvailability` catalog-wide).
+- A ranked row whose run measured an older release re-pins the command to
+  that run's version at read time (`pinPipCommand` in `resultRow`).
+- Every rendered install object carries `pinned: boolean`
+  (`installIsPinned`); an unpinned command renders with an explicit
+  "installs the current release, not necessarily the measured build" caveat
+  and never counts as usable (see §11.8 deployability-v2).
+- Invariant: no pip install line stays unpinned while a measured version
+  exists for its implementation (`scripts/check-invariants.ts`).
 - **Fastest reported:** fastest eligible source-native report, clearly labeled.
 
 ### 8.16 Serving domain
@@ -1818,6 +1840,21 @@ A deployment policy can require:
 - no forbidden runtime network dependency.
 
 Return both `eligible: boolean` and a reason vector. Users and organizations can save their own policy.
+
+**Revision (2026-08-25, deployability-v2 and the usability vocabulary).** The
+default policy now requires the install command to pin to the measured code
+(§8.15): reasons gained `INSTALL_UNPINNED`, and the policy version moved to
+`deployability-v2`. The rendered word "deployable" was retired at the same
+time — source + recipe + license proved less than the word promised (no
+invocation test, no environment match, no smoke run). Surfaces now state the
+factual ladder instead: `Installable · pinned` / `Installable · unpinned` /
+`Vendorable · source mirrored` / `Source available upstream` / `Benchmark
+submission only`, and answer slots read **Best usable** beside **fastest, not
+usable as-is**. API field names (`bestDeployable`, reason codes) are stable;
+only display vocabulary changed. Display-only in the same pass: the
+`reproducible` evidence level renders as **Reproduction-ready** (rerun inputs
+present, not necessarily rerun) while the stored fact and API value stay
+`reproducible`.
 
 **Revision (2026-08-23, headroom estimates).** Operation cohorts carry a deliberately coarse roofline under `headroom-v1` (`server/policy/headroom.ts`): the DRAM floor from the workload's declared tensors at the GPU's datasheet bandwidth, and, for GEMM and attention families, a compute floor from closed-form FLOP counts at the dense tensor-core peak (`server/policy/hardware-specs.ts`; a GPU outside the table gets no estimate). The larger floor and the record's ratio above it appear on the operation page, dossier, and API, always with `basis: "estimate"` and the assumptions listed — an estimate of a lower bound, never evidence, and never a rank input. Memory-bound families get the bandwidth floor only by design.
 

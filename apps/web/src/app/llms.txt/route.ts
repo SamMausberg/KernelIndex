@@ -15,7 +15,8 @@ Claim rules (keep these when quoting results):
   without naming the workload and cohort; say "fastest currently known in
   this cohort as of <timestamp>".
 - Evidence levels: Reported (preserved exactly as the source published it;
-  not rerun by KernelIndex), Reproducible, Verified, Replicated. The
+  not rerun by KernelIndex), Reproduction-ready (rerun inputs present, not
+  necessarily rerun; API value "reproducible"), Verified, Replicated. The
   current corpus is Reported-tier.
 - Never compare a serving throughput to a kernel latency, or two runs from
   different cohorts.

@@ -145,13 +145,13 @@ export default async function DesignLabPage() {
         <SearchResults model={emptyQuery} filters={noFilters} />
       </State>
 
-      <State label="model · best known with a fastest-vs-deployable split">
+      <State label="model · best known with a fastest-vs-usable split">
         <div className="p-6">
           <BestKnownTable groups={bestKnown} />
         </div>
       </State>
 
-      <State label="model · measured but no deployable entry">
+      <State label="model · measured but no usable entry">
         <div className="p-6">
           <BestKnownTable
             groups={

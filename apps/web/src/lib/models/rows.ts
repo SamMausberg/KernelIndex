@@ -68,6 +68,10 @@ export type Mismatch = {
 
 export type KeyValue = { key: string; value: string }
 
+/** Copyable install line. `pinned` states whether the command resolves to
+ * the measured code — pip `==version`, git `@commit`, image tag (§8.15). */
+export type InstallLine = { kind: string; command: string; pinned: boolean }
+
 export type SourceRef = {
   name: string
   kind: string
@@ -83,8 +87,8 @@ export type ResultRow = {
   /** Null for supported-but-unmeasured implementations. */
   runId: string | null
   implementation: { name: string; slug: string }
-  /** Verified install command; null renders as "no verified install recipe". */
-  install: { kind: string; command: string } | null
+  /** Copyable install line; null renders as "no install recipe". */
+  install: InstallLine | null
   project: { name: string; slug: string }
   /** Short display revision: commit prefix or release version. */
   revision: string | null

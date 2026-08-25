@@ -72,7 +72,9 @@ export const runStatus = z.enum([
 export const resultRow = z.object({
   runId: z.string().nullable(),
   implementation: z.object({ name: z.string(), slug: z.string() }),
-  install: z.object({ kind: z.string(), command: z.string() }).nullable(),
+  install: z
+    .object({ kind: z.string(), command: z.string(), pinned: z.boolean() })
+    .nullable(),
   project: z.object({ name: z.string(), slug: z.string() }),
   revision: z.string().nullable(),
   operation: z.object({ name: z.string(), slug: z.string() }),
@@ -211,7 +213,9 @@ const compareRun = z.object({
   eligible: z.boolean(),
   ineligibleReasons: z.array(z.string()),
   license: licenseInfo,
-  install: z.object({ kind: z.string(), command: z.string() }).nullable(),
+  install: z
+    .object({ kind: z.string(), command: z.string(), pinned: z.boolean() })
+    .nullable(),
   sourceAvailable: z.boolean(),
   observedAt: z.string(),
 })

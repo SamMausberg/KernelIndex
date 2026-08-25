@@ -299,9 +299,12 @@
                             },
                             "command": {
                               "type": "string"
+                            },
+                            "pinned": {
+                              "type": "boolean"
                             }
                           },
-                          "required": ["kind", "command"]
+                          "required": ["kind", "command", "pinned"]
                         },
                         "project": {
                           "type": "object",
@@ -540,9 +543,12 @@
                             },
                             "command": {
                               "type": "string"
+                            },
+                            "pinned": {
+                              "type": "boolean"
                             }
                           },
-                          "required": ["kind", "command"]
+                          "required": ["kind", "command", "pinned"]
                         },
                         "project": {
                           "type": "object",
@@ -786,9 +792,12 @@
                                   },
                                   "command": {
                                     "type": "string"
+                                  },
+                                  "pinned": {
+                                    "type": "boolean"
                                   }
                                 },
-                                "required": ["kind", "command"]
+                                "required": ["kind", "command", "pinned"]
                               },
                               "project": {
                                 "type": "object",
@@ -1030,9 +1039,12 @@
                                   },
                                   "command": {
                                     "type": "string"
+                                  },
+                                  "pinned": {
+                                    "type": "boolean"
                                   }
                                 },
-                                "required": ["kind", "command"]
+                                "required": ["kind", "command", "pinned"]
                               },
                               "project": {
                                 "type": "object",
@@ -1274,9 +1286,12 @@
                                   },
                                   "command": {
                                     "type": "string"
+                                  },
+                                  "pinned": {
+                                    "type": "boolean"
                                   }
                                 },
-                                "required": ["kind", "command"]
+                                "required": ["kind", "command", "pinned"]
                               },
                               "project": {
                                 "type": "object",
@@ -1518,9 +1533,12 @@
                                   },
                                   "command": {
                                     "type": "string"
+                                  },
+                                  "pinned": {
+                                    "type": "boolean"
                                   }
                                 },
-                                "required": ["kind", "command"]
+                                "required": ["kind", "command", "pinned"]
                               },
                               "project": {
                                 "type": "object",
@@ -2383,9 +2401,12 @@
                             },
                             "command": {
                               "type": "string"
+                            },
+                            "pinned": {
+                              "type": "boolean"
                             }
                           },
-                          "required": ["kind", "command"]
+                          "required": ["kind", "command", "pinned"]
                         },
                         "project": {
                           "type": "object",
@@ -2624,9 +2645,12 @@
                             },
                             "command": {
                               "type": "string"
+                            },
+                            "pinned": {
+                              "type": "boolean"
                             }
                           },
-                          "required": ["kind", "command"]
+                          "required": ["kind", "command", "pinned"]
                         },
                         "project": {
                           "type": "object",
@@ -2870,9 +2894,12 @@
                                   },
                                   "command": {
                                     "type": "string"
+                                  },
+                                  "pinned": {
+                                    "type": "boolean"
                                   }
                                 },
-                                "required": ["kind", "command"]
+                                "required": ["kind", "command", "pinned"]
                               },
                               "project": {
                                 "type": "object",
@@ -3114,9 +3141,12 @@
                                   },
                                   "command": {
                                     "type": "string"
+                                  },
+                                  "pinned": {
+                                    "type": "boolean"
                                   }
                                 },
-                                "required": ["kind", "command"]
+                                "required": ["kind", "command", "pinned"]
                               },
                               "project": {
                                 "type": "object",
@@ -3358,9 +3388,12 @@
                                   },
                                   "command": {
                                     "type": "string"
+                                  },
+                                  "pinned": {
+                                    "type": "boolean"
                                   }
                                 },
-                                "required": ["kind", "command"]
+                                "required": ["kind", "command", "pinned"]
                               },
                               "project": {
                                 "type": "object",
@@ -3602,9 +3635,12 @@
                                   },
                                   "command": {
                                     "type": "string"
+                                  },
+                                  "pinned": {
+                                    "type": "boolean"
                                   }
                                 },
-                                "required": ["kind", "command"]
+                                "required": ["kind", "command", "pinned"]
                               },
                               "project": {
                                 "type": "object",
@@ -4487,9 +4523,12 @@
                                   },
                                   "command": {
                                     "type": "string"
+                                  },
+                                  "pinned": {
+                                    "type": "boolean"
                                   }
                                 },
-                                "required": ["kind", "command"]
+                                "required": ["kind", "command", "pinned"]
                               },
                               "project": {
                                 "type": "object",
@@ -4728,9 +4767,12 @@
                                   },
                                   "command": {
                                     "type": "string"
+                                  },
+                                  "pinned": {
+                                    "type": "boolean"
                                   }
                                 },
-                                "required": ["kind", "command"]
+                                "required": ["kind", "command", "pinned"]
                               },
                               "project": {
                                 "type": "object",
@@ -4974,9 +5016,12 @@
                                         },
                                         "command": {
                                           "type": "string"
+                                        },
+                                        "pinned": {
+                                          "type": "boolean"
                                         }
                                       },
-                                      "required": ["kind", "command"]
+                                      "required": ["kind", "command", "pinned"]
                                     },
                                     "project": {
                                       "type": "object",
@@ -5222,9 +5267,12 @@
                                         },
                                         "command": {
                                           "type": "string"
+                                        },
+                                        "pinned": {
+                                          "type": "boolean"
                                         }
                                       },
-                                      "required": ["kind", "command"]
+                                      "required": ["kind", "command", "pinned"]
                                     },
                                     "project": {
                                       "type": "object",
@@ -5470,9 +5518,12 @@
                                         },
                                         "command": {
                                           "type": "string"
+                                        },
+                                        "pinned": {
+                                          "type": "boolean"
                                         }
                                       },
-                                      "required": ["kind", "command"]
+                                      "required": ["kind", "command", "pinned"]
                                     },
                                     "project": {
                                       "type": "object",
@@ -5718,9 +5769,12 @@
                                         },
                                         "command": {
                                           "type": "string"
+                                        },
+                                        "pinned": {
+                                          "type": "boolean"
                                         }
                                       },
-                                      "required": ["kind", "command"]
+                                      "required": ["kind", "command", "pinned"]
                                     },
                                     "project": {
                                       "type": "object",
@@ -7083,9 +7137,12 @@
                               },
                               "command": {
                                 "type": "string"
+                              },
+                              "pinned": {
+                                "type": "boolean"
                               }
                             },
-                            "required": ["kind", "command"]
+                            "required": ["kind", "command", "pinned"]
                           },
                           "project": {
                             "type": "object",
@@ -7738,9 +7795,12 @@
                             },
                             "command": {
                               "type": "string"
+                            },
+                            "pinned": {
+                              "type": "boolean"
                             }
                           },
-                          "required": ["kind", "command"]
+                          "required": ["kind", "command", "pinned"]
                         },
                         "invocationExample": {
                           "type": ["string", "null"]
@@ -7921,9 +7981,12 @@
                               },
                               "command": {
                                 "type": "string"
+                              },
+                              "pinned": {
+                                "type": "boolean"
                               }
                             },
-                            "required": ["kind", "command"]
+                            "required": ["kind", "command", "pinned"]
                           },
                           "project": {
                             "type": "object",
@@ -8479,9 +8542,12 @@
                                   },
                                   "command": {
                                     "type": "string"
+                                  },
+                                  "pinned": {
+                                    "type": "boolean"
                                   }
                                 },
-                                "required": ["kind", "command"]
+                                "required": ["kind", "command", "pinned"]
                               },
                               "project": {
                                 "type": "object",
@@ -9940,9 +10006,12 @@
                                   },
                                   "command": {
                                     "type": "string"
+                                  },
+                                  "pinned": {
+                                    "type": "boolean"
                                   }
                                 },
-                                "required": ["kind", "command"]
+                                "required": ["kind", "command", "pinned"]
                               },
                               "project": {
                                 "type": "object",
@@ -10562,9 +10631,12 @@
                               },
                               "command": {
                                 "type": "string"
+                              },
+                              "pinned": {
+                                "type": "boolean"
                               }
                             },
-                            "required": ["kind", "command"]
+                            "required": ["kind", "command", "pinned"]
                           },
                           "sourceAvailable": {
                             "type": "boolean"
@@ -13573,9 +13645,12 @@
                                         },
                                         "command": {
                                           "type": "string"
+                                        },
+                                        "pinned": {
+                                          "type": "boolean"
                                         }
                                       },
-                                      "required": ["kind", "command"]
+                                      "required": ["kind", "command", "pinned"]
                                     },
                                     "project": {
                                       "type": "object",
@@ -13818,9 +13893,12 @@
                                         },
                                         "command": {
                                           "type": "string"
+                                        },
+                                        "pinned": {
+                                          "type": "boolean"
                                         }
                                       },
-                                      "required": ["kind", "command"]
+                                      "required": ["kind", "command", "pinned"]
                                     },
                                     "project": {
                                       "type": "object",

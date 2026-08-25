@@ -172,7 +172,7 @@ export default async function ModelPage({ params, searchParams }: Props) {
               {model.stats.operations} operations
             </span>{" "}
             <span className="text-muted">
-              have a deployable best known on {model.selectedGpu}
+              have a usable best known on {model.selectedGpu}
             </span>
             {model.gaps.length + undeployable.length > 0 && (
               <span className="text-subtle">

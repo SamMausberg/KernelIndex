@@ -8,7 +8,7 @@ import { Section } from "@/components/section"
 import {
   AnswerSlots,
   ByLanguage,
-  isDeployable,
+  isUsable,
 } from "@/features/answer/answer-slots"
 import { FollowButton } from "@/features/follow/follow-button"
 import { ResultRowItem, ResultTableHead } from "@/features/search/result-row"
@@ -159,9 +159,7 @@ export function OperationRecords({
   // and, when it differs, the fastest row passing deployability (§11.8).
   const top = variant.records[0]
   const deploy =
-    top && !isDeployable(top)
-      ? (variant.records.find(isDeployable) ?? null)
-      : null
+    top && !isUsable(top) ? (variant.records.find(isUsable) ?? null) : null
   const vsBaseline =
     top &&
     !top.baseline &&

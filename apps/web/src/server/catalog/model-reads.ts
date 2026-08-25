@@ -159,11 +159,12 @@ export function bestKnown(
       cohortSize: ranked.length,
     })
   const deployableEntry = ranked.find((entry) => {
-    const { implementation } = byId.get(entry.id) as ModelRun
+    const row = rowOf(entry)
     return deployability({
-      sourceAvailable: implementation.sourceAvailable,
-      installable: implementation.installable,
-      licenseConcluded: implementation.licenseExpression,
+      sourceAvailable: row.sourceAvailable,
+      installable: row.installable,
+      installPinned: row.install?.pinned ?? false,
+      licenseConcluded: row.license.concluded,
     }).eligible
   })
   return {

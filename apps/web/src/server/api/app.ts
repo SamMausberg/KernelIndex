@@ -61,6 +61,7 @@ const isDeployable = (row: ResultRow) =>
   deployability({
     sourceAvailable: row.sourceAvailable,
     installable: row.installable,
+    installPinned: row.install?.pinned ?? false,
     licenseConcluded: row.license.concluded,
   }).eligible
 

@@ -81,6 +81,18 @@ try {
         + (select count(*) from implementations
              where manifest #>> '{metadata,description}' like '%—%') n`,
   )
+  // §8.15 adoption integrity: a pip install line stated beside evidence that
+  // recorded a measured version must pin to one. settleInstallPins keeps
+  // this at zero; a violation means a publication path skipped the settle.
+  await count(
+    "unpinned pip install lines with a measured version on record",
+    sql`select count(*) n from implementations i
+        where i.install_kind = 'pip'
+          and i.install_command is not null
+          and i.install_command not like '%==%'
+          and exists (select 1 from benchmark_runs r
+            where r.implementation_id = i.id and r.package_version is not null)`,
+  )
   await count(
     "workloads of one operation sharing a display identity",
     sql`select coalesce(sum(n) - count(*), 0) n from (

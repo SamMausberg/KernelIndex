@@ -18,7 +18,6 @@ import { getImplementationPage } from "@/lib/catalog"
 import { countNoun, evidenceLabel, formatDateUTC } from "@/lib/format"
 import { splitImplementationName } from "@/lib/names"
 import { env } from "@/server/env"
-import { deployability } from "@/server/policy/deployability"
 
 // Implementation dossiers change only on importer runs; ISR on first hit.
 export const revalidate = 300
@@ -55,11 +54,6 @@ export default async function ImplementationPage({ params }: Props) {
   // What it was actually measured on — declared support is a claim, this is
   // evidence (§11.8): distinct GPUs from the eligible runs on this revision.
   const testedOn = [...new Set(model.bestResults.map((r) => r.hardware.model))]
-  const deployable = deployability({
-    sourceAvailable: model.source.available,
-    installable: model.usage.install !== null,
-    licenseConcluded: model.license.concluded,
-  }).eligible
 
   return (
     <>
@@ -129,18 +123,22 @@ export default async function ImplementationPage({ params }: Props) {
 
       <main className="shell pb-24">
         <Section id="use" title="Use it">
-          {/* The deployability verdict first (§16.7): can this be used, in
-              one neutral line, before any evidence or provenance. */}
+          {/* The usability verdict first (§16.7): can this be used, in one
+              neutral factual line, before any evidence or provenance. The
+              ladder states observable facts — "deployable" was retired with
+              policy v2 because it promised more than the facts prove. */}
           <p className="mb-4 text-body text-fg">
-            {deployable
-              ? `Deployable · ${model.usage.install?.kind}`
-              : model.usage.install
-                ? `Installable · ${model.usage.install.kind}`
-                : model.sourceCode
-                  ? "Vendorable · source mirrored"
-                  : model.source.available
-                    ? "Source available upstream"
-                    : "Benchmark submission only · no public source"}
+            {model.usage.install
+              ? `Installable · ${model.usage.install.kind} · ${
+                  model.usage.install.pinned
+                    ? "pinned to the measured build"
+                    : "unpinned"
+                }`
+              : model.sourceCode
+                ? "Vendorable · source mirrored"
+                : model.source.available
+                  ? "Source available upstream"
+                  : "Benchmark submission only · no public source"}
             <span className="text-subtle">
               {" · "}
               {model.license.concluded ??
@@ -156,15 +154,22 @@ export default async function ImplementationPage({ params }: Props) {
           <div className="grid grid-cols-[minmax(0,1.5fr)_minmax(280px,1fr)] gap-10 max-lg:grid-cols-1">
             <div>
               {model.usage.install ? (
-                <div className="plate flex max-w-[560px] items-center gap-2.5 py-2 pr-2 pl-3">
-                  <code className="min-w-0 flex-1 truncate font-mono text-small text-muted">
-                    {model.usage.install.command}
-                  </code>
-                  <CopyButton
-                    text={model.usage.install.command}
-                    event="install_copied"
-                  />
-                </div>
+                <>
+                  <div className="plate flex max-w-[560px] items-center gap-2.5 py-2 pr-2 pl-3">
+                    <code className="min-w-0 flex-1 truncate font-mono text-small text-muted">
+                      {model.usage.install.command}
+                    </code>
+                    <CopyButton
+                      text={model.usage.install.command}
+                      event="install_copied"
+                    />
+                  </div>
+                  <p className="mt-2 max-w-[560px] text-small text-subtle">
+                    {model.usage.install.pinned
+                      ? "Pinned: this command installs the release the evidence below measured."
+                      : "Unpinned: installs the current release, not necessarily the measured build."}
+                  </p>
+                </>
               ) : model.sourceCode ? (
                 /* No package exists, but the code does (§8.13): vendoring is
                    the honest adoption path for most of the corpus. */

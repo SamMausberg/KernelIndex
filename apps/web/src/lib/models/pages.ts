@@ -6,6 +6,7 @@ import type {
   CohortOption,
   ComparisonProfile,
   EvidenceLevel,
+  InstallLine,
   KeyValue,
   LicenseInfo,
   NearestCase,
@@ -272,7 +273,7 @@ export type CompareRun = {
   eligible: boolean
   ineligibleReasons: string[]
   license: LicenseInfo
-  install: { kind: string; command: string } | null
+  install: InstallLine | null
   sourceAvailable: boolean
   observedAt: string
 }
@@ -443,7 +444,7 @@ export type ImplementationPageModel = {
   project: { name: string; slug: string; repositoryUrl: string | null }
   usage: {
     /** Null renders as an explicit "no install recipe recorded". */
-    install: { kind: string; command: string } | null
+    install: InstallLine | null
     invocationExample: string | null
     requirements: { name: string; constraint: string }[]
   }

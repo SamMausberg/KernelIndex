@@ -112,7 +112,7 @@ export type ModelIndexModel = {
 /**
  * One operation's best-known answer on the selected GPU: the fastest entry
  * of the operation's largest comparison cohort there, and the fastest entry
- * passing deployability-v1 — the answer card's two-slot semantics per row.
+ * passing deployability-v2 — the answer card's two-slot semantics per row.
  */
 export type ModelBestKnown = {
   operation: { name: string; slug: string }

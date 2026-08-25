@@ -3,6 +3,7 @@
 // against the same author's previous imported submission.
 import { and, desc, eq } from "drizzle-orm"
 import type { ImplementationPageModel } from "../../lib/catalog-models.ts"
+import { installIsPinned } from "../../lib/install.ts"
 import { implementationDisplayName } from "../../lib/names.ts"
 import type { ImplementationRevisionManifest } from "../../schemas/kinds.ts"
 import { attestationCounts } from "../attestations.ts"
@@ -284,7 +285,16 @@ export async function getImplementationPage(
       holder.current.runId !== null && runIds.has(holder.current.runId),
   ).length
 
-  const install = installCommandOf(variant?.install)
+  // Pin the install line to the newest measured package version among the
+  // evidence rows (§8.15); an unversioned recipe with no measured version
+  // stays stated but flags unpinned.
+  const measuredVersion =
+    joined
+      .filter((j) => j.run.packageVersion !== null)
+      .sort(
+        (a, b) => b.run.observedAt.getTime() - a.run.observedAt.getTime(),
+      )[0]?.run.packageVersion ?? null
+  const install = installCommandOf(variant?.install, measuredVersion)
 
   // §16.10: community attestations on each evidence row, one grouped count.
   const notes = await attestationCounts(
@@ -316,7 +326,11 @@ export async function getImplementationPage(
       // page denying an install recipe the row beside it was already showing.
       install:
         variant && install
-          ? { kind: variant.install.kind, command: install }
+          ? {
+              kind: variant.install.kind,
+              command: install,
+              pinned: installIsPinned(variant.install.kind, install),
+            }
           : null,
       invocationExample: null,
       requirements: Object.entries(variant?.requirements ?? {}).map(

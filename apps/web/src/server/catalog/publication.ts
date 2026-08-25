@@ -281,15 +281,23 @@ type InstallRecipe = NonNullable<
  * fields are enough to state one; a kind that names nothing installable
  * (`source`, or a variant with no coordinates) still yields null, because
  * "vendor the source" is a different action and the row says so.
+ *
+ * `measuredVersion` completes a version-less pip recipe with the package
+ * version the evidence actually measured, so the command resolves to the
+ * measured code rather than whatever the index serves today. A command
+ * without a pin is still stated — but flagged unpinned everywhere it renders.
  */
 export function installCommandOf(
   recipe: InstallRecipe | undefined,
+  measuredVersion?: string | null,
 ): string | null {
   if (!recipe) return null
   if (recipe.command) return recipe.command
-  const version = recipe.version ? `==${recipe.version}` : ""
+  const version = recipe.version ?? measuredVersion ?? null
   if (recipe.kind === "pip" && recipe.package)
-    return `pip install ${recipe.package}${version}`
+    return version
+      ? `pip install "${recipe.package}==${version}"`
+      : `pip install ${recipe.package}`
   if (recipe.kind === "git" && recipe.repository)
     return `pip install git+${recipe.repository}${recipe.commit ? `@${recipe.commit}` : ""}`
   if (recipe.kind === "container" && recipe.package)
@@ -430,6 +438,16 @@ export async function refreshWorkloadSummaries(
 export async function refreshAvailability(
   database: DbHandle,
 ): Promise<{ implementations: number; runs: number }> {
+  // Settle each run's measured package version from its manifest labels
+  // first: the implementation pins below read the scalar column.
+  await database.execute(sql`
+    update ${schema.benchmarkRuns} set package_version = coalesce(
+      manifest #>> '{run,metadata,labels,package_version}',
+      manifest #>> '{run,metadata,labels,liger_version}')
+    where package_version is distinct from coalesce(
+      manifest #>> '{run,metadata,labels,package_version}',
+      manifest #>> '{run,metadata,labels,liger_version}')`)
+  const measured = await newestMeasuredVersions(database)
   const rows = await database
     .select({
       id: schema.implementations.id,
@@ -451,7 +469,7 @@ export async function refreshAvailability(
     const recipe = manifest.spec.buildVariants?.[0]?.install
     const next = {
       id: row.id,
-      installCommand: installCommandOf(recipe),
+      installCommand: installCommandOf(recipe, measured.get(row.id)),
       installKind: recipe?.kind ?? null,
       sourceAvailable: sourceIsPublic(manifest, row.repository),
     }
@@ -511,6 +529,89 @@ export async function refreshAvailability(
       ),
     )
   return { implementations: updates.length, runs: runs.count ?? 0 }
+}
+
+/** Newest measured package version per implementation: the version label of
+ * its most recently observed run that carries one. */
+async function newestMeasuredVersions(
+  database: DbHandle,
+  implementationIds?: string[],
+): Promise<Map<string, string>> {
+  const rows = await database
+    .selectDistinctOn([schema.benchmarkRuns.implementationId], {
+      implementationId: schema.benchmarkRuns.implementationId,
+      version: schema.benchmarkRuns.packageVersion,
+    })
+    .from(schema.benchmarkRuns)
+    .where(
+      and(
+        sql`${schema.benchmarkRuns.packageVersion} is not null`,
+        implementationIds
+          ? inArray(schema.benchmarkRuns.implementationId, implementationIds)
+          : undefined,
+      ),
+    )
+    .orderBy(
+      schema.benchmarkRuns.implementationId,
+      sql`${schema.benchmarkRuns.observedAt} desc`,
+    )
+  return new Map(
+    rows.flatMap((row) =>
+      row.version === null ? [] : [[row.implementationId, row.version]],
+    ),
+  )
+}
+
+/**
+ * Pin implementation install lines to measured code (§8.15): a pip recipe
+ * that names no version completes with the newest measured package version
+ * among the implementation's runs. Called after each publication for the
+ * touched implementations, and by refreshAvailability for the whole catalog.
+ * Idempotent: only changed commands are written.
+ */
+export async function settleInstallPins(
+  database: DbHandle,
+  implementationIds: string[],
+): Promise<number> {
+  if (implementationIds.length === 0) return 0
+  const measured = await newestMeasuredVersions(database, implementationIds)
+  if (measured.size === 0) return 0
+  const rows = await inChunks([...measured.keys()], (slice) =>
+    database
+      .select({
+        id: schema.implementations.id,
+        manifest: schema.implementations.manifest,
+        installCommand: schema.implementations.installCommand,
+      })
+      .from(schema.implementations)
+      .where(inArray(schema.implementations.id, slice)),
+  )
+  const updates = rows.flatMap((row) => {
+    const manifest = row.manifest as ImplementationRevisionManifest
+    const recipe = manifest.spec.buildVariants?.[0]?.install
+    const next = installCommandOf(recipe, measured.get(row.id))
+    return next === row.installCommand
+      ? []
+      : [{ id: row.id, installCommand: next }]
+  })
+  await perChunk(updates, (slice) =>
+    database
+      .update(schema.implementations)
+      .set({
+        installCommand: caseById(
+          schema.implementations.id,
+          slice,
+          (update) => sql`${update.installCommand}::text`,
+        ),
+      })
+      .where(
+        inArray(
+          schema.implementations.id,
+          slice.map((update) => update.id),
+        ),
+      ),
+  )
+  return updates.length
 }
 
 function layoutKeyOf(tensor: { shape: number[]; strides?: number[] }): string {
@@ -1231,6 +1332,10 @@ export async function publishBundle(
           manifest.spec.evidence?.logs !== undefined,
         sourceNative: manifest.spec.sourceNative !== undefined,
         solScore: manifest.spec.sourceNative?.metrics?.sol_score ?? null,
+        packageVersion:
+          manifest.metadata.labels?.package_version ??
+          manifest.metadata.labels?.liger_version ??
+          null,
         environmentSummary:
           [
             environment.spec.software.cudaToolkit
@@ -1321,6 +1426,12 @@ export async function publishBundle(
     // every touched operation resettles its workloads' display identities.
     await refreshWorkloadSummaries(tx, [
       ...new Set([...workloadRowByDigest.values()].map((row) => row.id)),
+    ])
+
+    // New evidence can carry a newer measured package version (§8.15):
+    // re-pin the touched implementations' install lines to it.
+    await settleInstallPins(tx, [
+      ...new Set(runValues.map((row) => row.implementationId)),
     ])
 
     // Derived ranking may have changed (§11.10): append the record

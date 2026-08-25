@@ -13,11 +13,15 @@ import {
 } from "@/lib/format"
 import { deployability } from "@/server/policy/deployability"
 
-/** One policy, one predicate (§11.8). */
-export const isDeployable = (row: ResultRow) =>
+/** One policy, one predicate (§11.8): a row is usable today when its source
+ * is public, its install line pins to the measured code, and its license is
+ * known. The word "deployable" was retired with policy v2 — it promised
+ * more than the predicate proves. */
+export const isUsable = (row: ResultRow) =>
   deployability({
     sourceAvailable: row.sourceAvailable,
     installable: row.installable,
+    installPinned: row.install?.pinned ?? false,
     licenseConcluded: row.license.concluded,
   }).eligible
 
@@ -25,7 +29,7 @@ export const isDeployable = (row: ResultRow) =>
 export function answerLabel(row: ResultRow) {
   if (row.evidence === "verified" || row.evidence === "replicated")
     return "Fastest verified"
-  if (row.evidence === "reproducible") return "Fastest reproducible"
+  if (row.evidence === "reproducible") return "Fastest reproduction-ready"
   return "Fastest reported"
 }
 
@@ -110,12 +114,23 @@ function Slot({
         {row.caveats.length > 0 ? ` ${row.caveats.join(". ")}.` : ""}
       </p>
       {row.install && (
-        <div className="plate mt-4 flex max-w-[520px] items-center gap-2.5 py-2 pr-2 pl-3">
-          <code className="min-w-0 flex-1 truncate font-mono text-small text-muted">
-            {row.install.command}
-          </code>
-          <CopyButton text={row.install.command} event="install_copied" />
-        </div>
+        <>
+          <div className="plate mt-4 flex max-w-[520px] items-center gap-2.5 py-2 pr-2 pl-3">
+            <code className="min-w-0 flex-1 truncate font-mono text-small text-muted">
+              {row.install.command}
+            </code>
+            <CopyButton text={row.install.command} event="install_copied" />
+          </div>
+          {/* An unpinned command never passes silently (§8.15): it installs
+              whatever the index serves today, not necessarily what was
+              measured, and the answer says so where the command sits. */}
+          {!row.install.pinned && (
+            <p className="mt-1.5 max-w-[520px] text-small text-warning">
+              Unpinned: installs the current release, not necessarily the
+              measured build.
+            </p>
+          )}
+        </>
       )}
       {/* One action row: the adoption path and the evidence links share a
           line instead of stacking three rows under every answer. */}
@@ -151,10 +166,10 @@ function Slot({
 
 /**
  * The answer, not a ranking (§16.6): the fastest known result and, when it
- * differs, the fastest one that passes the deployability policy — as peer
- * slots with the gap stated. One slot when they coincide.
+ * differs, the fastest one that passes the usability policy — as peer slots
+ * with the gap stated. One slot when they coincide.
  *
- * The deployable row leads when there is one. Usability is tracked separately
+ * The usable row leads when there is one. Usability is tracked separately
  * from speed and the two answer different questions, but only one of them can
  * be acted on today: a reader who takes the lead slot at face value should end
  * at "I can use this". The faster number is never hidden — it keeps a full
@@ -169,7 +184,7 @@ export function AnswerSlots({
   top: ResultRow
   /** Search states evidence tier ("Fastest verified"); default derives it. */
   topLabel?: string
-  /** The fastest deployable row, when it isn't `top` itself. */
+  /** The fastest usable row, when it isn't `top` itself. */
   deploy: ResultRow | null
   vsBaseline?: number | null
 }) {
@@ -177,7 +192,7 @@ export function AnswerSlots({
   if (deploy === null) {
     return (
       <Slot
-        label={isDeployable(top) ? `${label} · deployable` : label}
+        label={isUsable(top) ? `${label} · usable today` : label}
         row={top}
         vsBaseline={vsBaseline}
       />
@@ -186,7 +201,7 @@ export function AnswerSlots({
   return (
     <div className="grid grid-cols-2 gap-10 max-lg:grid-cols-1">
       <Slot
-        label="Recommended · deployable"
+        label="Best usable"
         row={deploy}
         delta={deltaVsFastest(deploy, top)}
       />
@@ -194,7 +209,7 @@ export function AnswerSlots({
         {/* Why it isn't the recommendation, in the eyebrow — the slot's own
             action row then states what adopting it would actually take. */}
         <Slot
-          label={`${label} · not deployable`}
+          label={`${label} · not usable as-is`}
           row={top}
           vsBaseline={vsBaseline}
         />

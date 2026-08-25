@@ -170,7 +170,9 @@ export const implementationDossier = z.object({
     repositoryUrl: z.string().nullable(),
   }),
   usage: z.object({
-    install: z.object({ kind: z.string(), command: z.string() }).nullable(),
+    install: z
+      .object({ kind: z.string(), command: z.string(), pinned: z.boolean() })
+      .nullable(),
     invocationExample: z.string().nullable(),
     requirements: z.array(
       z.object({ name: z.string(), constraint: z.string() }),

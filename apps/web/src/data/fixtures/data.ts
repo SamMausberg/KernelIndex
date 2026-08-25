@@ -409,7 +409,11 @@ export function rowFromRun(r: FxRun): ResultRow {
     runId: r.id,
     implementation: { name: r.impl.name, slug: r.impl.slug },
     install: r.installable
-      ? { kind: "pip", command: `pip install ${r.project.slug}` }
+      ? {
+          kind: "pip",
+          command: `pip install "${r.project.slug}==2.4.1"`,
+          pinned: true,
+        }
       : null,
     project: r.project,
     revision: r.impl.revision,
@@ -478,7 +482,12 @@ export const SUPPORTED_UNMEASURED: ResultRow = {
     name: "atlas-fused-residual-rmsnorm-vectorized-bf16-persistent-warp-specialized",
     slug: "atlas-fused-residual-rmsnorm",
   },
-  install: { kind: "pip", command: "pip install atlas-primitives" },
+  // Deliberately unpinned: exercises the unpinned-command rendering path.
+  install: {
+    kind: "pip",
+    command: "pip install atlas-primitives",
+    pinned: false,
+  },
   project: { name: "Atlas Primitives (fictional)", slug: "atlas-primitives" },
   revision: "v2.1.0",
   operation: { name: "RMSNorm, hidden 4096", slug: "rmsnorm-h4096" },

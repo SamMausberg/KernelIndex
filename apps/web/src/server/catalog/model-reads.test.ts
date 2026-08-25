@@ -41,6 +41,7 @@ function row(
       sourceNative: overrides.sourceNative ?? false,
       environmentSummary: null,
       solScore: null,
+      packageVersion: null,
     },
     implementation: {
       id: `impl-${id}`,
@@ -50,7 +51,7 @@ function row(
       framework: null,
       title: null,
       installKind: deployable ? "pip" : null,
-      installCommand: deployable ? "pip install x" : null,
+      installCommand: deployable ? 'pip install "x==1.0"' : null,
       licenseDeclared: deployable ? "MIT" : null,
       sourceAvailable: deployable,
       installable: deployable,

@@ -8,9 +8,11 @@ export type TrustRow = {
   license: { declared: string | null; concluded: string | null }
 }
 
+// "reproducible" (the stored fact and API value) displays as
+// "Reproduction-ready": the rerun inputs are present, not necessarily rerun.
 const EVIDENCE_LABELS: Record<string, string> = {
   reported: "Reported",
-  reproducible: "Reproducible",
+  reproducible: "Reproduction-ready",
   verified: "Verified",
   replicated: "Replicated",
 }

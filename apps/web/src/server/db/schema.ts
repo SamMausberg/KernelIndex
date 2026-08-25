@@ -268,6 +268,9 @@ export const benchmarkRuns = pgTable(
     // Source-published SOL-Score (fraction of the source's speed-of-light
     // estimate), when the source publishes one; headline context on rows.
     solScore: numeric("sol_score", { mode: "number" }),
+    // Package version the run measured (manifest label `package_version`,
+    // legacy `liger_version`); pins the run's install line to measured code.
+    packageVersion: text("package_version"),
     manifest: jsonb("manifest").notNull(),
     supersedesId: uuid("supersedes_id").references(
       (): AnyPgColumn => benchmarkRuns.id,

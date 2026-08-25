@@ -515,7 +515,12 @@ export function runFromRow(input: {
         `liger-${spec.csvName}-${row.kernel_operation_mode}-${row.kernel_provider}-${row.gpu_name}-${caseKey(binding)}-${row.timestamp}`,
       ),
       title: `${spec.title} · ${row.kernel_provider} · ${row.kernel_operation_mode}`,
-      labels: { liger_version: row.liger_version },
+      // package_version is the normalized measured-version label publication
+      // reads (§8.15); liger_version stays as the source's own spelling.
+      labels: {
+        liger_version: row.liger_version,
+        package_version: row.liger_version,
+      },
     },
     spec: {
       implementationDigest: input.implementationDigest,

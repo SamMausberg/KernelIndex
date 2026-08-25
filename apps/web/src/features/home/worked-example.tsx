@@ -1,6 +1,6 @@
 import { CopyButton } from "@/components/copy-button"
 import { Link } from "@/components/quiet-link"
-import { isDeployable } from "@/features/answer/answer-slots"
+import { isUsable } from "@/features/answer/answer-slots"
 import { getOperationIndex, getRecordsPage, searchCatalog } from "@/lib/catalog"
 import { evidenceLabel, formatDateUTC, formatPrimaryParts } from "@/lib/format"
 import { HERO_FAMILIES } from "@/lib/priority"
@@ -31,7 +31,7 @@ export async function WorkedExample() {
   // Ledger order is newest-indexed first, so the first match is also the
   // freshest evidence among equally-prioritised families.
   const holder = ledger.records
-    .filter((record) => isDeployable(record.current))
+    .filter((record) => isUsable(record.current))
     .sort((a, b) => rank(a.operation.slug) - rank(b.operation.slug))[0]
   const fallback = index
     .filter((entry) => HERO_FAMILIES.includes(entry.family) && entry.runs > 0)
@@ -43,7 +43,7 @@ export async function WorkedExample() {
     cohort: holder?.cohortKey,
   })
   const exact = model.groups.exact
-  const top = exact.find(isDeployable) ?? exact[0]
+  const top = exact.find(isUsable) ?? exact[0]
   if (!top?.primary || !model.operation) return null
 
   // Same baseline framing as the search hero: state the ratio only when a
@@ -107,12 +107,20 @@ export async function WorkedExample() {
       </p>
       {/* The payoff, when the answer has one: the line you actually run. */}
       {top.install && (
-        <div className="plate mt-2.5 flex max-w-[420px] items-center gap-2.5 py-1.5 pr-1.5 pl-3">
-          <code className="min-w-0 flex-1 truncate font-mono text-small text-muted">
-            {top.install.command}
-          </code>
-          <CopyButton text={top.install.command} event="install_copied" />
-        </div>
+        <>
+          <div className="plate mt-2.5 flex max-w-[420px] items-center gap-2.5 py-1.5 pr-1.5 pl-3">
+            <code className="min-w-0 flex-1 truncate font-mono text-small text-muted">
+              {top.install.command}
+            </code>
+            <CopyButton text={top.install.command} event="install_copied" />
+          </div>
+          {!top.install.pinned && (
+            <p className="mt-1.5 text-small text-warning">
+              Unpinned: installs the current release, not necessarily the
+              measured build.
+            </p>
+          )}
+        </>
       )}
     </div>
   )

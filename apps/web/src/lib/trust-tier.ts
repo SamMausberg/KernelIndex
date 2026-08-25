@@ -15,7 +15,7 @@ export type TrustFacts = {
 /** Lower rank = stronger tier; `label` is the divider/section wording. */
 export const TRUST_TIERS = [
   "Verified",
-  "Reproducible",
+  "Reproduction-ready",
   "License + source",
   "Source available",
   "No source",
