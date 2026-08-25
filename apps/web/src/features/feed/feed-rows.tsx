@@ -1,6 +1,13 @@
+import { ImplName } from "@/components/impl-name"
 import { Link } from "@/components/quiet-link"
 import type { FeedEntry, FeedModel } from "@/lib/catalog"
-import { countNoun, formatImprovement, formatPrimary } from "@/lib/format"
+import {
+  countNoun,
+  formatImprovement,
+  formatPrimary,
+  formatWorkloadSummary,
+  shortHardware,
+} from "@/lib/format"
 
 /** One entry as one line: the fact, then its links. Record breaks lead
  * with the implementation and the number; imports state what the batch
@@ -13,7 +20,7 @@ function FeedLine({ entry, isNew }: { entry: FeedEntry; isNew: boolean }) {
     return (
       <p className="py-1.5 text-body">
         <Link href={`/implementations/${entry.implementation.slug}`}>
-          {entry.implementation.name}
+          <ImplName name={entry.implementation.name} />
         </Link>
         <span className="text-subtle"> took the record for </span>
         <Link
@@ -28,11 +35,12 @@ function FeedLine({ entry, isNew }: { entry: FeedEntry; isNew: boolean }) {
         {formatImprovement(entry.improvementPct) && (
           <span className="text-subtle">
             , {formatImprovement(entry.improvementPct)} than{" "}
-            {entry.previous.implementation.name}
+            <ImplName name={entry.previous.implementation.name} />
           </span>
         )}
         <span className="ml-2 font-mono text-mini text-faint">
-          {entry.workloadSummary} · {entry.hardware}
+          {formatWorkloadSummary(entry.workloadSummary)} ·{" "}
+          {shortHardware(entry.hardware)}
         </span>
         {" · "}
         <Link href={`/runs/${entry.runId}`} className="text-small">
@@ -62,7 +70,7 @@ function FeedLine({ entry, isNew }: { entry: FeedEntry; isNew: boolean }) {
     return (
       <p className="py-1.5 text-body">
         <Link href={`/implementations/${entry.implementation.slug}`}>
-          {entry.implementation.name}
+          <ImplName name={entry.implementation.name} />
         </Link>
         <span className="text-subtle">
           {" "}

@@ -1,4 +1,5 @@
 import { ExpandRows } from "@/components/expand-rows"
+import { ImplName } from "@/components/impl-name"
 import { Metric } from "@/components/metric"
 import { Link } from "@/components/quiet-link"
 import { AvailabilityCell, EvidenceCell } from "@/components/trust"
@@ -72,7 +73,7 @@ export function ImplementationsTable({
                 href={`/implementations/${impl.slug}`}
                 className="text-body"
               >
-                {impl.name}
+                <ImplName name={impl.name} />
               </Link>
               {impl.project.name !== impl.name && (
                 <span className="ml-2 text-small text-faint">

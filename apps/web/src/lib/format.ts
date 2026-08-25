@@ -161,6 +161,21 @@ export function formatSourceNativeMetrics(
 
 /** "2026-08-11" from an ISO timestamp; "—" when never tested. Dense cells
  * use it too: a year-less "10-21" across a year boundary misleads. */
+/** Display form of a workload summary's axis tokens: `batch_size=7` reads
+ * "batch 7". Display-only; the stored summary stays the identity. */
+export function formatWorkloadSummary(summary: string): string {
+  return summary.replaceAll(
+    /([a-z][a-z0-9_]*)=/gi,
+    (_, axis: string) => `${axis.replace(/_size$/, "").replaceAll("_", " ")} `,
+  )
+}
+
+/** Hardware model without the vendor prefix, for meta lines where the row
+ * is already scoped; full names stay on the GPU surfaces. */
+export function shortHardware(model: string): string {
+  return model.replace("NVIDIA ", "")
+}
+
 export function formatDateUTC(iso: string | null): string {
   return iso ? iso.slice(0, 10) : "—"
 }

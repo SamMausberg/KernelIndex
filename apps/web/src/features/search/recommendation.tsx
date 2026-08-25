@@ -1,3 +1,4 @@
+import { ImplName } from "@/components/impl-name"
 import { KeyValueList } from "@/components/key-value-list"
 import { Link } from "@/components/quiet-link"
 import {
@@ -106,7 +107,7 @@ export function Recommendation({
                   href={`/implementations/${qualifier.row.implementation.slug}`}
                   className="font-mono text-body"
                 >
-                  {qualifier.row.implementation.name}
+                  <ImplName name={qualifier.row.implementation.name} />
                 </Link>{" "}
                 at{" "}
               </>

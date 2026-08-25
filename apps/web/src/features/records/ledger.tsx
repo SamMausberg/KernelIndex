@@ -4,13 +4,14 @@ import { startTransition, useEffect, useState } from "react"
 import { ApiLink } from "@/components/api-link"
 import { FilterChip } from "@/components/chip"
 import { ContextHeader } from "@/components/context-header"
-import { Metric } from "@/components/metric"
-import { Pager } from "@/components/pager"
 // The records ledger island (§16.12): the server renders any deep-linked URL
 // from its precomputed slice (SEO and no-JS unchanged), then the full model
 // arrives once from the CDN-cached /records/data route and every filter,
 // sort, view, and page interaction becomes an instant client transition with
 // the URL kept shareable. Markup is identical to the server-rendered form.
+import { ImplName } from "@/components/impl-name"
+import { Metric } from "@/components/metric"
+import { Pager } from "@/components/pager"
 import { Link } from "@/components/quiet-link"
 import { TrustCell } from "@/components/trust"
 import {
@@ -18,6 +19,8 @@ import {
   formatImprovement,
   formatPrimary,
   formatSolScoreCell,
+  formatWorkloadSummary,
+  shortHardware,
 } from "@/lib/format"
 import { TRUST_TIERS, trustTier } from "@/lib/trust-tier"
 import {
@@ -35,9 +38,9 @@ import {
 import { RecordSpark, RecordTimeline } from "./timeline"
 
 const VIEWS: { key: RecordsView; label: string }[] = [
-  { key: "current", label: "Current records" },
+  { key: "current", label: "Current" },
   { key: "broken", label: "Recently broken" },
-  { key: "history", label: "Record history" },
+  { key: "history", label: "History" },
 ]
 
 // One in-flight/settled fetch of the full model per session (CDN-cached).
@@ -55,23 +58,21 @@ function loadModel(): Promise<LedgerModel | null> {
 const CURRENT_GRID =
   "grid grid-cols-[minmax(240px,1.5fr)_92px_170px_minmax(200px,1fr)_28px] min-w-[820px]"
 
-/** The page's lead (§16 page grammar): the newest broken records as the
- * first-screen story, before any control — hairline rows in the page's own
- * table idiom, the after-value the loudest cell. The whole row reaches the
- * record's run. */
+/** The page's lead story, kept unmistakably secondary to the ledger (Sam,
+ * 2026-08-25): an engraved eyebrow instead of a page-style heading, values
+ * at body size, three rows. The whole row reaches the record's run. */
 function LatestBreaks({ latest }: { latest: LedgerEvent[] }) {
   if (latest.length === 0) return null
   return (
     <div className="pt-6 pb-2">
-      <div className="mb-3 flex items-baseline justify-between gap-4">
-        <h2 className="text-title font-medium">Latest breaks</h2>
-        <span className="text-small text-faint">newest indexed first</span>
+      <div className="mb-1.5 font-mono text-label text-faint uppercase">
+        Latest record changes
       </div>
       <div className="overflow-x-auto border-t border-border-strong">
         {latest.map(({ holder, event }) => (
           <div
             key={event.runId}
-            className="relative grid min-w-[820px] grid-cols-[minmax(230px,1.2fr)_310px_minmax(190px,1fr)] items-baseline gap-x-6 border-b border-line py-3 transition-colors hover:bg-raised"
+            className="relative grid min-w-[820px] grid-cols-[minmax(230px,1.2fr)_310px_minmax(190px,1fr)] items-baseline gap-x-6 border-b border-line py-2.5 transition-colors hover:bg-raised"
           >
             <Link
               href={`/runs/${event.runId}`}
@@ -82,17 +83,15 @@ function LatestBreaks({ latest }: { latest: LedgerEvent[] }) {
             <span className="truncate text-body text-fg">
               {holder.operation.name}
               <span className="ml-2 font-mono text-mini text-faint">
-                {holder.workloadSummary}
+                {formatWorkloadSummary(holder.workloadSummary)}
               </span>
             </span>
-            <span className="font-mono whitespace-nowrap">
-              <span className="text-small text-faint">
+            <span className="font-mono text-body whitespace-nowrap">
+              <span className="text-faint">
                 {event.previousValue ? formatPrimary(event.previousValue) : "—"}
               </span>{" "}
               <span className="text-ghost">→</span>{" "}
-              <span className="text-lead font-medium text-fg">
-                {formatPrimary(event.value)}
-              </span>
+              <span className="text-fg">{formatPrimary(event.value)}</span>
               {formatImprovement(event.improvementPct) && (
                 <span className="ml-2 text-small text-success">
                   {formatImprovement(event.improvementPct)}
@@ -100,7 +99,8 @@ function LatestBreaks({ latest }: { latest: LedgerEvent[] }) {
               )}
             </span>
             <span className="truncate text-small text-subtle">
-              {event.implementation.name} · {holder.hardware}
+              <ImplName name={event.implementation.name} /> ·{" "}
+              {shortHardware(holder.hardware)}
             </span>
           </div>
         ))}
@@ -109,7 +109,15 @@ function LatestBreaks({ latest }: { latest: LedgerEvent[] }) {
   )
 }
 
-function HolderRow({ holder }: { holder: LedgerHolder }) {
+function HolderRow({
+  holder,
+  showIndexed,
+}: {
+  holder: LedgerHolder
+  /** The indexed date joins the collapsed row only when it is the sort key
+   * (Newest); otherwise it is expansion detail (§16 meta diet). */
+  showIndexed: boolean
+}) {
   const record = holder.current
   // "New" means newly indexed, not newly observed by the source (§16.5).
   // Day-quantized clock, like the timeline's `now` below: identical between
@@ -170,7 +178,7 @@ function HolderRow({ holder }: { holder: LedgerHolder }) {
               prefetch={false}
               className="text-body font-medium"
             >
-              {record.implementation.name}
+              <ImplName name={record.implementation.name} />
             </Link>
             {record.baseline && (
               <span className="ml-2 font-mono text-label text-faint uppercase">
@@ -185,13 +193,16 @@ function HolderRow({ holder }: { holder: LedgerHolder }) {
             ›
           </div>
         </div>
-        {/* Three facts on the collapsed row (§16 meta diet); trust tier and
-            project live in the expansion with the environment. */}
+        {/* Two facts on the collapsed row (§16 meta diet): workload and
+            hardware. Provenance bookkeeping (indexing date, trust tier,
+            project) lives in the expansion. */}
         <div className="mt-1 min-w-[820px] truncate font-mono text-mini text-faint">
           {[
-            holder.workloadSummary,
-            holder.hardware,
-            `indexed ${formatDateUTC(holder.indexedAt)}`,
+            formatWorkloadSummary(holder.workloadSummary),
+            shortHardware(holder.hardware),
+            ...(showIndexed
+              ? [`indexed ${formatDateUTC(holder.indexedAt)}`]
+              : []),
           ].join(" · ")}
           {isNew && <span className="text-accent"> · new</span>}
         </div>
@@ -199,6 +210,7 @@ function HolderRow({ holder }: { holder: LedgerHolder }) {
       <div className="border-t border-line bg-surface pb-4">
         <div className="pt-3 font-mono text-mini text-faint">
           {[
+            `indexed ${formatDateUTC(holder.indexedAt)}`,
             holder.environmentSummary,
             TRUST_TIERS[
               trustTier({
@@ -242,7 +254,7 @@ function HolderRow({ holder }: { holder: LedgerHolder }) {
               prefetch={false}
               className={`truncate font-mono text-small ${index === 0 ? "" : "text-subtle"}`}
             >
-              {event.implementation.name}
+              <ImplName name={event.implementation.name} />
             </Link>
             <span className="text-faint">
               {index === 0
@@ -314,7 +326,7 @@ function BrokenRows({ transitions }: { transitions: LedgerEvent[] }) {
           <div className="min-w-0 truncate py-3.5 pr-3 text-body text-fg">
             {holder.operation.name}
             <span className="ml-2 font-mono text-mini text-faint">
-              {holder.workloadSummary}
+              {formatWorkloadSummary(holder.workloadSummary)}
             </span>
           </div>
           <div className="py-3.5 pr-3 font-mono text-body whitespace-nowrap">
@@ -332,12 +344,12 @@ function BrokenRows({ transitions }: { transitions: LedgerEvent[] }) {
               prefetch={false}
               className="font-mono text-small"
             >
-              {event.implementation.name}
+              <ImplName name={event.implementation.name} />
             </Link>
             {previous &&
               previous.implementation.slug !== event.implementation.slug && (
                 <span className="ml-2 text-mini text-faint">
-                  over {previous.implementation.name}
+                  over <ImplName name={previous.implementation.name} />
                 </span>
               )}
           </div>
@@ -345,7 +357,7 @@ function BrokenRows({ transitions }: { transitions: LedgerEvent[] }) {
             {formatImprovement(event.improvementPct) ?? "—"}
           </div>
           <div className="py-3.5 pr-3 font-mono text-small whitespace-nowrap text-muted">
-            {holder.hardware}
+            {shortHardware(holder.hardware)}
           </div>
           <div className="py-3.5">
             <TrustCell row={holder.current} />
@@ -381,12 +393,13 @@ function HistoryRows({ events }: { events: LedgerEvent[] }) {
             <div className="text-body text-fg">
               {event.previousValue ? "Record set" : "First record"}:{" "}
               <span className="font-mono text-small">
-                {holder.operation.name} · {holder.workloadSummary} ·{" "}
-                {holder.hardware}
+                {holder.operation.name} ·{" "}
+                {formatWorkloadSummary(holder.workloadSummary)} ·{" "}
+                {shortHardware(holder.hardware)}
               </span>
             </div>
             <div className="mt-1 text-small text-subtle">
-              {event.implementation.name} at{" "}
+              <ImplName name={event.implementation.name} /> at{" "}
               <span className="font-mono">{formatPrimary(event.value)}</span>
               {event.previousValue && (
                 <>
@@ -396,8 +409,12 @@ function HistoryRows({ events }: { events: LedgerEvent[] }) {
                   </span>
                   {previous &&
                     previous.implementation.slug !==
-                      event.implementation.slug &&
-                    ` held by ${previous.implementation.name}`}
+                      event.implementation.slug && (
+                      <>
+                        {" held by "}
+                        <ImplName name={previous.implementation.name} />
+                      </>
+                    )}
                   {formatImprovement(event.improvementPct) &&
                     ` (${formatImprovement(event.improvementPct)})`}
                 </>
@@ -421,12 +438,15 @@ function FilterLink({
   patch,
   navigate,
   className,
+  title,
   children,
 }: {
   filters: RecordsFilters
   patch: Partial<RecordsFilters>
   navigate: Navigate
   className?: string
+  /** Native tooltip (no icons); used to explain non-obvious sorts. */
+  title?: string
   children: React.ReactNode
 }) {
   return (
@@ -438,6 +458,7 @@ function FilterLink({
         navigate(patch)
       }}
       className={className}
+      title={title}
     >
       {children}
     </Link>
@@ -520,36 +541,45 @@ function ControlStrip({
             })}
           </div>
         </details>
-        <FilterChip
-          href={recordsHref(filters, { verified: !filters.verified })}
-          on={filters.verified}
-          dead={slice.verifiedCount === 0 && !filters.verified}
-          title="No independently verified records yet: every result is source-reported"
-          label="Verified"
-          count={slice.verifiedCount}
-          onClick={(event) => {
-            event.preventDefault()
-            navigate({ verified: !filters.verified })
-          }}
-        />
-        <FilterChip
-          href={recordsHref(filters, { source: !filters.source })}
-          on={filters.source}
-          label="Has source"
-          onClick={(event) => {
-            event.preventDefault()
-            navigate({ source: !filters.source })
-          }}
-        />
+        {/* Dimension-labeled toggles (§16 control grammar): Hardware is
+            scope, Source is trust, Type is record kind — each chip states
+            its dimension in faint, its value in the body tone. */}
+        <FilterLink
+          filters={filters}
+          patch={{ source: !filters.source }}
+          navigate={navigate}
+          className={`${chip(filters.source)} flex items-center gap-2 py-1`}
+        >
+          <span className="text-faint">Source</span>
+          <span>{filters.source ? "Has source" : "Any"}</span>
+        </FilterLink>
         {slice.baselineCount > 0 && (
+          <FilterLink
+            filters={filters}
+            patch={{ baselines: !filters.baselines }}
+            navigate={navigate}
+            className={`${chip(filters.baselines)} flex items-center gap-2 py-1`}
+          >
+            <span className="text-faint">Type</span>
+            <span>
+              {filters.baselines
+                ? `Records + baselines (${slice.baselineCount})`
+                : "Records"}
+            </span>
+          </FilterLink>
+        )}
+        {/* A filter the corpus cannot satisfy is hidden, not dead-rendered
+            (Sam, 2026-08-25: "Verified 0 makes the corpus look deficient");
+            the source-reported fact moves to the footer methodology line. */}
+        {(slice.verifiedCount > 0 || filters.verified) && (
           <FilterChip
-            href={recordsHref(filters, { baselines: !filters.baselines })}
-            on={filters.baselines}
-            label="Unbeaten baselines"
-            count={slice.baselineCount}
+            href={recordsHref(filters, { verified: !filters.verified })}
+            on={filters.verified}
+            label="Verified"
+            count={slice.verifiedCount}
             onClick={(event) => {
               event.preventDefault()
-              navigate({ baselines: !filters.baselines })
+              navigate({ verified: !filters.verified })
             }}
           />
         )}
@@ -659,10 +689,15 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
 
   return (
     <div onPointerEnter={prime} onFocusCapture={prime}>
-      <ContextHeader
-        title="Performance records"
-        meta={[
-          ...VIEWS.map((view) => (
+      <ContextHeader title="Performance records">
+        {/* The three views as local navigation under the title (Sam,
+            2026-08-25: not right-aligned title metadata) — the quiet-tab
+            idiom of the resolver band. */}
+        <nav
+          aria-label="Record views"
+          className="mt-2.5 flex flex-wrap items-baseline gap-x-6 gap-y-1 text-body"
+        >
+          {VIEWS.map((view) => (
             <FilterLink
               key={view.key}
               filters={slice.filters}
@@ -673,13 +708,13 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
               }`}
             >
               {view.label}{" "}
-              <span className="font-mono text-mini text-subtle">
+              <span className="font-mono text-mini text-faint">
                 {slice.counts[view.key]}
               </span>
             </FilterLink>
-          )),
-        ]}
-      />
+          ))}
+        </nav>
+      </ContextHeader>
 
       <main className="shell pb-24">
         {slice.filters.view === "current" && slice.holders && (
@@ -702,7 +737,14 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
                       // Contested already surfaces the same rows (§16 diet).
                       (
                         [
-                          { key: "contested", label: "Contested" },
+                          {
+                            key: "contested",
+                            label: "Contested",
+                            // Matches sortHolders' banding exactly; a native
+                            // title, no icon (§16.2).
+                            title:
+                              "Records that have actually been displaced first, then sole entrants, then unbeaten baselines; newest first inside each band",
+                          },
                           { key: "date", label: "Newest" },
                           { key: "improvement", label: "Largest improvement" },
                           { key: "operation", label: "A–Z" },
@@ -712,6 +754,7 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
                           <span
                             key={option.key}
                             className="whitespace-nowrap text-fg"
+                            title={"title" in option ? option.title : undefined}
                           >
                             {option.label}
                           </span>
@@ -721,6 +764,7 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
                             filters={slice.filters}
                             patch={{ sort: option.key }}
                             navigate={navigate}
+                            title={"title" in option ? option.title : undefined}
                             className="whitespace-nowrap text-subtle transition-colors hover:text-fg no-underline"
                           >
                             {option.label}
@@ -737,13 +781,19 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
                 className={`${CURRENT_GRID} border-b border-border-strong font-mono text-label text-faint uppercase`}
               >
                 <div className="py-2">Operation</div>
-                <div className="py-2">History</div>
+                {/* The spark is supporting context, not a primary field
+                    (Sam, 2026-08-25): no heading, like the share bars. */}
+                <div />
                 <div className="py-2 pr-4 text-right">Current record</div>
                 <div className="py-2">Implementation</div>
                 <div />
               </div>
               {slice.holders.rows.map((holder) => (
-                <HolderRow key={holder.cohortKey} holder={holder} />
+                <HolderRow
+                  key={holder.cohortKey}
+                  holder={holder}
+                  showIndexed={slice.filters.sort === "date"}
+                />
               ))}
               {slice.holders.total === 0 && (
                 <p className="py-8 text-body text-faint">
@@ -822,6 +872,9 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
             </a>
             <ApiLink path="/records" />
             <span className="font-mono">
+              {/* The zero-verified fact lives here as methodology, not as a
+                  dead filter chip (Sam, 2026-08-25). */}
+              {slice.verifiedCount === 0 && "evidence: source-reported · "}
               history only grows · <Link href="/legal">data licenses</Link>
             </span>
           </span>

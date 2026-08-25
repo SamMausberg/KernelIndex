@@ -8,6 +8,7 @@ import { notFound } from "next/navigation"
 import { ContextHeader } from "@/components/context-header"
 import { ExpandRows } from "@/components/expand-rows"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
+import { ImplName } from "@/components/impl-name"
 import { Metric } from "@/components/metric"
 import { Link } from "@/components/quiet-link"
 import { Section } from "@/components/section"
@@ -24,6 +25,8 @@ import {
   formatImprovement,
   formatInstantUTC,
   formatPrimary,
+  formatWorkloadSummary,
+  shortHardware,
 } from "@/lib/format"
 import { ClaimPanel } from "./claim-panel"
 
@@ -170,7 +173,7 @@ export default async function ProjectPage({ params }: Props) {
                         {holder.operation.name}
                       </Link>
                       <span className="ml-2 font-mono text-mini text-faint">
-                        {holder.workloadSummary}
+                        {formatWorkloadSummary(holder.workloadSummary)}
                       </span>
                     </div>
                     <div>
@@ -198,11 +201,11 @@ export default async function ProjectPage({ params }: Props) {
                         prefetch={false}
                         className="text-small"
                       >
-                        {holder.current.implementation.name}
+                        <ImplName name={holder.current.implementation.name} />
                       </Link>
                     </div>
                     <div className="truncate font-mono text-small text-muted">
-                      {holder.hardware}
+                      {shortHardware(holder.hardware)}
                     </div>
                     <div className="text-right font-mono text-mini text-faint">
                       {formatDateUTC(holder.since)}

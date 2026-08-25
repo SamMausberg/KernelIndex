@@ -112,6 +112,39 @@ export function implementationDisplayName(
   return kept.length > 0 ? kept.join(" · ") : slug
 }
 
+/**
+ * Split a generated implementation identifier into a readable base and its
+ * trailing short id: `gpt-o3_cuda_af0f3d` → { base: "gpt-o3 / cuda",
+ * id: "af0f3d" }. Matches only when the final underscore token is exactly
+ * six alphanumerics mixing letters and digits and is not axis-like
+ * (`k2048`), so baseline names carrying workload axes never split. The
+ * separator is a slash, not a middot: these names sit inside middot-joined
+ * meta lines, where an inner middot would read as two facts. Canonical
+ * identifiers stay untouched on the implementation and run dossiers.
+ */
+export function splitImplementationName(
+  name: string,
+): { base: string; id: string } | null {
+  const at = name.lastIndexOf("_")
+  if (at <= 0) return null
+  const id = name.slice(at + 1)
+  if (
+    !/^[a-z0-9]{6}$/.test(id) ||
+    !/[a-z]/.test(id) ||
+    !/[0-9]/.test(id) ||
+    /^[a-z]\d+$/.test(id)
+  )
+    return null
+  return { base: name.slice(0, at).split("_").join(" / "), id }
+}
+
+/** String form of the split ("gpt-o3 / cuda af0f3d") for prose and SVG
+ * labels; unsplittable names pass through. */
+export function displayImplementationName(name: string): string {
+  const parts = splitImplementationName(name)
+  return parts ? `${parts.base} ${parts.id}` : name
+}
+
 /** Model tags in an exact hyphen-boundary prefix relation with the slug —
  * the only cross-tag association the model surface makes (§16.21); fuzzy
  * grouping of variants would manufacture equivalence (§2.2). */

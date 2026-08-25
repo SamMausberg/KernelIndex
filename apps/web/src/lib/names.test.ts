@@ -3,6 +3,7 @@ import {
   humanizeOperationName,
   implementationDisplayName,
   relatedModelTags,
+  splitImplementationName,
 } from "./names.ts"
 
 describe("humanizeOperationName", () => {
@@ -126,5 +127,33 @@ describe("relatedModelTags", () => {
       "qwen3-3b",
       "qwen3-coder-30b-a3b-instruct",
     ])
+  })
+})
+
+describe("splitImplementationName", () => {
+  it("splits generated identifiers into a readable base and short id", () => {
+    expect(splitImplementationName("gpt-o3_cuda_af0f3d")).toEqual({
+      base: "gpt-o3 / cuda",
+      id: "af0f3d",
+    })
+    expect(splitImplementationName("gemini-2.5-pro_triton_dc28mj")).toEqual({
+      base: "gemini-2.5-pro / triton",
+      id: "dc28mj",
+    })
+    expect(splitImplementationName("flashinfer_wrapper_3f9411")).toEqual({
+      base: "flashinfer / wrapper",
+      id: "3f9411",
+    })
+  })
+
+  // Baseline names carry workload axes, not ids; splitting them would
+  // present an axis as provenance.
+  it("refuses axis-like and non-id tails", () => {
+    expect(
+      splitImplementationName("mm_fp4_mxfp4_flashinfer_n5120_k2048"),
+    ).toBeNull()
+    expect(splitImplementationName("Stellar Flamingo")).toBeNull()
+    expect(splitImplementationName("liger-fused-add-rms-norm")).toBeNull()
+    expect(splitImplementationName("torch_matmul")).toBeNull()
   })
 })

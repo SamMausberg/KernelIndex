@@ -1,4 +1,5 @@
 import { CopyButton } from "@/components/copy-button"
+import { ImplName } from "@/components/impl-name"
 import { Link } from "@/components/quiet-link"
 import type { ResultRow } from "@/lib/catalog"
 import {
@@ -89,7 +90,7 @@ function Slot({
           href={`/implementations/${row.implementation.slug}`}
           className="text-lead font-medium"
         >
-          {row.implementation.name}
+          <ImplName name={row.implementation.name} />
         </Link>
         <span className="ml-2.5 text-body text-subtle">
           {[
@@ -233,7 +234,7 @@ export function ByLanguage({ rows }: { rows: ResultRow[] }) {
             href={`/implementations/${row.implementation.slug}`}
             className="text-small"
           >
-            {row.implementation.name}
+            <ImplName name={row.implementation.name} />
           </Link>
           {row.primary && (
             <>

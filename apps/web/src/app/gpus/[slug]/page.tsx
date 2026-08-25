@@ -7,6 +7,7 @@ import { notFound } from "next/navigation"
 import { ContextHeader } from "@/components/context-header"
 import { ExpandRows } from "@/components/expand-rows"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
+import { ImplName } from "@/components/impl-name"
 import { Metric } from "@/components/metric"
 import { Link } from "@/components/quiet-link"
 import { Section } from "@/components/section"
@@ -16,7 +17,7 @@ import { FollowButton } from "@/features/follow/follow-button"
 import { MonthlyActivity } from "@/features/hardware/activity"
 import { RecordSpark } from "@/features/records/timeline"
 import { getHardwarePage } from "@/lib/catalog"
-import { formatDateUTC } from "@/lib/format"
+import { formatDateUTC, formatWorkloadSummary } from "@/lib/format"
 
 type Props = { params: Promise<{ slug: string }> }
 
@@ -119,7 +120,7 @@ export default async function GpuPage({ params }: Props) {
                         {holder.operation.name}
                       </Link>
                       <span className="ml-2 font-mono text-mini text-faint">
-                        {holder.workloadSummary}
+                        {formatWorkloadSummary(holder.workloadSummary)}
                       </span>
                     </div>
                     <div>
@@ -137,7 +138,7 @@ export default async function GpuPage({ params }: Props) {
                         prefetch={false}
                         className="text-small"
                       >
-                        {holder.current.implementation.name}
+                        <ImplName name={holder.current.implementation.name} />
                       </Link>
                     </div>
                     <div className="text-right font-mono text-mini text-faint">

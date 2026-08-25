@@ -2,6 +2,7 @@
 
 import { startTransition, useEffect, useState } from "react"
 import { ExpandRows } from "@/components/expand-rows"
+import { ImplName } from "@/components/impl-name"
 import { Link } from "@/components/quiet-link"
 import { Section } from "@/components/section"
 import {
@@ -226,7 +227,11 @@ export function OperationRecords({
                         {option.head ? formatPrimary(option.head.primary) : "—"}
                       </span>
                       <span className="truncate">
-                        {option.head?.implementation.name ?? "no ranked run"}
+                        {option.head ? (
+                          <ImplName name={option.head.implementation.name} />
+                        ) : (
+                          "no ranked run"
+                        )}
                       </span>
                       <span className="text-right font-mono text-faint">
                         {option.runs}

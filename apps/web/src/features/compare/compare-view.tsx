@@ -1,4 +1,5 @@
 import { CopyButton } from "@/components/copy-button"
+import { ImplName } from "@/components/impl-name"
 import { Link } from "@/components/quiet-link"
 import type { ComparePageModel, CompareRun } from "@/lib/catalog"
 import { compareCsv, compareJson, compareMarkdown } from "@/lib/compare-export"
@@ -31,7 +32,7 @@ function RunHeader({ run }: { run: CompareRun }) {
           href={`/implementations/${run.implementation.slug}`}
           className="truncate font-mono text-body"
         >
-          {run.implementation.name}
+          <ImplName name={run.implementation.name} />
         </Link>
       </div>
       <div className="mt-1.5 font-mono text-title text-fg">

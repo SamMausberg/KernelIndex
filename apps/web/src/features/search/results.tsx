@@ -592,6 +592,11 @@ export function SearchResults({
               {CHIP_FILTERS.map((chip) => {
                 const count = groupsByMode[view].filter(chip.test).length
                 const on = state[chip.key]
+                // Verification is corpus-wide zero today: hide the chip
+                // rather than advertising the deficiency on every search
+                // (records-page rule). The availability chips stay dead-
+                // rendered — their zeros are per-result-set facts.
+                if (chip.key === "verified" && count === 0 && !on) return null
                 return (
                   <FilterChip
                     key={chip.key}

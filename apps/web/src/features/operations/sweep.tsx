@@ -3,9 +3,11 @@
 // library, no animation; hover emphasis and point values are CSS-only.
 // Identity is never color-alone: series are direct-labeled at their line
 // ends and listed in the legend; the cohort table below is the table view.
+
 import { Link } from "@/components/quiet-link"
 import type { OperationSweep } from "@/lib/catalog"
 import { formatLatency } from "@/lib/format"
+import { displayImplementationName } from "@/lib/names"
 
 const WIDTH = 640
 const HEIGHT = 240
@@ -97,7 +99,7 @@ export function SweepChart({ sweep }: { sweep: OperationSweep }) {
   const lastX = xs[xs.length - 1]
   const labels = sweep.series
     .map((series, index) => ({
-      name: series.implementation.name,
+      name: displayImplementationName(series.implementation.name),
       index,
       last: series.points[series.points.length - 1],
     }))
@@ -225,7 +227,7 @@ export function SweepChart({ sweep }: { sweep: OperationSweep }) {
                 href={`/implementations/${series.implementation.slug}`}
                 className="text-subtle"
               >
-                {series.implementation.name}
+                {displayImplementationName(series.implementation.name)}
               </Link>
             </span>
           ))}

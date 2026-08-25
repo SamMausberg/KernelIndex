@@ -66,16 +66,17 @@ export function FeedView({ initial }: { initial: FeedModel }) {
 
   return (
     <>
-      {/* No subtitle (2026-08-25): the date gutter shows the window. */}
-      <ContextHeader
-        title="Feed"
-        meta={
-          <>
-            {view(false, "All")}
-            {view(true, "Following")}
-          </>
-        }
-      />
+      {/* No subtitle (2026-08-25): the date gutter shows the window. The
+          views are local navigation under the title (records idiom). */}
+      <ContextHeader title="Feed">
+        <nav
+          aria-label="Feed views"
+          className="mt-2.5 flex flex-wrap items-baseline gap-x-6 gap-y-1 text-body"
+        >
+          {view(false, "All")}
+          {view(true, "Following")}
+        </nav>
+      </ContextHeader>
       <main className="shell pb-24">
         {following ? (
           loaded === "sign-in" ? (

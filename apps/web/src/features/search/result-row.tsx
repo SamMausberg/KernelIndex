@@ -1,3 +1,4 @@
+import { ImplName } from "@/components/impl-name"
 import { Meter } from "@/components/meter"
 import { Metric } from "@/components/metric"
 import { Link } from "@/components/quiet-link"
@@ -170,7 +171,7 @@ export function ResultRowItem({
             href={`/implementations/${row.implementation.slug}`}
             className="text-body text-fg hover:text-accent-bright"
           >
-            {row.implementation.name}
+            <ImplName name={row.implementation.name} />
           </Link>
           {row.baseline && (
             <span className="ml-2 font-mono text-label text-faint uppercase">

@@ -1,3 +1,4 @@
+import { ImplName } from "@/components/impl-name"
 import { Metric } from "@/components/metric"
 import { Link } from "@/components/quiet-link"
 import type { RecordHolder } from "@/lib/catalog"
@@ -5,6 +6,8 @@ import {
   formatImprovement,
   formatPrimary,
   formatSolScoreCell,
+  formatWorkloadSummary,
+  shortHardware,
 } from "@/lib/format"
 
 const GRID = "grid grid-cols-[1.4fr_1.1fr_170px_120px] min-w-[780px]"
@@ -56,7 +59,7 @@ export function LatestRecords({ rows }: { rows: RecordHolder[] }) {
                 {row.operation.name}
               </Link>
               <span className="ml-2 font-mono text-mini text-faint">
-                {holder.workloadSummary}
+                {formatWorkloadSummary(holder.workloadSummary)}
               </span>
             </div>
             <div className="truncate px-4">
@@ -64,7 +67,7 @@ export function LatestRecords({ rows }: { rows: RecordHolder[] }) {
                 href={`/implementations/${row.implementation.slug}`}
                 className="relative z-10 text-body font-medium"
               >
-                {row.implementation.name}
+                <ImplName name={row.implementation.name} />
               </Link>
             </div>
             <div className="px-4 text-right whitespace-nowrap">
@@ -85,7 +88,7 @@ export function LatestRecords({ rows }: { rows: RecordHolder[] }) {
               </div>
             </div>
             <div className="truncate px-4 font-mono text-small text-muted">
-              {holder.hardware}
+              {shortHardware(holder.hardware)}
             </div>
           </div>
         )

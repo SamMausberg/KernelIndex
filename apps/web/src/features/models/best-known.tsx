@@ -3,13 +3,21 @@
 // with the stated gaps beneath. Deployability is a filter with reasons,
 // never a rank input (§11.8); a non-deployable fastest is labeled, not
 // hidden. Rows follow the dense result-row idiom (§16.7).
+
 import { CopyButton } from "@/components/copy-button"
+import { ImplName } from "@/components/impl-name"
 import { Metric } from "@/components/metric"
 import { Link } from "@/components/quiet-link"
 import { TierChips, TrustCell } from "@/components/trust"
 import { deltaVsFastest } from "@/features/answer/answer-slots"
 import type { ModelBestKnown, ModelGap, ResultRow } from "@/lib/catalog"
-import { countNoun, formatDateUTC, formatPrimary } from "@/lib/format"
+import {
+  countNoun,
+  formatDateUTC,
+  formatPrimary,
+  formatWorkloadSummary,
+} from "@/lib/format"
+import { displayImplementationName } from "@/lib/names"
 import { deployability } from "@/server/policy/deployability"
 
 const GRID =
@@ -47,10 +55,12 @@ function expansionLine(entry: ModelBestKnown): string {
   } else if (deployable.runId !== fastest.runId) {
     const delta = deltaVsFastest(deployable, fastest)
     parts.push(
-      `Fastest known in this cohort as of ${formatDateUTC(fastest.lastTestedAt)}: ${fastest.implementation.name}${
+      `Fastest known in this cohort as of ${formatDateUTC(fastest.lastTestedAt)}: ${displayImplementationName(fastest.implementation.name)}${
         fastest.primary ? ` at ${formatPrimary(fastest.primary)}` : ""
       }, not deployable (${reasonsOf(fastest)}).${
-        delta ? ` ${deployable.implementation.name} runs ${delta}.` : ""
+        delta
+          ? ` ${displayImplementationName(deployable.implementation.name)} runs ${delta}.`
+          : ""
       }`,
     )
   } else {
@@ -89,7 +99,7 @@ function EntryRow({ entry }: { entry: ModelBestKnown }) {
             {entry.operation.name}
           </Link>
           <span className="ml-2 font-mono text-mini text-faint">
-            {shown.workloadSummary}
+            {formatWorkloadSummary(shown.workloadSummary)}
           </span>
         </div>
         <div className="min-w-0 truncate pr-3">
@@ -97,7 +107,7 @@ function EntryRow({ entry }: { entry: ModelBestKnown }) {
             href={`/implementations/${shown.implementation.slug}`}
             className="text-body"
           >
-            {shown.implementation.name}
+            <ImplName name={shown.implementation.name} />
           </Link>
           {entry.deployable === null ? (
             <span className="ml-2 font-mono text-label text-faint uppercase">

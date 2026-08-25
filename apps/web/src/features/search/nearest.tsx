@@ -1,3 +1,4 @@
+import { ImplName } from "@/components/impl-name"
 import { Metric } from "@/components/metric"
 import { Link } from "@/components/quiet-link"
 import type { SearchPageModel } from "@/lib/catalog"
@@ -61,7 +62,7 @@ export function NearestMeasured({
                   href={`/implementations/${side.head.implementation.slug}`}
                   className="text-body"
                 >
-                  {side.head.implementation.name}
+                  <ImplName name={side.head.implementation.name} />
                 </Link>
               ) : (
                 <span className="text-small text-faint">no ranked run</span>

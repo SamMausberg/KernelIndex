@@ -5,6 +5,7 @@ import {
   formatLatency,
   formatRelative,
   formatSpread,
+  formatWorkloadSummary,
 } from "./format"
 
 describe("formatLatency", () => {
@@ -77,5 +78,16 @@ describe("record margins", () => {
   it("states nothing for a margin that is not an improvement", () => {
     for (const pct of [-8.8, 0, null, undefined, Number.NaN])
       expect(formatImprovement(pct)).toBeNull()
+  })
+})
+
+describe("formatWorkloadSummary", () => {
+  it("reads axis tokens as words, not assignments", () => {
+    expect(formatWorkloadSummary("bf16 · [512] · batch_size=7")).toBe(
+      "bf16 · [512] · batch 7",
+    )
+    expect(formatWorkloadSummary("tokens=1024 · hidden=4096")).toBe(
+      "tokens 1024 · hidden 4096",
+    )
   })
 })
