@@ -137,7 +137,9 @@ export default async function ProjectPage({ params }: Props) {
           </div>
         )}
 
-        <Section id="records" title="Records held">
+        {/* Titles distinct from the stat-strip labels above, so neither
+            reads (nor tests) ambiguously. */}
+        <Section id="records" title="Current records">
           {model.records.length > 0 ? (
             <div className="overflow-x-auto">
               <div
@@ -221,7 +223,10 @@ export default async function ProjectPage({ params }: Props) {
           </p>
         </Section>
 
-        <Section id="kernels" title={individual ? "Entries" : "Kernels"}>
+        <Section
+          id="kernels"
+          title={individual ? "Measured entries" : "Measured kernels"}
+        >
           {model.implementations.length > 0 ? (
             <ImplementationsTable
               rows={model.implementations}
