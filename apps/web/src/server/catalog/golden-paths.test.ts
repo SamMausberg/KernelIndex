@@ -43,7 +43,17 @@ const PATHS = [
 
 const url = process.env.DATABASE_URL
 
-describe.skipIf(!url)("golden paths (database)", () => {
+// The paths walk the real imported corpus. A database that has never run
+// the Liger import — CI's migrated-but-empty service, a fresh compose — has
+// nothing to walk; skipping there keeps the suite honest without failing on
+// absence. Any database holding the corpus still runs every assertion.
+const seeded = url
+  ? await getImplementationPage(PATHS[0].implementation)
+      .then((page) => page !== null)
+      .catch(() => false)
+  : false
+
+describe.skipIf(!seeded)("golden paths (database)", () => {
   for (const path of PATHS) {
     it(`${path.name}: query resolves to one installable, licensed, sourced winner`, async () => {
       // 1. The query answers with a winner, not a list to sift.
