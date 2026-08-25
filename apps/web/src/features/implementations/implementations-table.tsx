@@ -10,9 +10,9 @@ type Row = ImplementationSummary & {
 }
 
 const OPERATION_GRID =
-  "grid min-w-[1040px] grid-cols-[minmax(240px,1.5fr)_minmax(170px,1fr)_150px_150px_92px_minmax(150px,1fr)]"
+  "grid min-w-[1080px] grid-cols-[minmax(240px,1.5fr)_minmax(170px,1fr)_150px_150px_130px_minmax(150px,1fr)]"
 const SINGLE_GRID =
-  "grid min-w-[940px] grid-cols-[minmax(240px,1.6fr)_150px_150px_92px_minmax(150px,1fr)]"
+  "grid min-w-[980px] grid-cols-[minmax(240px,1.6fr)_150px_150px_130px_minmax(150px,1fr)]"
 
 /**
  * The implementations table shared by the operation and project pages

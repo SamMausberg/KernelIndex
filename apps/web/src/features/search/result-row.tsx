@@ -11,8 +11,11 @@ import {
   humanizeField,
 } from "@/lib/format"
 
+// Below sm the same children reflow into a three-line card (rank · name ·
+// latency, then trust, then date); the meter and chevron step aside and the
+// row stops forcing a horizontal scroll (audit 2026-08-25).
 export const RESULT_GRID =
-  "grid grid-cols-[44px_minmax(200px,1.6fr)_150px_112px_minmax(190px,1.1fr)_92px_28px] min-w-[820px]"
+  "grid grid-cols-[44px_minmax(200px,1.6fr)_150px_112px_minmax(210px,1.1fr)_96px_28px] min-w-[860px] max-sm:min-w-0 max-sm:grid-cols-[44px_minmax(0,1fr)_auto] max-sm:gap-y-1"
 
 /** "Apache-2.0 · pip" — license state plus how the build is obtained. */
 export function availabilityText(row: ResultRow) {
@@ -33,7 +36,7 @@ export function availabilityText(row: ResultRow) {
 export function ResultTableHead({ relativeLabel }: { relativeLabel?: string }) {
   return (
     <div
-      className={`${RESULT_GRID} border-b border-border-strong font-mono text-label text-faint uppercase`}
+      className={`${RESULT_GRID} border-b border-border-strong font-mono text-label text-faint uppercase max-sm:hidden`}
     >
       <div className="py-2">#</div>
       <div className="py-2">Implementation</div>
@@ -63,7 +66,7 @@ function RelativeCell({
 }) {
   if (relative && row.primary && best) {
     return (
-      <div className="flex items-center gap-2 pr-3">
+      <div className="flex items-center gap-2 pr-3 max-sm:hidden">
         <Meter fraction={best.value / row.primary.value} className="w-11" />
         <span className="font-mono text-mini text-subtle">
           {formatRelative(row.primary, best)}
@@ -73,14 +76,14 @@ function RelativeCell({
   }
   if (row.mismatches.length > 0) {
     return (
-      <div className="truncate pr-3 text-small text-subtle">
+      <div className="truncate pr-3 text-small text-subtle max-sm:hidden">
         {row.mismatches
           .map((mismatch) => humanizeField(mismatch.field))
           .join(", ")}
       </div>
     )
   }
-  return <div />
+  return <div className="max-sm:hidden" />
 }
 
 /** One plain-English line for the expansion: why the row sits where it does
@@ -157,7 +160,7 @@ export function ResultRowItem({
   return (
     <details className="group row-cv border-b border-line">
       <summary
-        className={`${RESULT_GRID} h-12 cursor-pointer list-none items-center transition-colors hover:bg-raised focus-visible:bg-raised [&::-webkit-details-marker]:hidden`}
+        className={`${RESULT_GRID} h-12 cursor-pointer list-none items-center transition-colors hover:bg-raised focus-visible:bg-raised [&::-webkit-details-marker]:hidden max-sm:h-auto max-sm:py-2.5`}
       >
         <div
           className={`font-mono text-small ${
@@ -200,10 +203,10 @@ export function ResultRowItem({
           />
         </div>
         <RelativeCell row={row} best={best} relative={relative} />
-        <TrustCell row={row} />
+        <TrustCell row={row} className="max-sm:col-span-2 max-sm:col-start-2" />
         {/* Staleness is a freshness fact, not a warning (§16.16): the word
             carries it, on its own line so the date never breaks mid-token. */}
-        <div className="font-mono text-mini text-faint">
+        <div className="font-mono text-mini text-faint max-sm:col-span-2 max-sm:col-start-2">
           <span className="whitespace-nowrap">
             {formatDateUTC(row.lastTestedAt)}
           </span>
@@ -211,7 +214,7 @@ export function ResultRowItem({
         </div>
         <div
           aria-hidden="true"
-          className="pr-1 text-right font-mono text-small text-faint transition-transform group-open:rotate-90"
+          className="pr-1 text-right font-mono text-small text-faint transition-transform group-open:rotate-90 max-sm:hidden"
         >
           ›
         </div>

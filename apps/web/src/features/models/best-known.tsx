@@ -21,7 +21,7 @@ import { displayImplementationName } from "@/lib/names"
 import { deployability } from "@/server/policy/deployability"
 
 const GRID =
-  "grid grid-cols-[minmax(220px,1.5fr)_minmax(210px,1.3fr)_150px_minmax(190px,1.1fr)_92px_28px] min-w-[940px] items-center gap-x-4"
+  "grid grid-cols-[minmax(220px,1.5fr)_minmax(210px,1.3fr)_150px_minmax(210px,1.1fr)_96px_28px] min-w-[970px] items-center gap-x-4"
 
 const GAP_GRID =
   "grid grid-cols-[minmax(200px,1.2fr)_150px_minmax(300px,1.8fr)] items-baseline gap-x-4 min-w-[720px]"

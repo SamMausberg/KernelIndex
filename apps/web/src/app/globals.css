@@ -11,17 +11,17 @@
   /* Surfaces: near-true black; depth lives in the cobalt accents and the
      surface/raised separation, never in a tinted canvas. */
   --color-canvas: #020309;
-  --color-surface: #060810;
-  --color-raised: #0b0e18;
+  --color-surface: #090c15;
+  --color-raised: #0e1220;
   /* Input wells sit below the canvas — the one surface darker than it. */
   --color-well: #04050c;
 
   /* 1px hairline hierarchy: row separators < section borders < controls. */
-  --color-line: #0f1220;
-  --color-border: #171b2b;
-  --color-border-strong: #1f2538;
-  --color-edge: #293049;
-  --color-edge-hover: #3b4463;
+  --color-line: #10131f;
+  --color-border: #1b2033;
+  --color-border-strong: #232a40;
+  --color-edge: #2e3651;
+  --color-edge-hover: #414b6e;
 
   /*
    * Text scale, brightest to quietest — four deliberate levels (§16.2):
@@ -83,19 +83,19 @@
   --text-label: 11px;
   --text-label--letter-spacing: 0.08em;
   --text-mini: 12px;
-  --text-small: 13px;
-  --text-body: 14px;
-  --text-lead: 16px;
+  --text-small: 13.5px;
+  --text-body: 15px;
+  --text-lead: 17px;
   --text-lead--letter-spacing: -0.01em;
-  --text-title: 20px;
+  --text-title: 23px;
   --text-title--line-height: 1.25;
   --text-title--letter-spacing: -0.015em;
-  --text-display: 28px;
+  --text-display: 32px;
   --text-display--line-height: 1.2;
   --text-display--letter-spacing: -0.015em;
-  --text-readout: 34px;
+  --text-readout: 38px;
   --text-readout--line-height: 1;
-  --text-hero: clamp(26px, 2.8vw, 34px);
+  --text-hero: clamp(32px, 3.6vw, 44px);
   --text-hero--line-height: 1.15;
   --text-hero--letter-spacing: -0.02em;
 

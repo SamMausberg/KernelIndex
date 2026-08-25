@@ -56,13 +56,34 @@ export async function getHomePage(): Promise<HomePageModel> {
   const holders = page.records.filter(
     (holder) => holder.current.sourceAvailable,
   )
-  const latest = [
+  // Diversified selection (audit 2026-08-25): a fresh import of one family
+  // on one GPU used to fill all eight rows, making the corpus look narrower
+  // than it is. Keep the signal-first order, but cap each operation at two
+  // rows and each GPU at four; backfill from the remainder only when the
+  // caps leave slots empty.
+  const ordered = [
     ...holders.filter((holder) => holder.history.length >= 2),
     ...holders.filter(
       (holder) => holder.history.length === 1 && !holder.current.baseline,
     ),
   ]
-    .slice(0, 8)
+  const picked: typeof ordered = []
+  const perOperation = new Map<string, number>()
+  const perGpu = new Map<string, number>()
+  for (const holder of ordered) {
+    if (picked.length === 8) break
+    const operation = perOperation.get(holder.operation.slug) ?? 0
+    const gpu = perGpu.get(holder.hardware) ?? 0
+    if (operation >= 2 || gpu >= 4) continue
+    picked.push(holder)
+    perOperation.set(holder.operation.slug, operation + 1)
+    perGpu.set(holder.hardware, gpu + 1)
+  }
+  for (const holder of ordered) {
+    if (picked.length === 8) break
+    if (!picked.includes(holder)) picked.push(holder)
+  }
+  const latest = picked
     // The homepage renders only the current event; drop the deep histories.
     .map((holder) => ({ ...holder, history: holder.history.slice(0, 1) }))
   return {

@@ -41,11 +41,18 @@ export function EvidenceCell({ row }: { row: TrustRow }) {
  * cobalt cue that code is viewable on-site, the green dot marks only tiers
  * KernelIndex itself stands behind. The row expansion keeps the full chips.
  */
-export function TrustCell({ row }: { row: TrustRow }) {
+export function TrustCell({
+  row,
+  className,
+}: {
+  row: TrustRow
+  /** Layout-only extension (e.g. the mobile card's grid placement). */
+  className?: string
+}) {
   const strong = row.evidence === "verified" || row.evidence === "replicated"
   const license = row.license.concluded ?? row.license.declared
   return (
-    <div className="truncate pr-3 text-small text-subtle">
+    <div className={`truncate pr-3 text-small text-subtle ${className ?? ""}`}>
       {strong && <span className="mr-1.5 text-label text-success">●</span>}
       <span className={strong ? "text-fg" : undefined}>
         {row.evidence ? (EVIDENCE_LABELS[row.evidence] ?? row.evidence) : "—"}

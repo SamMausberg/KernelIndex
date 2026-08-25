@@ -10,7 +10,10 @@ import {
   shortHardware,
 } from "@/lib/format"
 
-const GRID = "grid grid-cols-[1.4fr_1.1fr_170px_120px] min-w-[780px]"
+// Below sm the same cells reflow into a card: operation · latency on the
+// first line, implementation and hardware beneath (audit 2026-08-25).
+const GRID =
+  "grid grid-cols-[1.4fr_1.1fr_170px_120px] min-w-[780px] max-sm:min-w-0 max-sm:grid-cols-[minmax(0,1fr)_auto]"
 
 /** Homepage table of the newest record breaks (§16.5), four columns; trust
  * and indexing dates live on the run dossier a row opens. Each row is a
@@ -32,7 +35,7 @@ export function LatestRecords({ rows }: { rows: RecordHolder[] }) {
       <table aria-label="Latest records" className="block">
         <thead className="contents">
           <tr
-            className={`${GRID} border-b border-border-strong font-mono text-label text-faint uppercase`}
+            className={`${GRID} border-b border-border-strong font-mono text-label text-faint uppercase max-sm:hidden`}
           >
             <th scope="col" className="px-4 py-2.5 text-left font-normal">
               Operation / workload
@@ -55,9 +58,9 @@ export function LatestRecords({ rows }: { rows: RecordHolder[] }) {
             return (
               <tr
                 key={holder.cohortKey}
-                className={`${GRID} relative h-14 items-center border-b border-line transition-colors hover:bg-raised`}
+                className={`${GRID} relative h-14 items-center border-b border-line transition-colors hover:bg-raised max-sm:h-auto max-sm:grid-flow-dense max-sm:py-2.5`}
               >
-                <td className="truncate px-4 text-body">
+                <td className="truncate px-4 text-body max-sm:col-start-1">
                   {/* The whole row reaches the record's run dossier (inset-0
                   resolves against the row, the nearest positioned ancestor);
                   living inside the first cell keeps the table row valid. The
@@ -79,7 +82,7 @@ export function LatestRecords({ rows }: { rows: RecordHolder[] }) {
                     {formatWorkloadSummary(holder.workloadSummary)}
                   </span>
                 </td>
-                <td className="truncate px-4">
+                <td className="truncate px-4 max-sm:col-span-2 max-sm:col-start-1">
                   <Link
                     href={`/implementations/${row.implementation.slug}`}
                     className="relative z-10 text-body font-medium"
@@ -87,7 +90,7 @@ export function LatestRecords({ rows }: { rows: RecordHolder[] }) {
                     <ImplName name={row.implementation.name} />
                   </Link>
                 </td>
-                <td className="px-4 text-right whitespace-nowrap">
+                <td className="px-4 text-right whitespace-nowrap max-sm:col-start-2 max-sm:row-start-1">
                   <Metric
                     primary={row.primary}
                     secondary={
@@ -104,7 +107,7 @@ export function LatestRecords({ rows }: { rows: RecordHolder[] }) {
                       : "first"}
                   </div>
                 </td>
-                <td className="truncate px-4 font-mono text-small text-muted">
+                <td className="truncate px-4 font-mono text-small text-muted max-sm:col-span-2 max-sm:col-start-1">
                   {shortHardware(holder.hardware)}
                 </td>
               </tr>
