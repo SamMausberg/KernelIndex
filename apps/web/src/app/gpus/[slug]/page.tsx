@@ -16,8 +16,9 @@ import { StatStrip } from "@/components/stat-strip"
 import { FollowButton } from "@/features/follow/follow-button"
 import { MonthlyActivity } from "@/features/hardware/activity"
 import { RecordSpark } from "@/features/records/timeline"
-import { getHardwarePage } from "@/lib/catalog"
+import { getHardwarePage, resolveServing } from "@/lib/catalog"
 import { formatDateUTC, formatWorkloadSummary } from "@/lib/format"
+import { servingEnabled } from "@/server/env"
 
 type Props = { params: Promise<{ slug: string }> }
 
@@ -50,6 +51,25 @@ export default async function GpuPage({ params }: Props) {
   if (!model) notFound()
   const records = model.records.slice(0, RECORD_LIMIT)
   const overflow = model.records.length - records.length
+  // End-to-end serving evidence on this hardware (§8.16: a separate corpus,
+  // shown beside the kernel evidence, never ranked with it). The resolver's
+  // hardware scope substring-matches, so "NVIDIA B200" finds the serving
+  // corpus's fuller accelerator names ("NVIDIA B200-SXM-180GB").
+  const serving = servingEnabled
+    ? await resolveServing({
+        hardware: { model: model.hardware.model },
+        objective: {
+          direction: "maximize",
+          metric: "output_token_throughput_tps",
+          statistic: "reported",
+        },
+      }).catch(() => null)
+    : null
+  const servingGroups = serving?.groups ?? []
+  const servingRuns = servingGroups.reduce(
+    (n, group) => n + group.rows.length + group.excluded.length,
+    0,
+  )
 
   return (
     <>
@@ -206,6 +226,67 @@ export default async function GpuPage({ params }: Props) {
             ))}
           </div>
         </Section>
+
+        {servingGroups.length > 0 && (
+          <Section id="serving" title="Serving evidence">
+            <p className="mb-3 max-w-[76ch] text-small text-faint">
+              End-to-end serving results measured on this hardware — a separate
+              corpus with its own resolver, never ranked against the kernel
+              records above.
+            </p>
+            <div className="overflow-x-auto">
+              <div className="grid min-w-[720px] grid-cols-[minmax(240px,1.4fr)_minmax(160px,1fr)_150px_120px] items-baseline gap-x-4 border-b border-border-strong pb-2 font-mono text-label text-faint uppercase">
+                <div>Model · workload</div>
+                <div>Scenario</div>
+                <div className="text-right">Best reported</div>
+                <div className="text-right">Runs</div>
+              </div>
+              {servingGroups.slice(0, 8).map((group) => {
+                const head = group.rows[0]
+                const throughput = head?.measurements.find(
+                  (m) =>
+                    m.metric === "output_token_throughput_tps" &&
+                    m.statistic === "reported",
+                )
+                return (
+                  <div
+                    key={group.cohortKey}
+                    className="grid min-w-[720px] grid-cols-[minmax(240px,1.4fr)_minmax(160px,1fr)_150px_120px] items-center gap-x-4 border-b border-line py-2.5"
+                  >
+                    <div className="min-w-0 truncate text-body">
+                      {group.identity.model}
+                      <span className="ml-2 font-mono text-mini text-faint">
+                        {group.identity.workload}
+                      </span>
+                    </div>
+                    <div className="truncate font-mono text-small text-subtle">
+                      {group.identity.scenario}
+                    </div>
+                    <div className="text-right font-mono text-small text-fg">
+                      {throughput
+                        ? `${Math.round(throughput.value).toLocaleString("en-US")} tok/s`
+                        : "—"}
+                    </div>
+                    <div className="text-right font-mono text-small text-subtle">
+                      {group.rows.length + group.excluded.length}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            <p className="mt-3 text-small text-faint">
+              {servingRuns.toLocaleString("en-US")} serving runs
+              {servingGroups.length > 8 &&
+                ` across ${servingGroups.length} comparison groups`}
+              {" · "}
+              <Link
+                href={`/serving?hw=${encodeURIComponent(model.hardware.model)}`}
+              >
+                Open in the serving resolver →
+              </Link>
+            </p>
+          </Section>
+        )}
 
         <Section id="activity" title="Record activity">
           <MonthlyActivity records={model.records} />

@@ -100,11 +100,14 @@ export function HeroSearch() {
     <form
       action="/search"
       onSubmit={submit}
-      className="well relative z-30 mt-7 flex h-12 max-w-[620px] items-center gap-3 pr-2 pl-4"
+      // Raised, not recessed (2026-08-25, Sam: the bar blended into the
+      // text around it): the page's one action sits on the brighter
+      // surface with the stronger hairline, a step taller than any well.
+      className="relative z-30 mt-7 flex h-14 max-w-[620px] items-center gap-3 rounded border border-edge bg-raised pr-2 pl-4 transition-colors focus-within:border-accent-dim"
     >
       <SuggestInput
         placeholder="Search operation, GPU, dtype, shape, framework…"
-        className="min-w-0 flex-1 border-0 bg-transparent p-0 font-mono text-body outline-none"
+        className="min-w-0 flex-1 border-0 bg-transparent p-0 font-mono text-lead outline-none"
       />
       <button
         type="submit"

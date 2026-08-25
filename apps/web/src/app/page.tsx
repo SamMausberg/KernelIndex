@@ -29,12 +29,15 @@ export default async function Home() {
       ]),
     ),
   ].slice(0, 2)
+  // Plain-language entry queries (2026-08-25, easier notation): operation
+  // names resolve as free text; the model example keeps its one prefix in
+  // the query but reads as the bare tag.
   const examples = [
-    ...operations.map(([slug, name]) => ({ label: name, query: `op:${slug}` })),
+    ...operations.map(([, name]) => ({ label: name, query: name })),
     ...(models.kernel[0]
       ? [
           {
-            label: `model:${models.kernel[0].model}`,
+            label: models.kernel[0].model,
             query: `model:${models.kernel[0].model}`,
           },
         ]

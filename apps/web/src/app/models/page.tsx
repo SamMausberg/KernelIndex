@@ -1,14 +1,14 @@
-// Model index (§16.21): kernel-side `model:` workload provenance as a
-// browse axis. Kernel tags and serving model revisions are separate lists
-// with separate counts; they never share a ranking (§8.16). Each kernel row
-// opens the model's dossier: best known per operation on a chosen GPU.
+// Model index (§16.21): one catalog over both corpora. Each row states its
+// kernel-side coverage (workload provenance declared by sources) and its
+// serving-side coverage on an exact slug match; the two counts sit side by
+// side and never merge into one ranking (§8.16). Kernel rows open the
+// model's dossier; serving-only rows open the serving resolver.
 import type { Metadata } from "next"
 import { ApiLink } from "@/components/api-link"
 import { ContextHeader } from "@/components/context-header"
-import { ExpandRows } from "@/components/expand-rows"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
 import { Link } from "@/components/quiet-link"
-import { Section } from "@/components/section"
+import { ModelCatalog, type ModelCatalogRow } from "@/features/models/catalog"
 import { getModelIndex } from "@/lib/catalog"
 import { countNoun } from "@/lib/format"
 import { servingEnabled } from "@/server/env"
@@ -16,20 +16,14 @@ import { servingEnabled } from "@/server/env"
 export const metadata: Metadata = {
   title: "Models",
   description:
-    "Model-aware GPU kernel coverage: for each model, the operations KernelIndex knows are relevant, with evidence counts per GPU and the best known implementations one row away.",
+    "Model-aware GPU coverage: for each model, the operations KernelIndex knows are relevant, kernel benchmark evidence per GPU, and end-to-end serving evidence where it exists.",
   alternates: { canonical: "/models" },
 }
 export const revalidate = 300
 
-// Freshness lives on the model dossier, not the scan (§16 row diet).
-const GRID =
-  "grid grid-cols-[minmax(240px,1.5fr)_minmax(140px,1fr)_repeat(3,90px)] gap-x-4 min-w-[740px]"
-const SERVING_GRID =
-  "grid grid-cols-[minmax(240px,1.6fr)_140px_90px] gap-x-4 min-w-[540px]"
-
 /** "70B" from a raw parameter count; models without one stay quiet. */
-function paramsLabel(count: number | null): string {
-  if (count === null) return "—"
+function paramsLabel(count: number | null): string | null {
+  if (count === null) return null
   if (count >= 1e12) return `${(count / 1e12).toFixed(1).replace(/\.0$/, "")}T`
   if (count >= 1e9) return `${(count / 1e9).toFixed(1).replace(/\.0$/, "")}B`
   return `${Math.round(count / 1e6)}M`
@@ -37,125 +31,64 @@ function paramsLabel(count: number | null): string {
 
 export default async function ModelsPage() {
   const model = await getModelIndex()
-  const maxRuns = model.kernel[0]?.runs || 1
+  const serving = servingEnabled ? model.serving : []
+  const servingBySlug = new Map(serving.map((entry) => [entry.slug, entry]))
+  const kernelTags = new Set(model.kernel.map((entry) => entry.model))
+  // Kernel rows keep their run-count order; serving-only rows follow, by
+  // their own run counts. Names are data-provided only — the serving
+  // source's display name on an exact slug match, never invented.
+  const rows: ModelCatalogRow[] = [
+    ...model.kernel.map((entry) => {
+      const served = servingBySlug.get(entry.model)
+      return {
+        tag: entry.model,
+        name: served?.name ?? null,
+        operations: entry.operations,
+        kernelRuns: entry.runs,
+        gpus: entry.gpus,
+        servingRuns: served?.runs ?? null,
+        params: paramsLabel(served?.parameterCount ?? null),
+      }
+    }),
+    ...serving
+      .filter((entry) => !kernelTags.has(entry.slug))
+      .sort((a, b) => b.runs - a.runs)
+      .map((entry) => ({
+        tag: entry.slug,
+        name: entry.name,
+        operations: null,
+        kernelRuns: null,
+        gpus: null,
+        servingRuns: entry.runs,
+        params: paramsLabel(entry.parameterCount),
+      })),
+  ]
   return (
     <>
       {model.illustrative && <IllustrativeNotice />}
-      {/* No subtitle (2026-08-25): the provenance nuance already lives in
-          the footer note beneath the table. */}
       <ContextHeader
         title="Models"
         meta={
           <span>
             {countNoun(model.kernel.length, "model")} with kernel evidence
             {servingEnabled &&
-              ` · ${countNoun(model.serving.length, "serving model")}`}
+              ` · ${countNoun(serving.length, "serving model")}`}
           </span>
         }
       />
       <main className="shell pt-7 pb-24">
-        <div className="overflow-x-auto">
-          <div
-            className={`${GRID} items-baseline border-b border-border-strong pb-3 font-mono text-label text-faint uppercase`}
-          >
-            <div>Model</div>
-            <div />
-            <div className="text-right">Operations</div>
-            <div className="text-right">Runs</div>
-            <div className="text-right">GPUs</div>
-          </div>
-          <ExpandRows
-            cap={25}
-            noun="models"
-            rows={model.kernel.map((entry) => (
-              <div
-                key={entry.model}
-                className={`${GRID} h-12 items-center border-b border-line transition-colors hover:bg-raised`}
-              >
-                <div className="min-w-0 truncate">
-                  <Link
-                    href={`/models/${entry.model}`}
-                    prefetch={false}
-                    className="font-mono text-body"
-                  >
-                    {entry.model}
-                  </Link>
-                </div>
-                {/* Length carries the share (§16.2); the printed runs count
-                    stays the record of fact. */}
-                <div aria-hidden="true" className="flex items-center">
-                  <span
-                    className="block h-[9px]"
-                    style={{
-                      width: `${Math.max((entry.runs / maxRuns) * 100, entry.runs > 0 ? 1 : 0)}%`,
-                      background: "var(--color-viz-1)",
-                    }}
-                  />
-                </div>
-                <div className="text-right font-mono text-small text-muted">
-                  {entry.operations.toLocaleString("en-US")}
-                </div>
-                <div className="text-right font-mono text-small text-fg">
-                  {entry.runs.toLocaleString("en-US")}
-                </div>
-                <div className="text-right font-mono text-small text-subtle">
-                  {entry.gpus.toLocaleString("en-US")}
-                </div>
-              </div>
-            ))}
-          />
-        </div>
-        <p className="mt-4 max-w-[76ch] text-small text-faint">
-          Model relevance is workload provenance declared by the imported
-          sources, not a completeness claim; an operation a model needs may
-          simply not be indexed yet.{" "}
-          <Link href="/docs#sources">Sources and limitations →</Link>{" "}
+        <ModelCatalog rows={rows} />
+        <p className="mt-6 flex max-w-[100ch] flex-wrap items-baseline gap-x-5 text-small text-faint">
+          <span className="max-w-[76ch]">
+            Model relevance is workload provenance declared by the imported
+            sources, not a completeness claim; kernel and serving counts are
+            separate corpora and never one ranking.
+          </span>
+          <Link href="/docs#sources" className="text-small text-faint">
+            Sources and limitations
+          </Link>
           <ApiLink path="/models" />
         </p>
-
-        {servingEnabled && model.serving.length > 0 && (
-          <Section id="serving" title="Serving models">
-            <p className="mb-4 max-w-[76ch] text-body text-muted">
-              End-to-end serving evidence is a separate corpus with its own
-              resolver; these counts never mix with the kernel table above.
-            </p>
-            <div className="overflow-x-auto">
-              <div
-                className={`${SERVING_GRID} items-baseline border-b border-border-strong pb-2 font-mono text-label text-faint uppercase`}
-              >
-                <div>Model</div>
-                <div className="text-right">Parameters</div>
-                <div className="text-right">Runs</div>
-              </div>
-              <ExpandRows
-                cap={12}
-                noun="serving models"
-                rows={model.serving.map((entry) => (
-                  <div
-                    key={entry.slug}
-                    className={`${SERVING_GRID} h-12 items-center border-b border-line transition-colors hover:bg-raised`}
-                  >
-                    <div className="min-w-0 truncate">
-                      <Link
-                        href={`/serving?model=${encodeURIComponent(entry.slug)}`}
-                        prefetch={false}
-                        className="text-body"
-                      >
-                        {entry.name}
-                      </Link>
-                    </div>
-                    <div className="text-right font-mono text-small text-subtle">
-                      {paramsLabel(entry.parameterCount)}
-                    </div>
-                    <div className="text-right font-mono text-small text-muted">
-                      {entry.runs.toLocaleString("en-US")}
-                    </div>
-                  </div>
-                ))}
-              />
-            </div>
-          </Section>
-        )}
       </main>
     </>
   )

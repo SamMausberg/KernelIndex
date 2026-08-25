@@ -226,10 +226,14 @@ export default async function ChallengesPage() {
           </div>
         </Section>
 
-        <p className="mt-11 border-t border-border pt-5 text-small text-subtle">
-          Closing a challenge means publishing evidence: a benchmark run with
-          its workload, protocol, environment, and source.{" "}
-          <Link href="/submit">Contribute evidence →</Link>{" "}
+        <p className="mt-11 flex flex-wrap items-baseline gap-x-5 border-t border-border pt-5 text-small text-subtle">
+          <span>
+            Closing a challenge means publishing evidence: a benchmark run with
+            its workload, protocol, environment, and source.
+          </span>
+          <Link href="/submit" className="action">
+            Contribute evidence →
+          </Link>
           <ApiLink path="/challenges" />
         </p>
       </main>

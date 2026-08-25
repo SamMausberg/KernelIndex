@@ -68,10 +68,16 @@ export default async function GpusPage() {
             </div>
           ))}
         </div>
-        <p className="mt-4 text-small text-faint">
-          Coverage follows the imported sources; absence of a GPU here is not
-          evidence about its performance.{" "}
-          <Link href="/docs#sources">Sources and limitations →</Link>{" "}
+        {/* Flex gaps, not text spaces, between the note and its links
+            (2026-08-25, Sam: the arrow-to-JSON spacing read wrong). */}
+        <p className="mt-4 flex flex-wrap items-baseline gap-x-5 text-small text-faint">
+          <span>
+            Coverage follows the imported sources; absence of a GPU here is not
+            evidence about its performance.
+          </span>
+          <Link href="/docs#sources" className="text-small text-faint">
+            Sources and limitations
+          </Link>
           <ApiLink path="/hardware" />
         </p>
       </main>

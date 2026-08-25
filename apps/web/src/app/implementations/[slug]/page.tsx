@@ -5,6 +5,7 @@ import { ContextHeader } from "@/components/context-header"
 import { CopyButton } from "@/components/copy-button"
 import { ExpandRows } from "@/components/expand-rows"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
+import { ImplName } from "@/components/impl-name"
 import { KeyValueList } from "@/components/key-value-list"
 import { Metric } from "@/components/metric"
 import { Link } from "@/components/quiet-link"
@@ -15,6 +16,7 @@ import {
 } from "@/features/implementations/source-view"
 import { getImplementationPage } from "@/lib/catalog"
 import { countNoun, evidenceLabel, formatDateUTC } from "@/lib/format"
+import { splitImplementationName } from "@/lib/names"
 import { env } from "@/server/env"
 import { deployability } from "@/server/policy/deployability"
 
@@ -63,17 +65,29 @@ export default async function ImplementationPage({ params }: Props) {
     <>
       {model.illustrative && <IllustrativeNotice />}
       <ContextHeader
+        // Readable display name up top (2026-08-25 review), canonical id in
+        // muted mono on the context line whenever the two differ.
         title={
           model.implementation.name === model.implementation.slug ? (
-            <span className="font-mono">{model.implementation.name}</span>
+            <span className="font-mono">
+              <ImplName name={model.implementation.name} />
+            </span>
           ) : (
-            model.implementation.name
+            <ImplName name={model.implementation.name} />
           )
         }
         // Three facts (§16 meta diet): who ships it, in what, under which
         // license. Slug echo and the support matrix live in "Use it".
         context={
           <>
+            {splitImplementationName(model.implementation.name) && (
+              <>
+                <span className="font-mono text-faint">
+                  {model.implementation.name}
+                </span>
+                {" · "}
+              </>
+            )}
             {model.project.name !== model.implementation.name &&
               (model.project.repositoryUrl ? (
                 <>

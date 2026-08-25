@@ -3,8 +3,9 @@
 // `gemm b200 bf16` still suggests GEMM operations.
 import type { OperationIndexEntry } from "./catalog-models"
 import type { parseQuery } from "./search-query"
+import { synonymTermSets } from "./search-synonyms"
 
-const LIMIT = 8
+const LIMIT = 10
 
 /**
  * Suggestions for a parsed query. Bare recognized tokens ("fp8", "b200")
@@ -39,6 +40,28 @@ export function matchSuggestions(
 ): OperationIndexEntry[] {
   const lowered = terms.map((term) => term.toLowerCase()).filter(Boolean)
   if (lowered.length === 0) return []
+  // Vocabulary bridges: "matrix multiplication" also tries the corpus's
+  // own tokens (matmul, gemm, mm), merged after direct matches.
+  const alternates = synonymTermSets(lowered)
+  if (alternates.length > 0) {
+    const seen = new Set<string>()
+    const merged: OperationIndexEntry[] = []
+    for (const set of [lowered, ...alternates]) {
+      for (const entry of rankSuggestions(set, index)) {
+        if (seen.has(entry.slug)) continue
+        seen.add(entry.slug)
+        merged.push(entry)
+      }
+    }
+    return merged.slice(0, LIMIT)
+  }
+  return rankSuggestions(lowered, index)
+}
+
+function rankSuggestions(
+  lowered: string[],
+  index: OperationIndexEntry[],
+): OperationIndexEntry[] {
   const phrase = lowered.join(" ")
   return index
     .map((entry) => {

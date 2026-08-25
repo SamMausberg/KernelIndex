@@ -6,6 +6,7 @@ import { EvidenceOpened } from "@/components/beacon"
 import { ContextHeader } from "@/components/context-header"
 import { CopyButton } from "@/components/copy-button"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
+import { ImplName } from "@/components/impl-name"
 import { KeyValueList } from "@/components/key-value-list"
 import { Section } from "@/components/section"
 import { AttestForm } from "@/features/attestations/attest-form"
@@ -69,9 +70,11 @@ export default async function RunPage({ params }: Props) {
       <ContextHeader
         title={
           model.implementation.name === model.implementation.slug ? (
-            <span className="font-mono">{model.implementation.name}</span>
+            <span className="font-mono">
+              <ImplName name={model.implementation.name} />
+            </span>
           ) : (
-            model.implementation.name
+            <ImplName name={model.implementation.name} />
           )
         }
         context={

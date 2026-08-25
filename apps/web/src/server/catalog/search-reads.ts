@@ -21,6 +21,7 @@ import {
   removeToken,
   type SearchIntent,
 } from "../../lib/search-query.ts"
+import { synonymTokens } from "../../lib/search-synonyms.ts"
 import type { OperationSpecManifest } from "../../schemas/kinds.ts"
 import { db } from "../db/client.ts"
 import * as schema from "../db/schema.ts"
@@ -117,9 +118,22 @@ export async function resolveOperation(
   const phraseCollapsed = terms
     .map((term) => term.replaceAll(/[-_]/g, ""))
     .join("")
-  // Terms are charset-validated above, so a literal `{a,b}` array is safe —
-  // the postgres-js driver does not serialize JS arrays for `= any($n)`.
-  const termsArray = `{${terms.join(",")}}`
+  // Vocabulary bridges (lib/search-synonyms): "matrix multiplication" also
+  // scores against matmul/gemm/mm — extra similarity terms and extra exact
+  // alias candidates, never replacing what was typed.
+  const synonyms = synonymTokens(terms)
+  // Terms are charset-validated above and synonyms come from our own
+  // curated table, so a literal `{a,b}` array is safe — the postgres-js
+  // driver does not serialize JS arrays for `= any($n)`.
+  const termsArray = `{${[...terms, ...synonyms].join(",")}}`
+  const aliasCandidates = `{${[
+    phrase,
+    phraseSlug,
+    phraseUnderscore,
+    ...synonyms,
+  ]
+    .map((candidate) => `"${candidate}"`)
+    .join(",")}}`
 
   const database = db()
   const scored = await database.execute(sql`
@@ -130,7 +144,7 @@ export async function resolveOperation(
         when exists (
           select 1 from ${schema.operationAliases} a
           where a.operation_id = o.id
-            and (a.alias in (${phrase}, ${phraseSlug}, ${phraseUnderscore})
+            and (a.alias = any(${aliasCandidates}::text[])
               or replace(replace(a.alias, '_', ''), '-', '') = ${phraseCollapsed})
         ) then 300
         when o.family in (${phrase}, ${phraseSlug}) then 200
