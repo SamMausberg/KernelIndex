@@ -2973,7 +2973,20 @@ code/digests:     12 to 14 px monospace
 
 Animation is functional only: focus, disclosure, copy confirmation, and modest route-state transitions around 120 to 180 ms. Respect reduced motion.
 
-**Revision (2026-08-25, readability pass).** The implemented role scale (globals.css) sits one notch above the launch values: label 11, mini 12, small 13, body 14, lead 16, title 20, display 28, readout 34, hero clamp(26px, 2.8vw, 34px) — the hero was deliberately reduced from 44px max: no oversized display type anywhere. The faint text tier brightened to #838aa2 so 12px metadata stays legible. Monospace is only for numerals and metrics, shapes and dtypes, slugs, IDs and digests, commands, table-head labels, and dates in table cells; anything that reads as a sentence or a fact list is sans. Meta lines carry at most three ·-joined facts (the rest live in the row's disclosure), collapsed rows carry at most two text tiers, and `.key` chips are reserved for interactive controls. Each page states one lead action with at most two secondary actions visible (the 3-second rule); the page's /api/v1 twin links from the page-end footer note, never the header.
+**Revision (2026-08-25, readability pass).** The implemented role scale (globals.css) sits one notch above the launch values: label 11, mini 12, small 13, body 14, lead 16, title 20, display 28, readout 34, hero clamp(26px, 2.8vw, 34px) — the hero was deliberately reduced from 44px max: no oversized display type anywhere.
+
+**Revision (2026-08-25 evening, external readability audit).** The audit read
+the scale as too small for the information density and the surface palette as
+too uniform (surface 1.03:1 and border 1.20:1 against the canvas: sections
+blended, hover carried all the structure). Both moved one deliberate step,
+nothing else: label and mini keep table density at 11/12px; small 13.5, body
+15, lead 17, title 23, display 32, readout 38, hero clamp(32px, 3.6vw, 44px);
+surfaces and hairlines each one step lighter at the same cobalt hue (surface
+#090c15, raised #0e1220, border #1b2033, border-strong #232a40, edge #2e3651,
+edge-hover #414b6e). Dense trust/evidence columns widened 20–40px for the
+Reproduction-ready label. Below sm, search result rows and homepage records
+reflow into stacked cards instead of horizontal scroll (the wide matrices on
+GPU/records/project pages keep overflow-x for now). The faint text tier brightened to #838aa2 so 12px metadata stays legible. Monospace is only for numerals and metrics, shapes and dtypes, slugs, IDs and digests, commands, table-head labels, and dates in table cells; anything that reads as a sentence or a fact list is sans. Meta lines carry at most three ·-joined facts (the rest live in the row's disclosure), collapsed rows carry at most two text tiers, and `.key` chips are reserved for interactive controls. Each page states one lead action with at most two secondary actions visible (the 3-second rule); the page's /api/v1 twin links from the page-end footer note, never the header.
 
 ### 16.3 Page geometry and density
 
