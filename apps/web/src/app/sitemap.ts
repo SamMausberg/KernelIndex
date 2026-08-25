@@ -5,17 +5,20 @@ import {
   getModelIndex,
   getOperationIndex,
   getProjectIndex,
+  listImplementationSlugs,
 } from "@/lib/catalog"
 import { env, servingEnabled } from "@/server/env"
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const origin = env.SITE_ORIGIN ?? "https://kernelindex.com"
-  const [index, hardware, models, projects] = await Promise.all([
-    getOperationIndex(),
-    getHardwareIndex(),
-    getModelIndex(),
-    getProjectIndex(),
-  ])
+  const [index, hardware, models, projects, implementations] =
+    await Promise.all([
+      getOperationIndex(),
+      getHardwareIndex(),
+      getModelIndex(),
+      getProjectIndex(),
+      listImplementationSlugs(),
+    ])
   return [
     { url: origin },
     { url: `${origin}/search` },
@@ -44,6 +47,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...index.map((operation) => ({
       url: `${origin}/operations/${operation.slug}`,
       lastModified: operation.lastObservedAt ?? undefined,
+    })),
+    // Implementation dossiers are the long-tail entry points (§16.18).
+    ...implementations.map((slug) => ({
+      url: `${origin}/implementations/${slug}`,
     })),
   ]
 }

@@ -41,6 +41,11 @@ export {
   getImplementationPage,
   getRunPage,
 } from "./dossiers"
+
+/** Every implementation slug, for the sitemap (§16.18). */
+export async function listImplementationSlugs(): Promise<string[]> {
+  return [...new Set(RUNS.map((r) => r.impl.slug))].sort()
+}
 export { findPrecedents } from "./precedents"
 export {
   getOperationIndex,

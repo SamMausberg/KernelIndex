@@ -17,7 +17,10 @@ export { getComparePage } from "./compare-reads.ts"
 export * from "./coverage-reads.ts"
 export { getFeed } from "./feed-reads.ts"
 export { getHomePage, getRecordsPage } from "./home-reads.ts"
-export { getImplementationPage } from "./implementation-reads.ts"
+export {
+  getImplementationPage,
+  listImplementationSlugs,
+} from "./implementation-reads.ts"
 export { getModelIndex, getModelPage } from "./model-reads.ts"
 export { getOperationIndex, getOperationPage } from "./operation-reads.ts"
 export { findPrecedents } from "./precedent-reads.ts"

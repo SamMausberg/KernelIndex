@@ -28,6 +28,16 @@ import {
 } from "./run-rows.ts"
 import { diffSource } from "./source-diff.ts"
 
+/** Every implementation slug, for the sitemap (§16.18): the dossiers are
+ * the long-tail crawl entry points and must all be named there. */
+export async function listImplementationSlugs(): Promise<string[]> {
+  const rows = await db()
+    .select({ slug: schema.implementations.slug })
+    .from(schema.implementations)
+    .orderBy(schema.implementations.slug)
+  return rows.map((row) => row.slug)
+}
+
 const SUBMISSION_VERSION = /^submission-(\d+)$/
 
 function submissionNumber(version: string | undefined): number | null {

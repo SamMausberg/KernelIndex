@@ -51,6 +51,8 @@ type CatalogReads = {
     cohort?: string,
   ): Promise<OperationPageModel | null>
   getImplementationPage(slug: string): Promise<ImplementationPageModel | null>
+  // Every implementation slug, for the sitemap (§16.18).
+  listImplementationSlugs(): Promise<string[]>
   getRunPage(id: string): Promise<RunPageModel | null>
   getComparePage(runIds: string[]): Promise<ComparePageModel>
   getCoveragePage(): Promise<CoveragePageModel>
@@ -166,6 +168,14 @@ export const getOperationPage = cache(
       return (await reads()).getOperationPage(slug, workload, cohort)
     },
     ["operation", BACKEND],
+    { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },
+  ),
+)
+
+export const listImplementationSlugs = cache(
+  cached(
+    async () => (await reads()).listImplementationSlugs(),
+    ["implementation-slugs", BACKEND],
     { revalidate: REVALIDATE_SECONDS, tags: ["catalog"] },
   ),
 )
