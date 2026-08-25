@@ -26,10 +26,8 @@ export default async function GpusPage() {
   return (
     <>
       {model.illustrative && <IllustrativeNotice />}
-      <ContextHeader
-        title="GPUs"
-        context="runs indexed and records held per hardware model"
-      />
+      {/* No subtitle (2026-08-25): the table states what the page holds. */}
+      <ContextHeader title="GPUs" />
       <main className="shell pt-7 pb-24">
         <div className="overflow-x-auto">
           <div

@@ -146,10 +146,9 @@ export default async function ProjectsPage({
   return (
     <>
       {model.illustrative && <IllustrativeNotice />}
-      <ContextHeader
-        title="Projects"
-        context="records held and 30-day movement per project, counted inside each record's own cohort"
-      />
+      {/* No subtitle (2026-08-25): the cohort-counting rule is stated once,
+          in the page footer. */}
+      <ContextHeader title="Projects" />
       <main className="shell pb-24">
         <Section id="libraries" title="Libraries">
           {/* The sort rides with the tables it orders, not the page header

@@ -41,9 +41,10 @@ export default async function ModelsPage() {
   return (
     <>
       {model.illustrative && <IllustrativeNotice />}
+      {/* No subtitle (2026-08-25): the provenance nuance already lives in
+          the footer note beneath the table. */}
       <ContextHeader
         title="Models"
-        context="operation coverage per model, as the imported sources declared it"
         meta={
           <span>
             {countNoun(model.kernel.length, "model")} with kernel evidence

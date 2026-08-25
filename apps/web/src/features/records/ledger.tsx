@@ -64,7 +64,7 @@ function LatestBreaks({ latest }: { latest: LedgerEvent[] }) {
   return (
     <div className="pt-6 pb-2">
       <div className="mb-3 flex items-baseline justify-between gap-4">
-        <h2 className="text-lead font-medium">Latest breaks</h2>
+        <h2 className="text-title font-medium">Latest breaks</h2>
         <span className="text-small text-faint">newest indexed first</span>
       </div>
       <div className="overflow-x-auto border-t border-border-strong">
@@ -119,9 +119,9 @@ function HolderRow({ holder }: { holder: LedgerHolder }) {
       new Date(holder.indexedAt).getTime() <
     14 * DAY_MS
   const margin = formatImprovement(holder.history[0].improvementPct)
-  // The full timeline lives in the Record history view; rendering it for
-  // every collapsed row made the page's payload (§16.12 payload budget).
-  const timeline = holder.history.slice(0, 6)
+  // Three events preview the story; the Record history view holds the rest
+  // (§16 row diet — the expansion is a summary, not the full dossier).
+  const timeline = holder.history.slice(0, 3)
   const earlier = holder.history.length - timeline.length
   return (
     <details
@@ -265,16 +265,10 @@ function HolderRow({ holder }: { holder: LedgerHolder }) {
             .
           </p>
         )}
+        {/* Two destinations (§16 link diet): the run dossier is the
+            forensic surface — source, compare, and methodology live there
+            and in the page footer, not repeated under every row. */}
         <div className="mt-3.5 flex flex-wrap items-baseline gap-x-5 gap-y-1">
-          {record.sourceAvailable && (
-            <Link
-              href={`/implementations/${record.implementation.slug}#code`}
-              prefetch={false}
-              className="action"
-            >
-              View source →
-            </Link>
-          )}
           {record.runId && (
             <Link
               href={`/runs/${record.runId}`}
@@ -292,18 +286,6 @@ function HolderRow({ holder }: { holder: LedgerHolder }) {
             className="action"
           >
             Cohort on the operation page →
-          </Link>
-          {record.runId && holder.history.length >= 2 && (
-            <Link
-              href={`/compare?run=${record.runId}&run=${holder.history[1].runId}`}
-              prefetch={false}
-              className="action"
-            >
-              Compare with previous record →
-            </Link>
-          )}
-          <Link href="/docs#records" className="text-small">
-            How records are decided
           </Link>
         </div>
       </div>
@@ -679,7 +661,6 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
     <div onPointerEnter={prime} onFocusCapture={prime}>
       <ContextHeader
         title="Performance records"
-        context={slice.context}
         meta={[
           ...VIEWS.map((view) => (
             <FilterLink

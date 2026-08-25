@@ -66,9 +66,9 @@ export function FeedView({ initial }: { initial: FeedModel }) {
 
   return (
     <>
+      {/* No subtitle (2026-08-25): the date gutter shows the window. */}
       <ContextHeader
         title="Feed"
-        context="what the index learned over the trailing 30 days, newest first"
         meta={
           <>
             {view(false, "All")}

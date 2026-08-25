@@ -13,7 +13,9 @@ export function Section({
 }) {
   return (
     <section id={id} className="mt-10">
-      <h2 className="mb-3 text-lead font-medium">{title}</h2>
+      {/* Title size (2026-08-25 hierarchy pass): one clear step below the
+          display h1, one clear step above table text. */}
+      <h2 className="mb-3 text-title font-medium">{title}</h2>
       {children}
     </section>
   )

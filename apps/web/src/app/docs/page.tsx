@@ -60,10 +60,7 @@ export default async function DocsPage() {
   const coverage = await getCoveragePage()
   return (
     <>
-      <ContextHeader
-        title="Documentation"
-        context="search · results · using a kernel · API"
-      />
+      <ContextHeader title="Documentation" />
       {/* Quiet section index on very wide screens (§16.3), positioned below
           the header band so it never overlaps it; the anchored headings
           remain the navigation everywhere else. */}

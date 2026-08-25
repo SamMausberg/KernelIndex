@@ -152,7 +152,7 @@ export default async function ChallengesPage() {
               className="mt-10"
             >
               <div className="flex flex-wrap items-baseline gap-x-4">
-                <h2 className="text-lead font-medium">{title}</h2>
+                <h2 className="text-title font-medium">{title}</h2>
                 <span className="text-small text-faint">{caption}</span>
               </div>
               <div className="mt-3 overflow-x-auto">

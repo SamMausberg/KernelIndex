@@ -7,7 +7,6 @@ import type {
   RecordsPageModel,
   ResultRow,
 } from "@/lib/catalog"
-import { formatInstantUTC } from "@/lib/format"
 
 /**
  * The web payload boundary (§16.12 payload budget): the catalog model keeps
@@ -342,7 +341,6 @@ export type LedgerSlice = {
   /** Verified/replicated holders under the other filters; zero renders the
    * Verified chip as an honest dead control instead of an empty page. */
   verifiedCount: number
-  context: string | undefined
   holders?: { rows: LedgerHolder[]; total: number; pageCount: number }
   /** Lead story for the current view: newest breaks under the filters. */
   latest?: LedgerEvent[]
@@ -361,20 +359,9 @@ export function ledgerSlice(
     broken: recentlyBroken(events).length,
     history: events.length,
   }
-  const operations = new Set(
-    model.records.map((holder) => holder.operation.slug),
-  ).size
   const hardwareCounts: Record<string, number> = {}
   for (const holder of model.records)
     hardwareCounts[holder.hardware] = (hardwareCounts[holder.hardware] ?? 0) + 1
-  // Named for what they count (§16.4): a record is one cohort's fastest run,
-  // and the operations are those with ranked runs — the same number the
-  // homepage states, so no surface disagrees with another. The GPU count
-  // lives in the hardware picker, not here (§16 header diet).
-  const context =
-    model.records.length > 0
-      ? `${model.records.length} current record${model.records.length === 1 ? "" : "s"} across ${operations} operation${operations === 1 ? "" : "s"} with ranked runs · as of ${formatInstantUTC(model.asOf)}`
-      : undefined
   const slice: LedgerSlice = {
     filters,
     counts,
@@ -391,7 +378,6 @@ export function ledgerSlice(
         isVerifiedHolder(holder) &&
         keepHolder(holder, { ...filters, verified: true, filter: "" }),
     ).length,
-    context,
   }
   const kept = (holder: LedgerHolder) => keepHolder(holder, filters)
   if (filters.view === "current") {

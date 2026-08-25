@@ -462,7 +462,7 @@ export function SearchResults({
         ) : model.matches && !model.operation ? (
           <section className="pt-6">
             <div className="flex flex-wrap items-baseline justify-between gap-4 border-b border-border-strong pb-3">
-              <h1 className="text-lead font-medium">
+              <h1 className="text-title font-medium">
                 {model.matches.length} operations match
               </h1>
               <span className="text-small text-faint">

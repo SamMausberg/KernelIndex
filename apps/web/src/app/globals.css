@@ -74,9 +74,9 @@
    *   mini     table meta: dates, units, counters, chips' numerals
    *   small    secondary text: chips, captions, expansion prose
    *   body     primary text: cells, links, nav, prose
-   *   lead     section headings, emphasized values
-   *   title    page h1
-   *   display  standalone statements (error, not-found)
+   *   lead     emphasized values, dense-area headings
+   *   title    section headings
+   *   display  page h1, standalone statements (error, not-found)
    *   readout  the measurement numeral (search hero, run dossier)
    *   hero     the homepage headline only
    */
