@@ -175,7 +175,8 @@ async function ServingResults({
     <>
       {/* One line: the counts, then the one comparability sentence. */}
       <div className="flex flex-wrap items-baseline justify-between gap-x-8 gap-y-1.5 py-4">
-        <p className="font-mono text-small text-muted">
+        {/* A fact list, so sans (§16 mono rule); the numerals stay tabular. */}
+        <p className="text-small text-muted">
           {countNoun(model.groups.length, "comparison group")} · {feasible}{" "}
           feasible · {excluded} excluded
         </p>

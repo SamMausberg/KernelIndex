@@ -11,7 +11,7 @@ import { Metric } from "@/components/metric"
 import { Link } from "@/components/quiet-link"
 import { Section } from "@/components/section"
 import { SourcesFooter } from "@/components/sources-footer"
-import { EvidenceCell } from "@/components/trust"
+import { StatStrip } from "@/components/stat-strip"
 import { FollowButton } from "@/features/follow/follow-button"
 import { MonthlyActivity } from "@/features/hardware/activity"
 import { RecordSpark } from "@/features/records/timeline"
@@ -40,7 +40,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 const RECORD_GRID =
-  "grid grid-cols-[minmax(240px,1.5fr)_92px_150px_minmax(180px,1.2fr)_92px_96px] items-center gap-x-4 min-w-[940px]"
+  "grid grid-cols-[minmax(240px,1.5fr)_92px_150px_minmax(180px,1.2fr)_96px] items-center gap-x-4 min-w-[840px]"
 const RECORD_LIMIT = 40
 
 export default async function GpuPage({ params }: Props) {
@@ -55,43 +55,49 @@ export default async function GpuPage({ params }: Props) {
       {model.illustrative && <IllustrativeNotice />}
       <ContextHeader
         title={model.hardware.model}
+        context={model.hardware.architecture ?? undefined}
         meta={
-          <>
-            <span>
-              {model.stats.runs.toLocaleString("en-US")} runs ·{" "}
-              {model.stats.operations.toLocaleString("en-US")} operations ·{" "}
-              {model.stats.implementations.toLocaleString("en-US")}{" "}
-              implementations
-            </span>
-            <FollowButton
-              kind="gpu"
-              followKey={model.hardware.model}
-              label={model.hardware.model}
-              href={`/gpus/${slug}`}
-              noun="GPU"
-            />
-          </>
+          <FollowButton
+            kind="gpu"
+            followKey={model.hardware.model}
+            label={model.hardware.model}
+            href={`/gpus/${slug}`}
+            noun="GPU"
+          />
         }
-      >
-        {model.hardware.architecture && (
-          <span className="key mt-2.5 inline-block px-2 py-1 font-mono text-mini text-subtle">
-            {model.hardware.architecture}
-          </span>
-        )}
-      </ContextHeader>
+      />
 
       <main className="shell pb-24">
+        {/* The page's reading before any table (§16 page grammar): what the
+            index holds for this GPU, in three numbers. */}
+        <StatStrip
+          facts={[
+            {
+              label: "Records held",
+              value: model.records.length.toLocaleString("en-US"),
+            },
+            {
+              label: "Runs",
+              value: model.stats.runs.toLocaleString("en-US"),
+            },
+            {
+              label: "Operations",
+              value: model.stats.operations.toLocaleString("en-US"),
+              detail: `${model.stats.implementations.toLocaleString("en-US")} implementations`,
+            },
+          ]}
+        />
         <Section id="records" title="Records held on this GPU">
           {records.length > 0 ? (
             <div className="overflow-x-auto">
               <div
                 className={`${RECORD_GRID} border-b border-border-strong pb-2 font-mono text-label text-faint uppercase`}
               >
+                {/* Evidence lives on the run dossier (§16 row diet). */}
                 <div>Operation · workload</div>
                 <div>History</div>
                 <div className="pr-3.5 text-right">Record</div>
                 <div>Implementation</div>
-                <div>Evidence</div>
                 <div className="text-right">Since</div>
               </div>
               <ExpandRows
@@ -134,7 +140,6 @@ export default async function GpuPage({ params }: Props) {
                         {holder.current.implementation.name}
                       </Link>
                     </div>
-                    <EvidenceCell row={holder.current} />
                     <div className="text-right font-mono text-mini text-faint">
                       {formatDateUTC(holder.since)}
                     </div>

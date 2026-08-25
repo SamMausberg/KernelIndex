@@ -12,6 +12,7 @@ import { Metric } from "@/components/metric"
 import { Link } from "@/components/quiet-link"
 import { Section } from "@/components/section"
 import { SourcesFooter } from "@/components/sources-footer"
+import { StatStrip } from "@/components/stat-strip"
 import { FollowButton } from "@/features/follow/follow-button"
 import { MonthlyActivity } from "@/features/hardware/activity"
 import { ImplementationsTable } from "@/features/implementations/implementations-table"
@@ -71,9 +72,9 @@ export default async function ProjectPage({ params }: Props) {
         title={project.name}
         context={
           <>
-            <span className="key mr-2 text-mini text-subtle">
-              {KIND_LABEL[project.kind]}
-            </span>
+            {/* Identity tags are plain text, not keys (§16 pill restraint). */}
+            {KIND_LABEL[project.kind]}
+            {" · "}
             {project.repositoryUrl ? (
               <a href={project.repositoryUrl}>
                 {project.host?.id ?? project.repositoryUrl}
@@ -88,39 +89,45 @@ export default async function ProjectPage({ params }: Props) {
           </>
         }
         meta={
-          <>
-            {/* The record count carries its snapshot: this dossier and the
-                projects index cache on separate clocks, so a few minutes of
-                imports can legitimately separate their numbers (§16.4). */}
-            <span className={model.records.length > 0 ? "text-fg" : undefined}>
-              {countNoun(model.records.length, "record")}
-              <span className="text-faint">
-                {" "}
-                as of {formatInstantUTC(model.recordsAsOf)}
-              </span>{" "}
-              ·{" "}
-              {countNoun(
-                stats.implementations,
-                individual ? "entry" : "kernel",
-              )}{" "}
-              · {stats.runs.toLocaleString("en-US")} runs
-            </span>
-            {claim.state === "claimed" && (
-              <span>Claimed{claim.by ? ` by ${claim.by}` : ""}</span>
-            )}
-            {claim.state === "pending" && <span>Claim pending review</span>}
-            <FollowButton
-              kind="project"
-              followKey={project.slug}
-              label={project.name}
-              href={`/projects/${project.slug}`}
-              noun="project"
-            />
-          </>
+          <FollowButton
+            kind="project"
+            followKey={project.slug}
+            label={project.name}
+            href={`/projects/${project.slug}`}
+            noun="project"
+          />
         }
       />
 
       <main className="shell pb-24">
+        {/* The standing before any table (§16 page grammar). The record
+            count carries its snapshot: this dossier and the projects index
+            cache on separate clocks, so a few minutes of imports can
+            legitimately separate their numbers (§16.4). */}
+        <StatStrip
+          facts={[
+            {
+              label: "Records held",
+              value: model.records.length.toLocaleString("en-US"),
+              detail: `as of ${formatInstantUTC(model.recordsAsOf)}`,
+            },
+            {
+              label: individual ? "Entries" : "Kernels",
+              value: stats.implementations.toLocaleString("en-US"),
+            },
+            {
+              label: "Runs",
+              value: stats.runs.toLocaleString("en-US"),
+            },
+          ]}
+        />
+        {claim.state !== "unclaimed" && (
+          <p className="pt-3 text-small text-subtle">
+            {claim.state === "claimed"
+              ? `Claimed${claim.by ? ` by ${claim.by}` : ""}`
+              : "Claim pending review"}
+          </p>
+        )}
         {claim.state === "unclaimed" && (
           <div className="pt-5">
             <ClaimPanel

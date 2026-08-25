@@ -2,7 +2,6 @@
 
 import { startTransition, useEffect, useState } from "react"
 import { ExpandRows } from "@/components/expand-rows"
-import { KeyValueList } from "@/components/key-value-list"
 import { Link } from "@/components/quiet-link"
 import { Section } from "@/components/section"
 import {
@@ -186,106 +185,98 @@ export function OperationRecords({
         </div>
       )}
       <Section id="records" title="Current records">
-        {/* The sweep table stays compact; the cohort panel uses the rest
-            of the width instead of leaving it empty. */}
-        <div className="mb-4 grid grid-cols-[minmax(0,1fr)_minmax(300px,370px)] gap-10 max-lg:grid-cols-1">
-          <div>
-            <WorkloadPicker
-              workloads={workloads}
-              selectedId={variant.selectedWorkloadId}
-              slug={slug}
-            />
-            {/* The environment chooser states what each cohort holds (§16.8
-                coverage made positive): its best known run, not only a
-                label. The selected row reads as the current cohort. */}
-            {variant.cohortOptions.length > 1 && (
-              <div className="text-small">
-                <div
-                  className={`${ENV_GRID} border-b border-border-strong pb-1.5 font-mono text-label text-faint uppercase`}
-                >
-                  <span>Hardware</span>
-                  <span className="text-right">Best known</span>
-                  <span>Implementation</span>
-                  <span className="text-right">Runs</span>
-                </div>
-                <ExpandRows
-                  cap={6}
-                  noun="environments"
-                  rows={variant.cohortOptions.map((option) => {
-                    const selected =
-                      option.key === variant.cohort?.comparisonKey
-                    return (
-                      <Link
-                        key={option.key}
-                        href={cohortHref(option.key)}
-                        aria-current={selected ? "true" : undefined}
-                        className={`${ENV_GRID} border-b border-line py-1.5 no-underline transition-colors hover:bg-raised ${
-                          selected ? "text-fg" : "text-subtle"
-                        }`}
-                      >
-                        <span className="truncate font-mono">
-                          {option.label}
-                        </span>
-                        <span className="text-right font-mono">
-                          {option.head
-                            ? formatPrimary(option.head.primary)
-                            : "—"}
-                        </span>
-                        <span className="truncate">
-                          {option.head?.implementation.name ?? "no ranked run"}
-                        </span>
-                        <span className="text-right font-mono text-faint">
-                          {option.runs}
-                        </span>
-                      </Link>
-                    )
-                  })}
-                />
-              </div>
-            )}
-            {variant.records.length > 0 && missing.length > 0 && (
-              <p className="mt-2.5 text-small text-faint">
-                Not measured on {missing.join(", ")} for this workload.{" "}
-                <Link
-                  href="/challenges"
-                  prefetch={false}
-                  className="text-small"
-                >
-                  Challenges →
-                </Link>
-              </p>
-            )}
-          </div>
-          {variant.cohort && (
-            <div className="border-l border-border pl-9 max-lg:border-l-0 max-lg:pl-0">
-              <div className="mb-2.5 text-small text-subtle">
-                {variant.cohort.profile === "source_native"
-                  ? "Source-native comparison"
-                  : "Exact comparison"}
-              </div>
-              <KeyValueList
-                items={[
-                  ...variant.cohort.facts,
-                  { key: "results", value: String(variant.recordsTotal) },
-                  ...(lastObservedAt
-                    ? [
-                        {
-                          key: "last observed",
-                          value: formatDateUTC(lastObservedAt),
-                        },
-                      ]
-                    : []),
-                ]}
-              />
-              {variant.headroom && <HeadroomNote headroom={variant.headroom} />}
-              <Link
-                href={`/records?view=history&f=${encodeURIComponent(operationName)}`}
-                prefetch={false}
-                className="mt-2.5 inline-block text-small"
+        {/* One scope zone (§16 page grammar): the workload picker and the
+            environment chooser are the only machinery between the section
+            heading and the table. */}
+        <div className="mb-4 max-w-[760px]">
+          <WorkloadPicker
+            workloads={workloads}
+            selectedId={variant.selectedWorkloadId}
+            slug={slug}
+          />
+          {/* The environment chooser states what each cohort holds (§16.8
+              coverage made positive): its best known run, not only a
+              label. The selected row reads as the current cohort. */}
+          {variant.cohortOptions.length > 1 && (
+            <div className="text-small">
+              <div
+                className={`${ENV_GRID} border-b border-border-strong pb-1.5 font-mono text-label text-faint uppercase`}
               >
-                Record history →
+                <span>Hardware</span>
+                <span className="text-right">Best known</span>
+                <span>Implementation</span>
+                <span className="text-right">Runs</span>
+              </div>
+              <ExpandRows
+                cap={6}
+                noun="environments"
+                rows={variant.cohortOptions.map((option) => {
+                  const selected = option.key === variant.cohort?.comparisonKey
+                  return (
+                    <Link
+                      key={option.key}
+                      href={cohortHref(option.key)}
+                      aria-current={selected ? "true" : undefined}
+                      className={`${ENV_GRID} border-b border-line py-1.5 no-underline transition-colors hover:bg-raised ${
+                        selected ? "text-fg" : "text-subtle"
+                      }`}
+                    >
+                      <span className="truncate font-mono">{option.label}</span>
+                      <span className="text-right font-mono">
+                        {option.head ? formatPrimary(option.head.primary) : "—"}
+                      </span>
+                      <span className="truncate">
+                        {option.head?.implementation.name ?? "no ranked run"}
+                      </span>
+                      <span className="text-right font-mono text-faint">
+                        {option.runs}
+                      </span>
+                    </Link>
+                  )
+                })}
+              />
+            </div>
+          )}
+          {variant.records.length > 0 && missing.length > 0 && (
+            <p className="mt-2.5 text-small text-faint">
+              Not measured on {missing.join(", ")} for this workload.{" "}
+              <Link href="/challenges" prefetch={false} className="text-small">
+                Challenges →
               </Link>
-              <div className="mt-3">
+            </p>
+          )}
+        </div>
+        {/* The cohort's facts as one quiet line over the table (§16 row
+            diet), replacing the old side panel; the headroom estimate keeps
+            its disclosure beneath it. */}
+        {variant.cohort && (
+          <div className="mb-3">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1.5">
+              <span className="min-w-0 font-mono text-mini text-subtle">
+                <span className="font-sans text-faint">
+                  {variant.cohort.profile === "source_native"
+                    ? "Source-native comparison"
+                    : "Exact comparison"}
+                  {" · "}
+                </span>
+                {[
+                  ...variant.cohort.facts.map(
+                    (fact) => `${fact.key} ${fact.value}`,
+                  ),
+                  `${variant.recordsTotal} results`,
+                  ...(lastObservedAt
+                    ? [`last observed ${formatDateUTC(lastObservedAt)}`]
+                    : []),
+                ].join(" · ")}
+              </span>
+              <span className="flex items-baseline gap-x-5">
+                <Link
+                  href={`/records?view=history&f=${encodeURIComponent(operationName)}`}
+                  prefetch={false}
+                  className="text-small whitespace-nowrap"
+                >
+                  Record history →
+                </Link>
                 <FollowButton
                   kind="cohort"
                   followKey={variant.cohort.comparisonKey}
@@ -297,10 +288,11 @@ export function OperationRecords({
                   href={cohortHref(variant.cohort.comparisonKey)}
                   noun="cohort"
                 />
-              </div>
+              </span>
             </div>
-          )}
-        </div>
+            {variant.headroom && <HeadroomNote headroom={variant.headroom} />}
+          </div>
+        )}
         <div className="overflow-x-auto">
           {variant.records.length > 0 ? (
             <>

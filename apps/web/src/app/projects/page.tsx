@@ -13,7 +13,7 @@ import { IllustrativeNotice } from "@/components/illustrative-notice"
 import { Link } from "@/components/quiet-link"
 import { Section } from "@/components/section"
 import { getProjectIndex, type ProjectIndexEntry } from "@/lib/catalog"
-import { formatDateUTC, formatInstantUTC } from "@/lib/format"
+import { formatInstantUTC } from "@/lib/format"
 
 export const metadata: Metadata = {
   title: "Projects",
@@ -22,11 +22,11 @@ export const metadata: Metadata = {
   alternates: { canonical: "/projects" },
 }
 
-// Six columns (§16 3-second rule): who, how much evidence, the standing,
-// its 30-day movement, freshness. Trust ceiling, licensing, and hardware
-// belong to the project dossier, not the standings scan.
+// Standings columns (§16 row diet): who, the standing with its share bar,
+// its 30-day movement, then the evidence volume. Freshness, trust ceiling,
+// licensing, and hardware belong to the project dossier, not this scan.
 const GRID =
-  "grid grid-cols-[minmax(230px,1.5fr)_72px_72px_82px_110px_104px] gap-x-5 min-w-[760px]"
+  "grid grid-cols-[minmax(230px,1.5fr)_minmax(120px,0.9fr)_82px_110px_72px_72px] gap-x-5 min-w-[760px]"
 
 // SSR row cap (§16 payload budget): the tail of the authors group is
 // hundreds of one-submission contest identities; every project past the cap
@@ -49,7 +49,13 @@ function sorted(projects: ProjectIndexEntry[], sort: Sort) {
   return copy
 }
 
-function ProjectRow({ project }: { project: ProjectIndexEntry }) {
+function ProjectRow({
+  project,
+  maxRecords,
+}: {
+  project: ProjectIndexEntry
+  maxRecords: number
+}) {
   return (
     <div
       className={`${GRID} row-cv h-12 items-center border-b border-line transition-colors hover:bg-raised`}
@@ -63,11 +69,16 @@ function ProjectRow({ project }: { project: ProjectIndexEntry }) {
           {project.name}
         </Link>
       </div>
-      <div className="text-right font-mono text-small text-muted">
-        {project.implementations.toLocaleString("en-US")}
-      </div>
-      <div className="text-right font-mono text-small text-muted">
-        {project.runs.toLocaleString("en-US")}
+      {/* Length carries the standing's share (§16.2); the printed count
+          stays the record of fact. */}
+      <div aria-hidden="true" className="flex items-center">
+        <span
+          className="block h-[9px]"
+          style={{
+            width: `${Math.max((project.records / (maxRecords || 1)) * 100, project.records > 0 ? 1 : 0)}%`,
+            background: "var(--color-viz-1)",
+          }}
+        />
       </div>
       <div className="text-right font-mono text-small text-fg">
         {project.records.toLocaleString("en-US")}
@@ -89,8 +100,11 @@ function ProjectRow({ project }: { project: ProjectIndexEntry }) {
           </>
         )}
       </div>
-      <div className="text-right font-mono text-mini text-faint">
-        {formatDateUTC(project.lastObservedAt)}
+      <div className="text-right font-mono text-small text-subtle">
+        {project.implementations.toLocaleString("en-US")}
+      </div>
+      <div className="text-right font-mono text-small text-subtle">
+        {project.runs.toLocaleString("en-US")}
       </div>
     </div>
   )
@@ -102,11 +116,11 @@ function TableHead() {
       className={`${GRID} items-baseline border-b border-border-strong pb-3 font-mono text-label text-faint uppercase`}
     >
       <div>Project</div>
-      <div className="text-right">Kernels</div>
-      <div className="text-right">Runs</div>
+      <div />
       <div className="text-right">Records</div>
       <div className="text-right">±30d</div>
-      <div className="text-right">Last observed</div>
+      <div className="text-right">Kernels</div>
+      <div className="text-right">Runs</div>
     </div>
   )
 }
@@ -134,43 +148,49 @@ export default async function ProjectsPage({
       {model.illustrative && <IllustrativeNotice />}
       <ContextHeader
         title="Projects"
-        context="standing per project · records held inside their own cohorts · gained and lost over 30 days"
-        meta={
-          <span className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
-            <span className="text-faint">sorted by</span>
-            {SORTS.map((option) =>
-              option.key === sort ? (
-                <span key={option.key} className="text-fg">
-                  {option.label}
-                </span>
-              ) : (
-                <Link
-                  key={option.key}
-                  href={
-                    option.key === "presence"
-                      ? "/projects"
-                      : `/projects?sort=${option.key}`
-                  }
-                  prefetch={false}
-                  className="text-subtle transition-colors hover:text-fg no-underline"
-                >
-                  {option.label}
-                </Link>
-              ),
-            )}
-          </span>
-        }
+        context="records held and 30-day movement per project, counted inside each record's own cohort"
       />
       <main className="shell pb-24">
         <Section id="libraries" title="Libraries">
-          <p className="mb-4 max-w-[76ch] text-body text-muted">
-            Software you can adopt: real projects with a repository, a license
-            conclusion, and benchmark evidence behind each row.
-          </p>
+          {/* The sort rides with the tables it orders, not the page header
+              (§16 header diet); both groups share it. */}
+          <div className="mb-4 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+            <p className="max-w-[76ch] text-body text-muted">
+              Software you can adopt: real projects with a repository, a license
+              conclusion, and benchmark evidence behind each row.
+            </p>
+            <span className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1 text-small">
+              <span className="text-faint">sorted by</span>
+              {SORTS.map((option) =>
+                option.key === sort ? (
+                  <span key={option.key} className="text-fg">
+                    {option.label}
+                  </span>
+                ) : (
+                  <Link
+                    key={option.key}
+                    href={
+                      option.key === "presence"
+                        ? "/projects"
+                        : `/projects?sort=${option.key}`
+                    }
+                    prefetch={false}
+                    className="text-subtle transition-colors hover:text-fg no-underline"
+                  >
+                    {option.label}
+                  </Link>
+                ),
+              )}
+            </span>
+          </div>
           <div className="overflow-x-auto">
             <TableHead />
             {libraries.map((project) => (
-              <ProjectRow key={project.slug} project={project} />
+              <ProjectRow
+                key={project.slug}
+                project={project}
+                maxRecords={Math.max(...libraries.map((p) => p.records), 0)}
+              />
             ))}
           </div>
         </Section>
@@ -189,7 +209,11 @@ export default async function ProjectsPage({
                 cap={10}
                 noun="authors"
                 rows={authors.map((project) => (
-                  <ProjectRow key={project.slug} project={project} />
+                  <ProjectRow
+                    key={project.slug}
+                    project={project}
+                    maxRecords={Math.max(...authors.map((p) => p.records), 0)}
+                  />
                 ))}
               />
             </div>

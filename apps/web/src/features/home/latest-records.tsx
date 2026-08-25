@@ -7,11 +7,12 @@ import {
   formatSolScoreCell,
 } from "@/lib/format"
 
-const GRID = "grid grid-cols-[1.3fr_1.2fr_110px_195px_120px] min-w-[900px]"
+const GRID = "grid grid-cols-[1.4fr_1.1fr_170px_120px] min-w-[780px]"
 
-/** Homepage table of the newest record breaks (§16.5), five columns; trust
+/** Homepage table of the newest record breaks (§16.5), four columns; trust
  * and indexing dates live on the run dossier a row opens. Each row is a
- * record holder; the margin column states what the run displaced. */
+ * record holder; the margin rides under the value it qualifies (§16 row
+ * diet), not in a column of its own. */
 export function LatestRecords({ rows }: { rows: RecordHolder[] }) {
   if (rows.length === 0) {
     return (
@@ -28,7 +29,6 @@ export function LatestRecords({ rows }: { rows: RecordHolder[] }) {
         <div className="px-4 py-2.5">Operation / workload</div>
         <div className="px-4 py-2.5">Implementation</div>
         <div className="px-4 py-2.5 text-right">Latency</div>
-        <div className="px-4 py-2.5">Margin</div>
         <div className="px-4 py-2.5">Hardware</div>
       </div>
       {rows.map((holder) => {
@@ -77,20 +77,12 @@ export function LatestRecords({ rows }: { rows: RecordHolder[] }) {
                 }
                 valueClassName="font-mono text-lead font-medium text-fg"
               />
-            </div>
-            <div className="truncate px-4 font-mono text-small whitespace-nowrap">
-              {formatImprovement(event?.improvementPct) &&
-              event?.previousValue ? (
-                <span className="text-subtle">
-                  {formatImprovement(event.improvementPct)}
-                  <span className="text-faint">
-                    {" "}
-                    · was {formatPrimary(event.previousValue)}
-                  </span>
-                </span>
-              ) : (
-                <span className="text-faint">first</span>
-              )}
+              <div className="font-mono text-mini text-faint">
+                {formatImprovement(event?.improvementPct) &&
+                event?.previousValue
+                  ? `${formatImprovement(event.improvementPct)} · was ${formatPrimary(event.previousValue)}`
+                  : "first"}
+              </div>
             </div>
             <div className="truncate px-4 font-mono text-small text-muted">
               {holder.hardware}

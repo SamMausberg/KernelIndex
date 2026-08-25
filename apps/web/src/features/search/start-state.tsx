@@ -230,7 +230,9 @@ export function StartState({
 
   return (
     <section className="pt-6">
-      <div className="flex flex-wrap items-baseline gap-x-5 gap-y-2 text-body">
+      {/* One hint row (§16 page grammar): examples and the filter grammar
+          share a wrapped line instead of stacking two. */}
+      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2 text-body">
         <span className="text-faint">Try</span>
         {examples.map((example) => (
           <Link
@@ -241,6 +243,12 @@ export function StartState({
             {example}
           </Link>
         ))}
+        <span className="text-faint">or filter with</span>
+        {SYNTAX_HINTS.slice(0, 4).map((hint) => (
+          <code key={hint} className="font-mono text-mini text-subtle">
+            {hint}
+          </code>
+        ))}
         <Link
           href="/docs#query-syntax"
           className="ml-auto text-small text-faint"
@@ -248,29 +256,14 @@ export function StartState({
           Query syntax
         </Link>
       </div>
-      <div className="mt-3 flex flex-wrap items-baseline gap-x-3.5 gap-y-1.5 text-small">
-        <span className="text-faint">Filter with</span>
-        {SYNTAX_HINTS.map((hint) => (
-          <code key={hint} className="font-mono text-mini text-subtle">
-            {hint}
-          </code>
-        ))}
-      </div>
 
       <div className="mt-12 flex flex-wrap items-baseline justify-between gap-4 border-b border-border-strong pb-3">
         <h2 className="text-body font-medium text-muted">Browse the index</h2>
         <div className="flex flex-wrap items-baseline gap-x-4 text-small">
+          {/* "Rows", not "operations": equivalent definitions fold into one
+              row (§16.4); the reconciliation lives in the footer note. */}
           <span className="text-faint">
-            {measured} row{measured === 1 ? "" : "s"} with ranked runs
-            {folded > 0 && (
-              <>
-                {" · "}
-                <Link href="/docs#counting" className="text-small text-faint">
-                  {folded} folded into an equivalent definition
-                </Link>
-              </>
-            )}
-            {awaiting > 0 && ` · ${awaiting} indexed without runs`} ·{" "}
+            {measured} row{measured === 1 ? "" : "s"} with ranked runs ·{" "}
             {totalRuns.toLocaleString("en-US")} kernel runs
           </span>
           <span className="flex items-baseline gap-2.5">
@@ -312,6 +305,22 @@ export function StartState({
         pageCount={pageCount}
         hrefFor={(target) => browseHref(filters, { page: target })}
       />
+
+      {/* The counting reconciliation, past the answer (§16 link diet). */}
+      {(folded > 0 || awaiting > 0) && (
+        <p className="mt-6 text-small text-faint">
+          {[
+            folded > 0 && `${folded} folded into an equivalent definition`,
+            awaiting > 0 && `${awaiting} indexed without runs`,
+          ]
+            .filter(Boolean)
+            .join(" · ")}
+          {" · "}
+          <Link href="/docs#counting" className="text-small text-faint">
+            How counting works
+          </Link>
+        </p>
+      )}
     </section>
   )
 }

@@ -71,76 +71,15 @@ export default async function OperationPage({ params }: Props) {
           </>
         }
       >
-        {/* Identity as machined tags behind a disclosure (§16.7 progressive
-            disclosure): the family stays visible; aliases, model provenance,
-            and the semantic digest are one click away, never the lead. */}
-        {/* Identity as plain text (§16 pill restraint: keys are controls,
-            not tags), still one disclosure away and never the lead. */}
-        <details className="group mt-2.5">
-          <summary className="flex cursor-pointer list-none flex-wrap items-baseline gap-x-3 [&::-webkit-details-marker]:hidden">
-            <span className="font-mono text-mini text-subtle">
-              {operation.family}
-            </span>
-            <span className="text-mini text-faint transition-colors group-open:hidden hover:text-fg">
-              identity ›
-            </span>
-            <span className="hidden text-mini text-faint transition-colors hover:text-fg group-open:inline">
-              identity ⌄
-            </span>
-          </summary>
-          <div className="mt-2 flex flex-wrap items-baseline gap-x-4 gap-y-1.5 font-mono text-mini text-subtle">
-            {operation.aliases.map((alias) => (
-              <span key={alias}>
-                <span className="mr-1.5 font-sans text-faint">alias</span>
-                {alias}
-              </span>
-            ))}
-            {operation.models.slice(0, 4).map((model_) => (
-              <Link
-                key={model_}
-                href={`/models/${model_}`}
-                prefetch={false}
-                className="text-mini text-subtle transition-colors hover:text-fg"
-              >
-                <span className="mr-1.5 font-sans text-faint no-underline">
-                  model
-                </span>
-                {model_}
-              </Link>
-            ))}
-            {operation.models.length > 4 && (
-              <span className="text-faint">
-                +{operation.models.length - 4} models
-              </span>
-            )}
-            <span className="inline-flex items-baseline gap-1.5">
-              <span className="font-sans text-faint">sha256</span>
-              {operation.semanticDigest.replace("sha256:", "").slice(0, 12)}…
-              <CopyButton text={operation.semanticDigest} />
-            </span>
-          </div>
-        </details>
+        {/* A slim header (§16 header diet): family and summary only. The
+            full identity — aliases, model tags, digest, equivalents — lives
+            beside Semantics, never before the answer. */}
+        <div className="mt-2.5 font-mono text-mini text-subtle">
+          {operation.family}
+        </div>
         {operation.summary && (
           <p className="mt-3 max-w-[76ch] text-body leading-relaxed text-muted">
             {operation.summary}
-          </p>
-        )}
-        {operation.equivalents.length > 0 && (
-          <p className="mt-2 text-small text-subtle">
-            Also indexed as{" "}
-            {operation.equivalents.map((equivalent, index) => (
-              <span key={equivalent.slug}>
-                {index > 0 && ", "}
-                <Link
-                  href={`/operations/${equivalent.slug}`}
-                  className="font-mono text-small"
-                >
-                  {equivalent.slug}
-                </Link>
-              </span>
-            ))}{" "}
-            · reviewed as the same computation; every definition's cohorts are
-            shown here, ranked separately.
           </p>
         )}
       </ContextHeader>
@@ -206,12 +145,67 @@ export default async function OperationPage({ params }: Props) {
               {semantics.expression}
             </pre>
           )}
+          {/* Identity (moved out of the header, §16 header diet): short, so
+              it renders open per the disclosure rule. */}
+          <div className="mt-6">
+            <div className="text-label text-faint uppercase">Identity</div>
+            <div className="mt-2 flex flex-wrap items-baseline gap-x-4 gap-y-1.5 font-mono text-mini text-subtle">
+              {operation.aliases.map((alias) => (
+                <span key={alias}>
+                  <span className="mr-1.5 font-sans text-faint">alias</span>
+                  {alias}
+                </span>
+              ))}
+              {operation.models.slice(0, 4).map((model_) => (
+                <Link
+                  key={model_}
+                  href={`/models/${model_}`}
+                  prefetch={false}
+                  className="text-mini text-subtle transition-colors hover:text-fg"
+                >
+                  <span className="mr-1.5 font-sans text-faint no-underline">
+                    model
+                  </span>
+                  {model_}
+                </Link>
+              ))}
+              {operation.models.length > 4 && (
+                <span className="text-faint">
+                  +{operation.models.length - 4} models
+                </span>
+              )}
+              <span className="inline-flex items-baseline gap-1.5">
+                <span className="font-sans text-faint">sha256</span>
+                {operation.semanticDigest.replace("sha256:", "").slice(0, 12)}…
+                <CopyButton text={operation.semanticDigest} />
+              </span>
+            </div>
+            {operation.equivalents.length > 0 && (
+              <p className="mt-2 text-small text-subtle">
+                Also indexed as{" "}
+                {operation.equivalents.map((equivalent, index) => (
+                  <span key={equivalent.slug}>
+                    {index > 0 && ", "}
+                    <Link
+                      href={`/operations/${equivalent.slug}`}
+                      className="font-mono text-small"
+                    >
+                      {equivalent.slug}
+                    </Link>
+                  </span>
+                ))}{" "}
+                · reviewed as the same computation; every definition's cohorts
+                are shown here, ranked separately.
+              </p>
+            )}
+          </div>
         </Section>
 
         <SourcesFooter
           sources={model.sources}
           lastObservedAt={coverage.lastObservedAt}
           emptyText="No source imports for this operation yet."
+          docs={{ href: "/docs#records", label: "How records are decided" }}
           api={`/operations/${operation.slug}`}
         />
       </main>

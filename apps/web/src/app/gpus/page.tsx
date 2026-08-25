@@ -28,7 +28,7 @@ export default async function GpusPage() {
       {model.illustrative && <IllustrativeNotice />}
       <ContextHeader
         title="GPUs"
-        context="coverage per hardware model · records held"
+        context="runs indexed and records held per hardware model"
       />
       <main className="shell pt-7 pb-24">
         <div className="overflow-x-auto">

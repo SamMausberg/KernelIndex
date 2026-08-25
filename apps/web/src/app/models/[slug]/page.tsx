@@ -163,15 +163,28 @@ export default async function ModelPage({ params, searchParams }: Props) {
             </p>
           )}
 
+        {/* The page's verdict in one sentence (§16 page grammar), before
+            any table: how much of this model is answered on this GPU. */}
+        {model.selectedGpu !== null && (
+          <p className="border-b border-border py-5 text-lead">
+            <span className="text-fg">
+              {entries.filter((entry) => entry.deployable !== null).length} of{" "}
+              {model.stats.operations} operations
+            </span>{" "}
+            <span className="text-muted">
+              have a deployable best known on {model.selectedGpu}
+            </span>
+            {model.gaps.length + undeployable.length > 0 && (
+              <span className="text-subtle">
+                {" "}
+                · {model.gaps.length + undeployable.length} without one
+              </span>
+            )}
+          </p>
+        )}
+
         {model.groups.length > 0 && model.selectedGpu !== null && (
           <Section id="best" title={`Best known on ${model.selectedGpu}`}>
-            <p className="mb-4 max-w-[76ch] text-small text-faint">
-              One best-known implementation per operation, each inside its own
-              comparison cohort.{" "}
-              <Link href="/docs#comparability" className="text-faint">
-                How comparison works →
-              </Link>
-            </p>
             <BestKnownTable groups={model.groups} />
           </Section>
         )}
@@ -190,10 +203,11 @@ export default async function ModelPage({ params, searchParams }: Props) {
               undeployable={undeployable}
               selectedGpu={model.selectedGpu ?? ""}
             />
+            {/* One action per section (§16 link diet); contributing is
+                reachable from the challenges board itself. */}
             <p className="mt-3 text-small text-faint">
               No eligible evidence yet for these operations.{" "}
-              <Link href="/challenges">Challenges →</Link>{" "}
-              <Link href="/submit">Contribute evidence →</Link>
+              <Link href="/challenges">Challenges →</Link>
             </p>
           </Section>
         )}
@@ -221,6 +235,7 @@ export default async function ModelPage({ params, searchParams }: Props) {
 
         <SourcesFooter
           sources={model.sources}
+          docs={{ href: "/docs#comparability", label: "How comparison works" }}
           api={`/models/${slug}${
             model.selectedGpu
               ? `?gpu=${encodeURIComponent(model.selectedGpu)}`

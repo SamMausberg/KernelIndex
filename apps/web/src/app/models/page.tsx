@@ -10,7 +10,7 @@ import { IllustrativeNotice } from "@/components/illustrative-notice"
 import { Link } from "@/components/quiet-link"
 import { Section } from "@/components/section"
 import { getModelIndex } from "@/lib/catalog"
-import { countNoun, formatDateUTC } from "@/lib/format"
+import { countNoun } from "@/lib/format"
 import { servingEnabled } from "@/server/env"
 
 export const metadata: Metadata = {
@@ -21,8 +21,9 @@ export const metadata: Metadata = {
 }
 export const revalidate = 300
 
+// Freshness lives on the model dossier, not the scan (§16 row diet).
 const GRID =
-  "grid grid-cols-[minmax(240px,1.5fr)_minmax(140px,1fr)_repeat(3,90px)_110px] gap-x-4 min-w-[850px]"
+  "grid grid-cols-[minmax(240px,1.5fr)_minmax(140px,1fr)_repeat(3,90px)] gap-x-4 min-w-[740px]"
 const SERVING_GRID =
   "grid grid-cols-[minmax(240px,1.6fr)_140px_90px] gap-x-4 min-w-[540px]"
 
@@ -42,7 +43,7 @@ export default async function ModelsPage() {
       {model.illustrative && <IllustrativeNotice />}
       <ContextHeader
         title="Models"
-        context="operation coverage per model · workload provenance declared by sources"
+        context="operation coverage per model, as the imported sources declared it"
         meta={
           <span>
             {countNoun(model.kernel.length, "model")} with kernel evidence
@@ -61,7 +62,6 @@ export default async function ModelsPage() {
             <div className="text-right">Operations</div>
             <div className="text-right">Runs</div>
             <div className="text-right">GPUs</div>
-            <div className="text-right">Last observed</div>
           </div>
           <ExpandRows
             cap={25}
@@ -99,9 +99,6 @@ export default async function ModelsPage() {
                 </div>
                 <div className="text-right font-mono text-small text-subtle">
                   {entry.gpus.toLocaleString("en-US")}
-                </div>
-                <div className="text-right font-mono text-mini text-faint">
-                  {formatDateUTC(entry.lastObservedAt)}
                 </div>
               </div>
             ))}

@@ -68,7 +68,7 @@ export function FeedView({ initial }: { initial: FeedModel }) {
     <>
       <ContextHeader
         title="Feed"
-        context="what the index learned · trailing 30 days, newest first"
+        context="what the index learned over the trailing 30 days, newest first"
         meta={
           <>
             {view(false, "All")}

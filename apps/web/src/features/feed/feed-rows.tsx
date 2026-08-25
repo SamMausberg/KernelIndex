@@ -7,6 +7,8 @@ import { countNoun, formatImprovement, formatPrimary } from "@/lib/format"
  * brought; corrections and claims are stated as what they are. */
 function FeedLine({ entry, isNew }: { entry: FeedEntry; isNew: boolean }) {
   const marker = isNew && <span className="text-accent"> · new</span>
+  // The sentence reads whole, then the data trails it (§16 mono rule): the
+  // workload fragment no longer interrupts the clause mid-way.
   if (entry.kind === "record")
     return (
       <p className="py-1.5 text-body">
@@ -21,9 +23,6 @@ function FeedLine({ entry, isNew }: { entry: FeedEntry; isNew: boolean }) {
         >
           {entry.operation.name}
         </Link>
-        <span className="ml-2 font-mono text-mini text-faint">
-          {entry.workloadSummary} · {entry.hardware}
-        </span>
         <span className="text-subtle"> at </span>
         <span className="font-mono text-fg">{formatPrimary(entry.value)}</span>
         {formatImprovement(entry.improvementPct) && (
@@ -32,6 +31,9 @@ function FeedLine({ entry, isNew }: { entry: FeedEntry; isNew: boolean }) {
             {entry.previous.implementation.name}
           </span>
         )}
+        <span className="ml-2 font-mono text-mini text-faint">
+          {entry.workloadSummary} · {entry.hardware}
+        </span>
         {" · "}
         <Link href={`/runs/${entry.runId}`} className="text-small">
           Run →
@@ -39,10 +41,12 @@ function FeedLine({ entry, isNew }: { entry: FeedEntry; isNew: boolean }) {
         {marker}
       </p>
     )
+  // Imports and corrections sit one tone below the breaks, so record
+  // breaks form the feed's visual spine.
   if (entry.kind === "import")
     return (
       <p className="py-1.5 text-body">
-        <span className="text-fg">{entry.source.name}</span>
+        <span className="text-muted">{entry.source.name}</span>
         <span className="text-subtle">
           {" "}
           import · {countNoun(entry.runs, "run")} ·{" "}

@@ -53,21 +53,25 @@ function loadModel(): Promise<LedgerModel | null> {
 }
 
 const CURRENT_GRID =
-  "grid grid-cols-[minmax(230px,1.4fr)_92px_160px_205px_minmax(190px,1fr)_28px] min-w-[980px]"
+  "grid grid-cols-[minmax(240px,1.5fr)_92px_170px_minmax(200px,1fr)_28px] min-w-[820px]"
 
-/** The lead story (§16.12): the newest broken records under the filters —
- * hairline rows in the page's own table idiom, no cards or lifted surfaces.
- * The whole row reaches the record's run. */
+/** The page's lead (§16 page grammar): the newest broken records as the
+ * first-screen story, before any control — hairline rows in the page's own
+ * table idiom, the after-value the loudest cell. The whole row reaches the
+ * record's run. */
 function LatestBreaks({ latest }: { latest: LedgerEvent[] }) {
   if (latest.length === 0) return null
   return (
-    <div className="mt-5">
-      <div className="text-label text-faint uppercase">Latest breaks</div>
-      <div className="mt-1.5 overflow-x-auto border-t border-border-strong">
+    <div className="pt-6 pb-2">
+      <div className="mb-3 flex items-baseline justify-between gap-4">
+        <h2 className="text-lead font-medium">Latest breaks</h2>
+        <span className="text-small text-faint">newest indexed first</span>
+      </div>
+      <div className="overflow-x-auto border-t border-border-strong">
         {latest.map(({ holder, event }) => (
           <div
             key={event.runId}
-            className="relative grid min-w-[980px] grid-cols-[minmax(230px,1.2fr)_310px_minmax(190px,1fr)_150px] items-baseline gap-x-6 border-b border-line py-2.5 transition-colors hover:bg-raised"
+            className="relative grid min-w-[820px] grid-cols-[minmax(230px,1.2fr)_310px_minmax(190px,1fr)] items-baseline gap-x-6 border-b border-line py-3 transition-colors hover:bg-raised"
           >
             <Link
               href={`/runs/${event.runId}`}
@@ -81,12 +85,14 @@ function LatestBreaks({ latest }: { latest: LedgerEvent[] }) {
                 {holder.workloadSummary}
               </span>
             </span>
-            <span className="font-mono text-body whitespace-nowrap">
-              <span className="text-faint">
+            <span className="font-mono whitespace-nowrap">
+              <span className="text-small text-faint">
                 {event.previousValue ? formatPrimary(event.previousValue) : "—"}
               </span>{" "}
               <span className="text-ghost">→</span>{" "}
-              <span className="text-fg">{formatPrimary(event.value)}</span>
+              <span className="text-lead font-medium text-fg">
+                {formatPrimary(event.value)}
+              </span>
               {formatImprovement(event.improvementPct) && (
                 <span className="ml-2 text-small text-success">
                   {formatImprovement(event.improvementPct)}
@@ -95,9 +101,6 @@ function LatestBreaks({ latest }: { latest: LedgerEvent[] }) {
             </span>
             <span className="truncate text-small text-subtle">
               {event.implementation.name} · {holder.hardware}
-            </span>
-            <span className="text-right font-mono text-mini whitespace-nowrap text-faint">
-              indexed {formatDateUTC(holder.indexedAt)}
             </span>
           </div>
         ))}
@@ -136,6 +139,8 @@ function HolderRow({ holder }: { holder: LedgerHolder }) {
           <div className="self-center pr-3">
             <RecordSpark history={holder.history} />
           </div>
+          {/* The margin rides under the record it qualifies (§16 row diet):
+              one value column, no separate margin cell. */}
           <div className="min-w-0 overflow-hidden pr-4 text-right whitespace-nowrap">
             <Metric
               primary={record.primary}
@@ -147,23 +152,17 @@ function HolderRow({ holder }: { holder: LedgerHolder }) {
               }
               valueClassName="font-mono text-lead font-medium text-fg"
             />
-          </div>
-          <div className="truncate pr-3 font-mono text-small whitespace-nowrap">
-            {margin !== null ? (
-              <span className="text-subtle">
-                {margin}
-                {holder.history[0]?.previousValue && (
-                  <span className="text-faint">
-                    {" "}
-                    · was {formatPrimary(holder.history[0].previousValue)}
-                  </span>
-                )}
-              </span>
-            ) : record.baseline ? (
-              <span className="text-faint">baseline · unbeaten</span>
-            ) : (
-              <span className="text-faint">first</span>
-            )}
+            <div className="font-mono text-mini text-faint">
+              {margin !== null
+                ? `${margin}${
+                    holder.history[0]?.previousValue
+                      ? ` · was ${formatPrimary(holder.history[0].previousValue)}`
+                      : ""
+                  }`
+                : record.baseline
+                  ? "baseline · unbeaten"
+                  : "first"}
+            </div>
           </div>
           <div className="min-w-0 truncate pr-3">
             <Link
@@ -188,7 +187,7 @@ function HolderRow({ holder }: { holder: LedgerHolder }) {
         </div>
         {/* Three facts on the collapsed row (§16 meta diet); trust tier and
             project live in the expansion with the environment. */}
-        <div className="mt-1 min-w-[960px] truncate font-mono text-mini text-faint">
+        <div className="mt-1 min-w-[820px] truncate font-mono text-mini text-faint">
           {[
             holder.workloadSummary,
             holder.hardware,
@@ -717,34 +716,37 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
                   </span>
                   <span className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
                     <span className="whitespace-nowrap">sorted by</span>
-                    {(
-                      [
-                        { key: "contested", label: "Contested" },
-                        { key: "date", label: "Newest" },
-                        { key: "improvement", label: "Largest improvement" },
-                        { key: "leads", label: "Most lead changes" },
-                        { key: "operation", label: "A–Z" },
-                      ] as const
-                    ).map((option) =>
-                      slice.filters.sort === option.key ? (
-                        <span
-                          key={option.key}
-                          className="whitespace-nowrap text-fg"
-                        >
-                          {option.label}
-                        </span>
-                      ) : (
-                        <FilterLink
-                          key={option.key}
-                          filters={slice.filters}
-                          patch={{ sort: option.key }}
-                          navigate={navigate}
-                          className="whitespace-nowrap text-subtle transition-colors hover:text-fg no-underline"
-                        >
-                          {option.label}
-                        </FilterLink>
-                      ),
-                    )}
+                    {
+                      // "leads" stays a valid deep-link sort in the model;
+                      // Contested already surfaces the same rows (§16 diet).
+                      (
+                        [
+                          { key: "contested", label: "Contested" },
+                          { key: "date", label: "Newest" },
+                          { key: "improvement", label: "Largest improvement" },
+                          { key: "operation", label: "A–Z" },
+                        ] as const
+                      ).map((option) =>
+                        slice.filters.sort === option.key ? (
+                          <span
+                            key={option.key}
+                            className="whitespace-nowrap text-fg"
+                          >
+                            {option.label}
+                          </span>
+                        ) : (
+                          <FilterLink
+                            key={option.key}
+                            filters={slice.filters}
+                            patch={{ sort: option.key }}
+                            navigate={navigate}
+                            className="whitespace-nowrap text-subtle transition-colors hover:text-fg no-underline"
+                          >
+                            {option.label}
+                          </FilterLink>
+                        ),
+                      )
+                    }
                   </span>
                 </>
               }
@@ -756,7 +758,6 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
                 <div className="py-2">Operation</div>
                 <div className="py-2">History</div>
                 <div className="py-2 pr-4 text-right">Current record</div>
-                <div className="py-2">Margin</div>
                 <div className="py-2">Implementation</div>
                 <div />
               </div>

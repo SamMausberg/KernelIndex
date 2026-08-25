@@ -2961,6 +2961,13 @@ Use:
 
 A page should read as a continuous technical document. Cards are reserved for independently actionable objects, not used as the default section container.
 
+Page grammar (2026-08-25 recomposition pass). Four rules keep the surfaces from reading as one shell repeated:
+
+- One lead per page. Every page opens with exactly one thing before the first hairline: an answer (operation answer slots), a reading (the dossier stat strip on GPU and project pages, the verdict line on model pages), or a story (the records ledger's latest breaks). Everything else sits below it.
+- Row diet. Index and ledger tables show at most five columns by default; the identity cell is the only body-size text and at most two text tones appear per collapsed row. Columns that do not drive the scan (dates, per-row evidence cells, margins) demote into the row expansion, the metric cell's second line, or the entity dossier. This refines, not contradicts, the no-tabs rule above: the facts stay on the page or one hop deeper, never behind parallel tabs.
+- Link diet. At most one arrowed action per section. Methodology links ("How comparison works", "How records are decided") render once, in the page footer zone (SourcesFooter `docs` slot), not repeated through sections.
+- Header diet. ContextHeader context is one plain sentence, not a chain of middot-joined jargon; meta carries one stat cluster and at most one action. Sort controls live with the table they order.
+
 ### 16.4 Navigation
 
 Unauthenticated header at launch:

@@ -1,20 +1,25 @@
 import { ApiLink } from "@/components/api-link"
+import { Link } from "@/components/quiet-link"
 import type { SourceRef } from "@/lib/catalog"
 import { formatDateUTC } from "@/lib/format"
 
-/** The provenance footer shared by operation and GPU pages: which sources
- * back the page, each with its terms, the newest observation date, and —
- * when `api` names the page's /api/v1 twin — the machine link (§16.18). */
+/** The provenance footer shared by the entity dossiers: which sources back
+ * the page, each with its terms, the newest observation date, and — when
+ * `api` names the page's /api/v1 twin — the machine link (§16.18). `docs`
+ * carries the page's one methodology link (§16 link diet: doc links live
+ * here, not repeated through the sections). */
 export function SourcesFooter({
   sources,
   lastObservedAt,
   emptyText,
   api,
+  docs,
 }: {
   sources: SourceRef[]
   lastObservedAt?: string | null
   emptyText?: string
   api?: string
+  docs?: { href: string; label: string }
 }) {
   return (
     <div className="mt-12 flex flex-wrap items-baseline justify-between gap-5 border-t border-border pt-5 text-small">
@@ -44,6 +49,11 @@ export function SourcesFooter({
           <span className="font-mono text-small text-faint">
             last observed {formatDateUTC(lastObservedAt)}
           </span>
+        )}
+        {docs && (
+          <Link href={docs.href} className="text-small text-faint">
+            {docs.label}
+          </Link>
         )}
         {api && <ApiLink path={api} />}
       </span>

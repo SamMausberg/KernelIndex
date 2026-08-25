@@ -56,51 +56,56 @@ export default async function Home() {
             </h1>
             <HeroSearch />
             {/* What "comparable" actually means, in the facts a reader can
-                check against their own workload — not the abstraction. */}
-            <div className="mt-3 flex max-w-[620px] items-baseline justify-between gap-6">
+                check against their own workload — not the abstraction. The
+                entry queries share the row instead of adding one below. */}
+            <div className="mt-3 flex max-w-[620px] flex-wrap items-baseline justify-between gap-x-6 gap-y-1.5">
               <p className="max-w-[46ch] text-small text-faint">
                 Same shapes, same dtype, same GPU, same protocol. Anything else
                 is not ranked against it.
               </p>
-              <Link
-                href="/docs#query-syntax"
-                className="text-small whitespace-nowrap text-faint"
-              >
-                Query syntax
-              </Link>
-            </div>
-            {/* The outcome comes before the machinery: one resolved workload,
-                then the queries and corpus size on a single quiet line. */}
-            <WorkedExample />
-            {/* Example queries and the corpus count only (3-second rule):
-                sources and the API live in the trust block and footer. */}
-            <p className="mt-5 flex max-w-[620px] flex-wrap items-baseline gap-x-4 gap-y-1 font-mono text-small text-faint">
-              {examples.map((example) => (
+              <span className="flex items-baseline gap-x-4">
+                {examples.map((example) => (
+                  <Link
+                    key={example.query}
+                    href={`/search?q=${encodeURIComponent(example.query)}`}
+                    className="font-mono text-small text-subtle"
+                  >
+                    {example.label}
+                  </Link>
+                ))}
                 <Link
-                  key={example.query}
-                  href={`/search?q=${encodeURIComponent(example.query)}`}
-                  className="font-mono text-small text-subtle"
+                  href="/docs#query-syntax"
+                  className="text-small whitespace-nowrap text-faint"
                 >
-                  {example.label}
+                  Query syntax
                 </Link>
-              ))}
-              {/* Named for what it counts, so /search and /records can be
-                  reconciled against it rather than doubted (§16.4). */}
-              <Link href="/docs#counting" className="text-subtle">
-                {model.stats.operations.toLocaleString("en-US")} operations with
-                ranked runs · {model.stats.runs.toLocaleString("en-US")} runs ·{" "}
-                {model.stats.gpus.toLocaleString("en-US")} GPUs
-              </Link>
-            </p>
+              </span>
+            </div>
+            {/* The outcome comes before the machinery: one resolved workload
+                as the hero's proof. Corpus counts moved beside the ledger
+                below (§16 page grammar: two quiet rows after the search). */}
+            <WorkedExample />
           </div>
         </section>
 
         <section className="shell pt-6">
-          <div className="mb-4 flex items-baseline justify-between gap-4">
+          <div className="mb-4 flex flex-wrap items-baseline justify-between gap-4">
             <h2 className="text-title font-medium">Latest records</h2>
-            <Link href="/records" className="text-body">
-              Full ledger →
-            </Link>
+            <span className="flex flex-wrap items-baseline gap-x-5">
+              {/* Named for what it counts, so /search and /records can be
+                  reconciled against it rather than doubted (§16.4). */}
+              <Link
+                href="/docs#counting"
+                className="font-mono text-small text-faint"
+              >
+                {model.stats.operations.toLocaleString("en-US")} operations with
+                ranked runs · {model.stats.runs.toLocaleString("en-US")} runs ·{" "}
+                {model.stats.gpus.toLocaleString("en-US")} GPUs
+              </Link>
+              <Link href="/records" className="text-body">
+                Full ledger →
+              </Link>
+            </span>
           </div>
           <LatestRecords rows={model.latest} />
           {/* One note, pointing at the trust block below rather than off the
