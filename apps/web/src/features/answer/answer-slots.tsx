@@ -125,7 +125,7 @@ function Slot({
               whatever the index serves today, not necessarily what was
               measured, and the answer says so where the command sits. */}
           {!row.install.pinned && (
-            <p className="mt-1.5 max-w-[520px] text-small text-warning">
+            <p className="mt-1.5 max-w-[520px] text-small text-subtle">
               Unpinned: installs the current release, not necessarily the
               measured build.
             </p>

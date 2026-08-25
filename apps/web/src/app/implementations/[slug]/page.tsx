@@ -166,7 +166,7 @@ export default async function ImplementationPage({ params }: Props) {
                   </div>
                   <p className="mt-2 max-w-[560px] text-small text-subtle">
                     {model.usage.install.pinned
-                      ? "Pinned: this command installs the release the evidence below measured."
+                      ? "Pinned: this command installs the newest release the evidence below measured."
                       : "Unpinned: installs the current release, not necessarily the measured build."}
                   </p>
                 </>

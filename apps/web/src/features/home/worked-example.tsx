@@ -115,7 +115,7 @@ export async function WorkedExample() {
             <CopyButton text={top.install.command} event="install_copied" />
           </div>
           {!top.install.pinned && (
-            <p className="mt-1.5 text-small text-warning">
+            <p className="mt-1.5 text-small text-subtle">
               Unpinned: installs the current release, not necessarily the
               measured build.
             </p>

@@ -33,9 +33,13 @@ describe("pinPipCommand", () => {
       'pip install "liger-kernel==0.5.10"',
     )
   })
-  it("leaves a command it cannot parse untouched", () => {
+  it("leaves commands outside the synthesized shape untouched", () => {
     expect(pinPipCommand("uv pip install thing", "1.0")).toBe(
       "uv pip install thing",
     )
+    // A source-declared command with flags must never lose them to a pin.
+    expect(
+      pinPipCommand("pip install thing --extra-index-url https://x", "1.0"),
+    ).toBe("pip install thing --extra-index-url https://x")
   })
 })

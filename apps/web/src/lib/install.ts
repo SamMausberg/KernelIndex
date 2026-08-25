@@ -15,8 +15,12 @@ export function installIsPinned(kind: string, command: string): boolean {
 }
 
 /** Rewrites a synthesized pip line to a specific measured version — the
- * per-run pin when one row's evidence predates the newest measured release. */
+ * per-run pin when one row's evidence predates the newest measured release.
+ * Matches only the exact shape installCommandOf emits; a source-declared
+ * command (extra flags, index URLs) passes through untouched. */
 export function pinPipCommand(command: string, version: string): string {
-  const name = command.match(/^pip install "?([A-Za-z0-9._-]+)/)?.[1]
+  const name = command.match(
+    /^pip install "?([A-Za-z0-9._-]+)(?:==[^\s"]+)?"?$/,
+  )?.[1]
   return name ? `pip install "${name}==${version}"` : command
 }

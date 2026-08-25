@@ -554,6 +554,9 @@ async function newestMeasuredVersions(
     .orderBy(
       schema.benchmarkRuns.implementationId,
       sql`${schema.benchmarkRuns.observedAt} desc`,
+      // Whole import batches share one observedAt; the id tiebreak keeps
+      // the settled pin deterministic across re-runs.
+      schema.benchmarkRuns.id,
     )
   return new Map(
     rows.flatMap((row) =>
