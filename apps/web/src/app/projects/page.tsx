@@ -73,22 +73,19 @@ function ProjectRow({ project }: { project: ProjectIndexEntry }) {
         {project.records.toLocaleString("en-US")}
       </div>
       {/* One movement cell: losses are facts the minus sign already states
-          (§16.16), so only the gain carries color. */}
+          (§16.16), so only the gain carries color and zero halves stay out. */}
       <div className="text-right font-mono text-small whitespace-nowrap">
         {project.gained30d === 0 && project.lost30d === 0 ? (
           <span className="text-faint">—</span>
         ) : (
           <>
-            <span
-              className={project.gained30d > 0 ? "text-success" : "text-faint"}
-            >
-              +{project.gained30d}
-            </span>{" "}
-            <span
-              className={project.lost30d > 0 ? "text-subtle" : "text-faint"}
-            >
-              −{project.lost30d}
-            </span>
+            {project.gained30d > 0 && (
+              <span className="text-success">+{project.gained30d}</span>
+            )}
+            {project.gained30d > 0 && project.lost30d > 0 && " "}
+            {project.lost30d > 0 && (
+              <span className="text-subtle">−{project.lost30d}</span>
+            )}
           </>
         )}
       </div>

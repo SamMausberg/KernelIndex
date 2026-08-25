@@ -198,10 +198,12 @@ export function ResultRowItem({
         <RelativeCell row={row} best={best} relative={relative} />
         <TrustCell row={row} />
         {/* Staleness is a freshness fact, not a warning (§16.16): the word
-            carries it, amber stays reserved for act-on states. */}
+            carries it, on its own line so the date never breaks mid-token. */}
         <div className="font-mono text-mini text-faint">
-          {formatDateUTC(row.lastTestedAt)}
-          {row.stale && <span className="ml-1.5 text-subtle">stale</span>}
+          <span className="whitespace-nowrap">
+            {formatDateUTC(row.lastTestedAt)}
+          </span>
+          {row.stale && <span className="block text-subtle">stale</span>}
         </div>
         <div
           aria-hidden="true"

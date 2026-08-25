@@ -67,7 +67,7 @@ function LatestBreaks({ latest }: { latest: LedgerEvent[] }) {
         {latest.map(({ holder, event }) => (
           <div
             key={event.runId}
-            className="relative grid min-w-[950px] grid-cols-[minmax(230px,1.2fr)_310px_minmax(190px,1fr)_92px] items-baseline gap-x-6 border-b border-line py-2.5 transition-colors hover:bg-raised"
+            className="relative grid min-w-[980px] grid-cols-[minmax(230px,1.2fr)_310px_minmax(190px,1fr)_150px] items-baseline gap-x-6 border-b border-line py-2.5 transition-colors hover:bg-raised"
           >
             <Link
               href={`/runs/${event.runId}`}

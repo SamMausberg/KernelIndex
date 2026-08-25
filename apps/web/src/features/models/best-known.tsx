@@ -128,8 +128,10 @@ function EntryRow({ entry }: { entry: ModelBestKnown }) {
         <TrustCell row={shown} />
         {/* Staleness is a fact, not a warning (§16.16). */}
         <div className="font-mono text-mini text-faint">
-          {formatDateUTC(shown.lastTestedAt)}
-          {shown.stale && <span className="ml-1.5 text-subtle">stale</span>}
+          <span className="whitespace-nowrap">
+            {formatDateUTC(shown.lastTestedAt)}
+          </span>
+          {shown.stale && <span className="block text-subtle">stale</span>}
         </div>
         <div
           aria-hidden="true"
