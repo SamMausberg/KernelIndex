@@ -4,7 +4,6 @@
 // the same publication transaction as every importer. Neither path can
 // touch derived rankings directly.
 import { and, eq } from "drizzle-orm"
-import { parse as parseYaml } from "yaml"
 import type {
   AnyManifest,
   BenchmarkProtocolManifest,
@@ -16,7 +15,10 @@ import type {
   WorkloadCaseManifest,
   WorkloadSuiteManifest,
 } from "../../schemas/kinds.ts"
-import { parseManifestDocument } from "../../schemas/parse.ts"
+import {
+  parseManifestDocument,
+  parseYamlDocument,
+} from "../../schemas/parse.ts"
 import { db } from "../db/client.ts"
 import * as schema from "../db/schema.ts"
 import { env } from "../env.ts"
@@ -59,6 +61,8 @@ export type SubmissionReport = {
   objects: { kind: string; name: string; digest: string }[]
 }
 
+export const SUBMISSION_DOCUMENT_LIMIT = 262_144
+
 type SubmissionDocument = {
   projects?: unknown[]
   operations?: unknown[]
@@ -87,7 +91,7 @@ export function bundleFromSubmission(text: string): {
   }
   let document: SubmissionDocument
   try {
-    const parsed = parseYaml(text) as unknown
+    const parsed = parseYamlDocument(text, SUBMISSION_DOCUMENT_LIMIT)
     if (parsed === null || typeof parsed !== "object")
       throw new Error("not a submission document")
     // A flat bench record (§15.5) assembles into the same document the

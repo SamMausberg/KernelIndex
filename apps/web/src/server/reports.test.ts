@@ -1,13 +1,15 @@
 // Report intake (§15.6): validation, the per-target daily cap, and the
 // open-only moderation transition. Throwaway target ids; rows cleaned up.
 import { eq } from "drizzle-orm"
-import { afterAll, describe, expect, it } from "vitest"
+import { afterAll, beforeAll, describe, expect, it } from "vitest"
+import { exampleBundle } from "./catalog/example-bundle.ts"
+import { publishBundle } from "./catalog/publication.ts"
 import { db } from "./db/client.ts"
 import * as schema from "./db/schema.ts"
 import { fileReport, resolveReport } from "./reports.ts"
 
 const url = process.env.DATABASE_URL
-const TARGET = `report-test-${process.pid}`
+let TARGET = crypto.randomUUID()
 
 const valid = {
   targetKind: "run",
@@ -20,6 +22,14 @@ const valid = {
 }
 
 describe.skipIf(!url)("reports (database)", () => {
+  beforeAll(async () => {
+    const publication = await publishBundle(db(), exampleBundle(), {
+      publish: true,
+    })
+    TARGET = publication.runIds[0] as string
+    valid.targetId = TARGET
+  })
+
   afterAll(async () => {
     await db().delete(schema.reports).where(eq(schema.reports.targetId, TARGET))
   })
@@ -28,9 +38,18 @@ describe.skipIf(!url)("reports (database)", () => {
     expect(await fileReport({ ...valid, targetKind: "user" })).toMatch(/kind/)
     expect(await fileReport({ ...valid, reason: "vibes" })).toMatch(/reason/)
     expect(await fileReport({ ...valid, detail: "  " })).toMatch(/describe/)
+    expect(
+      await fileReport({ ...valid, targetId: crypto.randomUUID() }),
+    ).toMatch(/unknown report target/)
     expect(await fileReport({ ...valid, evidenceUrl: "ftp://x" })).toMatch(
       /http/,
     )
+    expect(
+      await fileReport({
+        ...valid,
+        evidenceUrl: `https://x/${"a".repeat(2000)}`,
+      }),
+    ).toMatch(/limited/)
     expect(
       await db()
         .select()

@@ -2,7 +2,8 @@
 // object with a structured reason; review happens on /admin, and an
 // accepted report flows through the existing correction path (retraction
 // or supersession) — a report never edits evidence directly.
-import { and, count, eq, gte, sql } from "drizzle-orm"
+import { and, count, eq, gte, isNotNull, sql } from "drizzle-orm"
+import { UUID_PATTERN } from "./catalog/run-rows.ts"
 import { db } from "./db/client.ts"
 import * as schema from "./db/schema.ts"
 
@@ -21,6 +22,7 @@ export const REPORT_TARGET_KINDS = ["run", "serving_run"] as const
 const DAILY_TARGET_CAP = 20
 const DETAIL_LIMIT = 4000
 const CONTACT_LIMIT = 200
+const EVIDENCE_URL_LIMIT = 2000
 
 export type ReportInput = {
   targetKind: string
@@ -37,6 +39,7 @@ export type ReportInput = {
 export async function fileReport(input: ReportInput): Promise<string | null> {
   if (!REPORT_TARGET_KINDS.some((kind) => kind === input.targetKind))
     return "unknown target kind"
+  if (!UUID_PATTERN.test(input.targetId)) return "unknown report target"
   if (!REPORT_REASONS.some((reason) => reason === input.reason))
     return "pick a reason"
   const detail = input.detail.trim()
@@ -44,23 +47,53 @@ export async function fileReport(input: ReportInput): Promise<string | null> {
   if (detail.length > DETAIL_LIMIT)
     return `detail is limited to ${DETAIL_LIMIT} characters`
   const evidenceUrl = input.evidenceUrl.trim()
+  if (evidenceUrl.length > EVIDENCE_URL_LIMIT)
+    return `evidence URL is limited to ${EVIDENCE_URL_LIMIT} characters`
   if (evidenceUrl !== "" && !/^https?:\/\/\S+$/.test(evidenceUrl))
     return "evidence must be an http(s) URL"
-  const [recent] = await db()
-    .select({ filed: count() })
-    .from(schema.reports)
-    .where(
-      and(
-        eq(schema.reports.targetKind, input.targetKind),
-        eq(schema.reports.targetId, input.targetId),
-        gte(schema.reports.createdAt, sql`now() - interval '1 day'`),
-      ),
+  return db().transaction(async (tx) => {
+    // Serialize the cap for this target; otherwise concurrent requests can
+    // all observe the same count and exceed it.
+    await tx.execute(
+      sql`select pg_advisory_xact_lock(hashtextextended(${`${input.targetKind}:${input.targetId}`}, 0))`,
     )
-  if ((recent?.filed ?? 0) >= DAILY_TARGET_CAP)
-    return "this object reached its daily report limit; try again tomorrow"
-  await db()
-    .insert(schema.reports)
-    .values({
+    const [target] =
+      input.targetKind === "run"
+        ? await tx
+            .select({ id: schema.benchmarkRuns.id })
+            .from(schema.benchmarkRuns)
+            .where(
+              and(
+                eq(schema.benchmarkRuns.id, input.targetId),
+                isNotNull(schema.benchmarkRuns.publishedAt),
+              ),
+            )
+            .limit(1)
+        : await tx
+            .select({ id: schema.servingRuns.id })
+            .from(schema.servingRuns)
+            .where(
+              and(
+                eq(schema.servingRuns.id, input.targetId),
+                isNotNull(schema.servingRuns.publishedAt),
+              ),
+            )
+            .limit(1)
+    if (!target) return "unknown report target"
+
+    const [recent] = await tx
+      .select({ filed: count() })
+      .from(schema.reports)
+      .where(
+        and(
+          eq(schema.reports.targetKind, input.targetKind),
+          eq(schema.reports.targetId, input.targetId),
+          gte(schema.reports.createdAt, sql`now() - interval '1 day'`),
+        ),
+      )
+    if ((recent?.filed ?? 0) >= DAILY_TARGET_CAP)
+      return "this object reached its daily report limit; try again tomorrow"
+    await tx.insert(schema.reports).values({
       targetKind: input.targetKind,
       targetId: input.targetId,
       reason: input.reason,
@@ -69,7 +102,8 @@ export async function fileReport(input: ReportInput): Promise<string | null> {
       contact: input.contact.trim().slice(0, CONTACT_LIMIT) || null,
       userId: input.userId,
     })
-  return null
+    return null
+  })
 }
 
 /** Moderation transition with its audit event. Only open reports move. */

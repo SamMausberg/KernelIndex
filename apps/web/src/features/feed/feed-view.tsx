@@ -10,8 +10,8 @@ import { FeedDays } from "./feed-rows"
 
 // The feed island (§13.11, records-island pattern): the ISR page renders
 // the public feed; "Following" swaps in the reader's narrowed feed from the
-// session-authorized /feed/data route, marks what is newer than their
-// watermark, and keeps the URL shareable. Nothing here navigates.
+// session-authorized /feed/data route, marks what is newer than the prior
+// watermark, then acknowledges the presented feed. Nothing here navigates.
 
 type Following = FollowingFeed | "sign-in" | null
 
@@ -30,7 +30,8 @@ export function FeedView({ initial }: { initial: FeedModel }) {
             : null,
       )
       .then((result) => {
-        if (result !== null) startTransition(() => setLoaded(result))
+        if (result === null) return
+        startTransition(() => setLoaded(result))
       })
       .catch(() => {})
   }
@@ -46,6 +47,15 @@ export function FeedView({ initial }: { initial: FeedModel }) {
     if (new URLSearchParams(window.location.search).get("following") === "1")
       select(true)
   }, [])
+
+  // Acknowledge only after React commits the successfully parsed snapshot.
+  useEffect(() => {
+    if (loaded !== null && loaded !== "sign-in")
+      void fetch(
+        `/feed/data?seenThrough=${encodeURIComponent(loaded.seenThrough)}`,
+        { method: "POST" },
+      ).catch(() => {})
+  }, [loaded])
 
   const view = (on: boolean, label: string) => (
     <Link

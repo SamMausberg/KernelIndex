@@ -2,12 +2,13 @@
 // and the correction write path. Access is decided by the centralized
 // policy; signed-out or unprivileged visitors see a refusal, never data.
 
-import { desc, eq, inArray, sql } from "drizzle-orm"
+import { and, desc, eq, inArray, sql } from "drizzle-orm"
 import type { Metadata } from "next"
 import { headers } from "next/headers"
 import { ContextHeader } from "@/components/context-header"
 import { Section } from "@/components/section"
 import { authConfigured } from "@/server/auth"
+import { UUID_PATTERN } from "@/server/catalog/run-rows"
 import { db } from "@/server/db/client"
 import * as schema from "@/server/db/schema"
 import { eventSummary } from "@/server/events"
@@ -41,8 +42,25 @@ const FRESHNESS_DAYS: Record<string, number> = Object.fromEntries(
 
 export const metadata: Metadata = { title: "Review" }
 export const dynamic = "force-dynamic"
+const REPORT_PAGE_SIZE = 100
+const SUBMISSION_PAGE_SIZE = 20
 
-export default async function AdminPage() {
+function pageNumber(value: string | string[] | undefined): number {
+  const requested = Number(Array.isArray(value) ? value[0] : value)
+  return Number.isSafeInteger(requested) && requested > 0
+    ? Math.min(requested, 10_000)
+    : 0
+}
+
+export default async function AdminPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    reports?: string | string[]
+    submissions?: string | string[]
+    submission?: string | string[]
+  }>
+}) {
   const user = authConfigured ? await sessionUser(await headers()) : null
   if (user === null || !canReviewSubmissions(user)) {
     return (
@@ -58,23 +76,59 @@ export default async function AdminPage() {
       </main>
     )
   }
+  const query = await searchParams
+  const reportPage = pageNumber(query.reports)
+  const submissionPage = pageNumber(query.submissions)
+  const selectedValue = Array.isArray(query.submission)
+    ? query.submission[0]
+    : query.submission
+  const selectedId =
+    selectedValue && UUID_PATTERN.test(selectedValue)
+      ? selectedValue
+      : undefined
 
   const [
-    pending,
+    pendingRows,
+    selectedRows,
     claims,
-    openReports,
+    reportRows,
     recentAudit,
     sourceRows,
     metrics,
     attestations,
   ] = await Promise.all([
     db()
-      .select()
+      .select({
+        id: schema.submissions.id,
+        userId: schema.submissions.userId,
+        state: schema.submissions.state,
+        validationReport: schema.submissions.validationReport,
+      })
       .from(schema.submissions)
       .where(
         inArray(schema.submissions.state, ["ready_for_review", "in_review"]),
       )
-      .orderBy(desc(schema.submissions.createdAt)),
+      .orderBy(desc(schema.submissions.createdAt), desc(schema.submissions.id))
+      .limit(SUBMISSION_PAGE_SIZE + 1)
+      .offset(submissionPage * SUBMISSION_PAGE_SIZE),
+    selectedId
+      ? db()
+          .select({
+            id: schema.submissions.id,
+            bundle: schema.submissions.bundle,
+          })
+          .from(schema.submissions)
+          .where(
+            and(
+              eq(schema.submissions.id, selectedId),
+              inArray(schema.submissions.state, [
+                "ready_for_review",
+                "in_review",
+              ]),
+            ),
+          )
+          .limit(1)
+      : Promise.resolve([]),
     db()
       .select({
         claim: schema.projectClaims,
@@ -90,7 +144,9 @@ export default async function AdminPage() {
       .select()
       .from(schema.reports)
       .where(eq(schema.reports.state, "open"))
-      .orderBy(desc(schema.reports.createdAt)),
+      .orderBy(desc(schema.reports.createdAt), desc(schema.reports.id))
+      .limit(REPORT_PAGE_SIZE + 1)
+      .offset(reportPage * REPORT_PAGE_SIZE),
     db()
       .select()
       .from(schema.auditEvents)
@@ -117,6 +173,11 @@ export default async function AdminPage() {
       .orderBy(desc(schema.attestations.createdAt))
       .limit(20),
   ])
+  const hasOlderSubmissions = pendingRows.length > SUBMISSION_PAGE_SIZE
+  const pending = pendingRows.slice(0, SUBMISSION_PAGE_SIZE)
+  const selectedSubmission = selectedRows[0]
+  const hasOlderReports = reportRows.length > REPORT_PAGE_SIZE
+  const openReports = reportRows.slice(0, REPORT_PAGE_SIZE)
 
   const sources = sourceRows.map((row) => {
     const declared = FRESHNESS_DAYS[row.slug]
@@ -135,7 +196,7 @@ export default async function AdminPage() {
     <>
       <ContextHeader
         title="Review"
-        context={`${pending.length} submissions pending · ${claims.length} claims pending · ${openReports.length} reports open`}
+        context={`${pending.length} submissions on this page · ${claims.length} claims pending · ${openReports.length} reports on this page`}
         meta={<span>signed in as {user.name}</span>}
       />
       <main className="shell pb-24">
@@ -146,6 +207,7 @@ export default async function AdminPage() {
           {pending.map((submission) => (
             <div
               key={submission.id}
+              id={`submission-${submission.id}`}
               className="border-b border-line py-3 text-body"
             >
               <div className="flex flex-wrap items-baseline gap-4">
@@ -157,11 +219,47 @@ export default async function AdminPage() {
               <pre className="plate mt-2 max-h-[200px] overflow-auto px-3 py-2 font-mono text-mini text-subtle">
                 {JSON.stringify(submission.validationReport, null, 2)}
               </pre>
+              {selectedSubmission?.id === submission.id ? (
+                <div className="plate mt-2 px-3 py-2 text-small text-subtle">
+                  <p>Canonical stored bundle</p>
+                  <pre className="mt-2 max-h-[420px] overflow-auto font-mono text-mini">
+                    {JSON.stringify(selectedSubmission.bundle, null, 2)}
+                  </pre>
+                </div>
+              ) : (
+                <a
+                  href={`/admin?submissions=${submissionPage}&reports=${reportPage}&submission=${submission.id}#submission-${submission.id}`}
+                  className="mt-2 inline-block text-small"
+                >
+                  Review canonical stored bundle →
+                </a>
+              )}
               <div className="mt-2">
                 <ReviewForm id={submission.id} />
               </div>
             </div>
           ))}
+          {(submissionPage > 0 || hasOlderSubmissions) && (
+            <nav
+              className="mt-4 flex gap-5 text-small"
+              aria-label="Submission pages"
+            >
+              {submissionPage > 0 && (
+                <a
+                  href={`/admin?submissions=${submissionPage - 1}&reports=${reportPage}#submissions`}
+                >
+                  ← Newer
+                </a>
+              )}
+              {hasOlderSubmissions && (
+                <a
+                  href={`/admin?submissions=${submissionPage + 1}&reports=${reportPage}#submissions`}
+                >
+                  Older →
+                </a>
+              )}
+            </nav>
+          )}
         </Section>
 
         <Section id="claims" title="Project claims">
@@ -220,6 +318,27 @@ export default async function AdminPage() {
               </div>
             </div>
           ))}
+          {(reportPage > 0 || hasOlderReports) && (
+            <nav
+              className="mt-4 flex gap-5 text-small"
+              aria-label="Report pages"
+            >
+              {reportPage > 0 && (
+                <a
+                  href={`/admin?reports=${reportPage - 1}&submissions=${submissionPage}#reports`}
+                >
+                  ← Newer
+                </a>
+              )}
+              {hasOlderReports && (
+                <a
+                  href={`/admin?reports=${reportPage + 1}&submissions=${submissionPage}#reports`}
+                >
+                  Older →
+                </a>
+              )}
+            </nav>
+          )}
         </Section>
 
         <Section id="attestations" title="Recent attestations">

@@ -10,6 +10,7 @@ import { submissionFromBenchRecord } from "./bench-record.ts"
 import {
   bundleFromSubmission,
   previewSubmission,
+  SUBMISSION_DOCUMENT_LIMIT,
   SUBMISSION_TRANSITIONS,
 } from "./submissions.ts"
 
@@ -51,6 +52,14 @@ describe("submissions", () => {
     )
     expect(report.valid).toBe(false)
     expect(report.issues[0]).toContain("operations[0]")
+  })
+
+  it("bounds documents before YAML parsing on every submission path", () => {
+    const { report } = bundleFromSubmission(
+      "x".repeat(SUBMISSION_DOCUMENT_LIMIT + 1),
+    )
+    expect(report.valid).toBe(false)
+    expect(report.issues[0]).toContain("exceeds")
   })
 
   it("requires projectSlug on implementations", () => {

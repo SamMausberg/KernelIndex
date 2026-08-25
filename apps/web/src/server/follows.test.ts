@@ -9,6 +9,7 @@ import * as schema from "./db/schema.ts"
 import {
   followingFeed,
   listFollows,
+  markSeen,
   matchesFollows,
   toggleFollow,
 } from "./follows.ts"
@@ -55,7 +56,7 @@ describe.skipIf(!url)("follows (database)", () => {
     await db().delete(schema.users).where(eq(schema.users.id, USER))
   })
 
-  it("toggles, narrows the feed, and advances the watermark", async () => {
+  it("toggles, narrows the feed, and explicitly advances the watermark", async () => {
     await db()
       .insert(schema.users)
       .values({ id: USER, name: "follower", email: `${USER}@test.invalid` })
@@ -72,8 +73,9 @@ describe.skipIf(!url)("follows (database)", () => {
     const first = await followingFeed(USER, feed)
     expect(first.seenAt).toBeNull()
     expect(first.feed.days[0]?.entries).toHaveLength(1)
+    expect((await followingFeed(USER, feed)).seenAt).toBeNull()
+    await markSeen(USER, new Date(first.seenThrough))
     const second = await followingFeed(USER, feed)
-    // The first read advanced the watermark past the entry.
     expect(second.seenAt).not.toBeNull()
     expect((second.seenAt as string) > entry.at).toBe(true)
 

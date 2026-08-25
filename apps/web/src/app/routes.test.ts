@@ -3,7 +3,7 @@
 import { describe, expect, it } from "vitest"
 import { GET as badge } from "./badges/implementations/[slug]/route.ts"
 import { POST as beacon } from "./e/route.ts"
-import { GET as feedData } from "./feed/data/route.ts"
+import { GET as feedData, POST as markFeedSeen } from "./feed/data/route.ts"
 import { GET as recordsData } from "./records/data/route.ts"
 import { GET as suggest } from "./suggest/route.ts"
 
@@ -46,6 +46,26 @@ describe("JSON routes", () => {
     )
     expect(response.status).toBe(401)
     expect(response.headers.get("Cache-Control")).toBe("private, no-store")
+    expect(
+      (
+        await markFeedSeen(
+          new Request("http://test/feed/data", {
+            method: "POST",
+            headers: { Origin: "http://test" },
+          }),
+        )
+      ).status,
+    ).toBe(401)
+    expect(
+      (
+        await markFeedSeen(
+          new Request("http://test/feed/data", {
+            method: "POST",
+            headers: { Origin: "https://attacker.example" },
+          }),
+        )
+      ).status,
+    ).toBe(403)
   })
 
   it("/e answers 204 to every beacon, hostile ones included", async () => {

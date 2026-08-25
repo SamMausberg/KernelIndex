@@ -1,6 +1,15 @@
+import {
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs"
+import { tmpdir } from "node:os"
+import { join } from "node:path"
 import type { ImplementationDossier } from "@kernelindex/sdk"
-import { describe, expect, it } from "vitest"
-import { vendorPlan } from "./vendor.ts"
+import { afterEach, describe, expect, it } from "vitest"
+import { vendorPlan, writeVendoredSource } from "./vendor.ts"
 
 /** Minimal dossier: only the fields vendorPlan reads. */
 function dossier(over: {
@@ -75,5 +84,58 @@ describe("vendorPlan", () => {
       kind: "none",
       reason: "No public source for ionflux-rmsnorm: benchmark evidence only.",
     })
+  })
+})
+
+describe("writeVendoredSource", () => {
+  const roots: string[] = []
+  const temporaryRoot = () => {
+    const root = mkdtempSync(join(tmpdir(), "ki-vendor-"))
+    roots.push(root)
+    return root
+  }
+
+  afterEach(() => {
+    for (const root of roots.splice(0)) rmSync(root, { recursive: true })
+  })
+
+  it("creates a nested source path beneath the selected root", () => {
+    const root = temporaryRoot()
+    const written = writeVendoredSource(
+      root,
+      "safe-slug",
+      "src/kernels/rmsnorm.py",
+      "source",
+    )
+    expect(readFileSync(written, "utf8")).toBe("source")
+  })
+
+  it.each([
+    ["slug", "../victim"],
+    ["slug", "a/../../victim"],
+    ["slug", "..\\victim"],
+    ["../slug", "source.py"],
+    ["C:slug", "source.py"],
+    ["slug", "NUL.txt"],
+  ])("rejects unsafe slug/file pairs", (slug, fileName) => {
+    expect(() =>
+      writeVendoredSource(temporaryRoot(), slug, fileName, "source"),
+    ).toThrow(/unsafe/)
+  })
+
+  it("preserves existing files and rejects links outside the root", () => {
+    const root = temporaryRoot()
+    const outside = temporaryRoot()
+    const existing = join(root, "existing.py")
+    writeFileSync(existing, "local edits")
+    expect(() =>
+      writeVendoredSource(root, null, "existing.py", "remote"),
+    ).toThrow(/refusing to overwrite/)
+    expect(readFileSync(existing, "utf8")).toBe("local edits")
+
+    symlinkSync(outside, join(root, "linked"), "dir")
+    expect(() =>
+      writeVendoredSource(root, null, "linked/source.py", "remote"),
+    ).toThrow(/unsafe source path/)
   })
 })

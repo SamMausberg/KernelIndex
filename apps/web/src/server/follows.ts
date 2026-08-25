@@ -2,7 +2,7 @@
 // operations, projects, GPUs, and model tags; the feed filters itself by
 // those keys on read, and one seen-watermark per user marks what is new. No
 // notifications table, no email, no fan-out jobs.
-import { and, desc, eq } from "drizzle-orm"
+import { and, desc, eq, sql } from "drizzle-orm"
 import type { FeedEntry, FeedModel } from "../lib/catalog-models.ts"
 import { db } from "./db/client.ts"
 import * as schema from "./db/schema.ts"
@@ -63,13 +63,19 @@ export async function listFollows(userId: string): Promise<FollowRef[]> {
   return rows.filter((row): row is FollowRef => isFollowKind(row.kind))
 }
 
-export async function markSeen(userId: string): Promise<void> {
+export async function markSeen(
+  userId: string,
+  seenAt = new Date(),
+): Promise<void> {
+  const timestamp = seenAt.toISOString()
   await db()
     .insert(schema.watchMarks)
-    .values({ userId, seenAt: new Date() })
+    .values({ userId, seenAt })
     .onConflictDoUpdate({
       target: schema.watchMarks.userId,
-      set: { seenAt: new Date() },
+      set: {
+        seenAt: sql`greatest(${schema.watchMarks.seenAt}, ${timestamp}::timestamptz)`,
+      },
     })
 }
 
@@ -94,14 +100,17 @@ export type FollowingFeed = {
   feed: FeedModel
   /** The watermark before this read; entries newer than it are new. */
   seenAt: string | null
+  /** Upper bound acknowledged after this exact feed snapshot is presented. */
+  seenThrough: string
   follows: FollowRef[]
 }
 
-/** The public feed narrowed to the user's follows. Reading it is seeing
- * it: the watermark advances after the previous one is captured. */
+/** The public feed narrowed to the user's follows and the current watermark.
+ * Reads stay pure; the client marks the feed seen only after presenting it. */
 export async function followingFeed(
   userId: string,
   feed: FeedModel,
+  seenThrough = new Date(),
 ): Promise<FollowingFeed> {
   const [follows, [mark]] = await Promise.all([
     listFollows(userId),
@@ -116,10 +125,10 @@ export async function followingFeed(
       entries: day.entries.filter((entry) => matchesFollows(entry, follows)),
     }))
     .filter((day) => day.entries.length > 0)
-  await markSeen(userId)
   return {
     feed: { ...feed, days },
     seenAt: mark?.seenAt.toISOString() ?? null,
+    seenThrough: seenThrough.toISOString(),
     follows,
   }
 }

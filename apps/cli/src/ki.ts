@@ -2,8 +2,7 @@
 // ki — the KernelIndex CLI (§13.8). Human-readable tables by default; the
 // --json/--jsonl output is stable machine output with no decorative noise,
 // full units, and untruncated digests. Exit codes: 0 ok, 1 error, 2 usage.
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs"
-import { join } from "node:path"
+import { readFileSync } from "node:fs"
 import { parseArgs } from "node:util"
 import {
   type CompareModel,
@@ -18,7 +17,7 @@ import {
 import { digestManifest, validateManifest } from "@kernelindex/sdk/manifest"
 import { parse as parseYaml } from "yaml"
 import { formatPrimary, tableLines } from "./render.ts"
-import { vendorPlan } from "./vendor.ts"
+import { vendorPlan, writeVendoredSource } from "./vendor.ts"
 
 const HELP = `ki · KernelIndex command line
 
@@ -350,10 +349,12 @@ async function main(): Promise<number> {
         console.log(`\n${model.usage.invocationExample}`)
       return 0
     }
-    const dir = values.out ?? join("kernels", model.implementation.slug)
-    const path = join(dir, plan.fileName)
-    mkdirSync(dir, { recursive: true })
-    writeFileSync(path, plan.content)
+    const path = writeVendoredSource(
+      values.out ?? "kernels",
+      values.out === undefined ? model.implementation.slug : null,
+      plan.fileName,
+      plan.content,
+    )
     if (
       emit({
         written: path,
