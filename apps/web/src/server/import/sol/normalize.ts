@@ -260,6 +260,11 @@ export function caseFromEntry(
   definition: SolDefinition,
   operationSpecDigest: string,
   entry: SolWorkloadEntry,
+  /** Trace-format sources share this mapper; a NEW source names its own
+   * evaluation stack here. Existing sources must keep whatever they first
+   * minted — digests are identity, and changing this re-mints workloads
+   * (2026-08-25 audit; see the flashinfer reconcile note). */
+  comparator = "sol_execbench_eval",
 ): WorkloadCaseManifest {
   const entryAxes = Object.fromEntries(
     Object.entries(entry.axes).map(([name, value]) => [axisKey(name), value]),
@@ -333,7 +338,7 @@ export function caseFromEntry(
       // Dataset workload rows publish per-case tolerances; when absent the
       // comparator names the evaluation stack without inventing thresholds.
       correctness: {
-        comparator: "sol_execbench_eval",
+        comparator,
         maxAbsoluteError: entry.tolerance?.max_atol,
         maxRelativeError: entry.tolerance?.max_rtol,
       },
@@ -654,6 +659,9 @@ export function runFromTrace(input: {
   environmentDigest: string
   /** Trace-format sources share this mapper; SOL is the default. */
   sourceSlug?: string
+  /** Evaluation-stack name for the run's correctness record; each source
+   * passes its own (see caseFromEntry). */
+  comparator?: string
 }): NormalizedRun {
   const { trace } = input
   const evaluation = trace.evaluation
@@ -689,7 +697,7 @@ export function runFromTrace(input: {
       status,
       correctness: correctness
         ? {
-            comparator: "sol_execbench_eval",
+            comparator: input.comparator ?? "sol_execbench_eval",
             maximumAbsoluteError: correctness.max_absolute_error ?? undefined,
             maximumRelativeError: correctness.max_relative_error ?? undefined,
           }

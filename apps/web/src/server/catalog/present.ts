@@ -172,17 +172,21 @@ export function workloadTensorKeyValues(
   }))
 }
 
+// "definition comparator" (not "comparator"): this is the workload
+// definition's stated stack, which can legitimately differ in name from
+// the evaluator on the run's protocol; distinct labels keep the two from
+// reading as a contradiction (2026-08-25 review).
 export function toleranceKeyValues(workload: AnyWorkloadManifest): KeyValue[] {
   if (workload.kind === "WorkloadSuite") {
     const suite = workload.spec.correctness
     return kv([
-      ["comparator", suite.comparator],
+      ["definition comparator", suite.comparator],
       ["description", suite.description],
     ])
   }
   const c = workload.spec.correctness
   return kv([
-    ["comparator", c.comparator],
+    ["definition comparator", c.comparator],
     ["maxAbsoluteError", c.maxAbsoluteError],
     ["maxRelativeError", c.maxRelativeError],
     ["requiredMatchedRatio", c.requiredMatchedRatio],

@@ -181,6 +181,12 @@ export async function reconcileFlashinfer(
     try {
       let caseDigest = caseDigestByKey.get(key)
       if (!caseDigest) {
+        // Deliberately NOT passing "flashinfer_bench_eval" (2026-08-25):
+        // publication dedupes by manifest digest, so changing the comparator
+        // would re-mint every existing workload and duplicate all 7,526 runs
+        // into new cohorts on the next import. The stored name is corrected
+        // at presentation (the run page states the protocol's evaluator);
+        // a future NEW trace source passes its own comparator here.
         const manifest = caseFromEntry(
           definition,
           operationDigest,
@@ -206,6 +212,8 @@ export async function reconcileFlashinfer(
           protocolDigest,
           environment: environment.manifest,
           environmentDigest: environment.digest,
+          // comparator stays the shared default for digest stability (see
+          // the caseFromEntry note above).
           sourceSlug: FLASHINFER_SOURCE.slug,
         }),
       )

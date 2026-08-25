@@ -339,8 +339,11 @@ export default async function ServingPage({
           <div aria-hidden="true" className="w-px bg-border" />
           {/* Bounds sit in the console like every other group — one
               caption, one row of h-8 controls, nothing to open (2026-08-22
-              founder feedback: the disclosure broke the console's line). */}
-          <ConsoleGroup label="Latency bounds">
+              founder feedback: the disclosure broke the console's line).
+              "Scenario limits", not "latency bounds": with MLPerf rows the
+              comparison is against limits the scenario rules declare, not
+              measured latency (2026-08-25 honesty fix). */}
+          <ConsoleGroup label="Scenario limits">
             <Field label="TTFT p99 ≤">
               <UnitInput
                 name="ttft"
@@ -384,8 +387,10 @@ export default async function ServingPage({
           <section className="pt-5">
             <p className="max-w-[72ch] text-small text-faint">
               Best reported throughput per model and scenario. Open a row for
-              every configuration, the Pareto frontier, and exclusions; add
-              latency bounds above to resolve against your own limits.
+              every configuration, the Pareto frontier, and exclusions. MLPerf
+              measures token throughput only; the TTFT and TPOT limits above
+              compare against each scenario&apos;s declared rules, never against
+              latency KernelIndex has not seen measured.
             </p>
             <div className="mt-4">
               <ServingOverview rows={overview?.rows ?? []} />

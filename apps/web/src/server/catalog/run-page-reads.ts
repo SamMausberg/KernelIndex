@@ -196,7 +196,14 @@ export async function getRunPage(id: string): Promise<RunPageModel | null> {
     },
     correctness: correctness
       ? {
-          comparator: correctness.comparator,
+          // The run's evaluator is its protocol's stack; trace-format runs
+          // minted before 2026-08-25 stored the shared mapper's default
+          // name here, which read as a contradiction against the protocol
+          // manifest on the same page. Stored manifests are identity and
+          // stay untouched; the read states the truth.
+          comparator:
+            stored.protocol.spec.correctness?.comparator ??
+            correctness.comparator,
           maxAbsoluteError: correctness.maximumAbsoluteError ?? null,
           maxRelativeError: correctness.maximumRelativeError ?? null,
           matchedRatio: correctness.matchedRatio ?? null,

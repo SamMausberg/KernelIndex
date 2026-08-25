@@ -725,9 +725,16 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
               navigate={navigate}
               status={
                 <>
+                  {/* The default filter names itself (2026-08-25 review:
+                      "1,585 of 2,742" left a where-did-they-go gap). */}
                   <span>
                     {narrowed
-                      ? `${slice.holders.total} of ${slice.recordsTotal} records`
+                      ? slice.filters.source &&
+                        slice.filters.filter === "" &&
+                        slice.filters.hardware === null &&
+                        !slice.filters.verified
+                        ? `${slice.holders.total} source-backed of ${slice.recordsTotal} records`
+                        : `${slice.holders.total} of ${slice.recordsTotal} records`
                       : `${slice.recordsTotal} record${slice.recordsTotal === 1 ? "" : "s"}`}
                   </span>
                   <span className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">

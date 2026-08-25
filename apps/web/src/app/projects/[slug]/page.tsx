@@ -61,12 +61,22 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
+// SSR row caps (§16 payload budget): a large project (Liger: 565 records)
+// must not ship thousands of DOM rows behind a disclosure; the ledger and
+// the API carry the rest, and the cut is stated.
+const RECORD_LIMIT = 40
+const KERNEL_LIMIT = 40
+
 export default async function ProjectPage({ params }: Props) {
   const { slug } = await params
   const model = await getProjectPage(slug)
   if (!model) notFound()
   const { project, stats, claim } = model
   const individual = project.kind === "individual"
+  const records = model.records.slice(0, RECORD_LIMIT)
+  const recordsCut = model.records.length - records.length
+  const kernels = model.implementations.slice(0, KERNEL_LIMIT)
+  const kernelsCut = model.implementations.length - kernels.length
 
   return (
     <>
@@ -158,7 +168,7 @@ export default async function ProjectPage({ params }: Props) {
               <ExpandRows
                 cap={10}
                 noun="records"
-                rows={model.records.map((holder) => (
+                rows={records.map((holder) => (
                   <div
                     key={holder.cohortKey}
                     className={`${RECORD_GRID} border-b border-line py-3 transition-colors hover:bg-raised`}
@@ -220,6 +230,8 @@ export default async function ProjectPage({ params }: Props) {
             </p>
           )}
           <p className="mt-3 text-small text-faint">
+            {recordsCut > 0 &&
+              `${recordsCut} more record${recordsCut === 1 ? "" : "s"} · `}
             <Link href={`/records?f=${encodeURIComponent(project.name)}`}>
               Open in the records ledger →
             </Link>
@@ -230,13 +242,21 @@ export default async function ProjectPage({ params }: Props) {
           id="kernels"
           title={individual ? "Measured entries" : "Measured kernels"}
         >
-          {model.implementations.length > 0 ? (
-            <ImplementationsTable
-              rows={model.implementations}
-              withOperation
-              cap={10}
-              noun={individual ? "entries" : "kernels"}
-            />
+          {kernels.length > 0 ? (
+            <>
+              <ImplementationsTable
+                rows={kernels}
+                withOperation
+                cap={10}
+                noun={individual ? "entries" : "kernels"}
+              />
+              {kernelsCut > 0 && (
+                <p className="mt-3 text-small text-faint">
+                  Showing {KERNEL_LIMIT} of {model.implementations.length}; the
+                  full list is in the API dossier below.
+                </p>
+              )}
+            </>
           ) : (
             <p className="py-2 text-body text-faint">
               No eligible measurement for this project yet.
