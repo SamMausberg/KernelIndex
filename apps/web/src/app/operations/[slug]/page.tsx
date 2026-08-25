@@ -4,7 +4,6 @@
 // data. Selections never make this page dynamic (records pattern, §16.12).
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
-import { ApiLink } from "@/components/api-link"
 import { ContextHeader } from "@/components/context-header"
 import { CopyButton } from "@/components/copy-button"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
@@ -17,6 +16,7 @@ import { ImplementationsTable } from "@/features/implementations/implementations
 import { OperationRecords } from "@/features/operations/operation-records"
 import { operationVariant } from "@/features/operations/variant"
 import { getOperationPage } from "@/lib/catalog"
+import { countNoun } from "@/lib/format"
 
 type Props = { params: Promise<{ slug: string }> }
 
@@ -33,7 +33,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const model = await getOperationPage(slug)
   // Fail in metadata so unknown slugs return a real 404, not a soft-404.
   if (!model) notFound()
-  return { title: model.operation.name, description: model.operation.summary }
+  return {
+    title: model.operation.name,
+    description: model.operation.summary,
+    alternates: { canonical: `/operations/${slug}` },
+  }
 }
 
 export default async function OperationPage({ params }: Props) {
@@ -49,11 +53,14 @@ export default async function OperationPage({ params }: Props) {
         title={operation.name}
         meta={
           <>
+            {/* One coverage fact; the evidence split lives in the records
+                island and the run dossiers (3-second rule). */}
             <span>
-              {coverage.verified} verified · {coverage.reproducible}{" "}
-              reproducible · {coverage.reported} reported
+              {countNoun(
+                coverage.verified + coverage.reproducible + coverage.reported,
+                "eligible run",
+              )}
             </span>
-            <ApiLink path={`/operations/${operation.slug}`} />
             <FollowButton
               kind="operation"
               followKey={operation.slug}
@@ -67,9 +74,11 @@ export default async function OperationPage({ params }: Props) {
         {/* Identity as machined tags behind a disclosure (§16.7 progressive
             disclosure): the family stays visible; aliases, model provenance,
             and the semantic digest are one click away, never the lead. */}
+        {/* Identity as plain text (§16 pill restraint: keys are controls,
+            not tags), still one disclosure away and never the lead. */}
         <details className="group mt-2.5">
-          <summary className="flex cursor-pointer list-none flex-wrap items-center gap-2 [&::-webkit-details-marker]:hidden">
-            <span className="key text-mini text-subtle">
+          <summary className="flex cursor-pointer list-none flex-wrap items-baseline gap-x-3 [&::-webkit-details-marker]:hidden">
+            <span className="font-mono text-mini text-subtle">
               {operation.family}
             </span>
             <span className="text-mini text-faint transition-colors group-open:hidden hover:text-fg">
@@ -79,9 +88,9 @@ export default async function OperationPage({ params }: Props) {
               identity ⌄
             </span>
           </summary>
-          <div className="mt-2 flex flex-wrap items-center gap-2">
+          <div className="mt-2 flex flex-wrap items-baseline gap-x-4 gap-y-1.5 font-mono text-mini text-subtle">
             {operation.aliases.map((alias) => (
-              <span key={alias} className="key font-mono text-mini text-subtle">
+              <span key={alias}>
                 <span className="mr-1.5 font-sans text-faint">alias</span>
                 {alias}
               </span>
@@ -91,22 +100,24 @@ export default async function OperationPage({ params }: Props) {
                 key={model_}
                 href={`/models/${model_}`}
                 prefetch={false}
-                className="key font-mono text-mini text-subtle no-underline transition-colors hover:text-fg"
+                className="text-mini text-subtle transition-colors hover:text-fg"
               >
-                <span className="mr-1.5 font-sans text-faint">model</span>
+                <span className="mr-1.5 font-sans text-faint no-underline">
+                  model
+                </span>
                 {model_}
               </Link>
             ))}
             {operation.models.length > 4 && (
-              <span className="text-mini text-faint">
+              <span className="text-faint">
                 +{operation.models.length - 4} models
               </span>
             )}
-            <span className="key font-mono text-mini text-subtle">
-              <span className="mr-1.5 font-sans text-faint">sha256</span>
+            <span className="inline-flex items-baseline gap-1.5">
+              <span className="font-sans text-faint">sha256</span>
               {operation.semanticDigest.replace("sha256:", "").slice(0, 12)}…
+              <CopyButton text={operation.semanticDigest} />
             </span>
-            <CopyButton text={operation.semanticDigest} />
           </div>
         </details>
         {operation.summary && (
@@ -201,6 +212,7 @@ export default async function OperationPage({ params }: Props) {
           sources={model.sources}
           lastObservedAt={coverage.lastObservedAt}
           emptyText="No source imports for this operation yet."
+          api={`/operations/${operation.slug}`}
         />
       </main>
     </>

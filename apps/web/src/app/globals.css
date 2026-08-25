@@ -31,7 +31,7 @@
   --color-fg: #f2f4f9;
   --color-muted: #b6bac9;
   --color-subtle: #a2a8bb;
-  --color-faint: #757c93;
+  --color-faint: #838aa2;
   --color-ghost: #3b4054;
 
   /* One cobalt accent with real chroma; status colors appear sparingly and
@@ -46,12 +46,14 @@
   /* Categorical series colors for charts, cobalt first — assigned in this
      fixed order, never cycled past five (fold the rest). Validated on the
      dark surface for CVD separation, chroma, and contrast (dataviz gates);
-     never reused for status, and text beside them stays in text tokens. */
+     never reused for status, and text beside them stays in text tokens.
+     Series 5 is the deliberately neutral "everything else" tone — separated
+     from the four vivid series by lightness, so it survives every CVD. */
   --color-viz-1: #5b8ee0;
   --color-viz-2: #2aa889;
   --color-viz-3: #a379e8;
   --color-viz-4: #d0618f;
-  --color-viz-5: #b98a3d;
+  --color-viz-5: #9aa3b8;
 
   /* The house faces (§16.2): ABC Diatype leads when locally available;
      the self-hosted pair (Instrument Sans for UI, Space Grotesk as the
@@ -78,12 +80,12 @@
    *   readout  the measurement numeral (search hero, run dossier)
    *   hero     the homepage headline only
    */
-  --text-label: 10.5px;
+  --text-label: 11px;
   --text-label--letter-spacing: 0.08em;
-  --text-mini: 11.5px;
-  --text-small: 12.5px;
-  --text-body: 13.5px;
-  --text-lead: 15px;
+  --text-mini: 12px;
+  --text-small: 13px;
+  --text-body: 14px;
+  --text-lead: 16px;
   --text-lead--letter-spacing: -0.01em;
   --text-title: 20px;
   --text-title--line-height: 1.25;
@@ -93,8 +95,8 @@
   --text-display--letter-spacing: -0.015em;
   --text-readout: 34px;
   --text-readout--line-height: 1;
-  --text-hero: clamp(32px, 3.6vw, 44px);
-  --text-hero--line-height: 1.12;
+  --text-hero: clamp(26px, 2.8vw, 34px);
+  --text-hero--line-height: 1.15;
   --text-hero--letter-spacing: -0.02em;
 
   /* Motion grammar: two speeds, one house curve, always property-scoped —

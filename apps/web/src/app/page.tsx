@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import Link from "next/link"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
 import { HeroSearch } from "@/features/home/hero-search"
@@ -9,6 +10,7 @@ import { getCoveragePage, getHomePage, getModelIndex } from "@/lib/catalog"
 // The homepage reads live records; revalidate on a short cycle instead of
 // freezing them into the build (data changes only on importer runs).
 export const revalidate = 300
+export const metadata: Metadata = { alternates: { canonical: "/" } }
 
 export default async function Home() {
   const [model, coverage, models] = await Promise.all([
@@ -70,6 +72,8 @@ export default async function Home() {
             {/* The outcome comes before the machinery: one resolved workload,
                 then the queries and corpus size on a single quiet line. */}
             <WorkedExample />
+            {/* Example queries and the corpus count only (3-second rule):
+                sources and the API live in the trust block and footer. */}
             <p className="mt-5 flex max-w-[620px] flex-wrap items-baseline gap-x-4 gap-y-1 font-mono text-small text-faint">
               {examples.map((example) => (
                 <Link
@@ -87,14 +91,6 @@ export default async function Home() {
                 ranked runs · {model.stats.runs.toLocaleString("en-US")} runs ·{" "}
                 {model.stats.gpus.toLocaleString("en-US")} GPUs
               </Link>
-              <span className="flex items-baseline gap-x-4">
-                <a href="#trust" className="text-faint">
-                  sources
-                </a>
-                <Link href="/docs/api" className="text-faint">
-                  API &amp; MCP
-                </Link>
-              </span>
             </p>
           </div>
         </section>
@@ -102,17 +98,18 @@ export default async function Home() {
         <section className="shell pt-6">
           <div className="mb-4 flex items-baseline justify-between gap-4">
             <h2 className="text-title font-medium">Latest records</h2>
-            <span className="flex gap-5 text-body">
-              <Link href="/records?source=1">With source →</Link>
-              <Link href="/records">Full ledger →</Link>
-            </span>
+            <Link href="/records" className="text-body">
+              Full ledger →
+            </Link>
           </div>
           <LatestRecords rows={model.latest} />
+          {/* One note, pointing at the trust block below rather than off the
+              page: the evidence-level breakdown renders right there. */}
           <p className="mt-3 text-small text-faint">
             Shown as published by their sources.{" "}
-            <Link href="/docs#evidence" className="text-faint">
-              Evidence levels →
-            </Link>
+            <a href="#trust" className="text-faint">
+              Evidence levels ↓
+            </a>
           </p>
         </section>
 

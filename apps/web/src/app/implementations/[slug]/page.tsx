@@ -42,6 +42,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: model.implementation.name,
     description: `${model.implementation.name}: GPU kernel implementation from ${model.project.name} with install, license, supported hardware${hardware ? ` (${hardware})` : ""}, and benchmark evidence.`,
+    alternates: { canonical: `/implementations/${slug}` },
   }
 }
 
@@ -49,10 +50,6 @@ export default async function ImplementationPage({ params }: Props) {
   const { slug } = await params
   const model = await getImplementationPage(slug)
   if (!model) notFound()
-  const support = [
-    ...model.support.hardware,
-    ...model.support.architectures,
-  ].join(" / ")
   // What it was actually measured on — declared support is a claim, this is
   // evidence (§11.8): distinct GPUs from the eligible runs on this revision.
   const testedOn = [...new Set(model.bestResults.map((r) => r.hardware.model))]
@@ -73,16 +70,10 @@ export default async function ImplementationPage({ params }: Props) {
             model.implementation.name
           )
         }
+        // Three facts (§16 meta diet): who ships it, in what, under which
+        // license. Slug echo and the support matrix live in "Use it".
         context={
           <>
-            {model.implementation.name !== model.implementation.slug && (
-              <>
-                <span className="font-mono text-small">
-                  {model.implementation.slug}
-                </span>
-                {" · "}
-              </>
-            )}
             {model.project.name !== model.implementation.name &&
               (model.project.repositoryUrl ? (
                 <>
@@ -99,7 +90,6 @@ export default async function ImplementationPage({ params }: Props) {
               model.license.concluded ??
                 model.license.declared ??
                 "License unknown",
-              support || null,
             ]
               .filter(Boolean)
               .join(" · ")}
@@ -119,12 +109,6 @@ export default async function ImplementationPage({ params }: Props) {
                 holds {countNoun(model.standing.records, "record")}
               </span>
             )}
-            <span>{model.trust.summary}</span>
-            <ApiLink
-              path={`/implementations/${model.implementation.slug}${
-                model.sourceCode ? "?include=source" : ""
-              }`}
-            />
           </>
         }
       />
@@ -506,6 +490,17 @@ export default async function ImplementationPage({ params }: Props) {
             </ul>
           </Section>
         )}
+
+        {/* Trust summary and the machine twin, past the answer (§16 3-second
+            rule): the chips beside each result already carry the detail. */}
+        <div className="mt-12 flex flex-wrap items-baseline justify-between gap-5 border-t border-border pt-5">
+          <p className="text-small text-subtle">{model.trust.summary}</p>
+          <ApiLink
+            path={`/implementations/${model.implementation.slug}${
+              model.sourceCode ? "?include=source" : ""
+            }`}
+          />
+        </div>
       </main>
     </>
   )

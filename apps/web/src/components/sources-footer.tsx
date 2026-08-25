@@ -1,16 +1,20 @@
+import { ApiLink } from "@/components/api-link"
 import type { SourceRef } from "@/lib/catalog"
 import { formatDateUTC } from "@/lib/format"
 
 /** The provenance footer shared by operation and GPU pages: which sources
- * back the page, each with its terms, and the newest observation date. */
+ * back the page, each with its terms, the newest observation date, and —
+ * when `api` names the page's /api/v1 twin — the machine link (§16.18). */
 export function SourcesFooter({
   sources,
   lastObservedAt,
   emptyText,
+  api,
 }: {
   sources: SourceRef[]
   lastObservedAt?: string | null
   emptyText?: string
+  api?: string
 }) {
   return (
     <div className="mt-12 flex flex-wrap items-baseline justify-between gap-5 border-t border-border pt-5 text-small">
@@ -35,11 +39,14 @@ export function SourcesFooter({
           (emptyText ?? "No source imports yet.")
         )}
       </span>
-      {lastObservedAt && (
-        <span className="font-mono text-small text-faint">
-          last observed {formatDateUTC(lastObservedAt)}
-        </span>
-      )}
+      <span className="flex items-baseline gap-x-5">
+        {lastObservedAt && (
+          <span className="font-mono text-small text-faint">
+            last observed {formatDateUTC(lastObservedAt)}
+          </span>
+        )}
+        {api && <ApiLink path={api} />}
+      </span>
     </div>
   )
 }

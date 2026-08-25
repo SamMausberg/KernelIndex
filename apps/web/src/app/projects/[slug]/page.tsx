@@ -5,7 +5,6 @@
 // dossier; the claim panel is a session-free island.
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
-import { ApiLink } from "@/components/api-link"
 import { ContextHeader } from "@/components/context-header"
 import { ExpandRows } from "@/components/expand-rows"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
@@ -54,6 +53,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: model.project.name,
     description: `${model.project.name} on KernelIndex: ${countNoun(model.records.length, "current record")}, ${countNoun(model.stats.implementations, "measured kernel")}, with license, hardware, and benchmark evidence for every row.`,
+    alternates: { canonical: `/projects/${slug}` },
   }
 }
 
@@ -109,7 +109,6 @@ export default async function ProjectPage({ params }: Props) {
               <span>Claimed{claim.by ? ` by ${claim.by}` : ""}</span>
             )}
             {claim.state === "pending" && <span>Claim pending review</span>}
-            <ApiLink path={`/projects/${project.slug}`} />
             <FollowButton
               kind="project"
               followKey={project.slug}
@@ -239,6 +238,7 @@ export default async function ProjectPage({ params }: Props) {
         <SourcesFooter
           sources={model.sources}
           lastObservedAt={stats.lastObservedAt}
+          api={`/projects/${project.slug}`}
         />
       </main>
     </>

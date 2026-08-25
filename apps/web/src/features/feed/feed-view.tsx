@@ -5,7 +5,6 @@ import { ApiLink } from "@/components/api-link"
 import { ContextHeader } from "@/components/context-header"
 import { Link } from "@/components/quiet-link"
 import type { FeedModel } from "@/lib/catalog"
-import { countNoun } from "@/lib/format"
 import type { FollowingFeed } from "@/server/follows"
 import { FeedDays } from "./feed-rows"
 
@@ -48,7 +47,6 @@ export function FeedView({ initial }: { initial: FeedModel }) {
       select(true)
   }, [])
 
-  const total = initial.days.reduce((n, day) => n + day.entries.length, 0)
   const view = (on: boolean, label: string) => (
     <Link
       href={on ? "/feed?following=1" : "/feed"}
@@ -70,18 +68,11 @@ export function FeedView({ initial }: { initial: FeedModel }) {
     <>
       <ContextHeader
         title="Feed"
-        context={`${countNoun(total, "entry")} · trailing 30 days · newest first · what the index learned`}
+        context="what the index learned · trailing 30 days, newest first"
         meta={
           <>
             {view(false, "All")}
             {view(true, "Following")}
-            <a
-              href="/records/feed.xml"
-              className="whitespace-nowrap text-subtle transition-colors hover:text-fg no-underline"
-            >
-              Atom
-            </a>
-            <ApiLink path="/feed" />
           </>
         }
       />
@@ -129,11 +120,23 @@ export function FeedView({ initial }: { initial: FeedModel }) {
             <FeedDays days={initial.days} />
           </div>
         )}
-        <p className="mt-11 border-t border-border pt-5 text-small text-subtle">
-          Record breaks rank only inside their own cohort; imports state what a
-          batch brought; corrections retract or supersede, never rewrite.{" "}
-          <Link href="/docs#records">How records are decided →</Link>
-        </p>
+        <div className="mt-11 flex flex-wrap items-baseline justify-between gap-5 border-t border-border pt-5">
+          <p className="text-small text-subtle">
+            Record breaks rank only inside their own cohort; imports state what
+            a batch brought; corrections retract or supersede, never rewrite.{" "}
+            <Link href="/docs#records">How records are decided →</Link>
+          </p>
+          {/* Machine access past the answer (3-second rule). */}
+          <span className="flex items-baseline gap-x-5 text-small">
+            <a
+              href="/records/feed.xml"
+              className="text-faint transition-colors hover:text-fg"
+            >
+              Atom feed
+            </a>
+            <ApiLink path="/feed" />
+          </span>
+        </div>
       </main>
     </>
   )

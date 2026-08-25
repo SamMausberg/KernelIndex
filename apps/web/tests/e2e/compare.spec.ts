@@ -39,7 +39,10 @@ test("a run can be added by id and the comparison exports CSV", async ({
   page,
 }) => {
   await page.goto("/compare?run=run-fx-0002&run=run-fx-0003")
+  // Add-run and the exports sit behind quiet disclosures (§16 3-second rule).
+  await page.getByText("Export ›").click()
   await expect(page.getByText(/^CSV\b/)).toBeVisible()
+  await page.getByText("Add run ›").click()
   const add = page.getByRole("textbox", { name: "Add a run" })
   await add.fill("run-fx-0009")
   await add.press("Enter")

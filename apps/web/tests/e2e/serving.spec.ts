@@ -8,7 +8,7 @@ test("the default view is the overview; narrowing shows separated cohorts", asyn
   page,
 }) => {
   await page.goto("/serving")
-  await expect(page.getByText("Example data.", { exact: false })).toBeVisible()
+  await expect(page.getByText("Example data", { exact: false })).toBeVisible()
   // No cohort stream before narrowing: one row per model × benchmark.
   await expect(page.getByText("Best tokens/s")).toBeVisible()
   await expect(

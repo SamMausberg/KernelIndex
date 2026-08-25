@@ -11,6 +11,7 @@ export const metadata: Metadata = {
   title: "Feed",
   description:
     "What KernelIndex learned over the trailing 30 days: record breaks, publication batches, corrections, and accepted project claims.",
+  alternates: { canonical: "/feed" },
 }
 export const revalidate = 300
 

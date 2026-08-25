@@ -197,12 +197,11 @@ export function ResultRowItem({
         </div>
         <RelativeCell row={row} best={best} relative={relative} />
         <TrustCell row={row} />
-        <div
-          className={`font-mono text-mini ${
-            row.stale ? "text-warning" : "text-faint"
-          }`}
-        >
+        {/* Staleness is a freshness fact, not a warning (§16.16): the word
+            carries it, amber stays reserved for act-on states. */}
+        <div className="font-mono text-mini text-faint">
           {formatDateUTC(row.lastTestedAt)}
+          {row.stale && <span className="ml-1.5 text-subtle">stale</span>}
         </div>
         <div
           aria-hidden="true"

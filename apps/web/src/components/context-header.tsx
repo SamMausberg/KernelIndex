@@ -24,10 +24,10 @@ export function ContextHeader({
         <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-1">
           <div className="min-w-0">
             <h1 className="text-title font-medium">{title}</h1>
+            {/* Sans by default (mono is for data, not fact lists); callers
+                wrap genuinely technical spans (shapes, slugs) in font-mono. */}
             {context && (
-              <div className="mt-1.5 font-mono text-small text-subtle">
-                {context}
-              </div>
+              <div className="mt-1.5 text-small text-subtle">{context}</div>
             )}
           </div>
           {meta && (

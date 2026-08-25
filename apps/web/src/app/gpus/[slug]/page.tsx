@@ -35,6 +35,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: model.hardware.model,
     description: `GPU kernel benchmark evidence on ${model.hardware.model}: ${model.stats.runs} published runs across ${model.stats.operations} operations, with source, license, and protocol for every record.`,
+    alternates: { canonical: `/gpus/${slug}` },
   }
 }
 

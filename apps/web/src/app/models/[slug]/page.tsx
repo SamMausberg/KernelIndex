@@ -6,7 +6,6 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { after } from "next/server"
-import { ApiLink } from "@/components/api-link"
 import { FilterChip } from "@/components/chip"
 import { ContextHeader } from "@/components/context-header"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
@@ -37,6 +36,8 @@ export async function generateMetadata({
   return {
     title: slug,
     description: `Best known GPU kernel implementations for ${slug}: per-operation records with evidence quality, deployability, coverage gaps, and source links.`,
+    // One canonical per model: GPU selections are views of this page.
+    alternates: { canonical: `/models/${slug}` },
   }
 }
 
@@ -124,13 +125,6 @@ export default async function ModelPage({ params, searchParams }: Props) {
               {model.stats.families === 1 ? "family" : "families"} ·{" "}
               {model.stats.runs.toLocaleString("en-US")} eligible runs
             </span>
-            <ApiLink
-              path={`/models/${slug}${
-                model.selectedGpu
-                  ? `?gpu=${encodeURIComponent(model.selectedGpu)}`
-                  : ""
-              }`}
-            />
             <FollowButton
               kind="model"
               followKey={slug}
@@ -225,7 +219,14 @@ export default async function ModelPage({ params, searchParams }: Props) {
           </div>
         )}
 
-        <SourcesFooter sources={model.sources} />
+        <SourcesFooter
+          sources={model.sources}
+          api={`/models/${slug}${
+            model.selectedGpu
+              ? `?gpu=${encodeURIComponent(model.selectedGpu)}`
+              : ""
+          }`}
+        />
       </main>
     </>
   )

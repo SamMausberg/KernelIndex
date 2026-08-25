@@ -40,6 +40,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: `Run ${model.run.id.slice(0, 8)}`,
     description: `Immutable benchmark evidence: ${model.implementation.name} on ${model.operation.name} (${model.workload.label}): protocol, environment, correctness, and source snapshot.`,
+    alternates: { canonical: `/runs/${model.run.id}` },
   }
 }
 
@@ -93,7 +94,6 @@ export default async function RunPage({ params }: Props) {
               {model.run.status.replaceAll("_", " ")}
             </span>
             <span>{evidenceLabel(model.evidence)} evidence</span>
-            <ApiLink path={`/runs/${model.run.id}`} />
           </>
         }
       />
@@ -375,9 +375,12 @@ export default async function RunPage({ params }: Props) {
             {model.provenance.source.license &&
               ` · ${model.provenance.source.license}`}
           </span>
-          <Link href={cohortHref}>
-            All results for {model.operation.name} →
-          </Link>
+          <span className="flex items-baseline gap-x-5">
+            <Link href={cohortHref}>
+              All results for {model.operation.name} →
+            </Link>
+            <ApiLink path={`/runs/${model.run.id}`} />
+          </span>
         </div>
       </main>
     </>

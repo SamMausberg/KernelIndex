@@ -33,11 +33,13 @@ export function FilterChip({
       {count}
     </span>
   )
+  // Dead state reads one tier below a live chip: faint, not ghost — ghost
+  // is decorative-only and fails AA contrast for readable text (§16.17).
   if (dead) {
     return (
       <span
         title={title}
-        className="key text-small whitespace-nowrap text-ghost"
+        className="key text-small whitespace-nowrap text-faint"
       >
         {label}
         {counter}

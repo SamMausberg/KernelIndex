@@ -28,7 +28,7 @@ export function DeleteAccountForm({ email }: { email: string }) {
         <button
           type="submit"
           disabled={pending}
-          className="key cursor-pointer px-3 py-1 text-small text-warning hover:text-fg"
+          className="key cursor-pointer px-3 py-1 text-small text-subtle hover:text-warning"
         >
           Delete account
         </button>

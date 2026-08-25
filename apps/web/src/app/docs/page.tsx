@@ -6,7 +6,12 @@ import { LIMITATIONS, SourceTable } from "@/features/trust/sources"
 import { getCoveragePage } from "@/lib/catalog"
 import { servingEnabled } from "@/server/env"
 
-export const metadata: Metadata = { title: "Docs" }
+export const metadata: Metadata = {
+  title: "Docs",
+  description:
+    "How KernelIndex works: query syntax, reading a result, comparability and ranking rules, evidence levels, the REST API, and source licensing.",
+  alternates: { canonical: "/docs" },
+}
 // Live per-source counts render inside #sources; everything else is prose.
 export const revalidate = 300
 

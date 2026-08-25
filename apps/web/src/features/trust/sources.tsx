@@ -117,9 +117,8 @@ export function SourceTable({
               <span className="text-right font-mono text-small">
                 {row.hardware}
               </span>
-              <span
-                className={`font-mono text-small ${stale ? "text-warning" : "text-subtle"}`}
-              >
+              {/* Staleness is a fact, not a warning (§16.16). */}
+              <span className="font-mono text-small text-subtle">
                 {formatDateUTC(row.lastFetched)}
                 {stale && " · stale"}
               </span>
@@ -181,10 +180,9 @@ export function TrustBlock({
               </span>
               <span className="font-mono text-small whitespace-nowrap text-subtle">
                 {row.runs.toLocaleString("en-US")} runs ·{" "}
-                <span
-                  className={sourceIsStale(row) ? "text-warning" : "text-faint"}
-                >
+                <span className="text-faint">
                   {formatDateUTC(row.lastFetched)}
+                  {sourceIsStale(row) && " · stale"}
                 </span>
               </span>
             </div>

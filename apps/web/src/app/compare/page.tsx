@@ -4,7 +4,11 @@ import { IllustrativeNotice } from "@/components/illustrative-notice"
 import { CompareView } from "@/features/compare/compare-view"
 import { getComparePage } from "@/lib/catalog"
 
-export const metadata: Metadata = { title: "Compare" }
+export const metadata: Metadata = {
+  title: "Compare",
+  description:
+    "Side-by-side comparison of GPU kernel benchmark runs: shared cohort verdict, comparison identity, and the fields that differ.",
+}
 
 export default async function ComparePage({
   searchParams,

@@ -2936,6 +2936,8 @@ code/digests:     12 to 14 px monospace
 
 Animation is functional only: focus, disclosure, copy confirmation, and modest route-state transitions around 120 to 180 ms. Respect reduced motion.
 
+**Revision (2026-08-25, readability pass).** The implemented role scale (globals.css) sits one notch above the launch values: label 11, mini 12, small 13, body 14, lead 16, title 20, display 28, readout 34, hero clamp(26px, 2.8vw, 34px) — the hero was deliberately reduced from 44px max: no oversized display type anywhere. The faint text tier brightened to #838aa2 so 12px metadata stays legible. Monospace is only for numerals and metrics, shapes and dtypes, slugs, IDs and digests, commands, table-head labels, and dates in table cells; anything that reads as a sentence or a fact list is sans. Meta lines carry at most three ·-joined facts (the rest live in the row's disclosure), collapsed rows carry at most two text tiers, and `.key` chips are reserved for interactive controls. Each page states one lead action with at most two secondary actions visible (the 3-second rule); the page's /api/v1 twin links from the page-end footer note, never the header.
+
 ### 16.3 Page geometry and density
 
 Use two content widths:
@@ -3320,6 +3322,8 @@ Results show feasible configurations first and then the Pareto frontier. Every r
 
 Do not create one universal serving score. Resolve an explicit objective under constraints or show the Pareto set.
 
+**Revision (2026-08-25, resolver tabs).** /search and /serving share one band chrome with quiet `Kernels · Serving` mode tabs at the top (components/resolver-tabs.tsx): the two resolvers read as one instrument with two modes while keeping separate URLs, corpora, and rankings (§8.16). /serving stays out of the primary nav — it is one click from Search — and the tabs render only when serving is enabled.
+
 ### 16.14 Contributor and submission experience
 
 Contribution pages use the same restrained visual language but may be more form-oriented.
@@ -3421,6 +3425,8 @@ Avoid:
 - green checkmarks for unknown license or installability.
 
 **Revision (2026-08-23, copy pass).** Methodology is stated once, in /docs, and linked elsewhere: pages carry at most one methodology line ("How comparison works →"), never restated policy prose ("never merged", "a zero stated is a fact"). /docs itself was rewritten task-first (Get started, Searching, Reading a result, Using a kernel, API and agents, Contributing, Sources, Versions, Privacy) in short declarative sentences; legacy anchors are kept on subheadings. The search answer renders at most one qualifier line beside the headline; the machine-call strip is one disclosure. Site copy avoids em-dashes.
+
+**Revision (2026-08-25, amber policy).** Warning amber marks only states the reader must act on or distrust: retractions, disputes, supersessions, failed runs, form and input errors, moderation queues, and the compare page's not-comparable verdict (one uppercase eyebrow, on a neutral panel). Everything else that used to render amber is a fact in neutral text: stale dates carry the word "stale" in the subtle tier, compare field differences carry brightness and the ≠ glyph, query-parse notes are quiet guidance, the fixture-data notice is a neutral labeled line, and record losses are a minus sign. Status color is never the only signal (WCAG 1.4.1) and never decorates metadata.
 
 ### 16.17 Responsive behavior and accessibility
 

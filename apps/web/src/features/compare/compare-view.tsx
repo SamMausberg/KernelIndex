@@ -48,8 +48,9 @@ function RunHeader({ run }: { run: CompareRun }) {
         {" · "}
         <Link href={`/runs/${run.runId}`}>run detail</Link>
       </div>
+      {/* An eligibility fact; the verdict panel carries the caveat. */}
       {!run.eligible && (
-        <div className="mt-1 text-mini text-warning">
+        <div className="mt-1 text-mini text-subtle">
           Ineligible: {run.ineligibleReasons.join(", ")}
         </div>
       )}
@@ -109,20 +110,15 @@ export function CompareView({ model }: { model: ComparePageModel }) {
 
   return (
     <main className="shell pb-24">
-      <section
-        className={`mt-6 border px-4 py-3 text-body ${
-          model.comparable
-            ? "border-border bg-surface text-muted"
-            : "border-warning/40 bg-raised text-warning"
-        }`}
-      >
-        {model.explanation}
-        {!model.comparable && model.firstMaterialMismatch && (
-          <span className="ml-2 text-small text-subtle">
-            First material mismatch:{" "}
-            <span className="font-mono">{model.firstMaterialMismatch}</span>.
+      {/* The verdict panel stays neutral ink; a single amber eyebrow states
+          the not-comparable verdict — the one place amber belongs here. */}
+      <section className="mt-6 border border-border-strong bg-surface px-4 py-3 text-body text-muted">
+        {!model.comparable && (
+          <span className="mr-2.5 text-label text-warning uppercase">
+            Not comparable
           </span>
         )}
+        {model.explanation}
       </section>
 
       {model.missingIds.length > 0 && (
@@ -161,9 +157,11 @@ export function CompareView({ model }: { model: ComparePageModel }) {
               className="grid items-baseline border-b border-line transition-colors hover:bg-raised"
               style={columns(model.runs.length)}
             >
+              {/* A differing field is the finding, not a hazard: brightness
+                  and the ≠ glyph carry it (§16.16). */}
               <div
                 className={`py-2.5 pr-3 text-small ${
-                  field.differs ? "text-warning" : "text-subtle"
+                  field.differs ? "font-medium text-fg" : "text-subtle"
                 }`}
               >
                 {field.field}
@@ -182,61 +180,80 @@ export function CompareView({ model }: { model: ComparePageModel }) {
             </div>
           ))}
 
-          <div
-            className="grid items-baseline border-b border-line"
-            style={columns(model.runs.length)}
-          >
-            <div className="pt-4 pb-2.5 text-label text-faint uppercase">
-              Context
-            </div>
-          </div>
-          {context.map((field) => (
-            <div
-              key={field.field}
-              className="grid items-baseline border-b border-line transition-colors hover:bg-raised"
-              style={columns(model.runs.length)}
-            >
-              <div className="py-2.5 pr-3 text-small text-subtle">
-                {field.field}
-              </div>
-              {field.values.map((value, index) => (
-                <div
-                  key={`${field.field}-${model.runs[index].runId}`}
-                  className={`min-w-0 truncate py-2.5 pr-4 font-mono text-small ${
-                    field.differs ? "text-fg" : "text-muted"
-                  }`}
-                >
-                  {value ?? "unknown"}
+          {/* Context is immaterial to the verdict, so it opens on demand;
+              the summary states how much is folded and whether any of it
+              differs. Material mismatches above are never collapsed. */}
+          <details className="group">
+            <summary className="cursor-pointer list-none border-b border-line pt-4 pb-2.5 text-label text-faint uppercase transition-colors hover:text-subtle [&::-webkit-details-marker]:hidden">
+              Context · {context.length} fields
+              {context.some((field) => field.differs) &&
+                ` · ${context.filter((field) => field.differs).length} differ`}
+              <span className="ml-1.5 group-open:hidden">›</span>
+              <span className="ml-1.5 hidden group-open:inline">⌄</span>
+            </summary>
+            {context.map((field) => (
+              <div
+                key={field.field}
+                className="grid items-baseline border-b border-line transition-colors hover:bg-raised"
+                style={columns(model.runs.length)}
+              >
+                <div className="py-2.5 pr-3 text-small text-subtle">
+                  {field.field}
+                  {field.differs && " ≠"}
                 </div>
-              ))}
-            </div>
-          ))}
+                {field.values.map((value, index) => (
+                  <div
+                    key={`${field.field}-${model.runs[index].runId}`}
+                    className={`min-w-0 truncate py-2.5 pr-4 font-mono text-small ${
+                      field.differs ? "text-fg" : "text-muted"
+                    }`}
+                  >
+                    {value ?? "unknown"}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </details>
         </div>
       </div>
 
-      <div className="mt-8 flex flex-wrap items-center justify-between gap-5 border-t border-border pt-5">
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-          <p className="max-w-[60ch] text-small text-subtle">
-            {model.comparable
-              ? "Ranks compare only these runs. Too close to call shares a rank."
-              : "No winner: these runs didn't measure the same thing. The rows above show what differs."}{" "}
-            <Link href="/docs#comparability">Why comparable?</Link>
-          </p>
+      {/* One quiet utility line (§16 3-second rule): the sentence, then the
+          add-run field and the three exports each behind a disclosure. */}
+      <div className="mt-8 flex flex-wrap items-baseline justify-between gap-x-8 gap-y-3 border-t border-border pt-5">
+        <p className="max-w-[60ch] text-small text-subtle">
+          {model.comparable
+            ? "Ranks compare only these runs. Too close to call shares a rank."
+            : "No winner: these runs didn't measure the same thing. The rows above show what differs."}{" "}
+          <Link href="/docs#comparability">Why comparable?</Link>
+        </p>
+        <span className="flex flex-wrap items-baseline gap-x-6 gap-y-2 text-small">
           {model.runs.length < 8 && (
-            <AddRun runs={model.runs.map((run) => run.runId)} />
+            <details className="group">
+              <summary className="cursor-pointer list-none text-faint transition-colors hover:text-fg [&::-webkit-details-marker]:hidden">
+                Add run ›
+              </summary>
+              <div className="mt-2">
+                <AddRun runs={model.runs.map((run) => run.runId)} />
+              </div>
+            </details>
           )}
-        </div>
-        <div className="flex items-center gap-4 text-small">
-          <span className="flex items-center gap-1.5 text-subtle">
-            Markdown <CopyButton text={markdown} />
-          </span>
-          <span className="flex items-center gap-1.5 text-subtle">
-            CSV <CopyButton text={compareCsv(model)} />
-          </span>
-          <span className="flex items-center gap-1.5 text-subtle">
-            JSON <CopyButton text={json} />
-          </span>
-        </div>
+          <details className="group">
+            <summary className="cursor-pointer list-none text-faint transition-colors hover:text-fg [&::-webkit-details-marker]:hidden">
+              Export ›
+            </summary>
+            <div className="mt-2 flex items-center gap-4">
+              <span className="flex items-center gap-1.5 text-subtle">
+                Markdown <CopyButton text={markdown} />
+              </span>
+              <span className="flex items-center gap-1.5 text-subtle">
+                CSV <CopyButton text={compareCsv(model)} />
+              </span>
+              <span className="flex items-center gap-1.5 text-subtle">
+                JSON <CopyButton text={json} />
+              </span>
+            </div>
+          </details>
+        </span>
       </div>
       {model.runs.map((run) => (
         <p key={run.runId} className="mt-2 font-mono text-mini text-faint">

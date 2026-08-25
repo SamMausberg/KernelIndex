@@ -6,6 +6,7 @@ import { FilterChip } from "@/components/chip"
 import { CopyButton } from "@/components/copy-button"
 import { Pager } from "@/components/pager"
 import { Link } from "@/components/quiet-link"
+import { ResolverTabs } from "@/components/resolver-tabs"
 import { FollowButton } from "@/features/follow/follow-button"
 import type { ResultRow, SearchPageModel } from "@/lib/catalog"
 import { formatDateUTC, formatPrimary } from "@/lib/format"
@@ -169,15 +170,20 @@ function SearchField({ query }: { query: string }) {
  */
 export function SearchBand({
   query,
+  serving = false,
   children,
 }: {
   query: string
+  /** Shows the Kernels · Serving mode tabs; the server page passes the
+   * serving flag since env never reaches this client island. */
+  serving?: boolean
   children?: React.ReactNode
 }) {
   return (
     // z-30: the suggest popup must paint above the result sections.
     <div className="relative z-30 border-b border-border bg-surface">
       <div className="shell pt-4 pb-3.5">
+        <ResolverTabs mode="kernels" serving={serving} />
         <SearchField query={query} />
         {children}
       </div>
@@ -200,10 +206,12 @@ export function SearchResults({
   model,
   filters,
   browse,
+  serving = false,
 }: {
   model: SearchPageModel
   filters: SearchFilters
   browse?: BrowseFilters
+  serving?: boolean
 }) {
   // Filter, sort, view, and pagination are instant client transitions over
   // the already-delivered model; the URL tracks state for shareability and
@@ -295,7 +303,7 @@ export function SearchResults({
 
   return (
     <>
-      <SearchBand query={model.query}>
+      <SearchBand query={model.query} serving={serving}>
         <>
           {(model.facets.length > 0 || model.queryIssues.length > 0) && (
             <div className="mt-2.5 flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
@@ -314,9 +322,13 @@ export function SearchResults({
                   </Link>
                 </span>
               ))}
+              {/* Parse notes are guidance, not hazards: the token is bright,
+                  the message quiet, amber stays for act-on states (§16.16). */}
               {model.queryIssues.map((issue) => (
-                <span key={issue.token} className="text-small text-warning">
-                  <span className="font-mono text-mini">{issue.token}</span>
+                <span key={issue.token} className="text-small text-subtle">
+                  <span className="font-mono text-mini text-fg">
+                    {issue.token}
+                  </span>
                   {" · "}
                   {issue.message}
                 </span>
@@ -332,14 +344,6 @@ export function SearchResults({
                   className="text-mini text-faint transition-colors hover:text-fg"
                 >
                   Clear filters
-                </Link>
-              )}
-              {modelSlug && (
-                <Link
-                  href={`/models/${modelSlug}`}
-                  className="text-mini text-subtle transition-colors hover:text-fg"
-                >
-                  Every operation for this model →
                 </Link>
               )}
             </div>
@@ -359,15 +363,10 @@ export function SearchResults({
                     model.interpretedQuery
                   )}
                 </h1>
-                <div className="flex items-baseline gap-5 text-small">
-                  <span className="text-subtle">
-                    {model.groups.exact.length} exact measurement
-                    {model.groups.exact.length === 1 ? "" : "s"}
-                  </span>
-                  <Link href="/docs#query-syntax" className="text-faint">
-                    Query syntax
-                  </Link>
-                </div>
+                <span className="text-small text-subtle">
+                  {model.groups.exact.length} exact measurement
+                  {model.groups.exact.length === 1 ? "" : "s"}
+                </span>
               </div>
               <div className="mt-1 font-mono text-small text-subtle">
                 {contextLine(model)}
@@ -392,10 +391,25 @@ export function SearchResults({
                   (§16.6): switching hardware is a link, never a syntax
                   lesson. The selection is URL state (`cohort`), so the
                   page re-resolves server-side. */}
-              {model.cohortOptions.length > 1 && (
-                <div className="mt-2.5 flex flex-wrap items-center gap-2 text-small">
-                  <span className="mr-1 text-faint">Hardware</span>
-                  {model.cohortOptions.map((option) => {
+              {model.cohortOptions.length > 1 &&
+                (() => {
+                  // Six chips is the scan budget; the pinned cohort is always
+                  // among them, and the rest open in place (3-second rule).
+                  const CHIP_CAP = 6
+                  const selected = model.cohortOptions.findIndex(
+                    (option) => option.key === model.cohort?.comparisonKey,
+                  )
+                  const visible = model.cohortOptions.slice(0, CHIP_CAP)
+                  if (selected >= CHIP_CAP)
+                    visible.splice(
+                      CHIP_CAP - 1,
+                      1,
+                      model.cohortOptions[selected],
+                    )
+                  const folded = model.cohortOptions.filter(
+                    (option) => !visible.includes(option),
+                  )
+                  const chip = (option: (typeof visible)[number]) => {
                     const on = option.key === model.cohort?.comparisonKey
                     return (
                       <Link
@@ -416,9 +430,24 @@ export function SearchResults({
                         </span>
                       </Link>
                     )
-                  })}
-                </div>
-              )}
+                  }
+                  return (
+                    <div className="mt-2.5 flex flex-wrap items-center gap-2 text-small">
+                      <span className="mr-1 text-faint">Hardware</span>
+                      {visible.map(chip)}
+                      {folded.length > 0 && (
+                        <details className="group">
+                          <summary className="cursor-pointer list-none text-faint transition-colors hover:text-fg [&::-webkit-details-marker]:hidden group-open:hidden">
+                            +{folded.length} more ›
+                          </summary>
+                          <span className="hidden flex-wrap items-center gap-2 group-open:flex">
+                            {folded.map(chip)}
+                          </span>
+                        </details>
+                      )}
+                    </div>
+                  )
+                })()}
             </>
           )}
         </>
@@ -495,6 +524,8 @@ export function SearchResults({
               />
             )}
 
+            {/* One control band (3-second rule): views and sort share the
+                ruled line; the filter chips sit beneath it. */}
             <div className="mt-7 flex flex-wrap items-baseline gap-x-6 gap-y-2 border-b border-border-strong">
               {/* Empty views render nothing, not a dead tab. */}
               {MODES.map((mode) => {
@@ -525,36 +556,8 @@ export function SearchResults({
                   </Link>
                 )
               })}
-            </div>
-
-            <div className="mt-3 flex flex-wrap items-center justify-between gap-x-6 gap-y-2.5">
-              <div className="flex flex-wrap items-center gap-2">
-                {CHIP_FILTERS.map((chip) => {
-                  const count = groupsByMode[view].filter(chip.test).length
-                  const on = state[chip.key]
-                  return (
-                    <FilterChip
-                      key={chip.key}
-                      href={searchHref(model.query, state, { [chip.key]: !on })}
-                      on={on}
-                      dead={count === 0 && !on}
-                      label={chip.label}
-                      count={count}
-                      onClick={(event) => {
-                        event.preventDefault()
-                        apply({ [chip.key]: !on })
-                      }}
-                    />
-                  )
-                })}
-                {hidden > 0 && (
-                  <span className="ml-1 text-small text-faint">
-                    {hidden} hidden
-                  </span>
-                )}
-              </div>
               {allRows.length > 1 && (
-                <span className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1 text-small">
+                <span className="ml-auto flex flex-wrap items-baseline gap-x-2.5 gap-y-1 pb-2 text-small">
                   <span className="whitespace-nowrap text-faint">
                     sorted by
                   </span>
@@ -585,26 +588,55 @@ export function SearchResults({
               )}
             </div>
 
-            {/* One note line: view semantics, cap, and tie notation. */}
-            <p className="mt-2.5 text-small text-faint">
-              {modeNote ?? "Ranked by latency within one cohort."}
-              {(() => {
-                const cut =
-                  model.overflow[
-                    view === "supported" ? "supportedUnmeasured" : view
-                  ]
-                return cut > 0
-                  ? ` ${cut} more rows past the cap. Narrow the workload to see them.`
-                  : null
-              })()}
-              {anyTie && (
-                <>
-                  {" "}
-                  N= means tied: too close to call.{" "}
-                  <Link href="/docs#ranking">How ranking works →</Link>
-                </>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              {CHIP_FILTERS.map((chip) => {
+                const count = groupsByMode[view].filter(chip.test).length
+                const on = state[chip.key]
+                return (
+                  <FilterChip
+                    key={chip.key}
+                    href={searchHref(model.query, state, { [chip.key]: !on })}
+                    on={on}
+                    dead={count === 0 && !on}
+                    label={chip.label}
+                    count={count}
+                    onClick={(event) => {
+                      event.preventDefault()
+                      apply({ [chip.key]: !on })
+                    }}
+                  />
+                )
+              })}
+              {hidden > 0 && (
+                <span className="ml-1 text-small text-faint">
+                  {hidden} hidden
+                </span>
               )}
-            </p>
+            </div>
+
+            {/* The note line renders only when it actually says something:
+                a non-exact view's semantics, a cap cut, or tie notation. */}
+            {(() => {
+              const cut =
+                model.overflow[
+                  view === "supported" ? "supportedUnmeasured" : view
+                ]
+              if (!modeNote && cut <= 0 && !anyTie) return null
+              return (
+                <p className="mt-2.5 text-small text-faint">
+                  {modeNote}
+                  {cut > 0 &&
+                    ` ${cut} more rows past the cap. Narrow the workload to see them.`}
+                  {anyTie && (
+                    <>
+                      {" "}
+                      N= means tied: too close to call.{" "}
+                      <Link href="/docs#ranking">How ranking works →</Link>
+                    </>
+                  )}
+                </p>
+              )
+            })()}
 
             <div className="mt-1 overflow-x-auto">
               {rows.length > 0 ? (
@@ -754,6 +786,16 @@ export function SearchResults({
               {model.operation
                 ? "Missing a kernel here? Evidence submissions open with the contribution beta."
                 : "Ranked only against runs that measured the same thing."}
+              {/* The whole-model question, out of the band's first three
+                  seconds but one line from the results (§12.1). */}
+              {modelSlug && (
+                <>
+                  {" "}
+                  <Link href={`/models/${modelSlug}`}>
+                    Every operation for this model →
+                  </Link>
+                </>
+              )}
             </p>
             {/* Following a cohort never requires finding the operation
                 page (§13.11): the result footer carries the toggle. */}

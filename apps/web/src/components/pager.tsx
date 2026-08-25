@@ -34,7 +34,8 @@ export function Pager({
         {label}
       </Link>
     ) : (
-      <span className="text-ghost">{label}</span>
+      // Faint, not ghost: a disabled arm is still readable text (§16.17).
+      <span className="text-faint">{label}</span>
     )
   return (
     <div className="mt-4 flex items-baseline gap-5 text-small">

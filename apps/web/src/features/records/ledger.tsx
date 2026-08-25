@@ -186,10 +186,21 @@ function HolderRow({ holder }: { holder: LedgerHolder }) {
             ›
           </div>
         </div>
+        {/* Three facts on the collapsed row (§16 meta diet); trust tier and
+            project live in the expansion with the environment. */}
         <div className="mt-1 min-w-[960px] truncate font-mono text-mini text-faint">
           {[
             holder.workloadSummary,
             holder.hardware,
+            `indexed ${formatDateUTC(holder.indexedAt)}`,
+          ].join(" · ")}
+          {isNew && <span className="text-accent"> · new</span>}
+        </div>
+      </summary>
+      <div className="border-t border-line bg-surface pb-4">
+        <div className="pt-3 font-mono text-mini text-faint">
+          {[
+            holder.environmentSummary,
             TRUST_TIERS[
               trustTier({
                 evidence: record.evidence,
@@ -200,16 +211,9 @@ function HolderRow({ holder }: { holder: LedgerHolder }) {
             record.project.name !== record.implementation.name
               ? record.project.name
               : null,
-            `indexed ${formatDateUTC(holder.indexedAt)}`,
           ]
             .filter(Boolean)
             .join(" · ")}
-          {isNew && <span className="text-accent"> · new</span>}
-        </div>
-      </summary>
-      <div className="border-t border-line bg-surface pb-4">
-        <div className="pt-3 font-mono text-mini text-faint">
-          {holder.environmentSummary}
         </div>
         <div className="mt-3 text-label text-faint uppercase">
           Record history
@@ -694,15 +698,6 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
               </span>
             </FilterLink>
           )),
-          // Record changes as Atom (Week 12): subscribe without an account.
-          <a
-            key="feed"
-            href="/records/feed.xml"
-            className="whitespace-nowrap text-subtle transition-colors hover:text-fg no-underline"
-          >
-            Feed
-          </a>,
-          <ApiLink key="api" path="/records" />,
         ]}
       />
 
@@ -834,8 +829,19 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
             Runs too close to call share a rank.{" "}
             <Link href="/docs#records">How records are decided →</Link>
           </p>
-          <span className="font-mono text-small text-faint">
-            history only grows · <Link href="/legal">data licenses</Link>
+          {/* Machine access lives here, past the answer (3-second rule):
+              the Atom feed subscribes without an account (Week 12). */}
+          <span className="flex flex-wrap items-baseline gap-x-5 text-small text-faint">
+            <a
+              href="/records/feed.xml"
+              className="text-faint transition-colors hover:text-fg"
+            >
+              Atom feed
+            </a>
+            <ApiLink path="/records" />
+            <span className="font-mono">
+              history only grows · <Link href="/legal">data licenses</Link>
+            </span>
           </span>
         </div>
       </main>

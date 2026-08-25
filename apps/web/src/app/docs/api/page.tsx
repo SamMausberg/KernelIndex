@@ -6,7 +6,12 @@ import Link from "next/link"
 import { ContextHeader } from "@/components/context-header"
 import openapi from "../../../../../../packages/sdk/openapi.json"
 
-export const metadata: Metadata = { title: "API reference" }
+export const metadata: Metadata = {
+  title: "API reference",
+  description:
+    "The KernelIndex REST API and MCP server: search, operations, implementations, runs, records, and serving results as JSON.",
+  alternates: { canonical: "/docs/api" },
+}
 
 const BASE = "https://kernelindex.com/api/v1"
 

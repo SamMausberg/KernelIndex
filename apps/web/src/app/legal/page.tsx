@@ -6,7 +6,12 @@ import Link from "next/link"
 import { ContextHeader } from "@/components/context-header"
 import { Section } from "@/components/section"
 
-export const metadata: Metadata = { title: "Legal" }
+export const metadata: Metadata = {
+  title: "Legal",
+  description:
+    "KernelIndex terms, data licensing, and the source policy governing imported benchmark results.",
+  alternates: { canonical: "/legal" },
+}
 
 /** Takedown/legal contact. Swap to a kernelindex.com mailbox once email
  * forwarding exists; everything on this page reads it from here. */

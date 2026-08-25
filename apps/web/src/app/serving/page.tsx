@@ -10,8 +10,8 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { after } from "next/server"
 import { Suspense } from "react"
-import { ContextHeader } from "@/components/context-header"
 import { IllustrativeNotice } from "@/components/illustrative-notice"
+import { ResolverTabs } from "@/components/resolver-tabs"
 import { Select } from "@/components/select"
 import { SkeletonRows } from "@/components/skeleton"
 import { ServingOverview } from "@/features/serving/overview"
@@ -29,7 +29,11 @@ import type {
 import { servingEnabled } from "@/server/env"
 import { recordEvent } from "@/server/events"
 
-export const metadata: Metadata = { title: "Serving" }
+export const metadata: Metadata = {
+  title: "Serving",
+  description:
+    "LLM serving benchmark resolver: feasible configurations per comparison group under your model, hardware budget, objective, and latency bounds.",
+}
 
 const GROUP_CAP = 12
 const FACET_CAP = 80
@@ -169,15 +173,15 @@ async function ServingResults({
 
   return (
     <>
+      {/* One line: the counts, then the one comparability sentence. */}
       <div className="flex flex-wrap items-baseline justify-between gap-x-8 gap-y-1.5 py-4">
         <p className="font-mono text-small text-muted">
           {countNoun(model.groups.length, "comparison group")} · {feasible}{" "}
           feasible · {excluded} excluded
         </p>
         <p className="max-w-[68ch] text-small text-faint">
-          Only runs with the same model, workload, protocol, hardware, and
-          quality bar are ranked together. A run missing a metric you bounded is
-          left out, not guessed.
+          Ranked only within one model, workload, protocol, hardware, and
+          quality bar; a run missing a bounded metric is left out, not guessed.
         </p>
       </div>
 
@@ -238,12 +242,19 @@ export default async function ServingPage({
   return (
     <>
       {facets.illustrative && <IllustrativeNotice />}
-      <ContextHeader
-        title="Serving"
-        // Single-source provenance stated plainly; revisit when a second
-        // serving source lands.
-        context={`${facets.totalRuns} results · all from MLPerf Inference, shown as published · ranked only when you pick an objective`}
-      />
+      {/* The shared resolver band (§16.6): same chrome as /search, with the
+          mode tabs carrying the switch. Single-source provenance stated
+          plainly; revisit when a second serving source lands. */}
+      <div className="border-b border-border bg-surface">
+        <div className="shell pt-4 pb-3.5">
+          <ResolverTabs mode="serving" serving />
+          <h1 className="text-title font-medium">Serving</h1>
+          <div className="mt-1.5 text-small text-subtle">
+            {facets.totalRuns} results · all from MLPerf Inference, shown as
+            published
+          </div>
+        </div>
+      </div>
       <main className="shell pb-24">
         <form
           method="GET"

@@ -13,12 +13,20 @@ import { IllustrativeNotice } from "@/components/illustrative-notice"
 import { Link } from "@/components/quiet-link"
 import { Section } from "@/components/section"
 import { getProjectIndex, type ProjectIndexEntry } from "@/lib/catalog"
-import { evidenceLabel, formatDateUTC, formatInstantUTC } from "@/lib/format"
+import { formatDateUTC, formatInstantUTC } from "@/lib/format"
 
-export const metadata: Metadata = { title: "Projects" }
+export const metadata: Metadata = {
+  title: "Projects",
+  description:
+    "Standing per GPU software project: kernels indexed, benchmark runs, records held inside their own cohorts, and 30-day record movement.",
+  alternates: { canonical: "/projects" },
+}
 
+// Six columns (§16 3-second rule): who, how much evidence, the standing,
+// its 30-day movement, freshness. Trust ceiling, licensing, and hardware
+// belong to the project dossier, not the standings scan.
 const GRID =
-  "grid grid-cols-[minmax(230px,1.5fr)_72px_72px_82px_72px_72px_minmax(180px,1.1fr)_minmax(170px,1.2fr)_104px] gap-x-5 min-w-[1180px]"
+  "grid grid-cols-[minmax(230px,1.5fr)_72px_72px_82px_110px_104px] gap-x-5 min-w-[760px]"
 
 // SSR row cap (§16 payload budget): the tail of the authors group is
 // hundreds of one-submission contest identities; every project past the cap
@@ -64,33 +72,25 @@ function ProjectRow({ project }: { project: ProjectIndexEntry }) {
       <div className="text-right font-mono text-small text-fg">
         {project.records.toLocaleString("en-US")}
       </div>
-      <div
-        className={`text-right font-mono text-small ${
-          project.gained30d > 0 ? "text-success" : "text-faint"
-        }`}
-      >
-        {project.gained30d > 0 ? `+${project.gained30d}` : "—"}
-      </div>
-      <div
-        className={`text-right font-mono text-small ${
-          project.lost30d > 0 ? "text-warning" : "text-faint"
-        }`}
-      >
-        {project.lost30d > 0 ? `−${project.lost30d}` : "—"}
-      </div>
-      <div className="min-w-0 truncate text-small text-subtle">
-        {evidenceLabel(project.bestEvidence)}
-        {" · "}
-        {project.licenses.length > 0 ? (
-          <span className="font-mono text-mini">
-            {project.licenses.join(", ")}
-          </span>
+      {/* One movement cell: losses are facts the minus sign already states
+          (§16.16), so only the gain carries color. */}
+      <div className="text-right font-mono text-small whitespace-nowrap">
+        {project.gained30d === 0 && project.lost30d === 0 ? (
+          <span className="text-faint">—</span>
         ) : (
-          <span className="text-faint">license unknown</span>
+          <>
+            <span
+              className={project.gained30d > 0 ? "text-success" : "text-faint"}
+            >
+              +{project.gained30d}
+            </span>{" "}
+            <span
+              className={project.lost30d > 0 ? "text-subtle" : "text-faint"}
+            >
+              −{project.lost30d}
+            </span>
+          </>
         )}
-      </div>
-      <div className="min-w-0 truncate font-mono text-mini text-subtle">
-        {project.hardware.join(", ")}
       </div>
       <div className="text-right font-mono text-mini text-faint">
         {formatDateUTC(project.lastObservedAt)}
@@ -108,10 +108,7 @@ function TableHead() {
       <div className="text-right">Kernels</div>
       <div className="text-right">Runs</div>
       <div className="text-right">Records</div>
-      <div className="text-right">Gained</div>
-      <div className="text-right">Lost</div>
-      <div>Trust</div>
-      <div>Hardware</div>
+      <div className="text-right">±30d</div>
       <div className="text-right">Last observed</div>
     </div>
   )
@@ -143,12 +140,7 @@ export default async function ProjectsPage({
         context="standing per project · records held inside their own cohorts · gained and lost over 30 days"
         meta={
           <span className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
-            {/* Same ledger as every project dossier, cached on its own ISR
-                clock: the snapshot is what makes a few minutes' difference
-                between the two record counts a fact, not a discrepancy. */}
-            <span className="text-faint">
-              records as of {formatInstantUTC(model.recordsAsOf)} · sorted by
-            </span>
+            <span className="text-faint">sorted by</span>
             {SORTS.map((option) =>
               option.key === sort ? (
                 <span key={option.key} className="text-fg">
@@ -213,10 +205,14 @@ export default async function ProjectsPage({
           </Section>
         )}
 
+        {/* Same ledger as every project dossier, cached on its own ISR
+            clock: the stated snapshot is what makes a few minutes' drift
+            between the two record counts a fact, not a discrepancy. */}
         <p className="mt-8 text-small text-faint">
           {sort === "presence"
             ? "Ordered by corpus presence, not merit."
             : "Records are counted inside their own cohorts."}{" "}
+          Records as of {formatInstantUTC(model.recordsAsOf)}.{" "}
           <Link href="/docs#comparability">How comparison works →</Link>
         </p>
       </main>

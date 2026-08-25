@@ -13,9 +13,14 @@ import {
 } from "@/features/search/results"
 import type { BrowseSort } from "@/features/search/start-state"
 import { searchCatalog } from "@/lib/catalog"
+import { servingEnabled } from "@/server/env"
 import { recordEvent } from "@/server/events"
 
-export const metadata: Metadata = { title: "Search" }
+export const metadata: Metadata = {
+  title: "Search",
+  description:
+    "Search GPU kernel benchmarks by operation, GPU, dtype, and shape: the fastest known implementations for an exact workload, ranked with evidence.",
+}
 
 type Params = {
   q?: string
@@ -62,6 +67,7 @@ async function Results({ params }: { params: Params }) {
     <>
       {model.illustrative && <IllustrativeNotice />}
       <SearchResults
+        serving={servingEnabled}
         // Aliases exist for the suggest index, which the island fetches
         // from /suggest — inlining them here doubled the browse payload.
         model={
@@ -120,7 +126,7 @@ export default async function SearchPage({
       key={params.q ?? ""}
       fallback={
         <>
-          <SearchBand query={params.q ?? ""} />
+          <SearchBand query={params.q ?? ""} serving={servingEnabled} />
           <main className="shell pt-6">
             <SkeletonRows />
           </main>

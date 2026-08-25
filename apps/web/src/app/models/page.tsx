@@ -17,11 +17,12 @@ export const metadata: Metadata = {
   title: "Models",
   description:
     "Model-aware GPU kernel coverage: for each model, the operations KernelIndex knows are relevant, with evidence counts per GPU and the best known implementations one row away.",
+  alternates: { canonical: "/models" },
 }
 export const revalidate = 300
 
 const GRID =
-  "grid grid-cols-[minmax(240px,1.5fr)_minmax(140px,1fr)_repeat(4,90px)_110px] gap-x-4 min-w-[940px]"
+  "grid grid-cols-[minmax(240px,1.5fr)_minmax(140px,1fr)_repeat(3,90px)_110px] gap-x-4 min-w-[850px]"
 const SERVING_GRID =
   "grid grid-cols-[minmax(240px,1.6fr)_140px_90px] gap-x-4 min-w-[540px]"
 
@@ -43,14 +44,11 @@ export default async function ModelsPage() {
         title="Models"
         context="operation coverage per model · workload provenance declared by sources"
         meta={
-          <>
-            <span>
-              {countNoun(model.kernel.length, "model")} with kernel evidence
-              {servingEnabled &&
-                ` · ${countNoun(model.serving.length, "serving model")}`}
-            </span>
-            <ApiLink path="/models" />
-          </>
+          <span>
+            {countNoun(model.kernel.length, "model")} with kernel evidence
+            {servingEnabled &&
+              ` · ${countNoun(model.serving.length, "serving model")}`}
+          </span>
         }
       />
       <main className="shell pt-7 pb-24">
@@ -61,7 +59,6 @@ export default async function ModelsPage() {
             <div>Model</div>
             <div />
             <div className="text-right">Operations</div>
-            <div className="text-right">Families</div>
             <div className="text-right">Runs</div>
             <div className="text-right">GPUs</div>
             <div className="text-right">Last observed</div>
@@ -97,9 +94,6 @@ export default async function ModelsPage() {
                 <div className="text-right font-mono text-small text-muted">
                   {entry.operations.toLocaleString("en-US")}
                 </div>
-                <div className="text-right font-mono text-small text-subtle">
-                  {entry.families.toLocaleString("en-US")}
-                </div>
                 <div className="text-right font-mono text-small text-fg">
                   {entry.runs.toLocaleString("en-US")}
                 </div>
@@ -117,7 +111,8 @@ export default async function ModelsPage() {
           Model relevance is workload provenance declared by the imported
           sources, not a completeness claim; an operation a model needs may
           simply not be indexed yet.{" "}
-          <Link href="/docs#sources">Sources and limitations →</Link>
+          <Link href="/docs#sources">Sources and limitations →</Link>{" "}
+          <ApiLink path="/models" />
         </p>
 
         {servingEnabled && model.serving.length > 0 && (

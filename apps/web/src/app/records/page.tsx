@@ -12,7 +12,12 @@ import {
 } from "@/features/records/ledger-model"
 import { getRecordsPage } from "@/lib/catalog"
 
-export const metadata: Metadata = { title: "Records" }
+export const metadata: Metadata = {
+  title: "Records",
+  description:
+    "The GPU kernel performance record ledger: current record holders per workload cohort, recently broken records, and the full record history.",
+  alternates: { canonical: "/records" },
+}
 export const revalidate = 300
 
 export default async function RecordsPage() {

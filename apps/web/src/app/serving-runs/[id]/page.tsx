@@ -33,6 +33,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: `Serving run ${model.run.id.slice(0, 8)}`,
     description: `LLM serving benchmark evidence: ${model.model.name} on ${model.stack.name}: configuration, workload, protocol, and metrics as published.`,
+    alternates: { canonical: `/serving-runs/${model.run.id}` },
   }
 }
 
@@ -59,12 +60,7 @@ export default async function ServingRunPage({ params }: Props) {
             <span className="text-faint">run {model.run.id.slice(0, 13)}…</span>
           </>
         }
-        meta={
-          <>
-            <span>{model.run.status} · Reported evidence</span>
-            <ApiLink path={`/serving-runs/${model.run.id}`} />
-          </>
-        }
+        meta={<span>{model.run.status} · Reported evidence</span>}
       />
 
       {model.lifecycle.retracted && (
@@ -215,7 +211,10 @@ export default async function ServingRunPage({ params }: Props) {
             )}
             {" · shown unmodified as published"}
           </span>
-          <Link href="/serving">All serving results →</Link>
+          <span className="flex items-baseline gap-x-5">
+            <Link href="/serving">All serving results →</Link>
+            <ApiLink path={`/serving-runs/${model.run.id}`} />
+          </span>
         </div>
       </main>
     </>
