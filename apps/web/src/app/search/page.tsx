@@ -16,10 +16,27 @@ import { searchCatalog } from "@/lib/catalog"
 import { servingEnabled } from "@/server/env"
 import { recordEvent } from "@/server/events"
 
-export const metadata: Metadata = {
-  title: "Search",
-  description:
-    "Search GPU kernel benchmarks by operation, GPU, dtype, and shape: the fastest known implementations for an exact workload, ranked with evidence.",
+const DESCRIPTION =
+  "Search GPU kernel benchmarks by operation, GPU, dtype, and shape: the fastest known implementations for an exact workload, ranked with evidence."
+
+/** Query and filter states are unbounded permutations of one surface: they
+ * stay crawlable (follow) but never indexable (§18.2); the bare /search page
+ * is the one canonical, indexable entry. */
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<Params>
+}): Promise<Metadata> {
+  const params = await searchParams
+  const parameterized = Object.values(params).some((value) => value)
+  return {
+    title: "Search",
+    description: DESCRIPTION,
+    // noindex and canonical are contradictory signals; each state gets one.
+    ...(parameterized
+      ? { robots: { index: false, follow: true } }
+      : { alternates: { canonical: "/search" } }),
+  }
 }
 
 type Params = {

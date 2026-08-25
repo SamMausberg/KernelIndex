@@ -372,18 +372,21 @@ export function SearchResults({
                 {contextLine(model)}
               </div>
               {/* §12.1: a multi-match query answers with its most-measured
-                  candidate; the interpretation is stated, never silent, and
-                  the full match list is one click away. */}
+                  candidate; the interpretation is stated where the answer
+                  starts, never as a footnote (audit 2026-08-25), and the
+                  full match list is one click away. */}
               {model.matches && model.matches.length > 0 && (
-                <p className="mt-1.5 text-small text-subtle">
-                  Most-measured of {model.matches.length + 1} matching
-                  operations.{" "}
+                <p className="mt-1.5 text-small">
+                  <span className="text-muted">
+                    {model.matches.length + 1} operations match this query;
+                    resolved to the most measured.
+                  </span>{" "}
                   <Link
                     href={`/search?q=${encodeURIComponent(model.query)}&choose=1`}
                     prefetch={false}
                     className="text-small"
                   >
-                    All matches →
+                    Choose from all {model.matches.length + 1} →
                   </Link>
                 </p>
               )}
@@ -521,6 +524,9 @@ export function SearchResults({
                 fastest={fastest}
                 model={model}
                 hiddenFaster={hiddenBySourceFilter}
+                // The pinned cohort was chosen by evidence density, not by
+                // the query (§12.1) — the answer states the inference.
+                cohortInferred={!state.cohort && model.cohortOptions.length > 1}
               />
             )}
 

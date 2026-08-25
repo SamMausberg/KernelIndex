@@ -290,6 +290,16 @@
     background: var(--color-accent-soft);
   }
 
+  /* Comfortable hit areas on coarse pointers (WCAG 2.5.8) without
+     inflating desktop density: keys and chips grow vertically only. */
+  @media (pointer: coarse) {
+    .key,
+    .key-primary {
+      padding-top: 7px;
+      padding-bottom: 7px;
+    }
+  }
+
   /* Input well: darker than its surroundings, nothing else. Focus is a
      border change; the global focus-visible outline covers keyboards. */
   .well {

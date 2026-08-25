@@ -21,6 +21,7 @@ export function Recommendation({
   fastest,
   model,
   hiddenFaster = null,
+  cohortInferred = false,
 }: {
   top: ResultRow
   /** The cohort's pure-latency leader; differs from `top` when a stronger
@@ -29,6 +30,9 @@ export function Recommendation({
   model: SearchPageModel
   /** Cohort leader hidden by the default source filter. */
   hiddenFaster?: ResultRow | null
+  /** True when the pinned cohort was selected by evidence density rather
+   * than by the query (§12.1) — the facts panel then states the inference. */
+  cohortInferred?: boolean
 }) {
   const deployable = isUsable(top)
     ? null
@@ -129,7 +133,7 @@ export function Recommendation({
           <div className="flex items-baseline justify-between gap-4 text-small">
             <span className="text-subtle">
               {model.cohort.profile === "source_native"
-                ? "Source-native comparison"
+                ? "Ranked under the source's published protocol"
                 : "Exact comparison"}
             </span>
             <Link href="/docs#comparability" className="text-small text-faint">
@@ -139,6 +143,15 @@ export function Recommendation({
           <div className="mt-2.5">
             <KeyValueList items={model.cohort.facts} />
           </div>
+          {/* Inferred dimensions are stated beside the facts they filled in
+              (§12.1, audit 2026-08-25): "h128, batch 24" is never silent. */}
+          {cohortInferred && (
+            <p className="mt-2.5 text-small text-faint">
+              The query left these dimensions open; this is the most-measured of{" "}
+              {model.cohortOptions.length} cohorts. The hardware chips above
+              switch it.
+            </p>
+          )}
         </div>
       )}
     </section>

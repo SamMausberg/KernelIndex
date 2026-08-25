@@ -89,6 +89,7 @@ export function SiteHeader({
             <Link
               key={item.href}
               href={item.href}
+              aria-current={pathname.startsWith(item.href) ? "page" : undefined}
               className={`whitespace-nowrap transition-colors hover:text-fg no-underline ${
                 pathname.startsWith(item.href) ? "text-fg" : "text-subtle"
               } ${VISIBLE_FROM[item.from]}`}
@@ -114,6 +115,9 @@ export function SiteHeader({
                 <Link
                   key={item.href}
                   href={item.href}
+                  aria-current={
+                    pathname.startsWith(item.href) ? "page" : undefined
+                  }
                   className={`block px-3 py-1.5 text-body no-underline hover:bg-accent-soft ${
                     pathname.startsWith(item.href) ? "text-fg" : "text-subtle"
                   } ${MENU_UNTIL[item.from]}`}

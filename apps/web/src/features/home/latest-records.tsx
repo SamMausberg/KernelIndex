@@ -25,14 +25,29 @@ export function LatestRecords({ rows }: { rows: RecordHolder[] }) {
     )
   }
   return (
-    <div className="overflow-x-auto border-t border-border-strong">
+    // ARIA table semantics over the CSS grid (audit 2026-08-25): screen
+    // readers get rows and column headers without changing the layout.
+    <div
+      role="table"
+      aria-label="Latest records"
+      className="overflow-x-auto border-t border-border-strong"
+    >
       <div
+        role="row"
         className={`${GRID} border-b border-border-strong font-mono text-label text-faint uppercase`}
       >
-        <div className="px-4 py-2.5">Operation / workload</div>
-        <div className="px-4 py-2.5">Implementation</div>
-        <div className="px-4 py-2.5 text-right">Latency</div>
-        <div className="px-4 py-2.5">Hardware</div>
+        <div role="columnheader" className="px-4 py-2.5">
+          Operation / workload
+        </div>
+        <div role="columnheader" className="px-4 py-2.5">
+          Implementation
+        </div>
+        <div role="columnheader" className="px-4 py-2.5 text-right">
+          Latency
+        </div>
+        <div role="columnheader" className="px-4 py-2.5">
+          Hardware
+        </div>
       </div>
       {rows.map((holder) => {
         const row = holder.current
@@ -40,18 +55,21 @@ export function LatestRecords({ rows }: { rows: RecordHolder[] }) {
         return (
           <div
             key={holder.cohortKey}
+            role="row"
             className={`${GRID} relative h-14 items-center border-b border-line transition-colors hover:bg-raised`}
           >
-            {/* The whole row reaches the record's run dossier; the cell
-                links sit above it (no nested anchors). */}
-            {row.runId && (
-              <Link
-                href={`/runs/${row.runId}`}
-                aria-label={`Record run for ${row.operation.name}`}
-                className="absolute inset-0"
-              />
-            )}
-            <div className="truncate px-4 text-body">
+            <div role="cell" className="truncate px-4 text-body">
+              {/* The whole row reaches the record's run dossier (inset-0
+                  resolves against the row, the nearest positioned ancestor);
+                  living inside the first cell keeps the ARIA row valid. The
+                  cell links sit above it (no nested anchors). */}
+              {row.runId && (
+                <Link
+                  href={`/runs/${row.runId}`}
+                  aria-label={`Record run for ${row.operation.name}`}
+                  className="absolute inset-0"
+                />
+              )}
               <Link
                 href={`/operations/${row.operation.slug}`}
                 className="relative z-10 text-fg hover:text-accent-bright"
@@ -62,7 +80,7 @@ export function LatestRecords({ rows }: { rows: RecordHolder[] }) {
                 {formatWorkloadSummary(holder.workloadSummary)}
               </span>
             </div>
-            <div className="truncate px-4">
+            <div role="cell" className="truncate px-4">
               <Link
                 href={`/implementations/${row.implementation.slug}`}
                 className="relative z-10 text-body font-medium"
@@ -70,7 +88,7 @@ export function LatestRecords({ rows }: { rows: RecordHolder[] }) {
                 <ImplName name={row.implementation.name} />
               </Link>
             </div>
-            <div className="px-4 text-right whitespace-nowrap">
+            <div role="cell" className="px-4 text-right whitespace-nowrap">
               <Metric
                 primary={row.primary}
                 secondary={
@@ -87,7 +105,10 @@ export function LatestRecords({ rows }: { rows: RecordHolder[] }) {
                   : "first"}
               </div>
             </div>
-            <div className="truncate px-4 font-mono text-small text-muted">
+            <div
+              role="cell"
+              className="truncate px-4 font-mono text-small text-muted"
+            >
               {shortHardware(holder.hardware)}
             </div>
           </div>

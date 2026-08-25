@@ -13,7 +13,8 @@ import {
  * with the implementation and the number; imports state what the batch
  * brought; corrections and claims are stated as what they are. */
 function FeedLine({ entry, isNew }: { entry: FeedEntry; isNew: boolean }) {
-  const marker = isNew && <span className="text-accent"> · new</span>
+  // "Newly indexed", never "new": the upstream observation may be old.
+  const marker = isNew && <span className="text-accent"> · newly indexed</span>
   // The sentence reads whole, then the data trails it (§16 mono rule): the
   // workload fragment no longer interrupts the clause mid-way.
   if (entry.kind === "record")

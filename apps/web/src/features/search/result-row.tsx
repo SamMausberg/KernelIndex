@@ -163,6 +163,9 @@ export function ResultRowItem({
           className={`font-mono text-small ${
             row.rank === 1 ? "text-fg" : "text-faint"
           }`}
+          // The 44px cell keeps the "=" notation; the plain words ride the
+          // native tooltip and the accessible name (audit 2026-08-25).
+          title={tied ? `Tied #${row.rank}: too close to call` : undefined}
         >
           {rank}
         </div>

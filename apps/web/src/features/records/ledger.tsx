@@ -204,7 +204,9 @@ function HolderRow({
               ? [`indexed ${formatDateUTC(holder.indexedAt)}`]
               : []),
           ].join(" · ")}
-          {isNew && <span className="text-accent"> · new</span>}
+          {/* Says what it counts (audit 2026-08-25): a fresh import of old
+              upstream evidence is newly indexed, never "new". */}
+          {isNew && <span className="text-accent"> · newly indexed</span>}
         </div>
       </summary>
       <div className="border-t border-line bg-surface pb-4">
@@ -746,13 +748,18 @@ export function RecordsLedger({ initial }: { initial: LedgerSlice }) {
                         [
                           {
                             key: "contested",
-                            label: "Contested",
+                            label: "Most contested",
                             // Matches sortHolders' banding exactly; a native
                             // title, no icon (§16.2).
                             title:
                               "Records that have actually been displaced first, then sole entrants, then unbeaten baselines; newest first inside each band",
                           },
-                          { key: "date", label: "Newest" },
+                          {
+                            key: "date",
+                            label: "Newest indexed",
+                            title:
+                              "When KernelIndex indexed the run; the source's own observation date can be older",
+                          },
                           { key: "improvement", label: "Largest improvement" },
                           { key: "operation", label: "A–Z" },
                         ] as const
