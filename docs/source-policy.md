@@ -199,8 +199,12 @@ legalnotices@ the project contact removes the contested records immediately
 - **Evidence level.** Reported, baseline-only: the eager module is the
   designated baseline; `torch.compile` competes. No candidate kernels from
   the KernelBench leaderboard are imported (no structured results).
-- **Attribution.** "KernelBench (Stanford Scaling Intelligence Lab)" with
-  the repository link on every derived page.
+- **Attribution.** MIT's condition is notice retention on copies, and the
+  problem modules are copied, so the attribution line carries the notice:
+  "KernelBench, © 2023 Anne Ouyang, Simon Guo, Azalia Mirhoseini (Scaling
+  Intelligence Lab, Stanford University), MIT License", linked to the
+  repository, beside every mirrored module and on every derived page. The
+  timing JSONs are in the same repository under the same license.
 - **Parser owner / review.** `import/kernelbench` (parser v1), reviewed
   2026-08-26.
 

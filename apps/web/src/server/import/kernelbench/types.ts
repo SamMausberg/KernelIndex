@@ -15,9 +15,13 @@ export const KB_SOURCE = {
   name: "KernelBench baseline timings",
   policy: {
     license: "MIT",
-    attribution: "KernelBench (Stanford Scaling Intelligence Lab)",
+    // MIT's one condition is that copies carry the copyright and permission
+    // notice; the attribution line renders beside every mirrored module.
+    attribution:
+      "KernelBench, © 2023 Anne Ouyang, Simon Guo, Azalia Mirhoseini (Scaling Intelligence Lab, Stanford University), MIT License",
     url: KB_REPO_URL,
-    terms: "Redistribution permitted with copyright notice retention.",
+    terms:
+      "MIT: use, copy, modify, and distribute permitted provided the copyright and permission notice accompany copies.",
     verified: "2026-08-26",
     freshnessDays: 180,
   },
