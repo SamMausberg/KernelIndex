@@ -166,6 +166,9 @@ jobs:
           git config user.email import@kernelindex.dev
           git add registry/exports registry/reports
           git diff --cached --quiet || git commit -m "chore(exports): scheduled catalog snapshot"
+          # main may have moved during a multi-hour run; the snapshot only
+          # touches registry files, so replaying it on top is always clean.
+          git pull --rebase origin main
           git push
 
       # Step-level env is not visible to its own `if`; gate on vars directly.
