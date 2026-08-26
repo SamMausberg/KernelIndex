@@ -1,24 +1,24 @@
 {
-  "generatedAt": "2026-08-26T17:12:26.973Z",
+  "generatedAt": "2026-08-26T18:30:10.741Z",
   "sources": [
     {
       "slug": "flashinfer-bench",
       "kind": "benchmark",
       "state": "fresh",
-      "lastFetchedAt": "2026-08-23T20:33:40.714Z",
+      "lastFetchedAt": "2026-08-26T17:31:23.900Z",
       "declaredFreshnessDays": 10,
-      "snapshots": 779,
+      "snapshots": 780,
       "publishedRuns": 7526,
       "publishedServingRuns": 0
     },
     {
       "slug": "gpumode-kernelbot",
       "kind": "leaderboard",
-      "state": "stale",
-      "lastFetchedAt": "2026-08-15T20:53:53.212Z",
+      "state": "fresh",
+      "lastFetchedAt": "2026-08-26T18:29:37.782Z",
       "declaredFreshnessDays": 10,
-      "snapshots": 1677,
-      "publishedRuns": 5215,
+      "snapshots": 1784,
+      "publishedRuns": 9585,
       "publishedServingRuns": 0
     },
     {
@@ -63,19 +63,108 @@
     }
   ],
   "recordEvents": {
-    "total": 7551,
-    "supersededBySequence": 188
+    "total": 7640,
+    "supersededBySequence": 243
   },
   "reviews": [
     {
-      "source": "kernelbench",
-      "revision": "423217d9fda91e0c2d67e4a43bf62f96f6d104f1",
+      "source": "gpumode-kernelbot",
       "ambiguities": [],
       "issues": [],
       "driftWarnings": [],
-      "licenseWarnings": [],
-      "plan": "publish 1976 new objects (0 already present) into source 'kernelbench' via the idempotent publication transaction"
+      "licenseWarnings": [
+        "amd-mxfp4-mm: mirrored submission code carries no per-submission license; displayed under June 9 Researcher Reciprocity License v1.0 with attribution, records stay reported-only",
+        "amd-moe-mxfp4: mirrored submission code carries no per-submission license; displayed under June 9 Researcher Reciprocity License v1.0 with attribution, records stay reported-only",
+        "amd-mixed-mla: mirrored submission code carries no per-submission license; displayed under June 9 Researcher Reciprocity License v1.0 with attribution, records stay reported-only"
+      ],
+      "plan": "publish 1778 new objects (286 already present) into source 'gpumode-kernelbot' via the idempotent publication transaction"
+    },
+    {
+      "source": "gpumode-kernelbot",
+      "ambiguities": [],
+      "issues": [
+        {
+          "locator": "https://datasets-server.huggingface.co",
+          "item": "amd_successful_submissions/code",
+          "problem": "261 selected submissions were held back: their source could not be mirrored, and importing them without it would republish their pages under a new digest. Re-run once the filter index is warm."
+        }
+      ],
+      "driftWarnings": [],
+      "licenseWarnings": [
+        "amd-fp8-mm: mirrored submission code carries no per-submission license; displayed under June 9 Researcher Reciprocity License v1.0 with attribution, records stay reported-only",
+        "amd-mixture-of-experts: mirrored submission code carries no per-submission license; displayed under June 9 Researcher Reciprocity License v1.0 with attribution, records stay reported-only"
+      ],
+      "plan": "publish 4426 new objects (153 already present) into source 'gpumode-kernelbot' via the idempotent publication transaction"
+    },
+    {
+      "source": "gpumode-kernelbot",
+      "ambiguities": [],
+      "issues": [],
+      "driftWarnings": [],
+      "licenseWarnings": [
+        "causal_conv1d: mirrored submission code carries no per-submission license; displayed under June 9 Researcher Reciprocity License v1.0 with attribution, records stay reported-only",
+        "fp8_quant: mirrored submission code carries no per-submission license; displayed under June 9 Researcher Reciprocity License v1.0 with attribution, records stay reported-only",
+        "gated_deltanet_chunk_fwd_h: mirrored submission code carries no per-submission license; displayed under June 9 Researcher Reciprocity License v1.0 with attribution, records stay reported-only",
+        "gated_deltanet_chunk_fwd_o: mirrored submission code carries no per-submission license; displayed under June 9 Researcher Reciprocity License v1.0 with attribution, records stay reported-only",
+        "gated_deltanet_recompute_w_u: mirrored submission code carries no per-submission license; displayed under June 9 Researcher Reciprocity License v1.0 with attribution, records stay reported-only"
+      ],
+      "plan": "publish 0 new objects (74 already present) into source 'gpumode-kernelbot' via the idempotent publication transaction"
+    },
+    {
+      "source": "gpumode-kernelbot",
+      "ambiguities": [],
+      "issues": [],
+      "driftWarnings": [],
+      "licenseWarnings": [
+        "cholesky: mirrored submission code carries no per-submission license; displayed under June 9 Researcher Reciprocity License v1.0 with attribution, records stay reported-only",
+        "eigh: mirrored submission code carries no per-submission license; displayed under June 9 Researcher Reciprocity License v1.0 with attribution, records stay reported-only",
+        "qr_v2: mirrored submission code carries no per-submission license; displayed under June 9 Researcher Reciprocity License v1.0 with attribution, records stay reported-only"
+      ],
+      "plan": "publish 676 new objects (0 already present) into source 'gpumode-kernelbot' via the idempotent publication transaction"
+    },
+    {
+      "source": "gpumode-kernelbot",
+      "ambiguities": [],
+      "issues": [],
+      "driftWarnings": [],
+      "licenseWarnings": [
+        "nvfp4_gemv: mirrored submission code carries no per-submission license; displayed under June 9 Researcher Reciprocity License v1.0 with attribution, records stay reported-only",
+        "nvfp4_gemm: mirrored submission code carries no per-submission license; displayed under June 9 Researcher Reciprocity License v1.0 with attribution, records stay reported-only",
+        "nvfp4_dual_gemm: mirrored submission code carries no per-submission license; displayed under June 9 Researcher Reciprocity License v1.0 with attribution, records stay reported-only",
+        "modal_nvfp4_dual_gemm: mirrored submission code carries no per-submission license; displayed under June 9 Researcher Reciprocity License v1.0 with attribution, records stay reported-only",
+        "nvfp4_group_gemm: mirrored submission code carries no per-submission license; displayed under June 9 Researcher Reciprocity License v1.0 with attribution, records stay reported-only"
+      ],
+      "plan": "publish 848 new objects (248 already present) into source 'gpumode-kernelbot' via the idempotent publication transaction"
+    },
+    {
+      "source": "gpumode-kernelbot",
+      "ambiguities": [],
+      "issues": [],
+      "driftWarnings": [],
+      "licenseWarnings": [
+        "conv2d_v2: mirrored submission code carries no per-submission license; displayed under June 9 Researcher Reciprocity License v1.0 with attribution, records stay reported-only",
+        "grayscale_v2: mirrored submission code carries no per-submission license; displayed under June 9 Researcher Reciprocity License v1.0 with attribution, records stay reported-only",
+        "histogram_v2: mirrored submission code carries no per-submission license; displayed under June 9 Researcher Reciprocity License v1.0 with attribution, records stay reported-only",
+        "matmul_v2: mirrored submission code carries no per-submission license; displayed under June 9 Researcher Reciprocity License v1.0 with attribution, records stay reported-only",
+        "prefixsum_v2: mirrored submission code carries no per-submission license; displayed under June 9 Researcher Reciprocity License v1.0 with attribution, records stay reported-only",
+        "sort_v2: mirrored submission code carries no per-submission license; displayed under June 9 Researcher Reciprocity License v1.0 with attribution, records stay reported-only",
+        "vectoradd_v2: mirrored submission code carries no per-submission license; displayed under June 9 Researcher Reciprocity License v1.0 with attribution, records stay reported-only",
+        "vectorsum_v2: mirrored submission code carries no per-submission license; displayed under June 9 Researcher Reciprocity License v1.0 with attribution, records stay reported-only"
+      ],
+      "plan": "publish 4 new objects (166 already present) into source 'gpumode-kernelbot' via the idempotent publication transaction"
+    },
+    {
+      "source": "gpumode-kernelbot",
+      "ambiguities": [],
+      "issues": [],
+      "driftWarnings": [
+        "trimul: 9 submissions were evaluated on more than one runner; skipped, because one implementation page cannot state two hardware supports"
+      ],
+      "licenseWarnings": [
+        "trimul: mirrored submission code carries no per-submission license; displayed under June 9 Researcher Reciprocity License v1.0 with attribution, records stay reported-only"
+      ],
+      "plan": "publish 12 new objects (260 already present) into source 'gpumode-kernelbot' via the idempotent publication transaction"
     }
   ],
-  "needsReview": 0
+  "needsReview": 1
 }
