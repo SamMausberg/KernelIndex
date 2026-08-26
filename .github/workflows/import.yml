@@ -10,8 +10,8 @@ on:
       sources:
         # sol is manual-only (2026-08-20): no public per-submission source
         # and an uncomfortable ToS posture — no scheduled growth.
-        description: "comma list: gpumode,flashinfer,mlperf,liger (sol manual-only)"
-        default: "gpumode,flashinfer,mlperf,liger"
+        description: "comma list: gpumode,flashinfer,mlperf,liger,kernelbench (sol manual-only)"
+        default: "gpumode,flashinfer,mlperf,liger,kernelbench"
 
 concurrency:
   group: import
@@ -27,7 +27,7 @@ jobs:
     timeout-minutes: 300
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      SOURCES: ${{ github.event.inputs.sources || 'gpumode,flashinfer,mlperf,liger' }}
+      SOURCES: ${{ github.event.inputs.sources || 'gpumode,flashinfer,mlperf,liger,kernelbench' }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
@@ -118,24 +118,37 @@ jobs:
             if (bad > 0) { console.error("gate failed:", bad, "items"); process.exit(1) }'
           node scripts/import-liger.ts --publish
 
+      # Unparsed problem modules are counted in the report by reason; only
+      # issues and slug ambiguities gate.
+      - name: import kernelbench
+        if: contains(env.SOURCES, 'kernelbench') && always() && !cancelled()
+        run: |
+          cd apps/web
+          node scripts/import-kernelbench.ts --dry-run --output /tmp/kernelbench.json
+          node -e '
+            const r = require("/tmp/kernelbench.json");
+            const bad = r.issues.length + r.ambiguities.length;
+            if (bad > 0) { console.error("gate failed:", bad, "items"); process.exit(1) }'
+          node scripts/import-kernelbench.ts --publish
+
       # A source that fails its gate publishes nothing, but the sources that
       # already published still need their invariants checked, their export
       # refreshed, and the caches revalidated — otherwise one upstream outage
       # leaves the site serving a stale catalog it did successfully import.
       - name: data-quality invariants
-        if: always() && !cancelled()
+        if: ${{ !cancelled() }}
         run: cd apps/web && node scripts/check-invariants.ts
 
       - name: prune product events past retention
-        if: always() && !cancelled()
+        if: ${{ !cancelled() }}
         run: cd apps/web && node scripts/prune-events.ts
 
       - name: source health report
-        if: always() && !cancelled()
+        if: ${{ !cancelled() }}
         run: cd apps/web && node scripts/report-health.ts $(ls /tmp/*.json 2>/dev/null || true)
 
       - name: refresh catalog export
-        if: always() && !cancelled()
+        if: ${{ !cancelled() }}
         run: |
           cd apps/web && node scripts/export-catalog.ts
           cd ../..
@@ -147,10 +160,16 @@ jobs:
 
       # Step-level env is not visible to its own `if`; gate on vars directly.
       - name: revalidate caches
-        if: vars.SITE_ORIGIN != '' && always() && !cancelled()
+        if: vars.SITE_ORIGIN != '' && !cancelled()
         run: |
           curl -sf -X POST "${{ vars.SITE_ORIGIN }}/api/v1/revalidate" \
             -H "Authorization: Bearer ${{ secrets.REVALIDATE_TOKEN }}"
+
+      # The purge empties every ISR page; re-render the key routes and the
+      # sitemap now rather than on the first visitor.
+      - name: warm caches
+        if: vars.SITE_ORIGIN != '' && !cancelled()
+        run: node apps/web/scripts/warm.mjs "${{ vars.SITE_ORIGIN }}"
 
       - name: upload reports
         if: always()

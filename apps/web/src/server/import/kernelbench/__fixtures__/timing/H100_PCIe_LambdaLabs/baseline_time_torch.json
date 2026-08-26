@@ -1,0 +1,42 @@
+{
+  "level1": {
+    "1_Square_matrix_multiplication_.py": {
+      "mean": 3.68,
+      "std": 0.011,
+      "min": 3.65,
+      "max": 3.74,
+      "num_trials": 100,
+      "hardware": "NVIDIA H100 PCIe",
+      "device": "cuda:0"
+    },
+    "95_CrossEntropyLoss.py": {
+      "mean": 1.67,
+      "std": 0.0029,
+      "min": 1.67,
+      "max": 1.68,
+      "num_trials": 100,
+      "hardware": "NVIDIA H100 PCIe",
+      "device": "cuda:0"
+    },
+    "93_masked_cumsum.py": {
+      "mean": 13.2,
+      "std": 0.00941,
+      "min": 13.2,
+      "max": 13.2,
+      "num_trials": 100,
+      "hardware": "NVIDIA H100 PCIe",
+      "device": "cuda:0"
+    }
+  },
+  "level2": {
+    "1_Conv2D_ReLU_BiasAdd.py": {
+      "mean": 6.62,
+      "std": 0.0315,
+      "min": 6.54,
+      "max": 6.67,
+      "num_trials": 100,
+      "hardware": "NVIDIA H100 PCIe",
+      "device": "cuda:0"
+    }
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "level1": {
+    "1_Square_matrix_multiplication_.py": {
+      "mean": 2.67,
+      "std": 0.0519,
+      "min": 2.66,
+      "max": 3.18,
+      "num_trials": 100,
+      "hardware": "NVIDIA H100 80GB HBM3",
+      "device": "cuda:0"
+    },
+    "95_CrossEntropyLoss.py": {
+      "mean": 0.292,
+      "std": 0.00691,
+      "min": 0.287,
+      "max": 0.324,
+      "num_trials": 100,
+      "hardware": "NVIDIA H100 80GB HBM3",
+      "device": "cuda:0"
+    },
+    "93_masked_cumsum.py": {
+      "mean": 3.84,
+      "std": 4.14,
+      "min": 3.42,
+      "max": 45,
+      "num_trials": 100,
+      "hardware": "NVIDIA H100 80GB HBM3",
+      "device": "cuda:0"
+    }
+  },
+  "level2": {
+    "1_Conv2D_ReLU_BiasAdd.py": {
+      "mean": 1.96,
+      "std": 0.0439,
+      "min": 1.94,
+      "max": 2.34,
+      "num_trials": 100,
+      "hardware": "NVIDIA H100 80GB HBM3",
+      "device": "cuda:0"
+    }
+  }
+}

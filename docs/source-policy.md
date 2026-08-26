@@ -175,6 +175,35 @@ legalnotices@ the project contact removes the contested records immediately
   authoritative for older rows). Every upstream speed row now binds;
   megatron_cross_entropy imports TP=1 rows only.
 
+## KernelBench (active — `kernelbench`)
+
+- **Data.** `ScalingIntelligence/KernelBench` on GitHub, **MIT** (verified
+  2026-08-26 against the repo `LICENSE`): the committed baseline timing
+  JSONs under `results/timing/<host>/` (PyTorch eager and
+  `torch.compile` inductor, 100 trials each, two H100 hosts) and the
+  problem modules under `KernelBench/level{1,2,3}/`, all pinned to the
+  latest commit touching the timings. Redistribution and display permitted
+  with copyright notice retention.
+- **Store vs link.** Store: timing snapshots, normalized manifests, and the
+  problem module mirrored inline as each implementation's source (it is the
+  computation's definition; MIT permits it). The module's content digest is
+  part of both the operation identity (`reference.artifact`) and the
+  implementation identity (`source.contentDigest`), so problems sharing an
+  input signature stay distinct and an upstream edit re-mints rather than
+  overwrites. Link: the module at its commit.
+- **Shape extraction.** Workload shapes are read statically from the
+  module's constants and `get_inputs()` (`import/kernelbench/problem.ts`);
+  a module outside that grammar is counted in the report by reason and
+  skipped, never guessed (3 of 250 on 2026-08-26). Output shapes are not
+  stated by the source and are declared as one unbound symbolic axis.
+- **Evidence level.** Reported, baseline-only: the eager module is the
+  designated baseline; `torch.compile` competes. No candidate kernels from
+  the KernelBench leaderboard are imported (no structured results).
+- **Attribution.** "KernelBench (Stanford Scaling Intelligence Lab)" with
+  the repository link on every derived page.
+- **Parser owner / review.** `import/kernelbench` (parser v1), reviewed
+  2026-08-26.
+
 ## Rejected or blocked (reviewed 2026-08-14)
 
 - **HF dataset `nvidia/SOL-ExecBench`** — license forbids redistribution
