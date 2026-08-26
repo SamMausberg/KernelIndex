@@ -3544,9 +3544,12 @@ Methods:
 **Measured (2026-08-26, curl from the client side, CDN HIT unless noted).**
 `/records/data` was 5.2 MB raw / 533 KB brotli for 2,742 holders; the
 interned wire form (`encodeLedger`/`decodeLedger`, lossless, derived
-`previousValue`/`improvementPct` rebuilt on decode) is 1.3 MB / 296 KB —
-the remaining bytes are cohort digests, run ids, and implementation names,
-which do not compress. A cold `/search?q=` took ~1.1 s against the
+`previousValue`/`improvementPct` rebuilt on decode) is 1.3 MB / 296 KB at
+brotli 11 for the same corpus — the remaining bytes are cohort digests, run
+ids, and implementation names, which do not compress. The CDN compresses at
+a lower brotli level (~5), so with the 3,236 holders after the KernelBench
+import the live transfer is 433 KB against a projected ~640 KB for the old
+shape; the client parses 1.6 MB instead of ~6 MB. A cold `/search?q=` took ~1.1 s against the
 five-minute seam TTL (90–180 ms of that is the 5–10 statement resolve; the
 rest is function start and render); the seam TTL is now one hour, every
 write path purges the `catalog` tag, and the post-deploy warm pre-resolves
