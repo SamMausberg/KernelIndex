@@ -85,9 +85,25 @@ Two independent paths:
 
 ## Cache staleness
 
-`POST /api/v1/revalidate` with the bearer token drops every catalog cache
-tag; otherwise pages self-refresh within 300 s (CDN JSON routes within
-their `s-maxage`).
+Seam reads (`lib/catalog.ts`) and ISR pages revalidate hourly as a
+backstop; freshness comes from purging. Every write path — the import
+workflow's `revalidate caches` step (`POST /api/v1/revalidate` with the
+`REVALIDATE_TOKEN` bearer), admin actions, claims, attestations — drops the
+`catalog` tag, and the endpoint also purges the whole layout path so pages
+reading the in-process ledger memo (`/records`) refresh too. The workflow
+then runs `scripts/warm.mjs`, which re-renders the key routes, sweeps the
+sitemap, and pre-resolves the most-measured searches. If a page is stale
+after a manual import, call the endpoint by hand, then warm:
+
+```bash
+curl -sf -X POST "$SITE_ORIGIN/api/v1/revalidate" \
+  -H "Authorization: Bearer $REVALIDATE_TOKEN"
+node apps/web/scripts/warm.mjs "$SITE_ORIGIN"
+```
+
+CDN-cached JSON routes (`/records/data`, `/suggest`,
+`/operations/[slug]/data`) keep a five-minute `s-maxage` and are not purged;
+they trail an import by at most that long.
 
 ## Data-quality invariants
 

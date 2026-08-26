@@ -348,7 +348,7 @@ Moving files between folders inside one repository is cheaper than maintaining p
 | Hosting | Vercel web deployment | runtime, region, cost, or portability requirements fail |
 | Catalog | fixtures, then managed PostgreSQL | PostgreSQL cannot satisfy a measured requirement |
 | Search | PostgreSQL FTS, trigram, filters, and ranking views | relevance or latency misses a documented SLO at real scale |
-| Cache | framework/CDN caching and PostgreSQL (in place since 2026-08-15, extended 2026-08-18: unstable_cache over the catalog seam; ISR on home/run/implementation/operation pages — operation workload/cohort selection is a client island over the CDN-cached /operations/[slug]/data route, so search params never make the page dynamic; CDN-cached /suggest and /records/data routes with the ledger slimmed to the LedgerModel projection; one in-process ledger memo shared by every reads.ts caller; hover-intent prefetch in quiet-link instead of viewport prefetch; functions pinned to pdx1 beside the database) | a dedicated cache system is needed beyond the framework layers |
+| Cache | framework/CDN caching and PostgreSQL (in place since 2026-08-15, extended 2026-08-18: unstable_cache over the catalog seam; ISR on home/run/implementation/operation pages — operation workload/cohort selection is a client island over the CDN-cached /operations/[slug]/data route, so search params never make the page dynamic; CDN-cached /suggest and /records/data routes with the ledger slimmed to the LedgerModel projection; one in-process ledger memo shared by every reads.ts caller; hover-intent prefetch in quiet-link instead of viewport prefetch; functions pinned to pdx1 beside the database; 2026-08-26: the seam and ISR TTLs are one hour with `/api/v1/revalidate` purging the `catalog` tag and the whole layout path after every import, `/records/data` ships the interned ledger wire (`features/records/ledger-wire.ts`), the primary nav prefetches on idle, /projects is ISR with a client sort island, and the post-deploy warm also resolves the forty most-measured searches) | a dedicated cache system is needed beyond the framework layers |
 | Imports | local command or GitHub Actions | retries, concurrency, or review workflows need durable jobs |
 | Queue | PostgreSQL row state, then Graphile Worker | a persistent worker has real jobs |
 | Artifacts | upstream immutable links, small DB metadata, reviewed Git files | durable binaries or large logs require S3-compatible storage |
@@ -2458,10 +2458,11 @@ publishes structured, redistributable results:
 |---:|---|---|---|
 | 1 | NVIDIA SOL-ExecBench (public leaderboard API only — never the HF dataset, whose license forbids redistribution) | active | full vertical slice; all leaderboard kernels, B200, `model:` workload provenance tags |
 | 2 | GPU MODE KernelBot (`GPUMODE/kernelbot-data`, reciprocity license permits redistribution with attribution) | active | per-shape timings and aggregate leaderboard scores + mirrored submission code + system info; MI300X/MI355X, B200 fleets, A100/H100/L4, 29 curated boards |
-| 3 | FlashInfer-Bench (`flashinfer-ai/flashinfer-trace`, Apache-2.0) | planned | baseline library kernels, B200; near-1:1 schema match; reconcile overlap with SOL |
-| 4 | Liger-Kernel committed benchmark CSVs (BSD-2) | planned | multi-GPU medians with baseline pairs; environment-incomplete, reported-only |
-| 5 | papers and independent repositories | as evidence appears | reported evidence with explicit protocol limitations |
-| 6 | MLPerf Inference, InferenceX; vLLM/SGLang only if bulk access opens | Phase 3 | separate serving domain (§8.16) |
+| 3 | FlashInfer-Bench (`flashinfer-ai/flashinfer-trace`, Apache-2.0) | active | baseline library kernels, B200; near-1:1 schema match; reconcile overlap with SOL |
+| 4 | Liger-Kernel committed benchmark CSVs (BSD-2) | active | multi-GPU medians with baseline pairs; environment-incomplete, reported-only |
+| 5 | KernelBench baseline timings (`ScalingIntelligence/KernelBench`, MIT) | active (2026-08-26) | 250 reference-module problems with statically read shapes, PyTorch eager vs `torch.compile` on two H100 hosts; baseline-only reported evidence, module mirrored as source |
+| 6 | papers and independent repositories | as evidence appears | reported evidence with explicit protocol limitations |
+| 7 | MLPerf Inference, InferenceX; vLLM/SGLang only if bulk access opens | Phase 3 | separate serving domain (§8.16) |
 
 Rejected for now: Artificial Analysis (no redistribution rights), HF LLM-perf
 leaderboard (stale, unlicensed), PyTorch HUD ClickHouse (credential-gated),
@@ -3539,6 +3540,19 @@ Methods:
 - bounded queries and precomputed read scalars (denormalized manifest projections on `benchmark_runs`/`implementations`; ranked reads never load JSONB);
 - ledger and search interactions as client transitions over one cached model fetch, with URL state preserved and identical no-JS server rendering;
 - no analytics script until a concrete product question requires it.
+
+**Measured (2026-08-26, curl from the client side, CDN HIT unless noted).**
+`/records/data` was 5.2 MB raw / 533 KB brotli for 2,742 holders; the
+interned wire form (`encodeLedger`/`decodeLedger`, lossless, derived
+`previousValue`/`improvementPct` rebuilt on decode) is 1.3 MB / 296 KB —
+the remaining bytes are cohort digests, run ids, and implementation names,
+which do not compress. A cold `/search?q=` took ~1.1 s against the
+five-minute seam TTL (90–180 ms of that is the 5–10 statement resolve; the
+rest is function start and render); the seam TTL is now one hour, every
+write path purges the `catalog` tag, and the post-deploy warm pre-resolves
+the forty most-measured operations. `/projects` no longer renders per
+request. First-load JavaScript is unchanged (119–134 KB brotli; the
+framework floor is ~119 KB).
 
 Machine discoverability:
 
