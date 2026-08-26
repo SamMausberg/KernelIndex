@@ -66,18 +66,28 @@ jobs:
       # Discovery reads the dataset's parquet columns, so the working set is
       # one board's rows rather than every page's mirrored source: the
       # 12 GB heap this step used to need is gone.
+      # Each board gates on its own; a held-back board (a cold upstream
+      # filter index, see docs/source-policy.md) must not stop the boards
+      # after it, so the step fails at the end, not at the first gate.
       - name: import gpumode
         if: contains(env.SOURCES, 'gpumode') && always() && !cancelled()
         run: |
           cd apps/web
+          failed=0
           for GROUP in helion amd trimul linalg amd-1-1m pmpp nvfp4; do
-            node scripts/import-gpumode.ts --group "$GROUP" --dry-run --output "/tmp/gm-$GROUP.json"
-            node -e '
+            node scripts/import-gpumode.ts --group "$GROUP" --dry-run --output "/tmp/gm-$GROUP.json" || { failed=1; continue; }
+            if node -e '
               const r = require(process.argv[1]);
               const bad = r.issues.length + r.ambiguities.length;
               if (bad > 0) { console.error("gate failed:", bad, "items"); process.exit(1) }' "/tmp/gm-$GROUP.json"
-            node scripts/import-gpumode.ts --group "$GROUP" --publish
+            then
+              node scripts/import-gpumode.ts --group "$GROUP" --publish || failed=1
+            else
+              echo "::warning::gpumode $GROUP held back by its gate; see the uploaded report"
+              failed=1
+            fi
           done
+          exit $failed
       # Baseline plus the reviewed llm-generated author directories
       # (docs/source-policy.md 2026-08-20); a new upstream author directory
       # stays out until it is added here.
