@@ -22,7 +22,7 @@ import { servingEnabled } from "@/server/env"
 
 type Props = { params: Promise<{ slug: string }> }
 
-export const revalidate = 300
+export const revalidate = 3600
 // Without generateStaticParams a dynamic-param route never registers for
 // ISR (Next 16 renders it per request, `revalidate` or not); an empty list
 // keeps the build DB-free while unknown slugs render once and cache.

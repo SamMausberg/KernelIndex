@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/docs" },
 }
 // Live per-source counts render inside #sources; everything else is prose.
-export const revalidate = 300
+export const revalidate = 3600
 
 const EVIDENCE_LEVELS = [
   [

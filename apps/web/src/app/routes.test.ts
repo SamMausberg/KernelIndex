@@ -1,6 +1,7 @@
 // The JSON route handlers serve seam models with CDN cache headers; they
 // must keep working under the fixtures backend (e2e runs against it).
 import { describe, expect, it } from "vitest"
+import { decodeLedger } from "../features/records/ledger-wire.ts"
 import { GET as badge } from "./badges/implementations/[slug]/route.ts"
 import { POST as beacon } from "./e/route.ts"
 import { GET as feedData, POST as markFeedSeen } from "./feed/data/route.ts"
@@ -17,12 +18,13 @@ describe("JSON routes", () => {
     expect(Array.isArray(index[0].aliases)).toBe(true)
   })
 
-  it("/records/data serves the full ledger model with CDN caching", async () => {
+  it("/records/data serves the ledger wire with CDN caching", async () => {
     const response = await recordsData()
     expect(response.headers.get("Cache-Control")).toContain("s-maxage=300")
-    const model = await response.json()
+    const model = decodeLedger(await response.json())
     expect(Array.isArray(model.records)).toBe(true)
     expect(Array.isArray(model.hardwareOptions)).toBe(true)
+    expect(model.records[0]?.current.primary).toBeTruthy()
   })
 
   it("/badges serves a record-count SVG and 404s unknown slugs", async () => {

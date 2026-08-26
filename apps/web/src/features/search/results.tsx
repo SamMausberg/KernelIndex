@@ -304,156 +304,150 @@ export function SearchResults({
   return (
     <>
       <SearchBand query={model.query} serving={serving}>
-        <>
-          {(model.facets.length > 0 || model.queryIssues.length > 0) && (
-            <div className="mt-2.5 flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
-              {model.facets.map((facet) => (
-                <span
-                  key={facet.token}
-                  className="key inline-flex items-center gap-1.5 px-2 py-1 font-mono text-mini text-muted"
-                >
-                  {facet.display}
-                  <Link
-                    href={`/search?q=${encodeURIComponent(facet.removeQuery)}`}
-                    aria-label={`Remove ${facet.display}`}
-                    className="text-faint transition-colors hover:text-fg no-underline"
-                  >
-                    ✕
-                  </Link>
-                </span>
-              ))}
-              {/* Parse notes are guidance, not hazards: the token is bright,
-                  the message quiet, amber stays for act-on states (§16.16). */}
-              {model.queryIssues.map((issue) => (
-                <span key={issue.token} className="text-small text-subtle">
-                  <span className="font-mono text-mini text-fg">
-                    {issue.token}
-                  </span>
-                  {" · "}
-                  {issue.message}
-                </span>
-              ))}
-              {model.facets.length >= 2 && (
+        {(model.facets.length > 0 || model.queryIssues.length > 0) && (
+          <div className="mt-2.5 flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
+            {model.facets.map((facet) => (
+              <span
+                key={facet.token}
+                className="key inline-flex items-center gap-1.5 px-2 py-1 font-mono text-mini text-muted"
+              >
+                {facet.display}
                 <Link
-                  href={`/search?q=${encodeURIComponent(
-                    model.facets.reduce(
-                      (q, facet) => removeToken(q, facet.token),
-                      model.query,
-                    ),
-                  )}`}
-                  className="text-mini text-faint transition-colors hover:text-fg"
+                  href={`/search?q=${encodeURIComponent(facet.removeQuery)}`}
+                  aria-label={`Remove ${facet.display}`}
+                  className="text-faint transition-colors hover:text-fg no-underline"
                 >
-                  Clear filters
+                  ✕
                 </Link>
-              )}
-            </div>
-          )}
-          {model.operation !== null && (
-            <>
-              <div className="mt-4 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
-                <h1 className="text-title font-medium">
-                  {model.operation ? (
-                    <Link
-                      href={`/operations/${model.operation.slug}`}
-                      className="text-fg transition-colors hover:text-accent-bright no-underline"
-                    >
-                      {model.operation.name}
-                    </Link>
-                  ) : (
-                    model.interpretedQuery
-                  )}
-                </h1>
-                <span className="text-small text-subtle">
-                  {model.groups.exact.length} exact measurement
-                  {model.groups.exact.length === 1 ? "" : "s"}
+              </span>
+            ))}
+            {/* Parse notes are guidance, not hazards: the token is bright,
+                  the message quiet, amber stays for act-on states (§16.16). */}
+            {model.queryIssues.map((issue) => (
+              <span key={issue.token} className="text-small text-subtle">
+                <span className="font-mono text-mini text-fg">
+                  {issue.token}
                 </span>
-              </div>
-              <div className="mt-1 font-mono text-small text-subtle">
-                {contextLine(model)}
-              </div>
-              {/* §12.1: a multi-match query answers with its most-measured
+                {" · "}
+                {issue.message}
+              </span>
+            ))}
+            {model.facets.length >= 2 && (
+              <Link
+                href={`/search?q=${encodeURIComponent(
+                  model.facets.reduce(
+                    (q, facet) => removeToken(q, facet.token),
+                    model.query,
+                  ),
+                )}`}
+                className="text-mini text-faint transition-colors hover:text-fg"
+              >
+                Clear filters
+              </Link>
+            )}
+          </div>
+        )}
+        {model.operation !== null && (
+          <>
+            <div className="mt-4 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
+              <h1 className="text-title font-medium">
+                {model.operation ? (
+                  <Link
+                    href={`/operations/${model.operation.slug}`}
+                    className="text-fg transition-colors hover:text-accent-bright no-underline"
+                  >
+                    {model.operation.name}
+                  </Link>
+                ) : (
+                  model.interpretedQuery
+                )}
+              </h1>
+              <span className="text-small text-subtle">
+                {model.groups.exact.length} exact measurement
+                {model.groups.exact.length === 1 ? "" : "s"}
+              </span>
+            </div>
+            <div className="mt-1 font-mono text-small text-subtle">
+              {contextLine(model)}
+            </div>
+            {/* §12.1: a multi-match query answers with its most-measured
                   candidate; the interpretation is stated where the answer
                   starts, never as a footnote (audit 2026-08-25), and the
                   full match list is one click away. */}
-              {model.matches && model.matches.length > 0 && (
-                <p className="mt-1.5 text-small">
-                  <span className="text-muted">
-                    {model.matches.length + 1} operations match this query;
-                    resolved to the most measured.
-                  </span>{" "}
-                  <Link
-                    href={`/search?q=${encodeURIComponent(model.query)}&choose=1`}
-                    prefetch={false}
-                    className="text-small"
-                  >
-                    Choose from all {model.matches.length + 1} →
-                  </Link>
-                </p>
-              )}
-              {/* Every measured cohort for this workload, one chip each
+            {model.matches && model.matches.length > 0 && (
+              <p className="mt-1.5 text-small">
+                <span className="text-muted">
+                  {model.matches.length + 1} operations match this query;
+                  resolved to the most measured.
+                </span>{" "}
+                <Link
+                  href={`/search?q=${encodeURIComponent(model.query)}&choose=1`}
+                  prefetch={false}
+                  className="text-small"
+                >
+                  Choose from all {model.matches.length + 1} →
+                </Link>
+              </p>
+            )}
+            {/* Every measured cohort for this workload, one chip each
                   (§16.6): switching hardware is a link, never a syntax
                   lesson. The selection is URL state (`cohort`), so the
                   page re-resolves server-side. */}
-              {model.cohortOptions.length > 1 &&
-                (() => {
-                  // Six chips is the scan budget; the pinned cohort is always
-                  // among them, and the rest open in place (3-second rule).
-                  const CHIP_CAP = 6
-                  const selected = model.cohortOptions.findIndex(
-                    (option) => option.key === model.cohort?.comparisonKey,
-                  )
-                  const visible = model.cohortOptions.slice(0, CHIP_CAP)
-                  if (selected >= CHIP_CAP)
-                    visible.splice(
-                      CHIP_CAP - 1,
-                      1,
-                      model.cohortOptions[selected],
-                    )
-                  const folded = model.cohortOptions.filter(
-                    (option) => !visible.includes(option),
-                  )
-                  const chip = (option: (typeof visible)[number]) => {
-                    const on = option.key === model.cohort?.comparisonKey
-                    return (
-                      <Link
-                        key={option.key}
-                        href={searchHref(model.query, state, {
-                          cohort: option.key,
-                        })}
-                        prefetch={false}
-                        className={`key font-mono text-small whitespace-nowrap no-underline ${
-                          on ? "key-on" : "text-subtle hover:text-fg"
-                        }`}
-                      >
-                        {option.label}
-                        <span
-                          className={`ml-1.5 text-mini ${on ? "text-subtle" : "text-faint"}`}
-                        >
-                          {option.runs}
-                        </span>
-                      </Link>
-                    )
-                  }
+            {model.cohortOptions.length > 1 &&
+              (() => {
+                // Six chips is the scan budget; the pinned cohort is always
+                // among them, and the rest open in place (3-second rule).
+                const CHIP_CAP = 6
+                const selected = model.cohortOptions.findIndex(
+                  (option) => option.key === model.cohort?.comparisonKey,
+                )
+                const visible = model.cohortOptions.slice(0, CHIP_CAP)
+                if (selected >= CHIP_CAP)
+                  visible.splice(CHIP_CAP - 1, 1, model.cohortOptions[selected])
+                const folded = model.cohortOptions.filter(
+                  (option) => !visible.includes(option),
+                )
+                const chip = (option: (typeof visible)[number]) => {
+                  const on = option.key === model.cohort?.comparisonKey
                   return (
-                    <div className="mt-2.5 flex flex-wrap items-center gap-2 text-small">
-                      <span className="mr-1 text-faint">Hardware</span>
-                      {visible.map(chip)}
-                      {folded.length > 0 && (
-                        <details className="group">
-                          <summary className="cursor-pointer list-none text-faint transition-colors hover:text-fg [&::-webkit-details-marker]:hidden group-open:hidden">
-                            +{folded.length} more ›
-                          </summary>
-                          <span className="hidden flex-wrap items-center gap-2 group-open:flex">
-                            {folded.map(chip)}
-                          </span>
-                        </details>
-                      )}
-                    </div>
+                    <Link
+                      key={option.key}
+                      href={searchHref(model.query, state, {
+                        cohort: option.key,
+                      })}
+                      prefetch={false}
+                      className={`key font-mono text-small whitespace-nowrap no-underline ${
+                        on ? "key-on" : "text-subtle hover:text-fg"
+                      }`}
+                    >
+                      {option.label}
+                      <span
+                        className={`ml-1.5 text-mini ${on ? "text-subtle" : "text-faint"}`}
+                      >
+                        {option.runs}
+                      </span>
+                    </Link>
                   )
-                })()}
-            </>
-          )}
-        </>
+                }
+                return (
+                  <div className="mt-2.5 flex flex-wrap items-center gap-2 text-small">
+                    <span className="mr-1 text-faint">Hardware</span>
+                    {visible.map(chip)}
+                    {folded.length > 0 && (
+                      <details className="group">
+                        <summary className="cursor-pointer list-none text-faint transition-colors hover:text-fg [&::-webkit-details-marker]:hidden group-open:hidden">
+                          +{folded.length} more ›
+                        </summary>
+                        <span className="hidden flex-wrap items-center gap-2 group-open:flex">
+                          {folded.map(chip)}
+                        </span>
+                      </details>
+                    )}
+                  </div>
+                )
+              })()}
+          </>
+        )}
       </SearchBand>
 
       <main className="shell pb-24">

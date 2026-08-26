@@ -35,6 +35,7 @@ import {
   type RecordsView,
   recordsHref,
 } from "./ledger-model"
+import { decodeLedger } from "./ledger-wire"
 import { RecordSpark, RecordTimeline } from "./timeline"
 
 const VIEWS: { key: RecordsView; label: string }[] = [
@@ -48,6 +49,7 @@ let modelPromise: Promise<LedgerModel | null> | null = null
 function loadModel(): Promise<LedgerModel | null> {
   modelPromise ??= fetch("/records/data")
     .then((response) => (response.ok ? response.json() : null))
+    .then((wire) => (wire ? decodeLedger(wire) : null))
     .catch(() => {
       modelPromise = null
       return null

@@ -5,7 +5,7 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import { cors } from "hono/cors"
 import { HTTPException } from "hono/http-exception"
-import { revalidateTag } from "next/cache.js"
+import { revalidatePath, revalidateTag } from "next/cache.js"
 import {
   findPrecedents,
   getComparePage,
@@ -490,7 +490,7 @@ api.openapi(
     if (cursor !== undefined) {
       const [since, cohortKey] = Buffer.from(cursor, "base64url")
         .toString()
-        .split(" ")
+        .split("\0")
       const index = model.records.findIndex(
         (holder) => holder.since === since && holder.cohortKey === cohortKey,
       )
@@ -501,7 +501,7 @@ api.openapi(
     const last = page.at(-1)
     const nextCursor =
       last !== undefined && start + limit < model.records.length
-        ? Buffer.from(`${last.since} ${last.cohortKey}`).toString("base64url")
+        ? Buffer.from(`${last.since}\0${last.cohortKey}`).toString("base64url")
         : null
     c.header("Cache-Control", CACHE_SHORT)
     return c.json(
@@ -699,7 +699,9 @@ api.openapi(
 )
 
 // §10.8 step 9: the importer calls this after publishing so caches drop
-// immediately instead of waiting out the revalidate window.
+// immediately instead of waiting out the revalidate window. The tag covers
+// every seam read; the layout-wide path purge covers the ISR pages that
+// read the in-process ledger memo (/records) and so carry no tag.
 api.openapi(
   createRoute({
     method: "post",
@@ -726,6 +728,7 @@ api.openapi(
       fail(401, "UNAUTHORIZED", "missing or invalid token")
     }
     revalidateTag("catalog", "max")
+    revalidatePath("/", "layout")
     return c.json(
       { revalidated: true as const, at: new Date().toISOString() },
       200,

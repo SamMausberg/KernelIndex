@@ -2,7 +2,7 @@
 
 import NextLink from "next/link"
 import { useRouter } from "next/navigation"
-import { type ComponentProps, useRef } from "react"
+import { type ComponentProps, useEffect, useRef } from "react"
 
 /**
  * next/link with viewport prefetch off and hover-intent prefetch on. List
@@ -16,6 +16,32 @@ import { type ComponentProps, useRef } from "react"
  * the islands intercept client-side) never prefetch.
  */
 const HOVER_INTENT_MS = 80
+
+/**
+ * Idle-time prefetch for a fixed, small set of static routes (the primary
+ * nav): their RSC payloads are ISR entries served from the CDN, so warming
+ * all of them once per session costs a few cached fetches and makes every
+ * top-level navigation land on a warm router cache. Never use this for
+ * dynamic or list-linked routes — that was the site-wide lag quiet-link
+ * exists to prevent.
+ */
+export function useIdlePrefetch(hrefs: string[]) {
+  const router = useRouter()
+  // biome-ignore lint/correctness/useExhaustiveDependencies: one-shot per mount; the set is static
+  useEffect(() => {
+    const run = () => {
+      for (const href of hrefs)
+        if (href.split("?")[0] !== window.location.pathname)
+          router.prefetch(href)
+    }
+    if ("requestIdleCallback" in window) {
+      const id = window.requestIdleCallback(run, { timeout: 2000 })
+      return () => window.cancelIdleCallback(id)
+    }
+    const id = setTimeout(run, 1000)
+    return () => clearTimeout(id)
+  }, [])
+}
 
 export function Link(props: ComponentProps<typeof NextLink>) {
   const router = useRouter()

@@ -52,6 +52,25 @@ for (let index = 0; index < urls.length; index += 8) {
 }
 console.log(`swept ${swept}/${urls.length} sitemap pages`)
 
+// Search is dynamic, so its warmth lives in the data cache (an hour per
+// query). Resolve the most-measured operations now so the queries people
+// actually type after a deploy answer from cache instead of a cold resolve.
+const suggestions = await fetch(`${origin}/suggest`)
+  .then((response) => response.json())
+  .catch(() => [])
+const popular = suggestions
+  .sort((a, b) => b.runs - a.runs)
+  .slice(0, 40)
+  .map((entry) => `/search?q=${encodeURIComponent(entry.name)}`)
+for (let index = 0; index < popular.length; index += 4) {
+  await Promise.all(
+    popular
+      .slice(index, index + 4)
+      .map((route) => fetch(origin + route).catch(() => {})),
+  )
+}
+console.log(`warmed ${popular.length} searches`)
+
 await sleep(3000)
 let failed = false
 for (const route of routes) {

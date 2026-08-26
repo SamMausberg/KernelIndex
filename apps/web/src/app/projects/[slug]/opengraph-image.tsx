@@ -8,7 +8,7 @@ import { countNoun } from "@/lib/format"
 export const alt = "KernelIndex project"
 export const size = OG_SIZE
 export const contentType = "image/png"
-export const revalidate = 300
+export const revalidate = 3600
 
 const KIND_LABEL = {
   library: "library",

@@ -23,7 +23,7 @@ import {
 } from "@/lib/format"
 
 // Run dossiers are immutable once published; ISR on first hit.
-export const revalidate = 300
+export const revalidate = 3600
 // Without generateStaticParams a dynamic-param route never registers for
 // ISR (Next 16 renders it per request, `revalidate` or not); an empty list
 // keeps the build DB-free while unknown ids render once and cache.

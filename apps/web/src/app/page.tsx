@@ -9,7 +9,7 @@ import { getCoveragePage, getHomePage, getModelIndex } from "@/lib/catalog"
 
 // The homepage reads live records; revalidate on a short cycle instead of
 // freezing them into the build (data changes only on importer runs).
-export const revalidate = 300
+export const revalidate = 3600
 export const metadata: Metadata = { alternates: { canonical: "/" } }
 
 export default async function Home() {

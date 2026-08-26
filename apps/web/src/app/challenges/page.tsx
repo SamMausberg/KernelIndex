@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     "Where KernelIndex has no good answer yet: requested workloads, priority coverage gaps, unbeaten baselines, unchallenged and stale records.",
   alternates: { canonical: "/challenges" },
 }
-export const revalidate = 300
+export const revalidate = 3600
 
 const KINDS: { kind: ChallengeKind; title: string; caption: string }[] = [
   {

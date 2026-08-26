@@ -94,11 +94,13 @@ async function reads(): Promise<CatalogReads> {
 
 // Two cache layers: React request-level `cache` (a page and its
 // generateMetadata share one read) over `unstable_cache` (results survive
-// across requests for five minutes). Data changes only through the CLI
-// importer, so short time-based staleness is acceptable (§16). Keys are
+// across requests for an hour). Every write path — importer, admin, claims,
+// attestations — purges the `catalog` tag, so the TTL is a backstop, not the
+// freshness mechanism; a long one keeps dynamic reads (search) warm instead
+// of re-running a cold resolve every five minutes (2026-08-26). Keys are
 // namespaced by backend: locally the fixtures (e2e) and postgres servers
 // share .next/cache, and entries must never cross the seam.
-const REVALIDATE_SECONDS = 300
+const REVALIDATE_SECONDS = 3600
 // Outside the Next server (vitest, CLI scripts) there is no incremental
 // cache; the seam then runs uncached rather than crashing.
 const cached: typeof unstable_cache = process.env.NEXT_RUNTIME

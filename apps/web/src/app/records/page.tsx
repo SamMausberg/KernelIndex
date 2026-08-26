@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     "The GPU kernel performance record ledger: current record holders per workload cohort, recently broken records, and the full record history.",
   alternates: { canonical: "/records" },
 }
-export const revalidate = 300
+export const revalidate = 3600
 
 export default async function RecordsPage() {
   const model = await getRecordsPage()

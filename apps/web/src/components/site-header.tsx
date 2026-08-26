@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
 import { CommandK, useShortcutHint } from "./command-k"
-import { Link } from "./quiet-link"
+import { Link, useIdlePrefetch } from "./quiet-link"
 
 // Five items (§16.4): the primary surfaces only. Serving, Projects, and
 // Contribute live in the global footer and the search browse — reachable
@@ -21,6 +21,8 @@ const NAV = [
   { label: "GPUs", href: "/gpus", from: 2 },
   { label: "Docs", href: "/docs", from: 1 },
 ]
+
+const NAV_HREFS = ["/", ...NAV.map((item) => item.href)]
 
 /** In the bar: hidden until the viewport is wide enough to carry the item. */
 const VISIBLE_FROM = ["", "max-sm:hidden", "max-md:hidden"]
@@ -72,6 +74,7 @@ export function SiteHeader({
   const onSearch = pathname.startsWith("/search")
   const sessionName = useSessionName(authConfigured)
   const shortcut = useShortcutHint()
+  useIdlePrefetch(NAV_HREFS)
   return (
     <div className="sticky top-0 z-50 border-b border-border bg-canvas">
       <div className="shell flex h-14 items-center gap-7 max-md:gap-4 max-md:px-4">
@@ -82,9 +85,9 @@ export function SiteHeader({
           KernelIndex
         </Link>
         <nav className="flex items-center gap-6 text-body max-md:gap-3.5">
-          {/* Hover-intent prefetch via quiet-link: no viewport prefetch —
-              the header is on every page — but a rested pointer warms the
-              target before the click. */}
+          {/* Warmed once per session on idle (useIdlePrefetch above): these
+              are static ISR routes, so the click lands on a warm router
+              cache instead of waiting for hover intent. */}
           {NAV.map((item) => (
             <Link
               key={item.href}

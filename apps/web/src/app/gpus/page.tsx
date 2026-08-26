@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     "GPU kernel benchmark coverage per hardware model: runs indexed, records held, and freshness, with each GPU's dossier one row away.",
   alternates: { canonical: "/gpus" },
 }
-export const revalidate = 300
+export const revalidate = 3600
 
 const GRID =
   "grid grid-cols-[minmax(240px,1.6fr)_130px_repeat(2,110px)_130px] gap-x-6 min-w-[780px]"

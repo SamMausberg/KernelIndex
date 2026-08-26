@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     "Model-aware GPU coverage: for each model, the operations KernelIndex knows are relevant, kernel benchmark evidence per GPU, and end-to-end serving evidence where it exists.",
   alternates: { canonical: "/models" },
 }
-export const revalidate = 300
+export const revalidate = 3600
 
 /** "70B" from a raw parameter count; models without one stay quiet. */
 function paramsLabel(count: number | null): string | null {

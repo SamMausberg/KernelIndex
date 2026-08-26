@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     "What KernelIndex learned over the trailing 30 days: record breaks, publication batches, corrections, and accepted project claims.",
   alternates: { canonical: "/feed" },
 }
-export const revalidate = 300
+export const revalidate = 3600
 
 export default async function FeedPage() {
   const model = await getFeed()

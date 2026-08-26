@@ -8,7 +8,7 @@ import { countNoun, evidenceLabel, formatPrimaryParts } from "@/lib/format"
 export const alt = "KernelIndex implementation"
 export const size = OG_SIZE
 export const contentType = "image/png"
-export const revalidate = 300
+export const revalidate = 3600
 
 export default async function Image({
   params,
