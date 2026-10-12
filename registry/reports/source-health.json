@@ -1,13 +1,13 @@
 {
-  "generatedAt": "2026-09-07T08:26:41.314Z",
+  "generatedAt": "2026-10-12T10:59:44.896Z",
   "sources": [
     {
       "slug": "flashinfer-bench",
       "kind": "benchmark",
       "state": "fresh",
-      "lastFetchedAt": "2026-09-07T08:20:59.159Z",
+      "lastFetchedAt": "2026-10-12T10:54:56.353Z",
       "declaredFreshnessDays": 10,
-      "snapshots": 781,
+      "snapshots": 782,
       "publishedRuns": 7526,
       "publishedServingRuns": 0
     },
@@ -15,9 +15,9 @@
       "slug": "gpumode-kernelbot",
       "kind": "leaderboard",
       "state": "fresh",
-      "lastFetchedAt": "2026-09-07T08:17:19.888Z",
+      "lastFetchedAt": "2026-10-12T10:51:51.673Z",
       "declaredFreshnessDays": 10,
-      "snapshots": 1823,
+      "snapshots": 1860,
       "publishedRuns": 9585,
       "publishedServingRuns": 0
     },
@@ -34,7 +34,7 @@
     {
       "slug": "liger-kernel-bench",
       "kind": "benchmark",
-      "state": "fresh",
+      "state": "stale",
       "lastFetchedAt": "2026-08-18T20:59:38.396Z",
       "declaredFreshnessDays": 30,
       "snapshots": 2,
