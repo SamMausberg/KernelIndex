@@ -25,6 +25,7 @@ import {
   suiteFromProblem,
 } from "./normalize.ts"
 import { parseRunResult } from "./parse.ts"
+import { forgesTiming } from "./select.ts"
 import { type GmSubmissionRow, GPUMODE_SOURCE, PARSER } from "./types.ts"
 
 export type GmImportReport = {
@@ -155,7 +156,9 @@ export async function reconcileKernelbot(
       return environment
     }
 
-    for (const selected of cohorts.values()) {
+    for (const chosen of cohorts.values()) {
+      const selected = chosen.filter(({ code }) => !forgesTiming(code))
+      report.skippedSubmissions.invalid += chosen.length - selected.length
       report.selectedSubmissions += selected.length
 
       for (const candidate of selected) {

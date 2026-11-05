@@ -26,7 +26,7 @@ import {
   parseSubmissionObjects,
 } from "./parse.ts"
 import { CURATED_PROBLEMS, type CuratedProblem } from "./problems.ts"
-import { type GmSelectionOptions, selectCohort } from "./select.ts"
+import { type GmSelectionOptions, MIN_SCORE_S, selectCohort } from "./select.ts"
 import {
   DATASET,
   DATASETS_SERVER,
@@ -168,8 +168,13 @@ function candidateFromFlat(row: GmFlatRow): GmCandidate | null {
   }
 }
 
-/** Per-shape evidence must unfold, or the submission carries no measurement. */
-function validCandidate(problem: CuratedProblem, candidate: GmCandidate) {
+/** A score under the physical floor is not a measurement, and per-shape
+ * evidence must unfold, or the submission carries no measurement. */
+export function validCandidate(
+  problem: CuratedProblem,
+  candidate: GmCandidate,
+) {
+  if (candidate.score < MIN_SCORE_S) return false
   if (problem.scoring === "aggregate") return true
   try {
     const raw = candidate.raw as GmSubmissionRow

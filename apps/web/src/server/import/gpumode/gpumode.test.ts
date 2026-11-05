@@ -10,7 +10,7 @@ import { db } from "../../db/client.ts"
 import * as schema from "../../db/schema.ts"
 import { specDigest } from "../../identity/digest.ts"
 import { evidenceLevel } from "../../policy/trust.ts"
-import type { GmImportData } from "./discover.ts"
+import { type GmImportData, validCandidate } from "./discover.ts"
 import {
   aggregateRunFromRow,
   caseFromBenchmark,
@@ -97,6 +97,16 @@ describe("gpumode parsing", () => {
     })
     expect(benchmarks[0].bestNs).toBeNull()
     expect(benchmarks[0].meanNs).toBeCloseTo(1905575.33)
+  })
+
+  it("rejects a per-shape mean no GPU could produce", () => {
+    expect(() =>
+      parseRunResult({
+        "benchmark-count": "1",
+        "benchmark.0.spec": "dq: 1536; dim: 7168",
+        "benchmark.0.mean": "4.6e-16",
+      }),
+    ).toThrow("under 1 ns")
   })
 
   it("rejects malformed benchmark specs instead of guessing", () => {
@@ -317,6 +327,16 @@ describe("gpumode cohort selection", () => {
     expect(selection.selected.map((c) => c.submissionId)).toEqual([4, 5, 6])
   })
 
+  it("rejects a score no GPU could produce", () => {
+    const eigh = CURATED_PROBLEMS.find((p) => p.leaderboard === "eigh")
+    if (!eigh) throw new Error("eigh curation missing")
+    // eigh submission 839675's published score, then the board's next best.
+    expect(
+      validCandidate(eigh, candidate(1, "ana", 4.6252452409771535e-25, 1)),
+    ).toBe(false)
+    expect(validCandidate(eigh, candidate(2, "bo", 8.6e-5, 2))).toBe(true)
+  })
+
   it("honours a distinct-author cap", () => {
     const selection = selectCohort({
       ranked: cohort,
@@ -333,6 +353,24 @@ const url = process.env.DATABASE_URL
 
 describe.skipIf(!url)("gpumode import pipeline (database)", () => {
   class Rollback extends Error {}
+
+  it("drops a submission that rewrites the evaluator's timing", async () => {
+    const [row] = parseSubmissionRows(read("api/fp8-mm-top.json"), "fx").values
+    const forged = candidateOf(row, "MI300", "g['calculate_stats'] = shadow\n")
+    const { bundle, report } = await reconcileKernelbot(db(), {
+      boards: [{ problem: fp8, cohorts: new Map([["MI300", [forged]]]) }],
+      snapshots: [],
+      cohorts: [],
+      discoveredRows: 1,
+      invalidRows: 0,
+      deferredRows: 0,
+      issues: [],
+      driftWarnings: [],
+    })
+    expect(bundle.runs).toHaveLength(0)
+    expect(report.selectedSubmissions).toBe(0)
+    expect(report.skippedSubmissions.invalid).toBe(1)
+  })
 
   it("reconciles a selected cohort and publishes idempotently", async () => {
     const rows = parseSubmissionRows(read("api/fp8-mm-top.json"), "fx").values

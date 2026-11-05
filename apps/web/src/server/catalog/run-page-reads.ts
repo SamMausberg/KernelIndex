@@ -16,6 +16,7 @@ import {
   environmentKeyValues,
   isStale,
   protocolKeyValues,
+  retractionNote,
   runEvidence,
   type StoredRunManifest,
   toleranceKeyValues,
@@ -139,16 +140,7 @@ export async function getRunPage(id: string): Promise<RunPageModel | null> {
     lifecycle: {
       supersedesId: run.supersedesId,
       supersededById: supersededBy?.id ?? null,
-      retracted:
-        run.retractedAt !== null
-          ? {
-              at: run.retractedAt.toISOString(),
-              reason:
-                typeof run.retractionReason === "string"
-                  ? run.retractionReason
-                  : JSON.stringify(run.retractionReason ?? "unspecified"),
-            }
-          : null,
+      retracted: retractionNote(run.retractedAt, run.retractionReason),
       disputed: null,
       stale: isStale(run.observedAt),
     },

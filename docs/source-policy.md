@@ -99,6 +99,14 @@ legalnotices@ the project contact removes the contested records immediately
   own page. For the same reason a selected submission whose source cannot be
   fetched is **held back with an issue** rather than imported in a degraded
   shape — the record waits for a run that can mirror it.
+- **Forged timing (2026-11-04).** A published score is not always a
+  measurement: eigh submission 839675 wraps the evaluator's `calculate_stats`
+  to divide its reported time by 1e300, and its comments say it does so to
+  show the geomean can be gamed. Import drops scores and per-shape means under
+  1 ns and any source naming `calculate_stats`. These are sanity checks, not a
+  general fraud detector. Published rows are corrected by retraction. Submissions
+  that cache results across the evaluator's repeated inputs are within its
+  rules, so they stay Reported.
 - **Attribution.** "GPU Mode and the KernelBot dataset" with dataset link,
   rendered on every page displaying imported data or mirrored code
   (`sources.policy` drives the read layer).

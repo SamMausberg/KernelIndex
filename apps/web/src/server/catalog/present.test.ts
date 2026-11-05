@@ -1,7 +1,12 @@
 // Trust surfaces never disagree (§11.4): a label that speaks for a revision
 // takes its strongest run, so it can never rank below one of its own rows.
 import { describe, expect, it } from "vitest"
-import { bestEvidence, type RunEvidenceInput, recordSequence } from "./present"
+import {
+  bestEvidence,
+  type RunEvidenceInput,
+  recordSequence,
+  retractionNote,
+} from "./present"
 
 const run = (overrides: Partial<RunEvidenceInput>): RunEvidenceInput => ({
   reproducedByKernelindex: false,
@@ -63,5 +68,18 @@ describe("recordSequence", () => {
   it("skips unmeasured rows and holds nothing when none rank", () => {
     expect(replay([null, 120, null, 90])).toEqual([120, 90])
     expect(replay([null, null])).toEqual([])
+  })
+})
+
+describe("retractionNote", () => {
+  it("shows the stored reason as text, without the actor", () => {
+    const at = new Date("2026-11-05T00:00:00Z")
+    expect(
+      retractionNote(at, { reason: "not a measurement", actor: "sam" }),
+    ).toEqual({
+      at: at.toISOString(),
+      reason: "not a measurement",
+    })
+    expect(retractionNote(null, null)).toBeNull()
   })
 })

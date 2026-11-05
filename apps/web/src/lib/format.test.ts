@@ -19,6 +19,13 @@ describe("formatLatency", () => {
     expect(formatLatency(118200)).toBe("118.2 µs")
     expect(formatLatency(1_420_000)).toBe("1.42 ms")
   })
+
+  it("never rounds a positive value down to an impossible 0 ns", () => {
+    expect(formatLatency(4.6e-16)).toBe("<1 ns")
+    expect(formatLatency(0.999)).toBe("<1 ns")
+    expect(formatLatency(1)).toBe("1 ns")
+    expect(formatLatency(0)).toBe("0 ns")
+  })
 })
 
 describe("formatSpread", () => {

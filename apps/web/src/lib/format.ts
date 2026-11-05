@@ -27,8 +27,9 @@ function plural(noun: string): string {
   return `${noun}s`
 }
 
-/** "7.81 µs" from integer nanoseconds: two decimals under 10, one above. */
+/** "7.81 µs" from nanoseconds: two decimals under 10, one above. */
 export function formatLatency(ns: number): string {
+  if (ns > 0 && ns < 1) return "<1 ns"
   const scale = scaleFor(ns)
   if (ns < 1e3 || !scale) return `${Math.round(ns)} ns`
   const value = ns / scale.divisor

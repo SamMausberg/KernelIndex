@@ -43,6 +43,7 @@ import {
   SERVING_POLICY_VERSION,
   type ServingCandidate,
 } from "../policy/serving.ts"
+import { retractionNote } from "./present.ts"
 
 /** Shared SQL eligibility for serving surfaces (also used by api-reads). */
 export const eligibleServingRuns = () =>
@@ -518,7 +519,6 @@ export async function getServingRunPage(
   const configuration = row.configuration
     .manifest as ServingConfigurationManifest
   const native = stored.spec.sourceNative
-  const retraction = row.run.retractionReason as { reason?: string } | null
 
   return {
     illustrative: false,
@@ -569,12 +569,7 @@ export async function getServingRunPage(
     })),
     caveats: stored.spec.caveats ?? [],
     lifecycle: {
-      retracted: row.run.retractedAt
-        ? {
-            at: row.run.retractedAt.toISOString(),
-            reason: retraction?.reason ?? "retracted",
-          }
-        : null,
+      retracted: retractionNote(row.run.retractedAt, row.run.retractionReason),
     },
     attribution: {
       line: native

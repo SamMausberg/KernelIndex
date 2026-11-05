@@ -30,6 +30,13 @@ export type StoredRunManifest = {
 
 export type AnyWorkloadManifest = WorkloadCaseManifest | WorkloadSuiteManifest
 
+/** Reader-facing note for a retracted run; retractRun stores { reason, actor }. */
+export function retractionNote(at: Date | null, stored: unknown) {
+  if (at === null) return null
+  const { reason } = (stored ?? {}) as { reason?: string }
+  return { at: at.toISOString(), reason: reason ?? "retracted" }
+}
+
 export const STALE_AFTER_DAYS = 180
 
 export function isStale(observedAt: Date): boolean {

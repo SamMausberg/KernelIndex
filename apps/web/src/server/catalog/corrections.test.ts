@@ -113,6 +113,25 @@ describe.skipIf(!url)("corrections (database)", () => {
           actor: "tester",
         })
 
+        // A later import must keep the same row and its lifecycle state.
+        const again = await publishBundle(tx, bundle, { publish: true })
+        expect(again.counts.runs.inserted).toBe(0)
+        const [reimported] = await tx
+          .select({
+            retractedAt: schema.benchmarkRuns.retractedAt,
+            retractionReason: schema.benchmarkRuns.retractionReason,
+          })
+          .from(schema.benchmarkRuns)
+          .where(eq(schema.benchmarkRuns.id, runId))
+        expect(reimported).toEqual(after)
+        await expect(
+          retractRun(tx, {
+            runId,
+            reason: "duplicate",
+            actor: { id: "u1", name: "tester" },
+          }),
+        ).rejects.toThrow("already retracted")
+
         // No longer eligible on ranked surfaces.
         const stillEligible = await tx
           .select({ id: schema.benchmarkRuns.id })
@@ -149,7 +168,7 @@ describe.skipIf(!url)("corrections (database)", () => {
       })
   })
 
-  it("refuses double retraction", async () => {
+  it("refuses to retract a missing run", async () => {
     await db()
       .transaction(async (tx) => {
         await expect(

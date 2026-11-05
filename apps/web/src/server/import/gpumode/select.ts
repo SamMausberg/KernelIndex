@@ -6,6 +6,16 @@
 // hydrates, so the bulky columns are only ever fetched for kept rows.
 import type { GmCandidate } from "./types.ts"
 
+/** Scores are seconds. No GPU call finishes in under a nanosecond, so a smaller
+ * score cannot be a measurement. */
+export const MIN_SCORE_S = 1e-9
+
+/** A kernel has no reason to name the evaluator's stats helper. Submissions
+ * that do rewrite their own reported time (eigh 839675 divides it by 1e300), so
+ * the score measures nothing. Needs the source, so it runs after hydration. */
+export const forgesTiming = (code: string | null) =>
+  code?.includes("calculate_stats") ?? false
+
 export type GmSelectionOptions = {
   /** Distinct authors kept per cohort; null keeps every author. */
   top: number | null
@@ -23,7 +33,7 @@ export type GmCohortSelection = {
   top: number
   /** Additional progression steps kept beyond those personal bests. */
   progression: number
-  /** Candidates rejected because their evidence would not parse. */
+  /** Candidates rejected by the validity check. */
   invalid: number
 }
 

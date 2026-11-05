@@ -121,6 +121,13 @@ export function parseBenchmarkSpec(spec: string): Record<string, number> {
 }
 
 /** Unfold run_result's flattened benchmark.N.* map into typed benchmarks. */
+/** No GPU call finishes in under a nanosecond, and a smaller mean would
+ * publish as 0 ns. */
+function atLeastOneNs(meanNs: number, index: number): number {
+  if (meanNs < 1) throw new Error(`benchmark.${index}.mean is under 1 ns`)
+  return meanNs
+}
+
 export function parseRunResult(
   runResult: Record<string, unknown>,
 ): GmBenchmark[] {
@@ -149,7 +156,7 @@ export function parseRunResult(
     benchmarks.push({
       index,
       axes: parseBenchmarkSpec(spec),
-      meanNs: numeric("mean"),
+      meanNs: atLeastOneNs(numeric("mean"), index),
       bestNs: optional("best"),
       worstNs: optional("worst"),
       stdNs: Number.isFinite(std) && std >= 0 ? std : null,
