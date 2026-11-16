@@ -1,13 +1,13 @@
 {
-  "generatedAt": "2026-10-12T10:59:44.896Z",
+  "generatedAt": "2026-11-16T10:21:15.363Z",
   "sources": [
     {
       "slug": "flashinfer-bench",
       "kind": "benchmark",
       "state": "fresh",
-      "lastFetchedAt": "2026-10-12T10:54:56.353Z",
+      "lastFetchedAt": "2026-11-16T10:16:36.343Z",
       "declaredFreshnessDays": 10,
-      "snapshots": 782,
+      "snapshots": 783,
       "publishedRuns": 7526,
       "publishedServingRuns": 0
     },
@@ -15,10 +15,10 @@
       "slug": "gpumode-kernelbot",
       "kind": "leaderboard",
       "state": "fresh",
-      "lastFetchedAt": "2026-10-12T10:51:51.673Z",
+      "lastFetchedAt": "2026-11-16T10:13:17.882Z",
       "declaredFreshnessDays": 10,
-      "snapshots": 1860,
-      "publishedRuns": 9585,
+      "snapshots": 1890,
+      "publishedRuns": 9588,
       "publishedServingRuns": 0
     },
     {
@@ -34,17 +34,17 @@
     {
       "slug": "liger-kernel-bench",
       "kind": "benchmark",
-      "state": "stale",
-      "lastFetchedAt": "2026-08-18T20:59:38.396Z",
+      "state": "fresh",
+      "lastFetchedAt": "2026-11-16T10:19:27.596Z",
       "declaredFreshnessDays": 30,
-      "snapshots": 2,
+      "snapshots": 4,
       "publishedRuns": 1649,
       "publishedServingRuns": 0
     },
     {
       "slug": "mlperf-inference",
       "kind": "benchmark",
-      "state": "fresh",
+      "state": "stale",
       "lastFetchedAt": "2026-08-16T15:55:17.794Z",
       "declaredFreshnessDays": 90,
       "snapshots": 2,
@@ -310,7 +310,7 @@
         "amd-moe-mxfp4: mirrored submission code carries no per-submission license; displayed under June 9 Researcher Reciprocity License v1.0 with attribution, records stay reported-only",
         "amd-mixed-mla: mirrored submission code carries no per-submission license; displayed under June 9 Researcher Reciprocity License v1.0 with attribution, records stay reported-only"
       ],
-      "plan": "publish 0 new objects (2064 already present) into source 'gpumode-kernelbot' via the idempotent publication transaction"
+      "plan": "publish 0 new objects (2062 already present) into source 'gpumode-kernelbot' via the idempotent publication transaction"
     },
     {
       "source": "gpumode-kernelbot",
@@ -367,7 +367,7 @@
         "modal_nvfp4_dual_gemm: mirrored submission code carries no per-submission license; displayed under June 9 Researcher Reciprocity License v1.0 with attribution, records stay reported-only",
         "nvfp4_group_gemm: mirrored submission code carries no per-submission license; displayed under June 9 Researcher Reciprocity License v1.0 with attribution, records stay reported-only"
       ],
-      "plan": "publish 0 new objects (1096 already present) into source 'gpumode-kernelbot' via the idempotent publication transaction"
+      "plan": "publish 0 new objects (1094 already present) into source 'gpumode-kernelbot' via the idempotent publication transaction"
     },
     {
       "source": "gpumode-kernelbot",
@@ -409,7 +409,7 @@
     },
     {
       "source": "liger-kernel-bench",
-      "revision": "2120862ba532c9449e72d603ba6324310ae756e7",
+      "revision": "4ad9321f6595ea4184da976230aa92a6a64e35c5",
       "ambiguities": [],
       "issues": [],
       "driftWarnings": [],
